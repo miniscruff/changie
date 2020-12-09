@@ -21,8 +21,10 @@ jobs:
     - name: Check out code into the Go module directory
       uses: actions/checkout@v2
     
-    - name: Setup go-task/task
-      uses: lagren/setup-task@v1
+    - name: Install Taskfile
+      uses: Arduino/actions/setup-taskfile@master
+      with:
+        version: '2.x'
 
     - name: Test
       run: task test
