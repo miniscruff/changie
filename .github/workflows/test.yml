@@ -22,7 +22,9 @@ jobs:
       uses: actions/checkout@v2
     
     - name: Install Taskfile
-      run: sh -c "$(curl -ssL https://taskfile.dev/install.sh)" -- -d
+      run: |
+        sh -c "$(curl -ssL https://taskfile.dev/install.sh)" -- -d
+        echo "./bin" >> $GITHUB_PATH
 
     - name: Test
       run: task test
