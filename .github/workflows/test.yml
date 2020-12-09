@@ -22,9 +22,7 @@ jobs:
       uses: actions/checkout@v2
     
     - name: Install Taskfile
-      uses: Arduino/actions/setup-taskfile@master
-      with:
-        version: '2.x'
+      run: sh -c "$(curl -ssL https://taskfile.dev/install.sh)" -- -d
 
     - name: Test
       run: task test
