@@ -7,9 +7,7 @@
 
 # Test binary, built with `go test -c`
 *.test
+coverage.txt
 
-# Output of the go coverage tool, specifically when used with LiteIDE
+# Output of the go coverage tool
 *.out
-
-# Dependency directories (remove the comment below to include it)
-# vendor/

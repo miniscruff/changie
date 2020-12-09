@@ -1,0 +1,16 @@
+# https://taskfile.dev
+
+version: '3'
+
+tasks:
+  test:
+    desc: Run unit tests
+    cmds:
+      - go test -coverprofile=c.out ./...
+    silent: true
+  coverage:
+    desc: Run unit tests and code coverage
+    cmds:
+      - task: test
+      - go tool cover -html=c.out
+    silent: true
