@@ -1,8 +1,14 @@
 package cmd
 
 import (
+	"errors"
+	"fmt"
+	"github.com/manifoldco/promptui"
+	"github.com/miniscruff/changie/project"
 	"github.com/spf13/afero"
 	"github.com/spf13/cobra"
+	"strconv"
+	"time"
 )
 
 // newCmd represents the new command
@@ -31,6 +37,80 @@ func init() {
 
 func runNew(cmd *cobra.Command, args []string) error {
 	fs := afero.NewOsFs()
-	config := project.LoadConfig(fs)
-	return nil
+	config, err := project.LoadConfig(fs)
+	if err != nil {
+		return err
+	}
+
+	kindPrompt := promptui.Select{
+		Label: "Kind",
+		Items: config.Kinds,
+	}
+
+	_, kind, err := kindPrompt.Run()
+	if err != nil {
+		return err
+	}
+
+	bodyPrompt := promptui.Prompt{
+		Label: "Body",
+	}
+
+	body, err := bodyPrompt.Run()
+	if err != nil {
+		return err
+	}
+
+	customs := make(map[string]string, 0)
+
+	for name, custom := range config.CustomChoices {
+		if custom.Type == project.CustomString {
+			stringPrompt := promptui.Prompt{
+				Label: name,
+			}
+			customs[name], err = stringPrompt.Run()
+			if err != nil {
+				return err
+			}
+		} else if custom.Type == project.CustomInt {
+			intPrompt := promptui.Prompt{
+				Label: name,
+				Validate: func(input string) error {
+					value, err := strconv.ParseInt(input, 10, 64)
+					if err != nil {
+						return errors.New("Invalid number")
+					}
+					if custom.MinInt != nil && value < *custom.MinInt {
+						return errors.New(fmt.Sprintf("%v is below minimum of %v", value, custom.MinInt))
+					}
+					if custom.MaxInt != nil && value > *custom.MaxInt {
+						return errors.New(fmt.Sprintf("%v is above maximum of %v", value, custom.MaxInt))
+					}
+					return nil
+				},
+			}
+			customs[name], err = intPrompt.Run()
+			if err != nil {
+				return err
+			}
+		} else if custom.Type == project.CustomEnum {
+			enumPrompt := promptui.Select{
+				Label: name,
+				Items: custom.EnumOptions,
+			}
+			_, customs[name], err = enumPrompt.Run()
+			if err != nil {
+				return err
+			}
+		}
+	}
+
+	change := project.Change{
+		Kind:   kind,
+		Body:   body,
+		Time:   time.Now(),
+		Custom: customs,
+	}
+
+	return change.SaveUnreleased(fs, config)
 }

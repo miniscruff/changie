@@ -23,11 +23,8 @@ Values will also be saved in a changie config at .changie.yaml`,
 	RunE: runInit,
 }
 
-// No config options yet, coming later
 var (
 	changesDir    string
-	unreleasedDir string
-	headerPath    string
 	changelogPath string
 )
 
@@ -35,20 +32,34 @@ func init() {
 	rootCmd.AddCommand(initCmd)
 
 	initCmd.Flags().StringVarP(&changesDir, "dir", "d", "changes", "directory for all changes")
-	initCmd.Flags().StringVarP(&unreleasedDir, "unreleased", "u", "unreleased", "directory within changes for unreleased changes")
-	initCmd.Flags().StringVar(&headerPath, "header", "header.tpl.md", "file path to header file")
 	initCmd.Flags().StringVarP(&changelogPath, "output", "o", "CHANGELOG.md", "file path to output our changelog")
 }
 
 func runInit(cmd *cobra.Command, args []string) error {
 	var err error
 
+	var minTest int64 = 5
+	var maxTest int64 = 100
+
 	fs := afero.NewOsFs()
 	config := project.Config{
 		ChangesDir:    changesDir,
-		UnreleasedDir: unreleasedDir,
-		HeaderPath:    headerPath,
+		UnreleasedDir: "unreleased",
+		HeaderPath:    "header.tpl.md",
 		ChangelogPath: changelogPath,
+		Kinds: []string{
+			"Added", "Changed", "Deprecated", "Removed", "Fixed", "Security",
+		},
+		CustomChoices: map[string]project.Custom{
+			"demo": {
+				Type: project.CustomString,
+			},
+			"another": {
+				Type:   project.CustomInt,
+				MinInt: &minTest,
+				MaxInt: &maxTest,
+			},
+		},
 	}
 
 	err = config.Save(fs)
