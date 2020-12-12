@@ -1,0 +1,4 @@
+changesdir: changes
+unreleaseddir: unreleased
+headerpath: header.tpl.md
+changelogpath: CHANGELOG.md

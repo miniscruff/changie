@@ -1,6 +1,8 @@
 package cmd
 
 import (
+	"fmt"
+	"github.com/miniscruff/changie/project"
 	"github.com/spf13/afero"
 	"github.com/spf13/cobra"
 )
@@ -22,31 +24,70 @@ Values will also be saved in a changie config at .changie.yaml`,
 }
 
 // No config options yet, coming later
-/*
 var (
 	changesDir    string
 	unreleasedDir string
 	headerPath    string
-	outputPath    string
+	changelogPath string
 )
-*/
 
 func init() {
 	rootCmd.AddCommand(initCmd)
 
-	/*
-		initCmd.Flags().StringVarP(&changesDir, "dir", "d", "changes", "where to store intermediary change files")
-		initCmd.Flags().StringVarP(&unreleasedDir, "unreleased", "u", "unreleased", "where to store unreleased changes")
-		initCmd.Flags().StringVar(&headerPath, "header", "header.tpl.md", "header for output changelog")
-		initCmd.Flags().StringVarP(&outputPath, "output", "o", "CHANGELOG.md", "where to output our changelog")
-	*/
+	initCmd.Flags().StringVarP(&changesDir, "dir", "d", "changes", "directory for all changes")
+	initCmd.Flags().StringVarP(&unreleasedDir, "unreleased", "u", "unreleased", "directory within changes for unreleased changes")
+	initCmd.Flags().StringVar(&headerPath, "header", "header.tpl.md", "file path to header file")
+	initCmd.Flags().StringVarP(&changelogPath, "output", "o", "CHANGELOG.md", "file path to output our changelog")
 }
 
 func runInit(cmd *cobra.Command, args []string) error {
-	// TODO: Add testing once config loading is in place otherwise it will
-	// not be idempotent
+	var err error
+
 	fs := afero.NewOsFs()
-	config := ProjectConfig{}
-	p := NewProject(fs, config)
-	return p.Init()
+	config := project.Config{
+		ChangesDir:    changesDir,
+		UnreleasedDir: unreleasedDir,
+		HeaderPath:    headerPath,
+		ChangelogPath: changelogPath,
+	}
+
+	err = config.Save(fs)
+	if err != nil {
+		return err
+	}
+
+	err = fs.MkdirAll(fmt.Sprintf("%s/%s", config.ChangesDir, config.UnreleasedDir), 644)
+	if err != nil {
+		return err
+	}
+
+	keepFile, err := fs.Create(fmt.Sprintf("%s/%s/.gitkeep", config.ChangesDir, config.UnreleasedDir))
+	if err != nil {
+		return err
+	}
+	defer keepFile.Close()
+
+	headerFile, err := fs.Create(fmt.Sprintf("%s/%s", config.ChangesDir, config.HeaderPath))
+	if err != nil {
+		return err
+	}
+	defer headerFile.Close()
+
+	_, err = headerFile.WriteString(defaultHeader)
+	if err != nil {
+		return err
+	}
+
+	outputFile, err := fs.Create(config.ChangelogPath)
+	if err != nil {
+		return err
+	}
+	defer outputFile.Close()
+
+	_, err = outputFile.WriteString(defaultChangelog)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
