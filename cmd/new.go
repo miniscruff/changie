@@ -8,7 +8,6 @@ import (
 	"github.com/spf13/afero"
 	"github.com/spf13/cobra"
 	"strconv"
-	"time"
 )
 
 // newCmd represents the new command
@@ -23,16 +22,6 @@ Each version is combined together for the overall project changelog.`,
 
 func init() {
 	rootCmd.AddCommand(newCmd)
-
-	// Here you will define your flags and configuration settings.
-
-	// Cobra supports Persistent Flags which will work for this command
-	// and all subcommands, e.g.:
-	// newCmd.PersistentFlags().String("foo", "", "A help for foo")
-
-	// Cobra supports local flags which will only run when this command
-	// is called directly, e.g.:
-	// newCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 }
 
 func runNew(cmd *cobra.Command, args []string) error {
@@ -64,9 +53,14 @@ func runNew(cmd *cobra.Command, args []string) error {
 	customs := make(map[string]string, 0)
 
 	for name, custom := range config.CustomChoices {
+		label := name
+		if custom.Label != "" {
+			label = custom.Label
+		}
+
 		if custom.Type == project.CustomString {
 			stringPrompt := promptui.Prompt{
-				Label: name,
+				Label: label,
 			}
 			customs[name], err = stringPrompt.Run()
 			if err != nil {
@@ -74,7 +68,7 @@ func runNew(cmd *cobra.Command, args []string) error {
 			}
 		} else if custom.Type == project.CustomInt {
 			intPrompt := promptui.Prompt{
-				Label: name,
+				Label: label,
 				Validate: func(input string) error {
 					value, err := strconv.ParseInt(input, 10, 64)
 					if err != nil {
@@ -95,7 +89,7 @@ func runNew(cmd *cobra.Command, args []string) error {
 			}
 		} else if custom.Type == project.CustomEnum {
 			enumPrompt := promptui.Select{
-				Label: name,
+				Label: label,
 				Items: custom.EnumOptions,
 			}
 			_, customs[name], err = enumPrompt.Run()
@@ -108,9 +102,7 @@ func runNew(cmd *cobra.Command, args []string) error {
 	change := project.Change{
 		Kind:   kind,
 		Body:   body,
-		Time:   time.Now(),
 		Custom: customs,
 	}
-
 	return change.SaveUnreleased(fs, config)
 }

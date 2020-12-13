@@ -17,6 +17,7 @@ type CustomType string
 
 type Custom struct {
 	Type        CustomType
+	Label       string   `yaml:",omitempty"`
 	MinInt      *int64   `yaml:"minInt,omitempty"`
 	MaxInt      *int64   `yaml:"maxInt,omitempty"`
 	EnumOptions []string `yaml:"enumOptions,omitempty"`
@@ -24,14 +25,17 @@ type Custom struct {
 
 // Config handles configuration for a changie project
 type Config struct {
-	ChangesDir    string   `yaml:"changesDir"`
-	UnreleasedDir string   `yaml:"unreleasedDir"`
-	HeaderPath    string   `yaml:"headerPath"`
-	ChangelogPath string   `yaml:"changelogPath"`
-	Kinds         []string `yaml:"kinds"`
+	ChangesDir    string `yaml:"changesDir"`
+	UnreleasedDir string `yaml:"unreleasedDir"`
+	HeaderPath    string `yaml:"headerPath"`
+	ChangelogPath string `yaml:"changelogPath"`
 	// formats
+	VersionFormat string `yaml:"versionFormat"`
+	KindFormat    string `yaml:"kindFormat"`
+	ChangeFormat  string `yaml:"changeFormat"`
+	// custom
+	Kinds         []string          `yaml:"kinds"`
 	CustomChoices map[string]Custom `yaml:"custom,omitempty"`
-	// custom questions
 }
 
 func (config Config) Save(fs afero.Fs) error {

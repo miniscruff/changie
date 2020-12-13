@@ -38,27 +38,17 @@ func init() {
 func runInit(cmd *cobra.Command, args []string) error {
 	var err error
 
-	var minTest int64 = 5
-	var maxTest int64 = 100
-
 	fs := afero.NewOsFs()
 	config := project.Config{
 		ChangesDir:    changesDir,
 		UnreleasedDir: "unreleased",
 		HeaderPath:    "header.tpl.md",
 		ChangelogPath: changelogPath,
+		VersionFormat: "## :rocket: {{Version}}",
+		KindFormat:    "### {{Kind}}",
+		ChangeFormat:  "* {{.Body}}",
 		Kinds: []string{
 			"Added", "Changed", "Deprecated", "Removed", "Fixed", "Security",
-		},
-		CustomChoices: map[string]project.Custom{
-			"demo": {
-				Type: project.CustomString,
-			},
-			"another": {
-				Type:   project.CustomInt,
-				MinInt: &minTest,
-				MaxInt: &maxTest,
-			},
 		},
 	}
 
