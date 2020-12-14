@@ -3,12 +3,15 @@ package cmd
 import (
 	"errors"
 	"fmt"
+	"github.com/Masterminds/semver"
 	"github.com/miniscruff/changie/project"
 	"github.com/spf13/afero"
 	"github.com/spf13/cobra"
-	"golang.org/x/mod/semver"
+	"io"
+	"io/ioutil"
 	"os"
 	"path/filepath"
+	"sort"
 	"strings"
 	"text/template"
 )
@@ -33,7 +36,8 @@ func runGenerate(cmd *cobra.Command, args []string) error {
 	}
 
 	ver := args[0]
-	if !semver.IsValid(ver) {
+	_, err := semver.NewVersion(ver)
+	if err != nil {
 		return errors.New("Invalid version, must be a semantic version")
 	}
 
@@ -48,12 +52,13 @@ func runGenerate(cmd *cobra.Command, args []string) error {
 	changesPerKind := make(map[string][]project.Change, 0)
 
 	// read all markdown files from changes/unreleased
-	absDir := fmt.Sprintf("%s/%s", config.ChangesDir, config.UnreleasedDir)
-	err = filepath.Walk(absDir, func(path string, file os.FileInfo, err error) error {
-		if !strings.HasSuffix(path, ".yaml") {
-			return nil
+	fileInfos, err := ioutil.ReadDir(filepath.Join(config.ChangesDir, config.UnreleasedDir))
+	for _, file := range fileInfos {
+		if filepath.Ext(file.Name()) != ".yaml" {
+			continue
 		}
 
+		path := filepath.Join(config.ChangesDir, config.UnreleasedDir, file.Name())
 		c, err := project.LoadChange(path, afs)
 		if err != nil {
 			return err
@@ -64,17 +69,31 @@ func runGenerate(cmd *cobra.Command, args []string) error {
 		}
 
 		changesPerKind[c.Kind] = append(changesPerKind[c.Kind], c)
+	}
 
-		return nil
-	})
+	// merge them into one {version}.md file in changes/
+	err = mergeNewVersion(fs, config, ver, changesPerKind)
 	if err != nil {
 		return err
 	}
 
 	// delete all markdown files in unreleased ( keeping .gitkeep )
+	// defer deleteChangeFiles()
+	err = mergeChangelog(fs, config)
+	if err != nil {
+		return err
+	}
 
-	// merge them into one version.md file in changes/
-	versionFile, err := fs.Create(fmt.Sprintf("%s/%s.yaml", config.ChangesDir, ver))
+	err = deleteUnreleased(fs, config)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func mergeNewVersion(fs afero.Fs, config project.Config, version string, changesPerKind map[string][]project.Change) error {
+	versionFile, err := fs.Create(fmt.Sprintf("%s/%s.yaml", config.ChangesDir, version))
 	if err != nil {
 		return err
 	}
@@ -85,7 +104,7 @@ func runGenerate(cmd *cobra.Command, args []string) error {
 	cTempl, _ := template.New("change").Parse(config.ChangeFormat)
 
 	err = vTempl.Execute(versionFile, map[string]string{
-		"Version": ver,
+		"Version": version,
 	})
 	if err != nil {
 		return err
@@ -117,14 +136,75 @@ func runGenerate(cmd *cobra.Command, args []string) error {
 			}
 		}
 	}
+	return nil
+}
 
-	// merge all version files + header file in changes/ into changelog.md
-	/*
-		changelogFile, err := fs.Create(config.ChangelogPath)
+func mergeChangelog(fs afero.Fs, config project.Config) error {
+	allVersions := make([]*semver.Version, 0)
+
+	fileInfos, err := ioutil.ReadDir(config.ChangesDir)
+	if err != nil {
+		return err
+	}
+
+	for _, file := range fileInfos {
+		if filepath.Ext(file.Name()) != ".yaml" {
+			continue
+		}
+		versionString := strings.TrimSuffix(file.Name(), ".yaml")
+		v, err := semver.NewVersion(versionString)
+		if err != nil {
+			continue
+		}
+
+		allVersions = append(allVersions, v)
+	}
+	fmt.Println(allVersions)
+	sort.Sort(sort.Reverse(semver.Collection(allVersions)))
+
+	changeFile, err := fs.Create(config.ChangelogPath)
+	if err != nil {
+		return err
+	}
+	defer changeFile.Close()
+
+	appendFile(fs, changeFile, filepath.Join(config.ChangesDir, config.HeaderPath))
+
+	for _, version := range allVersions {
+		changeFile.WriteString("\n")
+		changeFile.WriteString("\n")
+		appendFile(fs, changeFile, filepath.Join(config.ChangesDir, version.Original()+".yaml"))
+	}
+
+	return nil
+}
+
+func appendFile(fs afero.Fs, rootFile afero.File, path string) error {
+	otherFile, err := fs.Open(path)
+	if err != nil {
+		return err
+	}
+	defer otherFile.Close()
+
+	_, err = io.Copy(rootFile, otherFile)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func deleteUnreleased(fs afero.Fs, config project.Config) error {
+	fileInfos, err := ioutil.ReadDir(filepath.Join(config.ChangesDir, config.UnreleasedDir))
+	for _, file := range fileInfos {
+		if filepath.Ext(file.Name()) != ".yaml" {
+			continue
+		}
+		path := filepath.Join(config.ChangesDir, config.UnreleasedDir, file.Name())
+		err = os.Remove(path)
 		if err != nil {
 			return err
 		}
-		defer changelogFile.Close()
-	*/
+	}
 	return nil
 }

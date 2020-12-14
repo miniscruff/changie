@@ -44,8 +44,8 @@ func runInit(cmd *cobra.Command, args []string) error {
 		UnreleasedDir: "unreleased",
 		HeaderPath:    "header.tpl.md",
 		ChangelogPath: changelogPath,
-		VersionFormat: "## :rocket: {{Version}}",
-		KindFormat:    "### {{Kind}}",
+		VersionFormat: "## :rocket: {{.Version}}",
+		KindFormat:    "### {{.Kind}}",
 		ChangeFormat:  "* {{.Body}}",
 		Kinds: []string{
 			"Added", "Changed", "Deprecated", "Removed", "Fixed", "Security",
