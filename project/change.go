@@ -26,10 +26,6 @@ func (change Change) SaveUnreleased(fs afero.Fs, config Config) error {
 	timeString := time.Now().Format(timeFormat)
 	filePath := fmt.Sprintf("%s/%s/%s-%s.yaml", config.ChangesDir, config.UnreleasedDir, change.Kind, timeString)
 
-	// if this file conflicts with another, try again. It should happen very rarely
-	if ok, _ := afs.Exists(filePath); ok {
-		return change.SaveUnreleased(fs, config)
-	}
 	return afs.WriteFile(filePath, bs, os.ModePerm)
 }
 
