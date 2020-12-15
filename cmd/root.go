@@ -6,8 +6,6 @@ import (
 	"os"
 )
 
-var cfgFile string
-
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
 	Use:   "changie",
@@ -16,6 +14,7 @@ var rootCmd = &cobra.Command{
 
 Changie is aimed at seemlessly integrating into your release process while also
 being easy to use for developers and your release team.`,
+	Version: "v0.1.0",
 }
 
 // Execute adds all child commands to the root command and sets flags appropriately.
