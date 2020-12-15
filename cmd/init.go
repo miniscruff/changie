@@ -19,7 +19,8 @@ var initCmd = &cobra.Command{
 * Output file when generating a changelog
 * Unreleased folder includes a .gitkeep file
 
-Values will also be saved in a changie config at .changie.yaml`,
+Values will also be saved in a changie config at .changie.yaml.
+Default values follow keep a changelog and semver specs but are customizable.`,
 	RunE: runInit,
 }
 
@@ -44,7 +45,8 @@ func runInit(cmd *cobra.Command, args []string) error {
 		UnreleasedDir: "unreleased",
 		HeaderPath:    "header.tpl.md",
 		ChangelogPath: changelogPath,
-		VersionFormat: "## :rocket: {{.Version}}",
+		VersionExt:    "md",
+		VersionFormat: "## {{.Version}} - {{.Time.Format \"2006-01-02\"}}",
 		KindFormat:    "### {{.Kind}}",
 		ChangeFormat:  "* {{.Body}}",
 		Kinds: []string{

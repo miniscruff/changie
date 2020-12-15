@@ -29,6 +29,7 @@ type Config struct {
 	UnreleasedDir string `yaml:"unreleasedDir"`
 	HeaderPath    string `yaml:"headerPath"`
 	ChangelogPath string `yaml:"changelogPath"`
+	VersionExt    string `yaml:"versionExt"`
 	// formats
 	VersionFormat string `yaml:"versionFormat"`
 	KindFormat    string `yaml:"kindFormat"`

@@ -7,30 +7,31 @@ import (
 	"github.com/miniscruff/changie/project"
 	"github.com/spf13/afero"
 	"github.com/spf13/cobra"
-	"io"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 	"sort"
 	"strings"
 	"text/template"
+	"time"
 )
 
-// generateCmd represents the generate command
-var generateCmd = &cobra.Command{
-	Use:   "generate [version]",
-	Short: "Generate a new version changelog and a new changelog.md",
-	Long: `Merges all unreleased changes into one changelog and adds
-it to the main changelog file.`,
+var batchCmd = &cobra.Command{
+	Use:   "batch [version]",
+	Short: "Batch unreleased changes into a single changelog",
+	Long: `Merges all unreleased changes into one version changelog.
+
+The new version changelog can then be modified with extra descriptions,
+context or with custom tweaks before merging into the main file.`,
 	Args: cobra.MinimumNArgs(1),
-	RunE: runGenerate,
+	RunE: runBatch,
 }
 
 func init() {
-	rootCmd.AddCommand(generateCmd)
+	rootCmd.AddCommand(batchCmd)
 }
 
-func runGenerate(cmd *cobra.Command, args []string) error {
+func runBatch(cmd *cobra.Command, args []string) error {
 	if len(args) == 0 {
 		return errors.New("Missing required version")
 	}
@@ -72,14 +73,7 @@ func runGenerate(cmd *cobra.Command, args []string) error {
 	}
 
 	// merge them into one {version}.md file in changes/
-	err = mergeNewVersion(fs, config, ver, changesPerKind)
-	if err != nil {
-		return err
-	}
-
-	// delete all markdown files in unreleased ( keeping .gitkeep )
-	// defer deleteChangeFiles()
-	err = mergeChangelog(fs, config)
+	err = batchNewVersion(fs, config, ver, changesPerKind)
 	if err != nil {
 		return err
 	}
@@ -92,8 +86,8 @@ func runGenerate(cmd *cobra.Command, args []string) error {
 	return nil
 }
 
-func mergeNewVersion(fs afero.Fs, config project.Config, version string, changesPerKind map[string][]project.Change) error {
-	versionFile, err := fs.Create(fmt.Sprintf("%s/%s.yaml", config.ChangesDir, version))
+func batchNewVersion(fs afero.Fs, config project.Config, version string, changesPerKind map[string][]project.Change) error {
+	versionFile, err := fs.Create(fmt.Sprintf("%s/%s.%s", config.ChangesDir, version, config.VersionExt))
 	if err != nil {
 		return err
 	}
@@ -103,8 +97,9 @@ func mergeNewVersion(fs afero.Fs, config project.Config, version string, changes
 	kTempl, _ := template.New("kind").Parse(config.KindFormat)
 	cTempl, _ := template.New("change").Parse(config.ChangeFormat)
 
-	err = vTempl.Execute(versionFile, map[string]string{
+	err = vTempl.Execute(versionFile, map[string]interface{}{
 		"Version": version,
+		"Time":    time.Now(),
 	})
 	if err != nil {
 		return err
@@ -159,7 +154,6 @@ func mergeChangelog(fs afero.Fs, config project.Config) error {
 
 		allVersions = append(allVersions, v)
 	}
-	fmt.Println(allVersions)
 	sort.Sort(sort.Reverse(semver.Collection(allVersions)))
 
 	changeFile, err := fs.Create(config.ChangelogPath)
@@ -174,21 +168,6 @@ func mergeChangelog(fs afero.Fs, config project.Config) error {
 		changeFile.WriteString("\n")
 		changeFile.WriteString("\n")
 		appendFile(fs, changeFile, filepath.Join(config.ChangesDir, version.Original()+".yaml"))
-	}
-
-	return nil
-}
-
-func appendFile(fs afero.Fs, rootFile afero.File, path string) error {
-	otherFile, err := fs.Open(path)
-	if err != nil {
-		return err
-	}
-	defer otherFile.Close()
-
-	_, err = io.Copy(rootFile, otherFile)
-	if err != nil {
-		return err
 	}
 
 	return nil
