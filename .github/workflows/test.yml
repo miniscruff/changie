@@ -20,7 +20,7 @@ jobs:
 
     - name: Check out code into the Go module directory
       uses: actions/checkout@v2
-    
+
     - name: Install Taskfile
       run: |
         sh -c "$(curl -ssL https://taskfile.dev/install.sh)" -- -d
@@ -28,3 +28,9 @@ jobs:
 
     - name: Test
       run: task test
+
+    - name: Coverage
+      uses: codecov/codecov-action@v1
+      with:
+        file: ./c.out
+        fail_ci_if_error: true
