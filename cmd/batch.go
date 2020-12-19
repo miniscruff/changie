@@ -44,7 +44,7 @@ func runBatch(cmd *cobra.Command, args []string) error {
 	fs := afero.NewOsFs()
 	afs := afero.Afero{Fs: fs}
 
-	config, err := LoadConfig(fs)
+	config, err := LoadConfig(afs)
 	if err != nil {
 		return err
 	}

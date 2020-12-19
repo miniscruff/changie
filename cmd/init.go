@@ -52,8 +52,9 @@ func runInit(cmd *cobra.Command, args []string) error {
 			"Added", "Changed", "Deprecated", "Removed", "Fixed", "Security",
 		},
 	}
+	afs := afero.Afero{Fs: fs}
 
-	err = config.Save(fs)
+	err = config.Save(afs)
 	if err != nil {
 		return err
 	}

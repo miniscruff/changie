@@ -1,7 +1,6 @@
 package cmd
 
 import (
-	"github.com/spf13/afero"
 	"gopkg.in/yaml.v2"
 	"os"
 )
@@ -39,20 +38,14 @@ type Config struct {
 	CustomChoices map[string]Custom `yaml:"custom,omitempty"`
 }
 
-func (config Config) Save(fs afero.Fs) error {
-	bs, err := yaml.Marshal(&config)
-	if err != nil {
-		return nil
-	}
-
-	afs := afero.Afero{Fs: fs}
-	return afs.WriteFile(configPath, bs, os.ModePerm)
+func (config Config) Save(wf WriteFiler) error {
+	bs, _ := yaml.Marshal(&config)
+	return wf.WriteFile(configPath, bs, os.ModePerm)
 }
 
-func LoadConfig(fs afero.Fs) (Config, error) {
+func LoadConfig(rf ReadFiler) (Config, error) {
 	var c Config
-	afs := afero.Afero{Fs: fs}
-	bs, err := afs.ReadFile(configPath)
+	bs, err := rf.ReadFile(configPath)
 	if err != nil {
 		return c, err
 	}
