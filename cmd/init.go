@@ -1,9 +1,10 @@
 package cmd
 
 import (
-	"fmt"
 	"github.com/spf13/afero"
 	"github.com/spf13/cobra"
+	"os"
+	"path/filepath"
 )
 
 // initCmd represents the init command
@@ -36,9 +37,6 @@ func init() {
 }
 
 func runInit(cmd *cobra.Command, args []string) error {
-	var err error
-
-	fs := afero.NewOsFs()
 	config := Config{
 		ChangesDir:    changesDir,
 		UnreleasedDir: "unreleased",
@@ -52,42 +50,39 @@ func runInit(cmd *cobra.Command, args []string) error {
 			"Added", "Changed", "Deprecated", "Removed", "Fixed", "Security",
 		},
 	}
-	afs := afero.Afero{Fs: fs}
 
-	err = config.Save(afs)
+	afs := afero.Afero{Fs: afero.NewOsFs()}
+	err := config.Save(afs.WriteFile)
 	if err != nil {
 		return err
 	}
 
-	err = fs.MkdirAll(fmt.Sprintf("%s/%s", config.ChangesDir, config.UnreleasedDir), 644)
+	return initPipeline(afs.MkdirAll, afs.WriteFile, config)
+}
+
+func initPipeline(mkdir MkdirAller, wf WriteFiler, config Config) error {
+	var err error
+
+	headerPath := filepath.Join(config.ChangesDir, config.HeaderPath)
+	unreleasedPath := filepath.Join(config.ChangesDir, config.UnreleasedDir)
+	keepPath := filepath.Join(unreleasedPath, ".gitkeep")
+
+	err = mkdir(unreleasedPath, 0644)
 	if err != nil {
 		return err
 	}
 
-	keepFile, err := fs.Create(fmt.Sprintf("%s/%s/.gitkeep", config.ChangesDir, config.UnreleasedDir))
-	if err != nil {
-		return err
-	}
-	defer keepFile.Close()
-
-	headerFile, err := fs.Create(fmt.Sprintf("%s/%s", config.ChangesDir, config.HeaderPath))
-	if err != nil {
-		return err
-	}
-	defer headerFile.Close()
-
-	_, err = headerFile.WriteString(defaultHeader)
+	err = wf(keepPath, []byte{}, os.ModePerm)
 	if err != nil {
 		return err
 	}
 
-	outputFile, err := fs.Create(config.ChangelogPath)
+	err = wf(headerPath, []byte(defaultHeader), os.ModePerm)
 	if err != nil {
 		return err
 	}
-	defer outputFile.Close()
 
-	_, err = outputFile.WriteString(defaultChangelog)
+	err = wf(config.ChangelogPath, []byte(defaultChangelog), os.ModePerm)
 	if err != nil {
 		return err
 	}

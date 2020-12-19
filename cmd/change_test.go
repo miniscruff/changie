@@ -27,8 +27,7 @@ var _ = Describe("Change", func() {
 
 		writeCalled := false
 
-		mockWf := newMockWriteFiler()
-		mockWf.mockWriteFile = func(filepath string, bytes []byte, perm os.FileMode) error {
+		mockWf := func(filepath string, bytes []byte, perm os.FileMode) error {
 			writeCalled = true
 			Expect(filepath).To(Equal("Changes/Unrel/kind-20150524-033010.yaml"))
 			Expect(bytes).To(Equal([]byte(changesYaml)))
@@ -41,8 +40,7 @@ var _ = Describe("Change", func() {
 	})
 
 	It("should load change from path", func() {
-		mockRf := newMockReadFiler()
-		mockRf.mockReadFile = func(filepath string) ([]byte, error) {
+		mockRf := func(filepath string) ([]byte, error) {
 			Expect(filepath).To(Equal("some_file.yaml"))
 			return []byte("kind: A\nbody: hey\n"), nil
 		}
@@ -56,8 +54,7 @@ var _ = Describe("Change", func() {
 	It("should return error from bad read", func() {
 		mockErr := errors.New("bad file")
 
-		mockRf := newMockReadFiler()
-		mockRf.mockReadFile = func(filepath string) ([]byte, error) {
+		mockRf := func(filepath string) ([]byte, error) {
 			Expect(filepath).To(Equal("some_file.yaml"))
 			return []byte(""), mockErr
 		}
@@ -67,8 +64,7 @@ var _ = Describe("Change", func() {
 	})
 
 	It("should return error from bad file", func() {
-		mockRf := newMockReadFiler()
-		mockRf.mockReadFile = func(filepath string) ([]byte, error) {
+		mockRf := func(filepath string) ([]byte, error) {
 			Expect(filepath).To(Equal("some_file.yaml"))
 			return []byte("not a yaml file---"), nil
 		}

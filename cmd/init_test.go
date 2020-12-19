@@ -1,7 +1,5 @@
 package cmd
 
-/*
-
 import (
 	"errors"
 	. "github.com/onsi/ginkgo"
@@ -9,85 +7,87 @@ import (
 	. "github.com/onsi/gomega"
 	"github.com/spf13/afero"
 	"os"
+	"path/filepath"
 )
 
 var _ = Describe("Init", func() {
 	var (
-		fs        afero.Fs
-		afs       *afero.Afero
-		mfs       *mockFs
-		mf        *mockFile
-		mockError error
+		fs         afero.Fs
+		afs        *afero.Afero
+		mockError  error
+		testConfig Config
 	)
 
 	BeforeEach(func() {
 		fs = afero.NewMemMapFs()
 		afs = &afero.Afero{Fs: fs}
-		mfs = newMockFs()
-		mf = newMockFile(mfs)
 		mockError = errors.New("dummy mock error")
+		testConfig = Config{
+			ChangesDir:    "chgs",
+			UnreleasedDir: "unrel",
+			HeaderPath:    "head.tpl.md",
+			ChangelogPath: "changelog.md",
+			VersionExt:    "md",
+			VersionFormat: "",
+			KindFormat:    "",
+			ChangeFormat:  "",
+			Kinds:         []string{},
+		}
 	})
 
 	It("builds default skeleton", func() {
-		p := NewProject(fs, ProjectConfig{})
-		err := p.Init()
+		err := initPipeline(afs.MkdirAll, afs.WriteFile, testConfig)
 
 		Expect(err).To(BeNil())
-		Expect("changes/").To(BeADir(afs))
-		Expect("changes/unreleased").To(BeADir(afs))
-		Expect("changes/unreleased/.gitkeep").To(BeAnEmptyFile(afs))
-		Expect("changes/header.tpl.md").To(HaveContents(afs, defaultHeader))
-		Expect("CHANGELOG.md").To(HaveContents(afs, defaultChangelog))
+		Expect("chgs/").To(BeADir(afs))
+		Expect("chgs/unrel").To(BeADir(afs))
+		Expect("chgs/unrel/.gitkeep").To(BeAnEmptyFile(afs))
+		Expect("chgs/head.tpl.md").To(HaveContents(afs, defaultHeader))
+		Expect("changelog.md").To(HaveContents(afs, defaultChangelog))
 	})
 
-	testBadFs := func(fs afero.Fs) {
-		p := NewProject(fs, ProjectConfig{})
-		err := p.Init()
-		Expect(err).To(Equal(mockError))
-	}
-
 	It("returns error on bad mkdir for unreleased", func() {
-		mfs.mockMkdirAll = func(path string, mode os.FileMode) error {
+		badMkdir := func(path string, mode os.FileMode) error {
 			return mockError
 		}
-		testBadFs(mfs)
+		err := initPipeline(badMkdir, afs.WriteFile, testConfig)
+		Expect(err).To(Equal(mockError))
 	})
 
 	DescribeTable("error creating file",
 		func(filename string) {
-			mfs.mockCreate = func(path string) (afero.File, error) {
+			mockWriteFile := func(path string, data []byte, perm os.FileMode) error {
 				if path == filename {
-					return nil, mockError
+					return mockError
 				}
-				return mfs.memFs.Create(path)
+				return nil
 			}
-			p := NewProject(mfs, ProjectConfig{})
-			err := p.Init()
+			err := initPipeline(afs.MkdirAll, mockWriteFile, testConfig)
 			Expect(err).To(Equal(mockError))
 		},
-		Entry("changelog", "CHANGELOG.md"),
-		Entry("header", "changes/header.tpl.md"),
-		Entry("git keep", "changes/unreleased/.gitkeep"),
+		Entry("changelog", "changelog.md"),
+		Entry("header", filepath.Join("chgs", "head.tpl.md")),
+		Entry("git keep", filepath.Join("chgs", "unrel", ".gitkeep")),
 	)
 
-	DescribeTable("error writing files",
-		func(filename string) {
-			mfs.mockCreate = func(path string) (afero.File, error) {
-				if path == filename {
-					return mf, nil
+	/*
+		DescribeTable("error writing files",
+			func(filename string) {
+				mfs.mockCreate = func(path string) (afero.File, error) {
+					if path == filename {
+						return mf, nil
+					}
+					return mfs.memFs.Create(path)
 				}
-				return mfs.memFs.Create(path)
-			}
-			mf.mockWriteString = func(s string) (int, error) {
-				return 0, mockError
-			}
-			p := NewProject(mfs, ProjectConfig{})
-			err := p.Init()
-			Expect(err).To(Equal(mockError))
-		},
-		Entry("changelog", "CHANGELOG.md"),
-		Entry("header", "changes/header.tpl.md"),
-	)
+				mf.mockWriteString = func(s string) (int, error) {
+					return 0, mockError
+				}
+				p := NewProject(mfs, ProjectConfig{})
+				err := p.Init()
+				Expect(err).To(Equal(mockError))
+			},
+			Entry("changelog", "CHANGELOG.md"),
+			Entry("header", "changes/header.tpl.md"),
+		)
+	*/
 })
-
-*/

@@ -24,7 +24,7 @@ func runMerge(cmd *cobra.Command, args []string) error {
 	fs := afero.NewOsFs()
 	afs := afero.Afero{Fs: fs}
 
-	config, err := LoadConfig(afs)
+	config, err := LoadConfig(afs.ReadFile)
 	if err != nil {
 		return err
 	}

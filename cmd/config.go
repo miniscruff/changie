@@ -40,12 +40,12 @@ type Config struct {
 
 func (config Config) Save(wf WriteFiler) error {
 	bs, _ := yaml.Marshal(&config)
-	return wf.WriteFile(configPath, bs, os.ModePerm)
+	return wf(configPath, bs, os.ModePerm)
 }
 
 func LoadConfig(rf ReadFiler) (Config, error) {
 	var c Config
-	bs, err := rf.ReadFile(configPath)
+	bs, err := rf(configPath)
 	if err != nil {
 		return c, err
 	}

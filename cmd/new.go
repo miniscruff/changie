@@ -27,7 +27,7 @@ func init() {
 func runNew(cmd *cobra.Command, args []string) error {
 	fs := afero.NewOsFs()
 	afs := afero.Afero{Fs: fs}
-	config, err := LoadConfig(afs)
+	config, err := LoadConfig(afs.ReadFile)
 	if err != nil {
 		return err
 	}
@@ -106,5 +106,5 @@ func runNew(cmd *cobra.Command, args []string) error {
 		Custom: customs,
 	}
 
-	return change.SaveUnreleased(afs, time.Now, config)
+	return change.SaveUnreleased(afs.WriteFile, time.Now, config)
 }

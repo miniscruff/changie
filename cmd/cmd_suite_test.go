@@ -113,6 +113,7 @@ func (_ *beADirMatcher) NegatedFailureMessage(actual interface{}) (message strin
 type mockFs struct {
 	mockCreate   func(string) (afero.File, error)
 	mockMkdirAll func(string, os.FileMode) error
+	mockOpen     func(string) (afero.File, error)
 	memFs        afero.Fs
 }
 
@@ -123,10 +124,10 @@ func newMockFs() *mockFs {
 }
 
 func (m *mockFs) Create(name string) (afero.File, error) {
-	if m.mockCreate == nil {
-		return m.memFs.Create(name)
+	if m.mockCreate != nil {
+		return m.mockCreate(name)
 	}
-	return m.mockCreate(name)
+	return m.memFs.Create(name)
 }
 
 func (m *mockFs) Mkdir(name string, perm os.FileMode) error {
@@ -134,14 +135,17 @@ func (m *mockFs) Mkdir(name string, perm os.FileMode) error {
 }
 
 func (m *mockFs) MkdirAll(path string, perm os.FileMode) error {
-	if m.mockMkdirAll == nil {
-		return m.memFs.MkdirAll(path, perm)
+	if m.mockMkdirAll != nil {
+		return m.mockMkdirAll(path, perm)
 	}
-	return m.mockMkdirAll(path, perm)
+	return m.memFs.MkdirAll(path, perm)
 }
 
 func (m *mockFs) Open(name string) (afero.File, error) {
-	panic("not implemented") // TODO: Implement
+	if m.mockOpen != nil {
+		return m.mockOpen(name)
+	}
+	return m.memFs.Open(name)
 }
 
 func (m *mockFs) OpenFile(name string, flag int, perm os.FileMode) (afero.File, error) {
@@ -177,13 +181,15 @@ func (m *mockFs) Chtimes(name string, atime, mtime time.Time) error {
 }
 
 type mockFile struct {
+	mockRead        func([]byte) (int, error)
 	mockClose       func() error
+	mockWrite       func([]byte) (int, error)
 	mockWriteString func(string) (int, error)
 	memFile         afero.File
 }
 
-func newMockFile(fs afero.Fs) *mockFile {
-	f, _ := fs.Create("temp file")
+func newMockFile(fs afero.Fs, filename string) *mockFile {
+	f, _ := fs.Create(filename)
 	return &mockFile{
 		memFile: f,
 	}
@@ -200,7 +206,10 @@ func (m *mockFile) Close() error {
 }
 
 func (m *mockFile) Read(p []byte) (n int, err error) {
-	panic("not implemented") // TODO: Implement
+	if m.mockRead != nil {
+		return m.mockRead(p)
+	}
+	return m.memFile.Read(p)
 }
 
 func (m *mockFile) ReadAt(p []byte, off int64) (n int, err error) {
@@ -212,7 +221,10 @@ func (m *mockFile) Seek(offset int64, whence int) (int64, error) {
 }
 
 func (m *mockFile) Write(p []byte) (n int, err error) {
-	panic("not implemented") // TODO: Implement
+	if m.mockWrite != nil {
+		return m.mockWrite(p)
+	}
+	return m.memFile.Write(p)
 }
 
 func (m *mockFile) WriteAt(p []byte, off int64) (n int, err error) {
@@ -248,28 +260,4 @@ func (m *mockFile) WriteString(s string) (ret int, err error) {
 		return m.mockWriteString(s)
 	}
 	return m.memFile.WriteString(s)
-}
-
-type mockWriteFiler struct {
-	mockWriteFile func(string, []byte, os.FileMode) error
-}
-
-func newMockWriteFiler() *mockWriteFiler {
-	return &mockWriteFiler{}
-}
-
-func (m *mockWriteFiler) WriteFile(filename string, data []byte, perm os.FileMode) error {
-	return m.mockWriteFile(filename, data, perm)
-}
-
-type mockReadFiler struct {
-	mockReadFile func(string) ([]byte, error)
-}
-
-func newMockReadFiler() *mockReadFiler {
-	return &mockReadFiler{}
-}
-
-func (m *mockReadFiler) ReadFile(filename string) ([]byte, error) {
-	return m.mockReadFile(filename)
 }

@@ -44,7 +44,7 @@ func runBatch(cmd *cobra.Command, args []string) error {
 	fs := afero.NewOsFs()
 	afs := afero.Afero{Fs: fs}
 
-	config, err := LoadConfig(afs)
+	config, err := LoadConfig(afs.ReadFile)
 	if err != nil {
 		return err
 	}
@@ -59,7 +59,7 @@ func runBatch(cmd *cobra.Command, args []string) error {
 		}
 
 		path := filepath.Join(config.ChangesDir, config.UnreleasedDir, file.Name())
-		c, err := LoadChange(path, afs)
+		c, err := LoadChange(path, afs.ReadFile)
 		if err != nil {
 			return err
 		}

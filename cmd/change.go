@@ -19,12 +19,12 @@ func (change Change) SaveUnreleased(wf WriteFiler, tn TimeNow, config Config) er
 	timeString := tn().Format(timeFormat)
 	filePath := fmt.Sprintf("%s/%s/%s-%s.yaml", config.ChangesDir, config.UnreleasedDir, change.Kind, timeString)
 
-	return wf.WriteFile(filePath, bs, os.ModePerm)
+	return wf(filePath, bs, os.ModePerm)
 }
 
 func LoadChange(path string, rf ReadFiler) (Change, error) {
 	var c Change
-	bs, err := rf.ReadFile(path)
+	bs, err := rf(path)
 	if err != nil {
 		return c, err
 	}

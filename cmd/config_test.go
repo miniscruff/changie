@@ -29,8 +29,7 @@ kinds: []
 
 		writeCalled := false
 
-		mockWf := newMockWriteFiler()
-		mockWf.mockWriteFile = func(filepath string, bytes []byte, perm os.FileMode) error {
+		mockWf := func(filepath string, bytes []byte, perm os.FileMode) error {
 			writeCalled = true
 			Expect(filepath).To(Equal(configPath))
 			Expect(string(bytes)).To(Equal(configYaml))
@@ -43,8 +42,7 @@ kinds: []
 	})
 
 	It("should load change from path", func() {
-		mockRf := newMockReadFiler()
-		mockRf.mockReadFile = func(filepath string) ([]byte, error) {
+		mockRf := func(filepath string) ([]byte, error) {
 			Expect(filepath).To(Equal(configPath))
 			return []byte("changesDir: C\nheaderPath: header.rst\n"), nil
 		}
@@ -58,8 +56,7 @@ kinds: []
 	It("should return error from bad read", func() {
 		mockErr := errors.New("bad file")
 
-		mockRf := newMockReadFiler()
-		mockRf.mockReadFile = func(filepath string) ([]byte, error) {
+		mockRf := func(filepath string) ([]byte, error) {
 			Expect(filepath).To(Equal(configPath))
 			return []byte(""), mockErr
 		}
@@ -69,8 +66,7 @@ kinds: []
 	})
 
 	It("should return error from bad file", func() {
-		mockRf := newMockReadFiler()
-		mockRf.mockReadFile = func(filepath string) ([]byte, error) {
+		mockRf := func(filepath string) ([]byte, error) {
 			Expect(filepath).To(Equal(configPath))
 			return []byte("not a yaml file---"), nil
 		}
