@@ -1,4 +1,4 @@
-package project
+package cmd
 
 import (
 	"github.com/spf13/afero"

@@ -249,3 +249,27 @@ func (m *mockFile) WriteString(s string) (ret int, err error) {
 	}
 	return m.memFile.WriteString(s)
 }
+
+type mockWriteFiler struct {
+	mockWriteFile func(string, []byte, os.FileMode) error
+}
+
+func newMockWriteFiler() *mockWriteFiler {
+	return &mockWriteFiler{}
+}
+
+func (m *mockWriteFiler) WriteFile(filename string, data []byte, perm os.FileMode) error {
+	return m.mockWriteFile(filename, data, perm)
+}
+
+type mockReadFiler struct {
+	mockReadFile func(string) ([]byte, error)
+}
+
+func newMockReadFiler() *mockReadFiler {
+	return &mockReadFiler{}
+}
+
+func (m *mockReadFiler) ReadFile(filename string) ([]byte, error) {
+	return m.mockReadFile(filename)
+}

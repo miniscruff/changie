@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"fmt"
-	"github.com/miniscruff/changie/project"
 	"github.com/spf13/afero"
 	"github.com/spf13/cobra"
 )
@@ -40,7 +39,7 @@ func runInit(cmd *cobra.Command, args []string) error {
 	var err error
 
 	fs := afero.NewOsFs()
-	config := project.Config{
+	config := Config{
 		ChangesDir:    changesDir,
 		UnreleasedDir: "unreleased",
 		HeaderPath:    "header.tpl.md",

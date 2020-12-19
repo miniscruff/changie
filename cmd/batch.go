@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"github.com/Masterminds/semver"
-	"github.com/miniscruff/changie/project"
 	"github.com/spf13/afero"
 	"github.com/spf13/cobra"
 	"io/ioutil"
@@ -45,12 +44,12 @@ func runBatch(cmd *cobra.Command, args []string) error {
 	fs := afero.NewOsFs()
 	afs := afero.Afero{Fs: fs}
 
-	config, err := project.LoadConfig(fs)
+	config, err := LoadConfig(fs)
 	if err != nil {
 		return err
 	}
 
-	changesPerKind := make(map[string][]project.Change, 0)
+	changesPerKind := make(map[string][]Change, 0)
 
 	// read all markdown files from changes/unreleased
 	fileInfos, err := ioutil.ReadDir(filepath.Join(config.ChangesDir, config.UnreleasedDir))
@@ -60,13 +59,13 @@ func runBatch(cmd *cobra.Command, args []string) error {
 		}
 
 		path := filepath.Join(config.ChangesDir, config.UnreleasedDir, file.Name())
-		c, err := project.LoadChange(path, afs)
+		c, err := LoadChange(path, afs)
 		if err != nil {
 			return err
 		}
 
 		if _, ok := changesPerKind[c.Kind]; !ok {
-			changesPerKind[c.Kind] = make([]project.Change, 0)
+			changesPerKind[c.Kind] = make([]Change, 0)
 		}
 
 		changesPerKind[c.Kind] = append(changesPerKind[c.Kind], c)
@@ -86,7 +85,7 @@ func runBatch(cmd *cobra.Command, args []string) error {
 	return nil
 }
 
-func batchNewVersion(fs afero.Fs, config project.Config, version string, changesPerKind map[string][]project.Change) error {
+func batchNewVersion(fs afero.Fs, config Config, version string, changesPerKind map[string][]Change) error {
 	versionFile, err := fs.Create(fmt.Sprintf("%s/%s.%s", config.ChangesDir, version, config.VersionExt))
 	if err != nil {
 		return err
@@ -134,7 +133,7 @@ func batchNewVersion(fs afero.Fs, config project.Config, version string, changes
 	return nil
 }
 
-func mergeChangelog(fs afero.Fs, config project.Config) error {
+func mergeChangelog(fs afero.Fs, config Config) error {
 	allVersions := make([]*semver.Version, 0)
 
 	fileInfos, err := ioutil.ReadDir(config.ChangesDir)
@@ -173,7 +172,7 @@ func mergeChangelog(fs afero.Fs, config project.Config) error {
 	return nil
 }
 
-func deleteUnreleased(fs afero.Fs, config project.Config) error {
+func deleteUnreleased(fs afero.Fs, config Config) error {
 	fileInfos, err := ioutil.ReadDir(filepath.Join(config.ChangesDir, config.UnreleasedDir))
 	for _, file := range fileInfos {
 		if filepath.Ext(file.Name()) != ".yaml" {

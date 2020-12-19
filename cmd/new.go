@@ -4,10 +4,10 @@ import (
 	"errors"
 	"fmt"
 	"github.com/manifoldco/promptui"
-	"github.com/miniscruff/changie/project"
 	"github.com/spf13/afero"
 	"github.com/spf13/cobra"
 	"strconv"
+	"time"
 )
 
 // newCmd represents the new command
@@ -26,7 +26,7 @@ func init() {
 
 func runNew(cmd *cobra.Command, args []string) error {
 	fs := afero.NewOsFs()
-	config, err := project.LoadConfig(fs)
+	config, err := LoadConfig(fs)
 	if err != nil {
 		return err
 	}
@@ -58,7 +58,7 @@ func runNew(cmd *cobra.Command, args []string) error {
 			label = custom.Label
 		}
 
-		if custom.Type == project.CustomString {
+		if custom.Type == CustomString {
 			stringPrompt := promptui.Prompt{
 				Label: label,
 			}
@@ -66,7 +66,7 @@ func runNew(cmd *cobra.Command, args []string) error {
 			if err != nil {
 				return err
 			}
-		} else if custom.Type == project.CustomInt {
+		} else if custom.Type == CustomInt {
 			intPrompt := promptui.Prompt{
 				Label: label,
 				Validate: func(input string) error {
@@ -87,7 +87,7 @@ func runNew(cmd *cobra.Command, args []string) error {
 			if err != nil {
 				return err
 			}
-		} else if custom.Type == project.CustomEnum {
+		} else if custom.Type == CustomEnum {
 			enumPrompt := promptui.Select{
 				Label: label,
 				Items: custom.EnumOptions,
@@ -99,10 +99,12 @@ func runNew(cmd *cobra.Command, args []string) error {
 		}
 	}
 
-	change := project.Change{
+	change := Change{
 		Kind:   kind,
 		Body:   body,
 		Custom: customs,
 	}
-	return change.SaveUnreleased(fs, config)
+
+	afs := afero.Afero{Fs: fs}
+	return change.SaveUnreleased(afs, time.Now, config)
 }

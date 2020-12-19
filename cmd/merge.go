@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"github.com/Masterminds/semver"
-	"github.com/miniscruff/changie/project"
 	"github.com/spf13/afero"
 	"github.com/spf13/cobra"
 	"io/ioutil"
@@ -24,7 +23,7 @@ func init() {
 func runMerge(cmd *cobra.Command, args []string) error {
 	fs := afero.NewOsFs()
 
-	config, err := project.LoadConfig(fs)
+	config, err := LoadConfig(fs)
 	if err != nil {
 		return err
 	}
