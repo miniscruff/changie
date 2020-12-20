@@ -180,6 +180,10 @@ func (m *mockFs) Name() string {
 	panic("not implemented") // TODO: Implement
 }
 
+func (m *mockFs) Chown(name string, uid, gid int) error {
+	panic("not implemented") // TODO: Implement
+}
+
 func (m *mockFs) Chmod(name string, mode os.FileMode) error {
 	panic("not implemented") // TODO: Implement
 }
