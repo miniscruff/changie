@@ -13,14 +13,14 @@ import (
 var _ = Describe("Init", func() {
 	var (
 		fs         afero.Fs
-		afs        *afero.Afero
+		afs        afero.Afero
 		mockError  error
 		testConfig Config
 	)
 
 	BeforeEach(func() {
 		fs = afero.NewMemMapFs()
-		afs = &afero.Afero{Fs: fs}
+		afs = afero.Afero{Fs: fs}
 		mockError = errors.New("dummy mock error")
 		testConfig = Config{
 			ChangesDir:    "chgs",
@@ -65,29 +65,9 @@ var _ = Describe("Init", func() {
 			err := initPipeline(afs.MkdirAll, mockWriteFile, testConfig)
 			Expect(err).To(Equal(mockError))
 		},
+		Entry("config file", ".changie.yaml"),
 		Entry("changelog", "changelog.md"),
 		Entry("header", filepath.Join("chgs", "head.tpl.md")),
 		Entry("git keep", filepath.Join("chgs", "unrel", ".gitkeep")),
 	)
-
-	/*
-		DescribeTable("error writing files",
-			func(filename string) {
-				mfs.mockCreate = func(path string) (afero.File, error) {
-					if path == filename {
-						return mf, nil
-					}
-					return mfs.memFs.Create(path)
-				}
-				mf.mockWriteString = func(s string) (int, error) {
-					return 0, mockError
-				}
-				p := NewProject(mfs, ProjectConfig{})
-				err := p.Init()
-				Expect(err).To(Equal(mockError))
-			},
-			Entry("changelog", "CHANGELOG.md"),
-			Entry("header", "changes/header.tpl.md"),
-		)
-	*/
 })

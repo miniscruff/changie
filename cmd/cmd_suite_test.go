@@ -17,7 +17,7 @@ func TestCmd(t *testing.T) {
 	RunSpecs(t, "Cmd Suite")
 }
 
-func HaveContents(afs *afero.Afero, content string) types.GomegaMatcher {
+func HaveContents(afs afero.Afero, content string) types.GomegaMatcher {
 	return &haveContentMatcher{
 		afs:     afs,
 		content: content,
@@ -25,7 +25,7 @@ func HaveContents(afs *afero.Afero, content string) types.GomegaMatcher {
 }
 
 type haveContentMatcher struct {
-	afs      *afero.Afero
+	afs      afero.Afero
 	content  string
 	expected string
 }
@@ -52,14 +52,14 @@ func (matcher *haveContentMatcher) NegatedFailureMessage(actual interface{}) (me
 	return fmt.Sprintf("Expected '%s' to not have contents\n\t'%s' but was \n\t'%s'", actual, matcher.content, matcher.expected)
 }
 
-func BeAnEmptyFile(afs *afero.Afero) types.GomegaMatcher {
+func BeAnEmptyFile(afs afero.Afero) types.GomegaMatcher {
 	return &beAnEmptyFileMatcher{
 		afs: afs,
 	}
 }
 
 type beAnEmptyFileMatcher struct {
-	afs *afero.Afero
+	afs afero.Afero
 }
 
 func (matcher *beAnEmptyFileMatcher) Match(actual interface{}) (success bool, err error) {
@@ -83,14 +83,14 @@ func (_ *beAnEmptyFileMatcher) NegatedFailureMessage(actual interface{}) (messag
 	return fmt.Sprintf("Expected not to be '%s' to be an empty file", actual)
 }
 
-func BeADir(afs *afero.Afero) types.GomegaMatcher {
+func BeADir(afs afero.Afero) types.GomegaMatcher {
 	return &beADirMatcher{
 		afs: afs,
 	}
 }
 
 type beADirMatcher struct {
-	afs *afero.Afero
+	afs afero.Afero
 }
 
 func (matcher *beADirMatcher) Match(actual interface{}) (success bool, err error) {
@@ -114,6 +114,8 @@ type mockFs struct {
 	mockCreate   func(string) (afero.File, error)
 	mockMkdirAll func(string, os.FileMode) error
 	mockOpen     func(string) (afero.File, error)
+	mockOpenFile func(string, int, os.FileMode) (afero.File, error)
+	mockRemove   func(string) error
 	memFs        afero.Fs
 }
 
@@ -149,11 +151,17 @@ func (m *mockFs) Open(name string) (afero.File, error) {
 }
 
 func (m *mockFs) OpenFile(name string, flag int, perm os.FileMode) (afero.File, error) {
-	panic("not implemented") // TODO: Implement
+	if m.mockOpenFile != nil {
+		return m.mockOpenFile(name, flag, perm)
+	}
+	return m.memFs.OpenFile(name, flag, perm)
 }
 
 func (m *mockFs) Remove(name string) error {
-	panic("not implemented") // TODO: Implement
+	if m.mockRemove != nil {
+		return m.mockRemove(name)
+	}
+	return m.memFs.Remove(name)
 }
 
 func (m *mockFs) RemoveAll(path string) error {

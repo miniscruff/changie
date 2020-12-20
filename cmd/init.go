@@ -52,11 +52,6 @@ func runInit(cmd *cobra.Command, args []string) error {
 	}
 
 	afs := afero.Afero{Fs: afero.NewOsFs()}
-	err := config.Save(afs.WriteFile)
-	if err != nil {
-		return err
-	}
-
 	return initPipeline(afs.MkdirAll, afs.WriteFile, config)
 }
 
@@ -66,6 +61,11 @@ func initPipeline(mkdir MkdirAller, wf WriteFiler, config Config) error {
 	headerPath := filepath.Join(config.ChangesDir, config.HeaderPath)
 	unreleasedPath := filepath.Join(config.ChangesDir, config.UnreleasedDir)
 	keepPath := filepath.Join(unreleasedPath, ".gitkeep")
+
+	err = config.Save(wf)
+	if err != nil {
+		return err
+	}
 
 	err = mkdir(unreleasedPath, 0644)
 	if err != nil {
