@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"fmt"
 	"github.com/Masterminds/semver"
 	"github.com/spf13/afero"
 	"github.com/spf13/cobra"
@@ -9,17 +10,23 @@ import (
 	"strings"
 )
 
-var mergeCmd = &cobra.Command{
-	Use:   "merge",
-	Short: "Merge all versions into one changelog",
-	RunE:  runMerge,
+// latestCmd represents the latest command
+var latestCmd = &cobra.Command{
+	Use:   "latest",
+	Short: "Echos the latest release version number",
+	Long:  `Echo the latest release version number to be used by CI tools.`,
+	RunE:  runLatest,
 }
+
+var removePrefix string = ""
 
 func init() {
-	rootCmd.AddCommand(mergeCmd)
+	rootCmd.AddCommand(latestCmd)
+
+	latestCmd.Flags().StringVarP(&removePrefix, "remove-prefix", "r", "", "Remove specified prefix from output")
 }
 
-func runMerge(cmd *cobra.Command, args []string) error {
+func runLatest(cmd *cobra.Command, args []string) error {
 	fs := afero.NewOsFs()
 	afs := afero.Afero{Fs: fs}
 
@@ -48,21 +55,13 @@ func runMerge(cmd *cobra.Command, args []string) error {
 
 		allVersions = append(allVersions, v)
 	}
+
 	sort.Sort(sort.Reverse(semver.Collection(allVersions)))
 
-	changeFile, err := fs.Create(config.ChangelogPath)
-	if err != nil {
-		return err
+	if removePrefix != "" {
+		fmt.Println(strings.TrimPrefix(allVersions[0].Original(), removePrefix))
+	} else {
+		fmt.Println(allVersions[0].Original())
 	}
-	defer changeFile.Close()
-
-	appendFile(fs, changeFile, filepath.Join(config.ChangesDir, config.HeaderPath))
-
-	for _, version := range allVersions {
-		changeFile.WriteString("\n")
-		changeFile.WriteString("\n")
-		appendFile(fs, changeFile, filepath.Join(config.ChangesDir, version.Original()+"."+config.VersionExt))
-	}
-
 	return nil
 }
