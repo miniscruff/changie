@@ -22,10 +22,16 @@ jobs:
           echo GORELEASER_CURRENT_TAG=$(go run main.go latest) >> $GITHUB_ENV
           echo RELEASE_NOTES_PATH=changes/$(go run main.go latest).md >> $GITHUB_ENV
 
-      - name: Run GoReleaser
+      - name: install GoReleaser
         uses: goreleaser/goreleaser-action@v2
         with:
           version: latest
-          args: release --rm-dist --release-notes=${{ env.RELEASE_NOTES_PATH }}
+          with: install-only: true
+
+      - name: Run GoReleaser
+        run: |
+          echo tag=${GORELEASER_CURRENT_TAG}
+          echo notes path=${RELEASE_NOTES_PATH}
+          goreleaser --rm-dist --release-notes=${RELEASE_NOTES_PATH}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
