@@ -18,9 +18,12 @@ archives:
       windows: Windows
       386: i386
       amd64: x86_64
+release:
+  prerelease: auto
 checksum:
   name_template: 'checksums.txt'
 snapshot:
   name_template: "{{ .Tag }}-next"
 changelog:
   skip: true
+

@@ -3,6 +3,7 @@ name: release
 on:
   push:
     branches: [ main ]
+    paths: [ CHANGELOG.md ]
 
 jobs:
   release:
@@ -10,8 +11,6 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v2
-        with:
-          fetch-depth: 0
 
       - name: Set up Go
         uses: actions/setup-go@v2
@@ -23,15 +22,10 @@ jobs:
           echo GORELEASER_CURRENT_TAG=$(go run main.go latest) >> $GITHUB_ENV
           echo RELEASE_NOTES_PATH=changes/$(go run main.go latest).md >> $GITHUB_ENV
 
-      - name: Test system works
-        run: |
-          echo release tag ${GORELEASER_CURRENT_TAG}
-          echo release notes ${RELEASE_NOTES_PATH}
-
       - name: Run GoReleaser
         uses: goreleaser/goreleaser-action@v2
         with:
           version: latest
-          args: release --rm-dist --release-notes=${{env.RELEASE_NOTES_PATH}}
+          args: release --rm-dist --release-notes=${{ env.RELEASE_NOTES_PATH }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
