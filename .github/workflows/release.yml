@@ -30,8 +30,6 @@ jobs:
 
       - name: Run GoReleaser
         run: |
-          echo tag=${GORELEASER_CURRENT_TAG}
-          echo notes path=${RELEASE_NOTES_PATH}
-          goreleaser --rm-dist --release-notes=${RELEASE_NOTES_PATH}
+          goreleaser --rm-dist --release-notes=${RELEASE_NOTES_PATH} --skip-validate
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
