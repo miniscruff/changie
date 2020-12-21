@@ -32,6 +32,6 @@ jobs:
         uses: goreleaser/goreleaser-action@v2
         with:
           version: latest
-          args: release --rm-dist --release-notes=${RELEASE_NOTES_PATH)
+          args: release --rm-dist --release-notes=${RELEASE_NOTES_PATH}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
