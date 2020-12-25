@@ -18,28 +18,38 @@ var latestCmd = &cobra.Command{
 	RunE:  runLatest,
 }
 
-var removePrefix string = ""
+var removePrefix bool = false
 
 func init() {
 	rootCmd.AddCommand(latestCmd)
 
-	latestCmd.Flags().StringVarP(&removePrefix, "remove-prefix", "r", "", "Remove specified prefix from output")
+	latestCmd.Flags().BoolVarP(&removePrefix, "remove-prefix", "r", false, "Remove 'v' prefix before echoing")
 }
 
 func runLatest(cmd *cobra.Command, args []string) error {
 	fs := afero.NewOsFs()
 	afs := afero.Afero{Fs: fs}
 
-	config, err := LoadConfig(afs.ReadFile)
+	result, err := latestPipeline(afs)
 	if err != nil {
 		return err
+	}
+
+	fmt.Println(result)
+	return nil
+}
+
+func latestPipeline(afs afero.Afero) (string, error) {
+	config, err := LoadConfig(afs.ReadFile)
+	if err != nil {
+		return "", err
 	}
 
 	allVersions := make([]*semver.Version, 0)
 
 	fileInfos, err := afs.ReadDir(config.ChangesDir)
 	if err != nil {
-		return err
+		return "", err
 	}
 
 	for _, file := range fileInfos {
@@ -58,10 +68,8 @@ func runLatest(cmd *cobra.Command, args []string) error {
 
 	sort.Sort(sort.Reverse(semver.Collection(allVersions)))
 
-	if removePrefix != "" {
-		fmt.Println(strings.TrimPrefix(allVersions[0].Original(), removePrefix))
-	} else {
-		fmt.Println(allVersions[0].Original())
+	if removePrefix {
+		return fmt.Sprintln(strings.TrimPrefix(allVersions[0].Original(), "v")), nil
 	}
-	return nil
+	return fmt.Sprintln(allVersions[0].Original()), nil
 }

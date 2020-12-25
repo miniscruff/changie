@@ -8,6 +8,7 @@ tasks:
     cmds:
       - go test -coverprofile=c.out ./...
     silent: true
+
   coverage:
     desc: Run unit tests and code coverage
     cmds:
