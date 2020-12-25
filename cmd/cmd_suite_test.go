@@ -116,6 +116,7 @@ type mockFs struct {
 	mockOpen     func(string) (afero.File, error)
 	mockOpenFile func(string, int, os.FileMode) (afero.File, error)
 	mockRemove   func(string) error
+	mockChmod    func(string, os.FileMode) error
 	memFs        afero.Fs
 }
 
@@ -185,7 +186,10 @@ func (m *mockFs) Chown(name string, uid, gid int) error {
 }
 
 func (m *mockFs) Chmod(name string, mode os.FileMode) error {
-	panic("not implemented") // TODO: Implement
+	if m.mockChmod != nil {
+		return m.mockChmod(name, mode)
+	}
+	return m.memFs.Chmod(name, mode)
 }
 
 func (m *mockFs) Chtimes(name string, atime, mtime time.Time) error {

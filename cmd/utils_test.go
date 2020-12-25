@@ -21,7 +21,7 @@ var _ = Describe("Utils", func() {
 		otherFile.WriteString(" append")
 		otherFile.Close()
 
-		err = appendFile(memFs, rootFile, "append.txt")
+		err = appendFile(memFs.Open, rootFile, "append.txt")
 		Expect(err).To(BeNil())
 
 		rootFile.Close()
@@ -41,7 +41,7 @@ var _ = Describe("Utils", func() {
 		rootFile := newMockFile(mockFs, "root.txt")
 		defer rootFile.Close()
 
-		err := appendFile(mockFs, rootFile, "dummy.txt")
+		err := appendFile(mockFs.Open, rootFile, "dummy.txt")
 		Expect(err).To(Equal(mockError))
 	})
 })

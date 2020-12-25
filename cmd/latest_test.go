@@ -1,7 +1,6 @@
 package cmd
 
 import (
-	// "errors"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/spf13/afero"
@@ -9,16 +8,14 @@ import (
 
 var _ = Describe("Latest", func() {
 	var (
-		fs  afero.Fs
-		afs afero.Afero
-		// mockError  error
+		fs         afero.Fs
+		afs        afero.Afero
 		testConfig Config
 	)
 
 	BeforeEach(func() {
 		fs = afero.NewMemMapFs()
 		afs = afero.Afero{Fs: fs}
-		// mockError = errors.New("dummy mock error")
 		testConfig = Config{
 			ChangesDir:    "chgs",
 			UnreleasedDir: "unrel",

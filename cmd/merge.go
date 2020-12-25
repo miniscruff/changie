@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"fmt"
 	"github.com/Masterminds/semver"
 	"github.com/spf13/afero"
 	"github.com/spf13/cobra"
@@ -22,7 +23,10 @@ func init() {
 func runMerge(cmd *cobra.Command, args []string) error {
 	fs := afero.NewOsFs()
 	afs := afero.Afero{Fs: fs}
+	return mergePipeline(afs, afs.Create)
+}
 
+func mergePipeline(afs afero.Afero, creater CreateFiler) error {
 	config, err := LoadConfig(afs.ReadFile)
 	if err != nil {
 		return err
@@ -50,18 +54,19 @@ func runMerge(cmd *cobra.Command, args []string) error {
 	}
 	sort.Sort(sort.Reverse(semver.Collection(allVersions)))
 
-	changeFile, err := fs.Create(config.ChangelogPath)
+	fmt.Println("changelog path:", config.ChangelogPath)
+	changeFile, err := creater(config.ChangelogPath)
 	if err != nil {
 		return err
 	}
 	defer changeFile.Close()
 
-	appendFile(fs, changeFile, filepath.Join(config.ChangesDir, config.HeaderPath))
+	appendFile(afs.Open, changeFile, filepath.Join(config.ChangesDir, config.HeaderPath))
 
 	for _, version := range allVersions {
 		changeFile.WriteString("\n")
 		changeFile.WriteString("\n")
-		appendFile(fs, changeFile, filepath.Join(config.ChangesDir, version.Original()+"."+config.VersionExt))
+		appendFile(afs.Open, changeFile, filepath.Join(config.ChangesDir, version.Original()+"."+config.VersionExt))
 	}
 
 	return nil
