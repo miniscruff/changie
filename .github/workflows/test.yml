@@ -27,7 +27,9 @@ jobs:
         echo "./bin" >> $GITHUB_PATH
 
     - name: Test
-      run: sudo task test
+      run: |
+        chmod 0777 ${env.GITHUB_WORKSPACE}
+        task test
 
     - name: Coverage
       uses: codecov/codecov-action@v1
