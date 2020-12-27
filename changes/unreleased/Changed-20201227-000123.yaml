@@ -1,0 +1,4 @@
+kind: Changed
+body: Remove prefix argument in latest command is now a bool
+custom:
+  issue: "22"

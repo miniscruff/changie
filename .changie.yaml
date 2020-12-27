@@ -5,7 +5,7 @@ changelogPath: CHANGELOG.md
 versionExt: md
 versionFormat: '## {{.Version}} - {{.Time.Format "2006-01-02"}}'
 kindFormat: '### {{.Kind}}'
-changeFormat: '* {{.Body}}'
+changeFormat: '* [#{{.Custom.Issue}}](https://github.com/miniscruff/changie/issues/{{.Custom.Issue}}) {{.Body}}'
 kinds:
 - Added
 - Changed
@@ -13,3 +13,7 @@ kinds:
 - Removed
 - Fixed
 - Security
+custom:
+  issue:
+    type: int
+    minInt: 1
