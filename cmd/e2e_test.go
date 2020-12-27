@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"fmt"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"io/ioutil"
@@ -26,6 +27,15 @@ var _ = Describe("end to end", func() {
 	BeforeEach(func() {
 		var err error
 
+		startDir, err = os.Getwd()
+		Expect(err).To(BeNil())
+
+		tempDir, err = ioutil.TempDir("", "e2e-test")
+		Expect(err).To(BeNil())
+
+		err = os.Chdir(tempDir)
+		Expect(err).To(BeNil())
+
 		stdinReader, stdinWriter, err = os.Pipe()
 		Expect(err).To(BeNil())
 
@@ -40,15 +50,6 @@ var _ = Describe("end to end", func() {
 
 		rootCmd.SetOut(stdoutWriter)
 		rootCmd.SetIn(stdinReader)
-
-		startDir, err = os.Getwd()
-		Expect(err).To(BeNil())
-
-		tempDir, err = ioutil.TempDir("", "e2e-test")
-		Expect(err).To(BeNil())
-
-		err = os.Chdir(tempDir)
-		Expect(err).To(BeNil())
 	})
 
 	AfterEach(func() {
@@ -99,17 +100,18 @@ var _ = Describe("end to end", func() {
 		rootCmd.SetArgs([]string{"merge"})
 		Expect(Execute("")).To(Succeed())
 
-		changeContents := `# Changelog
+		date := time.Now().Format("2006-01-02")
+		changeContents := fmt.Sprintf(`# Changelog
 All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## v0.1.0 - 2020-12-26
+## v0.1.0 - %s
 
 ### Changed
 * first
-* second`
+* second`, date)
 		changeFile, err := ioutil.ReadFile("CHANGELOG.md")
 		Expect(err).To(BeNil())
 		Expect(string(changeFile)).To(Equal(changeContents))
