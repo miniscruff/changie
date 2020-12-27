@@ -1,8 +1,7 @@
 package cmd
 
 import (
-	"fmt"
-	"github.com/Masterminds/semver"
+	"github.com/Masterminds/semver/v3"
 	"github.com/spf13/afero"
 	"github.com/spf13/cobra"
 	"path/filepath"
@@ -54,7 +53,6 @@ func mergePipeline(afs afero.Afero, creater CreateFiler) error {
 	}
 	sort.Sort(sort.Reverse(semver.Collection(allVersions)))
 
-	fmt.Println("changelog path:", config.ChangelogPath)
 	changeFile, err := creater(config.ChangelogPath)
 	if err != nil {
 		return err

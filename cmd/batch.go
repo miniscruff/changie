@@ -2,7 +2,7 @@ package cmd
 
 import (
 	"errors"
-	"github.com/Masterminds/semver"
+	"github.com/Masterminds/semver/v3"
 	"github.com/spf13/afero"
 	"github.com/spf13/cobra"
 	"path/filepath"

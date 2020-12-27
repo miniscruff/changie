@@ -1,12 +1,10 @@
 package cmd
 
 import (
-	"errors"
-	"fmt"
 	"github.com/manifoldco/promptui"
 	"github.com/spf13/afero"
 	"github.com/spf13/cobra"
-	"strconv"
+	"os"
 	"time"
 )
 
@@ -27,6 +25,10 @@ func init() {
 func runNew(cmd *cobra.Command, args []string) error {
 	fs := afero.NewOsFs()
 	afs := afero.Afero{Fs: fs}
+	return newPipeline(afs, os.Stdin)
+}
+
+func newPipeline(afs afero.Afero, stdinReader *os.File) error {
 	config, err := LoadConfig(afs.ReadFile)
 	if err != nil {
 		return err
@@ -35,6 +37,7 @@ func runNew(cmd *cobra.Command, args []string) error {
 	kindPrompt := promptui.Select{
 		Label: "Kind",
 		Items: config.Kinds,
+		Stdin: stdinReader,
 	}
 
 	_, kind, err := kindPrompt.Run()
@@ -44,6 +47,7 @@ func runNew(cmd *cobra.Command, args []string) error {
 
 	bodyPrompt := promptui.Prompt{
 		Label: "Body",
+		Stdin: stdinReader,
 	}
 
 	body, err := bodyPrompt.Run()
@@ -54,49 +58,14 @@ func runNew(cmd *cobra.Command, args []string) error {
 	customs := make(map[string]string, 0)
 
 	for name, custom := range config.CustomChoices {
-		label := name
-		if custom.Label != "" {
-			label = custom.Label
+		prompt, err := custom.CreatePrompt(name, stdinReader)
+		if err != nil {
+			return err
 		}
 
-		if custom.Type == CustomString {
-			stringPrompt := promptui.Prompt{
-				Label: label,
-			}
-			customs[name], err = stringPrompt.Run()
-			if err != nil {
-				return err
-			}
-		} else if custom.Type == CustomInt {
-			intPrompt := promptui.Prompt{
-				Label: label,
-				Validate: func(input string) error {
-					value, err := strconv.ParseInt(input, 10, 64)
-					if err != nil {
-						return errors.New("Invalid number")
-					}
-					if custom.MinInt != nil && value < *custom.MinInt {
-						return errors.New(fmt.Sprintf("%v is below minimum of %v", value, custom.MinInt))
-					}
-					if custom.MaxInt != nil && value > *custom.MaxInt {
-						return errors.New(fmt.Sprintf("%v is above maximum of %v", value, custom.MaxInt))
-					}
-					return nil
-				},
-			}
-			customs[name], err = intPrompt.Run()
-			if err != nil {
-				return err
-			}
-		} else if custom.Type == CustomEnum {
-			enumPrompt := promptui.Select{
-				Label: label,
-				Items: custom.EnumOptions,
-			}
-			_, customs[name], err = enumPrompt.Run()
-			if err != nil {
-				return err
-			}
+		customs[name], err = prompt.Run()
+		if err != nil {
+			return err
 		}
 	}
 
