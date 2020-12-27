@@ -36,8 +36,10 @@ var _ = Describe("end to end", func() {
 		err = os.Chdir(tempDir)
 		Expect(err).To(BeNil())
 
-		fmt.Println("new temp dir:", tempDir)
-		fmt.Println("current dir:", startDir)
+		fmt.Println("temp dir:", tempDir)
+		fmt.Println("old dir:", startDir)
+		currDir, _ := os.Getwd()
+		fmt.Println("current dir:", currDir)
 
 		stdinReader, stdinWriter, err = os.Pipe()
 		Expect(err).To(BeNil())
