@@ -27,12 +27,7 @@ jobs:
         echo "./bin" >> $GITHUB_PATH
 
     - name: Test
-      run: |
-        mkdir /tmp/e2e
-        chmod 0777 -R /tmp/e2e
-        ls -al /tmp/e2e
-        export TMPDIR=/tmp/e2e
-        task test
+      run: sudo go test -coverprofile=c.out ./...
 
     - name: Coverage
       uses: codecov/codecov-action@v1
