@@ -29,6 +29,7 @@ jobs:
     - name: Test
       run: |
         mkdir /tmp/e2e
+        chmod 0777 -R /tmp/e2e
         export TMPDIR=/tmp/e2e
         task test
 
