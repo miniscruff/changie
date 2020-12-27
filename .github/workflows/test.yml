@@ -28,7 +28,7 @@ jobs:
 
     - name: Test
       run: |
-        chmod 0777 ${TMPDIR}
+        chmod 0777 /tmp
         task test
 
     - name: Coverage
