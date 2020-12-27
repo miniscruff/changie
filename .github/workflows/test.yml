@@ -28,7 +28,7 @@ jobs:
 
     - name: Test
       run: |
-        sudo chmod 0777 /tmp
+        export TMPDIR=${RUNNER_TEMP}
         task test
 
     - name: Coverage
