@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"fmt"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"io/ioutil"
@@ -26,6 +27,18 @@ var _ = Describe("end to end", func() {
 	BeforeEach(func() {
 		var err error
 
+		startDir, err = os.Getwd()
+		Expect(err).To(BeNil())
+
+		tempDir, err = ioutil.TempDir("", "e2e-test")
+		Expect(err).To(BeNil())
+
+		err = os.Chdir(tempDir)
+		Expect(err).To(BeNil())
+
+		fmt.Println("new temp dir:", tempDir)
+		fmt.Println("current dir:", startDir)
+
 		stdinReader, stdinWriter, err = os.Pipe()
 		Expect(err).To(BeNil())
 
@@ -40,15 +53,6 @@ var _ = Describe("end to end", func() {
 
 		rootCmd.SetOut(stdoutWriter)
 		rootCmd.SetIn(stdinReader)
-
-		startDir, err = os.Getwd()
-		Expect(err).To(BeNil())
-
-		tempDir, err = ioutil.TempDir("", "e2e-test")
-		Expect(err).To(BeNil())
-
-		err = os.Chdir(tempDir)
-		Expect(err).To(BeNil())
 	})
 
 	AfterEach(func() {
