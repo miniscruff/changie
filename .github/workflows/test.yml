@@ -28,7 +28,7 @@ jobs:
 
     - name: Test
       run: |
-        chmod 0777 ${env.GITHUB_WORKSPACE}
+        chmod 0777 ${GITHUB_WORKSPACE}
         task test
 
     - name: Coverage
