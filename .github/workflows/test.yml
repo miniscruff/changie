@@ -28,7 +28,8 @@ jobs:
 
     - name: Test
       run: |
-        export TMPDIR=${RUNNER_TEMP}
+        mkdir /tmp/e2e
+        export TMPDIR=/tmp/e2e
         task test
 
     - name: Coverage
