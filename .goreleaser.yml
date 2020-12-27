@@ -12,22 +12,38 @@ builds:
       - windows
       - darwin
 archives:
-  - replacements:
-      darwin: Darwin
-      linux: Linux
-      windows: Windows
-      386: i386
-      amd64: x86_64
-    format_overrides:
+  - format_overrides:
     - goos: windows
       format: zip
 release:
   github:
   prerelease: auto
+nfpms:
+  - homepage: https://github.com/miniscruff/changie
+    description: Automated changelog tool for preparing releases with lots of customization options.
+    license: MIT
+    formats:
+    - deb
+    - rpm
+brews:
+  - tap:
+      owner: miniscruff
+      name: changie
+    homepage: https://github.com/miniscruff/changie
+    description: Automated changelog tool for preparing releases with lots of customization options.
+    license: MIT
+    skip_upload: auto
+scoop:
+  bucket:
+    owner: miniscruff
+    name: changie
+  commit_msg_template: "Scoop update for {{ .ProjectName }} version {{ .Tag }}"
+  homepage: https://github.com/miniscruff/changie
+  description: Automated changelog tool for preparing releases with lots of customization options.
+  license: MIT
 checksum:
   name_template: 'checksums.txt'
 snapshot:
   name_template: "{{ .Tag }}-next"
 changelog:
   skip: true
-
