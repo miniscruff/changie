@@ -28,7 +28,7 @@ jobs:
 
     - name: Test
       run: |
-        chmod 0777 /tmp
+        sudo chmod 0777 /tmp
         task test
 
     - name: Coverage
