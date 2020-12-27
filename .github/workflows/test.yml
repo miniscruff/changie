@@ -28,6 +28,8 @@ jobs:
 
     - name: Test
       run: task test
+      env:
+        TMPDIR: "${GITHUB_WORKSPACE}/tmpdir"
 
     - name: Coverage
       uses: codecov/codecov-action@v1
