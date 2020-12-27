@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/manifoldco/promptui"
 	"gopkg.in/yaml.v2"
+	"io"
 	"os"
 	"strconv"
 )
@@ -46,7 +47,7 @@ type Custom struct {
 	EnumOptions []string `yaml:"enumOptions,omitempty"`
 }
 
-func (c Custom) CreatePrompt(name string, stdinReader *os.File) (Prompt, error) {
+func (c Custom) CreatePrompt(name string, stdinReader io.ReadCloser) (Prompt, error) {
 	label := name
 	if c.Label != "" {
 		label = c.Label

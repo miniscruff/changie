@@ -48,7 +48,7 @@ var _ = Describe("New", func() {
 			time.Sleep(inputSleep)
 			stdinWriter.Write([]byte{106, 13})
 
-			time.Sleep(time.Second)
+			time.Sleep(inputSleep)
 			stdinWriter.Write([]byte("a message"))
 			stdinWriter.Write([]byte{13})
 		}()
@@ -73,10 +73,6 @@ var _ = Describe("New", func() {
 				Type:        CustomEnum,
 				EnumOptions: []string{"rocket", "dog"},
 			},
-			"name": Custom{
-				Type:  CustomString,
-				Label: "your name",
-			},
 		}
 		testConfig.Save(afs.WriteFile)
 
@@ -96,10 +92,6 @@ var _ = Describe("New", func() {
 
 			time.Sleep(inputSleep)
 			stdinWriter.Write([]byte{106, 13})
-
-			time.Sleep(inputSleep)
-			stdinWriter.Write([]byte("lord muffins"))
-			stdinWriter.Write([]byte{13})
 		}()
 
 		err = newPipeline(afs, stdinReader)
@@ -115,7 +107,6 @@ var _ = Describe("New", func() {
 body: body stuff
 custom:
   emoji: dog
-  name: lord muffins
 `
 		changePath := filepath.Join(futurePath, fileInfos[0].Name())
 		Expect(changePath).To(HaveContents(afs, changeContent))

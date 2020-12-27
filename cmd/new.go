@@ -4,6 +4,7 @@ import (
 	"github.com/manifoldco/promptui"
 	"github.com/spf13/afero"
 	"github.com/spf13/cobra"
+	"io"
 	"os"
 	"time"
 )
@@ -28,7 +29,7 @@ func runNew(cmd *cobra.Command, args []string) error {
 	return newPipeline(afs, os.Stdin)
 }
 
-func newPipeline(afs afero.Afero, stdinReader *os.File) error {
+func newPipeline(afs afero.Afero, stdinReader io.ReadCloser) error {
 	config, err := LoadConfig(afs.ReadFile)
 	if err != nil {
 		return err

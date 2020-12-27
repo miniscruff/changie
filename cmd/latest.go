@@ -35,8 +35,8 @@ func runLatest(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	fmt.Println(result)
-	return nil
+	_, err = cmd.OutOrStdout().Write([]byte(result))
+	return err
 }
 
 func latestPipeline(afs afero.Afero) (string, error) {

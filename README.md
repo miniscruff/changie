@@ -42,6 +42,9 @@ If you need to make some manual adjustments to this version like high level over
 
     Note: Since this is a complete changelog for a single release, it works as github release notes.
 
+1. For CI/CD usage you can use `changie latest` to print out the latest version batched.
+See the release workflow [here](/.github/workflows/release.yml) for an example
+
 1. Finally use `changie merge` to merge all version changelogs into one `CHANGELOG.md` file.
 This file is the default standard for where to find all of a project changes and is also the default for changie to output.
 
