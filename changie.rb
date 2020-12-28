@@ -2,17 +2,17 @@
 class Changie < Formula
   desc "Automated changelog tool for preparing releases with lots of customization options."
   homepage "https://github.com/miniscruff/changie"
-  version "0.2.0"
+  version "0.3.0"
   license "MIT"
   bottle :unneeded
 
   if OS.mac?
-    url "https://github.com/miniscruff/changie/releases/download/v0.2.0/changie_0.2.0_darwin_amd64.tar.gz"
-    sha256 "d41972c521f8e34500e10c343045c4c063b1c6aaee4e26a28b9da5efdd293f05"
+    url "https://github.com/miniscruff/changie/releases/download/v0.3.0/changie_0.3.0_darwin_amd64.tar.gz"
+    sha256 "82b82b63a926cd6eff03c41bc1c448be5abf2914fc5efe8addd4a727e520a14b"
   end
   if OS.linux? && Hardware::CPU.intel?
-    url "https://github.com/miniscruff/changie/releases/download/v0.2.0/changie_0.2.0_linux_amd64.tar.gz"
-    sha256 "3e62188dcbd58df1e8e4a69f6b1e68059dacce12d15c5efc922230f13494dac1"
+    url "https://github.com/miniscruff/changie/releases/download/v0.3.0/changie_0.3.0_linux_amd64.tar.gz"
+    sha256 "dca19ccf94b0bb0c226f96a832d1e0e5b46edf00eddc600a58be0685e54a79c3"
   end
 
   def install
