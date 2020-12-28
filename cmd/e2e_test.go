@@ -104,17 +104,13 @@ var _ = Describe("end to end", func() {
 		Expect(Execute("")).To(Succeed())
 
 		date := time.Now().Format("2006-01-02")
-		changeContents := fmt.Sprintf(`# Changelog
-All notable changes to this project will be documented in this file.
-
-The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
-and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+		changeContents := fmt.Sprintf(`%s
 
 ## v0.1.0 - %s
 
 ### Changed
 * first
-* second`, date)
+* second`, defaultHeader, date)
 		changeFile, err := ioutil.ReadFile("CHANGELOG.md")
 		Expect(err).To(BeNil())
 		Expect(string(changeFile)).To(Equal(changeContents))
