@@ -49,8 +49,9 @@ kinds: []
 			UnreleasedDir: "Unrel",
 			HeaderPath:    "header.tpl.md",
 			ChangelogPath: "CHANGELOG.md",
-			CustomChoices: map[string]Custom{
-				"first": {
+			CustomChoices: []Custom{
+				{
+					Key:   "first",
 					Type:  customString,
 					Label: "First name",
 				},
@@ -67,9 +68,9 @@ kindFormat: ""
 changeFormat: ""
 kinds: []
 custom:
-  first:
-    type: string
-    label: First name
+- key: first
+  type: string
+  label: First name
 `
 
 		writeCalled := false
@@ -125,7 +126,7 @@ var _ = Describe("Custom", func() {
 	It("returns error on invalid prompt type", func() {
 		_, err := Custom{
 			Type: "invalid type",
-		}.CreatePrompt("name", os.Stdin)
+		}.CreatePrompt(os.Stdin)
 		Expect(errors.Is(err, errInvalidPromptType)).To(BeTrue())
 	})
 
@@ -133,7 +134,7 @@ var _ = Describe("Custom", func() {
 		prompt, err := Custom{
 			Type:  customString,
 			Label: "a label",
-		}.CreatePrompt("name", os.Stdin)
+		}.CreatePrompt(os.Stdin)
 		Expect(err).To(BeNil())
 
 		underPrompt, ok := prompt.(*promptui.Prompt)
@@ -143,8 +144,9 @@ var _ = Describe("Custom", func() {
 
 	It("can create custom int prompt", func() {
 		prompt, err := Custom{
+			Key:  "name",
 			Type: customInt,
-		}.CreatePrompt("name", os.Stdin)
+		}.CreatePrompt(os.Stdin)
 		Expect(err).To(BeNil())
 
 		underPrompt, ok := prompt.(*promptui.Prompt)
@@ -162,7 +164,7 @@ var _ = Describe("Custom", func() {
 			Type:   customInt,
 			MinInt: &min,
 			MaxInt: &max,
-		}.CreatePrompt("name", os.Stdin)
+		}.CreatePrompt(os.Stdin)
 		Expect(err).To(BeNil())
 
 		underPrompt, ok := prompt.(*promptui.Prompt)
@@ -176,7 +178,7 @@ var _ = Describe("Custom", func() {
 		prompt, err := Custom{
 			Type:        customEnum,
 			EnumOptions: []string{"a", "b", "c"},
-		}.CreatePrompt("name", os.Stdin)
+		}.CreatePrompt(os.Stdin)
 		Expect(err).To(BeNil())
 
 		underPrompt, ok := prompt.(*enumWrapper)

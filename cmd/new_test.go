@@ -74,8 +74,13 @@ var _ = Describe("New", func() {
 	})
 
 	It("creates new file on completion of prompts with custom options", func() {
-		testConfig.CustomChoices = map[string]Custom{
-			"emoji": {
+		testConfig.CustomChoices = []Custom{
+			{
+				Key:  "Issue",
+				Type: customInt,
+			},
+			{
+				Key:         "Emoji",
 				Type:        customEnum,
 				EnumOptions: []string{"rocket", "dog"},
 			},
@@ -93,6 +98,8 @@ var _ = Describe("New", func() {
 			delayWrite(stdinWriter, []byte{106, 13})
 			delayWrite(stdinWriter, []byte("body stuff"))
 			delayWrite(stdinWriter, []byte{13})
+			delayWrite(stdinWriter, []byte("15"))
+			delayWrite(stdinWriter, []byte{13})
 			delayWrite(stdinWriter, []byte{106, 13})
 		}()
 
@@ -108,7 +115,8 @@ var _ = Describe("New", func() {
 		changeContent := `kind: removed
 body: body stuff
 custom:
-  emoji: dog
+  Emoji: dog
+  Issue: "15"
 `
 		changePath := filepath.Join(futurePath, fileInfos[0].Name())
 		Expect(changePath).To(HaveContents(afs, changeContent))
@@ -151,8 +159,9 @@ custom:
 	})
 
 	It("returns error on bad custom creation", func() {
-		testConfig.CustomChoices = map[string]Custom{
-			"name": {
+		testConfig.CustomChoices = []Custom{
+			{
+				Key:  "name",
 				Type: "bad type",
 			},
 		}
@@ -176,8 +185,9 @@ custom:
 	})
 
 	It("returns error on bad input choice", func() {
-		testConfig.CustomChoices = map[string]Custom{
-			"name": {
+		testConfig.CustomChoices = []Custom{
+			{
+				Key:  "name",
 				Type: customString,
 			},
 		}

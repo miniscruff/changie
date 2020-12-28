@@ -60,13 +60,13 @@ func newPipeline(afs afero.Afero, stdinReader io.ReadCloser) error {
 
 	customs := make(map[string]string)
 
-	for name, custom := range config.CustomChoices {
-		prompt, err := custom.CreatePrompt(name, stdinReader)
+	for _, custom := range config.CustomChoices {
+		prompt, err := custom.CreatePrompt(stdinReader)
 		if err != nil {
 			return err
 		}
 
-		customs[name], err = prompt.Run()
+		customs[custom.Key], err = prompt.Run()
 		if err != nil {
 			return err
 		}

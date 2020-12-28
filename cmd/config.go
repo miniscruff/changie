@@ -44,6 +44,7 @@ type CustomType string
 
 // Custom contains the options for a custom choice for new changes
 type Custom struct {
+	Key         string
 	Type        CustomType
 	Label       string   `yaml:",omitempty"`
 	MinInt      *int64   `yaml:"minInt,omitempty"`
@@ -52,8 +53,8 @@ type Custom struct {
 }
 
 // CreatePrompt will create a promptui select or prompt from a custom choice
-func (c Custom) CreatePrompt(name string, stdinReader io.ReadCloser) (Prompt, error) {
-	label := name
+func (c Custom) CreatePrompt(stdinReader io.ReadCloser) (Prompt, error) {
+	label := c.Key
 	if c.Label != "" {
 		label = c.Label
 	}
@@ -106,8 +107,8 @@ type Config struct {
 	KindFormat    string `yaml:"kindFormat"`
 	ChangeFormat  string `yaml:"changeFormat"`
 	// custom
-	Kinds         []string          `yaml:"kinds"`
-	CustomChoices map[string]Custom `yaml:"custom,omitempty"`
+	Kinds         []string `yaml:"kinds"`
+	CustomChoices []Custom `yaml:"custom,omitempty"`
 }
 
 // Save will save the config as a yaml file to the default path

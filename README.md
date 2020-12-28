@@ -121,22 +121,22 @@ Currently there are three types of choices; strings, ints and enums.
 
 ```yaml
 custom:
-    Issue: # used to reference the value in change format
-        label: Issue Number
-        type: int
-        minInt: 1
-        # maxInt: is also possible
-    Author:
-        label: Author Github Name
-        type: string
-    Emoji:
-        label: Flair emoji
-        type: enum
-        enumOptions:
-        - bug
-        - pencil2
-        - smile
-        - dog
+- key: Issue # used to reference the value in change format
+  label: Issue Number # optional label when asking for changes
+  type: int
+  minInt: 1
+  # maxInt: is also possible
+- key: Author
+  label: Author Github Name
+  type: string
+- key: Emoji
+  label: Flair emoji
+  type: enum
+  enumOptions:
+  - bug
+  - pencil2
+  - smile
+  - dog
 changeFormat: "* :{{.Custom.Emoji}}: {{.Body}} (#{{.Custom.Issue}} by {{.Custom.Author}})"
 # Can create markdown links as well:
 # [#{{.Custom.Issue}}](github.com/project/issues/{{.Custom.Issue}})
