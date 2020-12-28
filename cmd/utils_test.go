@@ -2,6 +2,8 @@ package cmd
 
 import (
 	"errors"
+	"os"
+
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/spf13/afero"
@@ -10,18 +12,17 @@ import (
 var _ = Describe("Utils", func() {
 	It("append file appends two files", func() {
 		memFs := afero.NewMemMapFs()
+		afs := afero.Afero{Fs: memFs}
 		rootFile, err := memFs.Create("root.txt")
 		Expect(err).To(BeNil())
 
-		rootFile.WriteString("root")
-
-		otherFile, err := memFs.Create("append.txt")
+		_, err = rootFile.WriteString("root")
 		Expect(err).To(BeNil())
 
-		otherFile.WriteString(" append")
-		otherFile.Close()
+		err = afs.WriteFile("append.txt", []byte(" append"), os.ModePerm)
+		Expect(err).To(BeNil())
 
-		err = appendFile(memFs.Open, rootFile, "append.txt")
+		err = appendFile(afs.Open, rootFile, "append.txt")
 		Expect(err).To(BeNil())
 
 		rootFile.Close()

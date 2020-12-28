@@ -14,6 +14,17 @@ tasks:
       - go tool cover -html=c.out
 
   watch:
-    desc: Run unit tests and rerun on file changes
+    desc: Run unit tests and rerun on file changes with ginkgo
     cmds:
       - ginkgo watch ./...
+
+  lint:
+    desc: Run lint checks with golangci
+    cmds:
+      - golangci-lint run ./...
+
+  format:
+    desc: Run auto formatters
+    cmds:
+      - gofmt -s -w .
+      - goimports -w -local github.com/miniscruff/changie .

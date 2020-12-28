@@ -2,12 +2,13 @@ package cmd
 
 import (
 	"errors"
+	"os"
+	"path/filepath"
+
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/ginkgo/extensions/table"
 	. "github.com/onsi/gomega"
 	"github.com/spf13/afero"
-	"os"
-	"path/filepath"
 )
 
 var _ = Describe("Init", func() {

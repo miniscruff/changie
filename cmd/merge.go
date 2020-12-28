@@ -1,12 +1,13 @@
 package cmd
 
 import (
-	"github.com/Masterminds/semver/v3"
-	"github.com/spf13/afero"
-	"github.com/spf13/cobra"
 	"path/filepath"
 	"sort"
 	"strings"
+
+	"github.com/Masterminds/semver/v3"
+	"github.com/spf13/afero"
+	"github.com/spf13/cobra"
 )
 
 var mergeCmd = &cobra.Command{
@@ -22,10 +23,11 @@ func init() {
 func runMerge(cmd *cobra.Command, args []string) error {
 	fs := afero.NewOsFs()
 	afs := afero.Afero{Fs: fs}
+
 	return mergePipeline(afs, afs.Create)
 }
 
-func mergePipeline(afs afero.Afero, creater CreateFiler) error {
+func mergePipeline(afs afero.Afero, creator CreateFiler) error {
 	config, err := LoadConfig(afs.ReadFile)
 	if err != nil {
 		return err
@@ -44,27 +46,42 @@ func mergePipeline(afs afero.Afero, creater CreateFiler) error {
 		}
 
 		versionString := strings.TrimSuffix(file.Name(), filepath.Ext(file.Name()))
-		v, err := semver.NewVersion(versionString)
+
+		var v *semver.Version
+
+		v, err = semver.NewVersion(versionString)
 		if err != nil {
 			continue
 		}
 
 		allVersions = append(allVersions, v)
 	}
+
 	sort.Sort(sort.Reverse(semver.Collection(allVersions)))
 
-	changeFile, err := creater(config.ChangelogPath)
+	changeFile, err := creator(config.ChangelogPath)
 	if err != nil {
 		return err
 	}
 	defer changeFile.Close()
 
-	appendFile(afs.Open, changeFile, filepath.Join(config.ChangesDir, config.HeaderPath))
+	err = appendFile(afs.Open, changeFile, filepath.Join(config.ChangesDir, config.HeaderPath))
+	if err != nil {
+		return err
+	}
 
 	for _, version := range allVersions {
-		changeFile.WriteString("\n")
-		changeFile.WriteString("\n")
-		appendFile(afs.Open, changeFile, filepath.Join(config.ChangesDir, version.Original()+"."+config.VersionExt))
+		_, err = changeFile.WriteString("\n\n")
+		if err != nil {
+			return err
+		}
+
+		versionPath := filepath.Join(config.ChangesDir, version.Original()+"."+config.VersionExt)
+
+		err = appendFile(afs.Open, changeFile, versionPath)
+		if err != nil {
+			return err
+		}
 	}
 
 	return nil

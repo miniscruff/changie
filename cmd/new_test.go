@@ -2,20 +2,28 @@ package cmd
 
 import (
 	"errors"
-	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/gomega"
-	"github.com/spf13/afero"
+	"io"
 	"os"
 	"path/filepath"
 	"time"
+
+	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
+	"github.com/spf13/afero"
 )
+
+func delayWrite(writer io.Writer, data []byte) {
+	time.Sleep(50 * time.Millisecond)
+
+	_, err := writer.Write(data)
+	Expect(err).To(BeNil())
+}
 
 var _ = Describe("New", func() {
 	var (
 		fs         *mockFs
 		afs        afero.Afero
 		testConfig Config
-		inputSleep = 50 * time.Millisecond
 	)
 	BeforeEach(func() {
 		fs = newMockFs()
@@ -36,7 +44,8 @@ var _ = Describe("New", func() {
 	})
 
 	It("creates new file on completion of prompts", func() {
-		testConfig.Save(afs.WriteFile)
+		err := testConfig.Save(afs.WriteFile)
+		Expect(err).To(BeNil())
 
 		stdinReader, stdinWriter, err := os.Pipe()
 		Expect(err).To(BeNil())
@@ -45,12 +54,9 @@ var _ = Describe("New", func() {
 		defer stdinWriter.Close()
 
 		go func() {
-			time.Sleep(inputSleep)
-			stdinWriter.Write([]byte{106, 13})
-
-			time.Sleep(inputSleep)
-			stdinWriter.Write([]byte("a message"))
-			stdinWriter.Write([]byte{13})
+			delayWrite(stdinWriter, []byte{106, 13})
+			delayWrite(stdinWriter, []byte("a message"))
+			delayWrite(stdinWriter, []byte{13})
 		}()
 
 		err = newPipeline(afs, stdinReader)
@@ -69,12 +75,13 @@ var _ = Describe("New", func() {
 
 	It("creates new file on completion of prompts with custom options", func() {
 		testConfig.CustomChoices = map[string]Custom{
-			"emoji": Custom{
-				Type:        CustomEnum,
+			"emoji": {
+				Type:        customEnum,
 				EnumOptions: []string{"rocket", "dog"},
 			},
 		}
-		testConfig.Save(afs.WriteFile)
+		err := testConfig.Save(afs.WriteFile)
+		Expect(err).To(BeNil())
 
 		stdinReader, stdinWriter, err := os.Pipe()
 		Expect(err).To(BeNil())
@@ -83,15 +90,10 @@ var _ = Describe("New", func() {
 		defer stdinWriter.Close()
 
 		go func() {
-			time.Sleep(inputSleep)
-			stdinWriter.Write([]byte{106, 13})
-
-			time.Sleep(inputSleep)
-			stdinWriter.Write([]byte("body stuff"))
-			stdinWriter.Write([]byte{13})
-
-			time.Sleep(inputSleep)
-			stdinWriter.Write([]byte{106, 13})
+			delayWrite(stdinWriter, []byte{106, 13})
+			delayWrite(stdinWriter, []byte("body stuff"))
+			delayWrite(stdinWriter, []byte{13})
+			delayWrite(stdinWriter, []byte{106, 13})
 		}()
 
 		err = newPipeline(afs, stdinReader)
@@ -113,7 +115,8 @@ custom:
 	})
 
 	It("returns error on bad kind", func() {
-		testConfig.Save(afs.WriteFile)
+		err := testConfig.Save(afs.WriteFile)
+		Expect(err).To(BeNil())
 
 		stdinReader, stdinWriter, err := os.Pipe()
 		Expect(err).To(BeNil())
@@ -121,14 +124,15 @@ custom:
 		defer stdinReader.Close()
 		defer stdinWriter.Close()
 
-		stdinWriter.Write([]byte{3}) // 3 is ctrl-c
+		delayWrite(stdinWriter, []byte{3}) // 3 is ctrl-c
 
 		err = newPipeline(afs, stdinReader)
 		Expect(err).NotTo(BeNil())
 	})
 
 	It("returns error on bad body", func() {
-		testConfig.Save(afs.WriteFile)
+		err := testConfig.Save(afs.WriteFile)
+		Expect(err).To(BeNil())
 
 		stdinReader, stdinWriter, err := os.Pipe()
 		Expect(err).To(BeNil())
@@ -137,10 +141,9 @@ custom:
 		defer stdinWriter.Close()
 
 		go func() {
-			stdinWriter.Write([]byte{13})
-			time.Sleep(inputSleep)
-			stdinWriter.Write([]byte("ctrl-c here"))
-			stdinWriter.Write([]byte{3})
+			delayWrite(stdinWriter, []byte{13})
+			delayWrite(stdinWriter, []byte("ctrl-c here"))
+			delayWrite(stdinWriter, []byte{3})
 		}()
 
 		err = newPipeline(afs, stdinReader)
@@ -149,11 +152,12 @@ custom:
 
 	It("returns error on bad custom creation", func() {
 		testConfig.CustomChoices = map[string]Custom{
-			"name": Custom{
+			"name": {
 				Type: "bad type",
 			},
 		}
-		testConfig.Save(afs.WriteFile)
+		err := testConfig.Save(afs.WriteFile)
+		Expect(err).To(BeNil())
 
 		stdinReader, stdinWriter, err := os.Pipe()
 		Expect(err).To(BeNil())
@@ -162,25 +166,23 @@ custom:
 		defer stdinWriter.Close()
 
 		go func() {
-			time.Sleep(inputSleep)
-			stdinWriter.Write([]byte{106, 13})
-
-			time.Sleep(inputSleep)
-			stdinWriter.Write([]byte("body stuff"))
-			stdinWriter.Write([]byte{13})
+			delayWrite(stdinWriter, []byte{106, 13})
+			delayWrite(stdinWriter, []byte("body stuff"))
+			delayWrite(stdinWriter, []byte{13})
 		}()
 
 		err = newPipeline(afs, stdinReader)
-		Expect(errors.Is(err, invalidPromptType)).To(BeTrue())
+		Expect(errors.Is(err, errInvalidPromptType)).To(BeTrue())
 	})
 
 	It("returns error on bad input choice", func() {
 		testConfig.CustomChoices = map[string]Custom{
-			"name": Custom{
-				Type: CustomString,
+			"name": {
+				Type: customString,
 			},
 		}
-		testConfig.Save(afs.WriteFile)
+		err := testConfig.Save(afs.WriteFile)
+		Expect(err).To(BeNil())
 
 		stdinReader, stdinWriter, err := os.Pipe()
 		Expect(err).To(BeNil())
@@ -189,16 +191,11 @@ custom:
 		defer stdinWriter.Close()
 
 		go func() {
-			time.Sleep(inputSleep)
-			stdinWriter.Write([]byte{106, 13})
-
-			time.Sleep(inputSleep)
-			stdinWriter.Write([]byte("body stuff"))
-			stdinWriter.Write([]byte{13})
-
-			time.Sleep(inputSleep)
-			stdinWriter.Write([]byte("jonny"))
-			stdinWriter.Write([]byte{3})
+			delayWrite(stdinWriter, []byte{106, 13})
+			delayWrite(stdinWriter, []byte("body stuff"))
+			delayWrite(stdinWriter, []byte{13})
+			delayWrite(stdinWriter, []byte("jonny"))
+			delayWrite(stdinWriter, []byte{3})
 		}()
 
 		err = newPipeline(afs, stdinReader)

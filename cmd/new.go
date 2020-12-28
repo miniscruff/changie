@@ -1,12 +1,13 @@
 package cmd
 
 import (
-	"github.com/manifoldco/promptui"
-	"github.com/spf13/afero"
-	"github.com/spf13/cobra"
 	"io"
 	"os"
 	"time"
+
+	"github.com/manifoldco/promptui"
+	"github.com/spf13/afero"
+	"github.com/spf13/cobra"
 )
 
 // newCmd represents the new command
@@ -14,8 +15,8 @@ var newCmd = &cobra.Command{
 	Use:   "new",
 	Short: "Create a new change file",
 	Long: `Creates a new change file.
-Change files are processed when preparing a new release and will create a changelog for the new version.
-Each version is combined together for the overall project changelog.`,
+Change files are processed when batching a new release.
+Each version is merged together for the overall project changelog.`,
 	RunE: runNew,
 }
 
@@ -26,6 +27,7 @@ func init() {
 func runNew(cmd *cobra.Command, args []string) error {
 	fs := afero.NewOsFs()
 	afs := afero.Afero{Fs: fs}
+
 	return newPipeline(afs, os.Stdin)
 }
 
@@ -56,7 +58,7 @@ func newPipeline(afs afero.Afero, stdinReader io.ReadCloser) error {
 		return err
 	}
 
-	customs := make(map[string]string, 0)
+	customs := make(map[string]string)
 
 	for name, custom := range config.CustomChoices {
 		prompt, err := custom.CreatePrompt(name, stdinReader)

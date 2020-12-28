@@ -2,11 +2,13 @@ package cmd
 
 import (
 	"fmt"
-	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/gomega"
+	"io"
 	"io/ioutil"
 	"os"
 	"time"
+
+	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
 )
 
 var _ = Describe("end to end", func() {
@@ -21,8 +23,6 @@ var _ = Describe("end to end", func() {
 		startDir     string
 		tempDir      string
 	)
-
-	const dirName = "test-dir"
 
 	BeforeEach(func() {
 		var err error
@@ -68,15 +68,18 @@ var _ = Describe("end to end", func() {
 		Expect(Execute("")).To(Succeed())
 	}
 
+	delayWrite := func(writer io.Writer, data []byte) {
+		time.Sleep(inputSleep)
+		_, err := writer.Write(data)
+		Expect(err).To(BeNil())
+	}
+
 	testNew := func(body string) {
 		rootCmd.SetArgs([]string{"new"})
 		go func() {
-			time.Sleep(inputSleep)
-			stdinWriter.Write([]byte{106, 13})
-
-			time.Sleep(time.Second)
-			stdinWriter.Write([]byte(body))
-			stdinWriter.Write([]byte{13})
+			delayWrite(stdinWriter, []byte{106, 13})
+			delayWrite(stdinWriter, []byte(body))
+			delayWrite(stdinWriter, []byte{13})
 		}()
 		Expect(Execute("")).To(Succeed())
 	}
@@ -120,6 +123,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 	It("should all work", func() {
 		testInit()
 		testNew("first")
+		time.Sleep(2 * time.Second) // let time pass for the next change
 		testNew("second")
 		testBatch()
 		testLatest()

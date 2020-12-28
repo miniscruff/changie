@@ -2,18 +2,16 @@ package cmd
 
 import (
 	"errors"
-	"github.com/Masterminds/semver/v3"
-	"github.com/spf13/afero"
-	"github.com/spf13/cobra"
 	"path/filepath"
 	"text/template"
 	"time"
+
+	"github.com/Masterminds/semver/v3"
+	"github.com/spf13/afero"
+	"github.com/spf13/cobra"
 )
 
-var (
-	missingVersionError     = errors.New("missing required version")
-	notSemanticVersionError = errors.New("version string is not a valid semantic version")
-)
+var errNotSemanticVersion = errors.New("version string is not a valid semantic version")
 
 var batchCmd = &cobra.Command{
 	Use:   "batch version",
@@ -33,13 +31,14 @@ func init() {
 func runBatch(cmd *cobra.Command, args []string) error {
 	fs := afero.NewOsFs()
 	afs := afero.Afero{Fs: fs}
+
 	return batchPipeline(afs, args[0])
 }
 
 func batchPipeline(afs afero.Afero, ver string) error {
 	_, err := semver.NewVersion(ver)
 	if err != nil {
-		return notSemanticVersionError
+		return errNotSemanticVersion
 	}
 
 	config, err := LoadConfig(afs.ReadFile)
@@ -66,7 +65,7 @@ func batchPipeline(afs afero.Afero, ver string) error {
 }
 
 func getChanges(afs afero.Afero, config Config) (map[string][]Change, error) {
-	changesPerKind := make(map[string][]Change, 0)
+	changesPerKind := make(map[string][]Change)
 	unreleasedPath := filepath.Join(config.ChangesDir, config.UnreleasedDir)
 
 	// read all markdown files from changes/unreleased
@@ -81,6 +80,7 @@ func getChanges(afs afero.Afero, config Config) (map[string][]Change, error) {
 		}
 
 		path := filepath.Join(config.ChangesDir, config.UnreleasedDir, file.Name())
+
 		c, err := LoadChange(path, afs.ReadFile)
 		if err != nil {
 			return changesPerKind, err
@@ -92,11 +92,15 @@ func getChanges(afs afero.Afero, config Config) (map[string][]Change, error) {
 
 		changesPerKind[c.Kind] = append(changesPerKind[c.Kind], c)
 	}
+
 	return changesPerKind, nil
 }
 
-func batchNewVersion(fs afero.Fs, config Config, version string, changesPerKind map[string][]Change) error {
+func batchNewVersion(
+	fs afero.Fs, config Config, version string, changesPerKind map[string][]Change,
+) error {
 	versionPath := filepath.Join(config.ChangesDir, version+"."+config.VersionExt)
+
 	versionFile, err := fs.Create(versionPath)
 	if err != nil {
 		return err
@@ -150,25 +154,30 @@ func batchNewVersion(fs afero.Fs, config Config, version string, changesPerKind 
 		for _, change := range changes {
 			_, _ = versionFile.WriteString("\n")
 			err = cTempl.Execute(versionFile, change)
+
 			if err != nil {
 				return err
 			}
 		}
 	}
+
 	return nil
 }
 
 func deleteUnreleased(afs afero.Afero, config Config) error {
-	fileInfos, err := afs.ReadDir(filepath.Join(config.ChangesDir, config.UnreleasedDir))
+	fileInfos, _ := afs.ReadDir(filepath.Join(config.ChangesDir, config.UnreleasedDir))
 	for _, file := range fileInfos {
 		if filepath.Ext(file.Name()) != ".yaml" {
 			continue
 		}
+
 		path := filepath.Join(config.ChangesDir, config.UnreleasedDir, file.Name())
-		err = afs.Remove(path)
+
+		err := afs.Remove(path)
 		if err != nil {
 			return err
 		}
 	}
+
 	return nil
 }

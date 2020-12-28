@@ -15,6 +15,13 @@ Changie aims to be a universal tool for any project language or style but limiti
 ### From releases
 Download from [here](https://github.com/miniscruff/changie/releases)
 
+### From scoop
+On windows you can use [scoop](https://scoop.sh/) by first adding this repo and then installing.
+```
+scoop bucket add repo https://github.com/miniscruff/changie
+scoop install changie
+```
+
 ### From source
 Go get can be used to download
 
