@@ -27,7 +27,7 @@ jobs:
         echo "./bin" >> $GITHUB_PATH
 
     - name: Test
-      run: sudo go test -coverprofile=c.out ./...
+      run: task test
 
     - name: Coverage
       uses: codecov/codecov-action@v1

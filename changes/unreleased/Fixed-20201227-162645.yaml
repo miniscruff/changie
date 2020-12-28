@@ -1,0 +1,4 @@
+kind: Fixed
+body: Incorrect file permissions on init when creating unreleased directory
+custom:
+  Issue: "25"

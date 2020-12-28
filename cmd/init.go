@@ -67,7 +67,7 @@ func initPipeline(mkdir MkdirAller, wf WriteFiler, config Config) error {
 		return err
 	}
 
-	err = mkdir(unreleasedPath, 0644)
+	err = mkdir(unreleasedPath, 0755)
 	if err != nil {
 		return err
 	}
