@@ -3,42 +3,46 @@ package cmd
 import (
 	"errors"
 	"fmt"
-	"github.com/manifoldco/promptui"
-	"gopkg.in/yaml.v2"
 	"io"
 	"os"
 	"strconv"
+
+	"github.com/manifoldco/promptui"
+	"gopkg.in/yaml.v2"
 )
 
 const (
 	configPath   string     = ".changie.yaml"
-	CustomString CustomType = "string"
-	CustomInt    CustomType = "int"
-	CustomEnum   CustomType = "enum"
+	customString CustomType = "string"
+	customInt    CustomType = "int"
+	customEnum   CustomType = "enum"
 )
 
 var (
-	invalidPromptType = errors.New("Invalid prompt type")
-	invalidIntInput   = errors.New("Invalid number")
-	intTooLow         = errors.New("Input below minimum")
-	intTooHigh        = errors.New("Input above maximum")
+	errInvalidPromptType = errors.New("invalid prompt type")
+	errInvalidIntInput   = errors.New("invalid number")
+	errIntTooLow         = errors.New("input below minimum")
+	errIntTooHigh        = errors.New("input above maximum")
 )
 
-type EnumWrapper struct {
+type enumWrapper struct {
 	*promptui.Select
 }
 
-func (e *EnumWrapper) Run() (string, error) {
+func (e *enumWrapper) Run() (string, error) {
 	_, value, err := e.Select.Run()
 	return value, err
 }
 
+// Prompt is a small wrapper around the promptui Run method
 type Prompt interface {
 	Run() (string, error)
 }
 
+// CustomType determines the possible custom choice types
 type CustomType string
 
+// Custom contains the options for a custom choice for new changes
 type Custom struct {
 	Type        CustomType
 	Label       string   `yaml:",omitempty"`
@@ -47,6 +51,7 @@ type Custom struct {
 	EnumOptions []string `yaml:"enumOptions,omitempty"`
 }
 
+// CreatePrompt will create a promptui select or prompt from a custom choice
 func (c Custom) CreatePrompt(name string, stdinReader io.ReadCloser) (Prompt, error) {
 	label := name
 	if c.Label != "" {
@@ -54,38 +59,39 @@ func (c Custom) CreatePrompt(name string, stdinReader io.ReadCloser) (Prompt, er
 	}
 
 	switch c.Type {
-	case CustomString:
+	case customString:
 		return &promptui.Prompt{
 			Label: label,
 			Stdin: stdinReader,
 		}, nil
-	case CustomInt:
+	case customInt:
 		return &promptui.Prompt{
 			Label: label,
 			Stdin: stdinReader,
 			Validate: func(input string) error {
 				value, err := strconv.ParseInt(input, 10, 64)
 				if err != nil {
-					return invalidIntInput
+					return errInvalidIntInput
 				}
 				if c.MinInt != nil && value < *c.MinInt {
-					return fmt.Errorf("%w: %v < %v", intTooLow, value, c.MinInt)
+					return fmt.Errorf("%w: %v < %v", errIntTooLow, value, c.MinInt)
 				}
 				if c.MaxInt != nil && value > *c.MaxInt {
-					return fmt.Errorf("%w: %v > %v", intTooHigh, value, c.MinInt)
+					return fmt.Errorf("%w: %v > %v", errIntTooHigh, value, c.MinInt)
 				}
 				return nil
 			},
 		}, nil
-	case CustomEnum:
-		return &EnumWrapper{
+	case customEnum:
+		return &enumWrapper{
 			Select: &promptui.Select{
 				Label: label,
 				Stdin: stdinReader,
 				Items: c.EnumOptions,
 			}}, nil
 	}
-	return nil, invalidPromptType
+
+	return nil, errInvalidPromptType
 }
 
 // Config handles configuration for a changie project
@@ -104,13 +110,16 @@ type Config struct {
 	CustomChoices map[string]Custom `yaml:"custom,omitempty"`
 }
 
+// Save will save the config as a yaml file to the default path
 func (config Config) Save(wf WriteFiler) error {
 	bs, _ := yaml.Marshal(&config)
 	return wf(configPath, bs, os.ModePerm)
 }
 
+// LoadConfig will load the config from the default path
 func LoadConfig(rf ReadFiler) (Config, error) {
 	var c Config
+
 	bs, err := rf(configPath)
 	if err != nil {
 		return c, err

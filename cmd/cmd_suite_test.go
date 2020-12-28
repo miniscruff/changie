@@ -33,23 +33,35 @@ type haveContentMatcher struct {
 func (matcher *haveContentMatcher) Match(actual interface{}) (success bool, err error) {
 	pathStr, ok := actual.(string)
 	if !ok {
-		return false, fmt.Errorf("BeAnEmptyFile matcher expects a string")
+		return false, fmt.Errorf("beAnEmptyFile matcher expects a string")
 	}
 
 	bs, err := matcher.afs.ReadFile(pathStr)
 	if err != nil {
 		return false, err
 	}
+
 	matcher.expected = string(bs)
+
 	return matcher.expected == matcher.content, nil
 }
 
 func (matcher *haveContentMatcher) FailureMessage(actual interface{}) (message string) {
-	return fmt.Sprintf("Expected '%s' to have contents\n\t'%s' but was \n\t'%s'", actual, matcher.content, matcher.expected)
+	return fmt.Sprintf(
+		"Expected '%s' to have contents\n\t'%s' but was \n\t'%s'",
+		actual,
+		matcher.content,
+		matcher.expected,
+	)
 }
 
 func (matcher *haveContentMatcher) NegatedFailureMessage(actual interface{}) (message string) {
-	return fmt.Sprintf("Expected '%s' to not have contents\n\t'%s' but was \n\t'%s'", actual, matcher.content, matcher.expected)
+	return fmt.Sprintf(
+		"Expected '%s' to not have contents\n\t'%s' but was \n\t'%s'",
+		actual,
+		matcher.content,
+		matcher.expected,
+	)
 }
 
 func BeAnEmptyFile(afs afero.Afero) types.GomegaMatcher {
@@ -65,21 +77,22 @@ type beAnEmptyFileMatcher struct {
 func (matcher *beAnEmptyFileMatcher) Match(actual interface{}) (success bool, err error) {
 	pathStr, ok := actual.(string)
 	if !ok {
-		return false, fmt.Errorf("BeAnEmptyFile matcher expects a string")
+		return false, fmt.Errorf("beAnEmptyFile matcher expects a string")
 	}
 
 	bs, err := matcher.afs.ReadFile(pathStr)
 	if err != nil {
 		return false, err
 	}
+
 	return len(bs) == 0, nil
 }
 
-func (_ *beAnEmptyFileMatcher) FailureMessage(actual interface{}) (message string) {
+func (*beAnEmptyFileMatcher) FailureMessage(actual interface{}) (message string) {
 	return fmt.Sprintf("Expected '%s' to be an empty file", actual)
 }
 
-func (_ *beAnEmptyFileMatcher) NegatedFailureMessage(actual interface{}) (message string) {
+func (*beAnEmptyFileMatcher) NegatedFailureMessage(actual interface{}) (message string) {
 	return fmt.Sprintf("Expected not to be '%s' to be an empty file", actual)
 }
 
@@ -96,17 +109,17 @@ type beADirMatcher struct {
 func (matcher *beADirMatcher) Match(actual interface{}) (success bool, err error) {
 	pathStr, ok := actual.(string)
 	if !ok {
-		return false, fmt.Errorf("BeADirectory matcher expects a string")
+		return false, fmt.Errorf("beADir matcher expects a string")
 	}
 
 	return matcher.afs.DirExists(pathStr)
 }
 
-func (_ *beADirMatcher) FailureMessage(actual interface{}) (message string) {
+func (*beADirMatcher) FailureMessage(actual interface{}) (message string) {
 	return fmt.Sprintf("Expected '%s' to be a directory", actual)
 }
 
-func (_ *beADirMatcher) NegatedFailureMessage(actual interface{}) (message string) {
+func (*beADirMatcher) NegatedFailureMessage(actual interface{}) (message string) {
 	return fmt.Sprintf("Expected not to be '%s' to be a directory", actual)
 }
 
@@ -130,6 +143,7 @@ func (m *mockFs) Create(name string) (afero.File, error) {
 	if m.mockCreate != nil {
 		return m.mockCreate(name)
 	}
+
 	return m.memFs.Create(name)
 }
 
@@ -141,6 +155,7 @@ func (m *mockFs) MkdirAll(path string, perm os.FileMode) error {
 	if m.mockMkdirAll != nil {
 		return m.mockMkdirAll(path, perm)
 	}
+
 	return m.memFs.MkdirAll(path, perm)
 }
 
@@ -148,6 +163,7 @@ func (m *mockFs) Open(name string) (afero.File, error) {
 	if m.mockOpen != nil {
 		return m.mockOpen(name)
 	}
+
 	return m.memFs.Open(name)
 }
 
@@ -155,6 +171,7 @@ func (m *mockFs) OpenFile(name string, flag int, perm os.FileMode) (afero.File, 
 	if m.mockOpenFile != nil {
 		return m.mockOpenFile(name, flag, perm)
 	}
+
 	return m.memFs.OpenFile(name, flag, perm)
 }
 
@@ -162,6 +179,7 @@ func (m *mockFs) Remove(name string) error {
 	if m.mockRemove != nil {
 		return m.mockRemove(name)
 	}
+
 	return m.memFs.Remove(name)
 }
 
@@ -189,6 +207,7 @@ func (m *mockFs) Chmod(name string, mode os.FileMode) error {
 	if m.mockChmod != nil {
 		return m.mockChmod(name, mode)
 	}
+
 	return m.memFs.Chmod(name, mode)
 }
 
@@ -206,6 +225,7 @@ type mockFile struct {
 
 func newMockFile(fs afero.Fs, filename string) *mockFile {
 	f, _ := fs.Create(filename)
+
 	return &mockFile{
 		memFile: f,
 	}
@@ -218,6 +238,7 @@ func (m *mockFile) Close() error {
 	if m.mockClose != nil {
 		return m.mockClose()
 	}
+
 	return nil
 }
 
@@ -225,6 +246,7 @@ func (m *mockFile) Read(p []byte) (n int, err error) {
 	if m.mockRead != nil {
 		return m.mockRead(p)
 	}
+
 	return m.memFile.Read(p)
 }
 
@@ -240,6 +262,7 @@ func (m *mockFile) Write(p []byte) (n int, err error) {
 	if m.mockWrite != nil {
 		return m.mockWrite(p)
 	}
+
 	return m.memFile.Write(p)
 }
 
@@ -275,5 +298,6 @@ func (m *mockFile) WriteString(s string) (ret int, err error) {
 	if m.mockWriteString != nil {
 		return m.mockWriteString(s)
 	}
+
 	return m.memFile.WriteString(s)
 }

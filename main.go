@@ -2,17 +2,13 @@ package main
 
 import (
 	"fmt"
-	"github.com/miniscruff/changie/cmd"
 	"os"
+
+	"github.com/miniscruff/changie/cmd"
 )
 
 // goreleaser injected values
-var (
-	version = "dev"
-	commit  = "none"
-	date    = "unknown"
-	builtBy = "unknown"
-)
+var version = "dev"
 
 func main() {
 	if err := cmd.Execute("v" + version); err != nil {

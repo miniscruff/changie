@@ -2,12 +2,13 @@ package cmd
 
 import (
 	"fmt"
-	"github.com/Masterminds/semver/v3"
-	"github.com/spf13/afero"
-	"github.com/spf13/cobra"
 	"path/filepath"
 	"sort"
 	"strings"
+
+	"github.com/Masterminds/semver/v3"
+	"github.com/spf13/afero"
+	"github.com/spf13/cobra"
 )
 
 // latestCmd represents the latest command
@@ -23,7 +24,13 @@ var removePrefix bool = false
 func init() {
 	rootCmd.AddCommand(latestCmd)
 
-	latestCmd.Flags().BoolVarP(&removePrefix, "remove-prefix", "r", false, "Remove 'v' prefix before echoing")
+	latestCmd.Flags().BoolVarP(
+		&removePrefix,
+		"remove-prefix",
+		"r",
+		false,
+		"Remove 'v' prefix before echoing",
+	)
 }
 
 func runLatest(cmd *cobra.Command, args []string) error {
@@ -36,6 +43,7 @@ func runLatest(cmd *cobra.Command, args []string) error {
 	}
 
 	_, err = cmd.OutOrStdout().Write([]byte(result))
+
 	return err
 }
 
@@ -58,6 +66,7 @@ func latestPipeline(afs afero.Afero) (string, error) {
 		}
 
 		versionString := strings.TrimSuffix(file.Name(), filepath.Ext(file.Name()))
+
 		v, err := semver.NewVersion(versionString)
 		if err != nil {
 			continue
@@ -71,5 +80,6 @@ func latestPipeline(afs afero.Afero) (string, error) {
 	if removePrefix {
 		return fmt.Sprintln(strings.TrimPrefix(allVersions[0].Original(), "v")), nil
 	}
+
 	return fmt.Sprintln(allVersions[0].Original()), nil
 }

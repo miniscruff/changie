@@ -1,10 +1,11 @@
 package cmd
 
 import (
-	"github.com/spf13/afero"
-	"github.com/spf13/cobra"
 	"os"
 	"path/filepath"
+
+	"github.com/spf13/afero"
+	"github.com/spf13/cobra"
 )
 
 // initCmd represents the init command
@@ -33,7 +34,13 @@ func init() {
 	rootCmd.AddCommand(initCmd)
 
 	initCmd.Flags().StringVarP(&changesDir, "dir", "d", "changes", "directory for all changes")
-	initCmd.Flags().StringVarP(&changelogPath, "output", "o", "CHANGELOG.md", "file path to output our changelog")
+	initCmd.Flags().StringVarP(
+		&changelogPath,
+		"output",
+		"o",
+		"CHANGELOG.md",
+		"file path to output our changelog",
+	)
 }
 
 func runInit(cmd *cobra.Command, args []string) error {
@@ -52,6 +59,7 @@ func runInit(cmd *cobra.Command, args []string) error {
 	}
 
 	afs := afero.Afero{Fs: afero.NewOsFs()}
+
 	return initPipeline(afs.MkdirAll, afs.WriteFile, config)
 }
 
