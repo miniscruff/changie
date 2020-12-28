@@ -1,4 +1,0 @@
-kind: Changed
-body: Custom choices is now an array of Custom instead of a map
-custom:
-  Issue: "28"
