@@ -1,0 +1,4 @@
+kind: Fixed
+body: Latest command when no releases exist will return v0.0.0 instead of panicking
+custom:
+  Issue: "33"

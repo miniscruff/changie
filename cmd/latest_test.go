@@ -72,4 +72,13 @@ var _ = Describe("Latest", func() {
 		_, err := latestPipeline(afs)
 		Expect(err).NotTo(BeNil())
 	})
+
+	It("returns v0.0.0 if no versions found", func() {
+		// include just the header
+		_, err := afs.Create("chgs/head.tpl.md")
+		Expect(err).To(BeNil())
+		res, err := latestPipeline(afs)
+		Expect(err).To(BeNil())
+		Expect(res).To(Equal("v0.0.0\n"))
+	})
 })
