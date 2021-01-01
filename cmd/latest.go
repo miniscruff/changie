@@ -53,12 +53,12 @@ func latestPipeline(afs afero.Afero) (string, error) {
 		return "", err
 	}
 
-	allVersions := make([]*semver.Version, 0)
-
 	fileInfos, err := afs.ReadDir(config.ChangesDir)
 	if err != nil {
 		return "", err
 	}
+
+	allVersions := make([]*semver.Version, 0)
 
 	for _, file := range fileInfos {
 		if file.Name() == config.HeaderPath || file.IsDir() {
@@ -73,6 +73,11 @@ func latestPipeline(afs afero.Afero) (string, error) {
 		}
 
 		allVersions = append(allVersions, v)
+	}
+
+	// if no versions exist default to v0.0.0
+	if len(allVersions) == 0 {
+		return "v0.0.0\n", nil
 	}
 
 	sort.Sort(sort.Reverse(semver.Collection(allVersions)))
