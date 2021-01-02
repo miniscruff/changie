@@ -67,8 +67,8 @@ var _ = Describe("Latest", func() {
 		Expect(err).NotTo(BeNil())
 	})
 
-	It("fails if unable to read dir", func() {
-		// no files, means bad read
+	It("fails if unable to get versions", func() {
+		// no files, means bad read for get versions
 		_, err := latestPipeline(afs)
 		Expect(err).NotTo(BeNil())
 	})
