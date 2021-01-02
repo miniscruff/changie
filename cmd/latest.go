@@ -2,11 +2,8 @@ package cmd
 
 import (
 	"fmt"
-	"path/filepath"
-	"sort"
 	"strings"
 
-	"github.com/Masterminds/semver/v3"
 	"github.com/spf13/afero"
 	"github.com/spf13/cobra"
 )
@@ -53,34 +50,15 @@ func latestPipeline(afs afero.Afero) (string, error) {
 		return "", err
 	}
 
-	fileInfos, err := afs.ReadDir(config.ChangesDir)
+	allVersions, err := getAllVersions(afs.ReadDir, config)
 	if err != nil {
 		return "", err
-	}
-
-	allVersions := make([]*semver.Version, 0)
-
-	for _, file := range fileInfos {
-		if file.Name() == config.HeaderPath || file.IsDir() {
-			continue
-		}
-
-		versionString := strings.TrimSuffix(file.Name(), filepath.Ext(file.Name()))
-
-		v, err := semver.NewVersion(versionString)
-		if err != nil {
-			continue
-		}
-
-		allVersions = append(allVersions, v)
 	}
 
 	// if no versions exist default to v0.0.0
 	if len(allVersions) == 0 {
 		return "v0.0.0\n", nil
 	}
-
-	sort.Sort(sort.Reverse(semver.Collection(allVersions)))
 
 	if removePrefix {
 		return fmt.Sprintln(strings.TrimPrefix(allVersions[0].Original(), "v")), nil

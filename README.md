@@ -26,7 +26,9 @@ scoop install changie
 ### From source
 Go get can be used to download
 
-```go get -u github.com/miniscruff/changie```
+```
+go get -u github.com/miniscruff/changie
+```
 
 ## Quick Start
 
@@ -85,7 +87,8 @@ Changie utilizes [go template](https://golang.org/pkg/text/template/) for format
 Each one can be customized through the config file and change formats can be extended with custom choices.
 See [change.go](cmd/change.go) for the change structure used in the change format.
 
-    Due to the ordering of commands you must add custom choices before you added any change files in order to use the custom values in your format.
+    Due to the ordering of commands you must add custom choices before
+    you added any change files in order to use the custom values in your format.
 
 ```yaml
 # Version structure:
@@ -141,6 +144,26 @@ custom:
 changeFormat: "* :{{.Custom.Emoji}}: {{.Body}} (#{{.Custom.Issue}} by {{.Custom.Author}})"
 # Can create markdown links as well:
 # [#{{.Custom.Issue}}](github.com/project/issues/{{.Custom.Issue}})
+```
+
+### Replacements
+When working in projects that include the version directly in the source code a replacement option exists to find and replace those values.
+This works similar to the find and replace from IDE tools but also includes the file path of the file.
+An example for a Node package.json is below.
+
+```json
+{
+    "name": "my project",
+    "version": "0.1.0",
+    "main": "main.js"
+}
+```
+
+```yaml
+replacements:
+- path: package.json
+  find: '  "version": ".*"'
+  replace: '  "version": "{{.VersionNoPrefix}}",'
 ```
 
 ### Header

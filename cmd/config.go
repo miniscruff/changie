@@ -1,13 +1,18 @@
 package cmd
 
 import (
+	"bytes"
 	"errors"
 	"fmt"
 	"io"
 	"os"
+	"regexp"
 	"strconv"
+	"text/template"
 
+	"github.com/icholy/replace"
 	"github.com/manifoldco/promptui"
+	"golang.org/x/text/transform"
 	"gopkg.in/yaml.v2"
 )
 
@@ -95,6 +100,45 @@ func (c Custom) CreatePrompt(stdinReader io.ReadCloser) (Prompt, error) {
 	return nil, errInvalidPromptType
 }
 
+type ReplaceData struct {
+	Version         string
+	VersionNoPrefix string
+}
+
+type Replacement struct {
+	Path    string
+	Find    string
+	Replace string
+}
+
+func (r Replacement) Execute(readFile ReadFiler, writeFile WriteFiler, data ReplaceData) error {
+	templ, err := template.New("replacement").Parse(r.Replace)
+	if err != nil {
+		return err
+	}
+
+	var buf bytes.Buffer
+
+	//nolint:errcheck
+	templ.Execute(&buf, data)
+
+	fileData, err := readFile(r.Path)
+	if err != nil {
+		return err
+	}
+
+	transformer := replace.Regexp(regexp.MustCompile(r.Find), buf.Bytes())
+
+	newData, _, _ := transform.Bytes(transformer, fileData)
+
+	err = writeFile(r.Path, newData, 0644)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 // Config handles configuration for a changie project
 type Config struct {
 	ChangesDir    string `yaml:"changesDir"`
@@ -107,8 +151,9 @@ type Config struct {
 	KindFormat    string `yaml:"kindFormat"`
 	ChangeFormat  string `yaml:"changeFormat"`
 	// custom
-	Kinds         []string `yaml:"kinds"`
-	CustomChoices []Custom `yaml:"custom,omitempty"`
+	Kinds         []string      `yaml:"kinds"`
+	CustomChoices []Custom      `yaml:"custom,omitempty"`
+	Replacements  []Replacement `yaml:"replacements,omitempty"`
 }
 
 // Save will save the config as a yaml file to the default path
