@@ -28,3 +28,13 @@ tasks:
     cmds:
       - gofmt -s -w .
       - goimports -w -local github.com/miniscruff/changie .
+
+  docs-serve:
+    desc: Serve documentation
+    cmds:
+      - hugo serve -s website
+
+  docs-build:
+    desc: Build documentation
+    cmds:
+      - hugo -s website --minify --gc

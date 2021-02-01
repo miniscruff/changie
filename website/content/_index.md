@@ -1,6 +1,7 @@
-# Changie
-
-_changie is in early development and is subject to change_
+---
+title: 'Changie Docs'
+date: 2021-01-30T23:19:51-08:00
+---
 
 [![codecov](https://codecov.io/gh/miniscruff/changie/branch/main/graph/badge.svg?token=7HT2E32FMB)](https://codecov.io/gh/miniscruff/changie)
 [![Go Report Card](https://goreportcard.com/badge/github.com/miniscruff/changie)](https://goreportcard.com/report/github.com/miniscruff/changie)
@@ -12,11 +13,8 @@ _changie is in early development and is subject to change_
 Automated changelog tool for preparing releases with lots of customization options.
 Changie aims to be a universal tool for any project language or style but limiting itself to changelogs and version management.
 
-[website](https://miniscruff.github.com/changie) |
-[guide](https://miniscruff.github.com/changie/guide)
-
-## Contributing
-_in progress_
-
-## License
-Distributed under the MIT License. See `LICENSE` for more information.
+## Features
+* File based changelog management keeps your commit history and changelog separate
+* Extensive [configuration options](/config) to fit your project
+* Language and framework agnostic using a single go binary
+* Automate version strings with [replacements](/config/replacements)

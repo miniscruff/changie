@@ -40,3 +40,19 @@ jobs:
       with:
         file: ./c.out
         fail_ci_if_error: true
+
+    - name: Setup Hugo
+      uses: peaceiris/actions-hugo@v2
+      with:
+        hugo-version: 'latest'
+        extended: true
+
+    - name: Build docs
+      run: hugo --minify -s website -b https://miniscruff.github.io/changie/
+
+    - name: Deploy docs
+      uses: peaceiris/actions-gh-pages@v3
+      with:
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+        publish_dir: ./website/public
+

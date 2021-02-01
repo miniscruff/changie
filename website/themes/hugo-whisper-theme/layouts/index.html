@@ -1,0 +1,36 @@
+{{ define "title" }}{{ .Site.Title }}{{ end}}
+{{ define "header_css" }}{{ end }}
+{{ define "body_classes" }}page-home{{ end }}
+{{ define "header_classes" }}{{ end }}
+
+{{ define "meta_tags" }}
+<meta name="description" content="{{ .Site.Params.homepage_meta_tags.meta_description }}" />
+<meta property="og:title" content="{{ .Site.Params.homepage_meta_tags.meta_og_title }}" />
+<meta property="og:type" content="{{ .Site.Params.homepage_meta_tags.meta_og_type }}" />
+<meta property="og:url" content="{{ .Site.Params.homepage_meta_tags.meta_og_url }}" />
+<meta property="og:image" content="{{ .Site.Params.homepage_meta_tags.meta_og_image }}" />
+<meta property="og:description" content="{{ .Site.Params.homepage_meta_tags.meta_og_description }}" />
+{{ end }}
+
+{{ define "main" }}
+<div class="strip">
+  <div class="container pt-4 pb-16">
+    <div class="row">
+      <div class="col-12">
+        <h1 class="title">{{ .Title | default .Site.Title }}</h1>
+        <div class="content">
+          {{ if .Content }}
+          {{ .Content }}
+          {{ else }}
+          <p>{{ .Site.Params.homepage_intro }}</p>
+          {{ end }}
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+{{ end }}
+
+{{ define "footer_js" }}
+{{ end }}

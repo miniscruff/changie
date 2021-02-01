@@ -1,0 +1,59 @@
+title = "Changie"
+themesDir = "themes"
+theme = "hugo-whisper-theme"
+languageCode = "en-us"
+
+pygmentsCodeFences = true
+pygmentsCodefencesGuessSyntax = true
+pygmentsUseClasses = true
+
+# Controls how many words are printed in the content summary on the docs homepage.
+# See https://gohugo.io/content-management/summaries/
+summaryLength = 30
+
+[[menu.main]]
+    name = "Guide"
+    url = "/guide/"
+    weight = 1
+
+[[menu.main]]
+    name = "Config"
+    url = "/config/"
+    weight = 3
+
+[[menu.main]]
+    name = "Github"
+    url = "https://github.com/miniscruff/changie"
+    weight = 99
+
+[params]
+  homepage_intro = 'Changie is a file based changelog management tool.'
+  mainSections = [
+      "guide",
+      # "cli",
+      "config",
+      # "examples",
+      # "changelog",
+  ]
+  enable_anchor_link = true
+
+  [params.homepage_meta_tags]
+    meta_description = "Changie is a file based changelog management tool."
+    meta_og_title = "Changie Documentation"
+    meta_og_type = "website"
+    meta_og_url = ""
+    meta_og_image = ""
+    meta_og_description = "Changie is a file based changelog management tool."
+
+  [params.logo]
+      mobile = "/images/logo-mobile.svg"
+      standard  = "/images/logo.svg"
+
+[markup]
+  [markup.highlight]
+    anchorLineNos = false
+    codeFences = true
+    guessSyntax = true
+    noClasses = true
+    style = "monokai"
+    tabWidth = 4
