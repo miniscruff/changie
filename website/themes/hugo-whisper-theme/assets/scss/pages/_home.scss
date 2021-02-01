@@ -1,0 +1,19 @@
+.page-home {
+  .title {
+    font-weight: lighter;
+    font-family: $font-family-base;
+    text-align: center;
+  }
+  p {
+    margin: 0 auto;
+    font-size: 1.2rem;
+    font-weight: lighter;
+    margin-bottom: 40px;
+    @include media-breakpoint-up(md) {
+      width: 80%;
+    }
+    @include media-breakpoint-up(lg) {
+      width: 60%;
+    }
+  }
+}

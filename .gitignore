@@ -11,3 +11,7 @@ coverage.txt
 
 # Output of the go coverage tool
 *.out
+
+# hugo builds
+website/public
+website/resources
