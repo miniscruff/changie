@@ -1,5 +1,4 @@
 title = "Changie"
-baseURL = "/"
 themesDir = "themes"
 theme = "hugo-whisper-theme"
 languageCode = "en-us"
