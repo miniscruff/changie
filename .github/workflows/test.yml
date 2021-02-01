@@ -48,7 +48,7 @@ jobs:
         extended: true
 
     - name: Build docs
-      run: hugo --minify -s website
+      run: hugo --minify -s website --cleanDestinationDir -b https://miniscruff.github.io/changie/
 
     - name: Deploy docs
       uses: peaceiris/actions-gh-pages@v3
