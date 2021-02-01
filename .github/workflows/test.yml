@@ -48,7 +48,7 @@ jobs:
         extended: true
 
     - name: Build docs
-      run: hugo --minify
+      run: hugo --minify -s website
 
     - name: Deploy docs
       uses: peaceiris/actions-gh-pages@v3
