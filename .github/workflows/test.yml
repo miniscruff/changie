@@ -49,7 +49,7 @@ jobs:
 
     - name: Build docs
       run: |
-        cat CHANGELOG.md | awk 'NR > 1' >> website/content/guide/changelog/index.md
+        awk 'NR > 1' CHANGELOG.md >> website/content/guide/changelog/index.md
         hugo --minify -s website -b https://miniscruff.github.io/changie/
 
     - name: Deploy docs
