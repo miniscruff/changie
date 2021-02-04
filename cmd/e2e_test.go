@@ -5,6 +5,7 @@ import (
 	"io"
 	"io/ioutil"
 	"os"
+	"path/filepath"
 	"time"
 
 	. "github.com/onsi/ginkgo"
@@ -89,14 +90,14 @@ var _ = Describe("end to end", func() {
 		Expect(Execute("")).To(Succeed())
 	}
 
-	testLatest := func() {
+	testLatest := func(expectedVersion string) {
 		rootCmd.SetArgs([]string{"latest"})
 		Expect(Execute("")).To(Succeed())
 
 		versionOut := make([]byte, 10)
 		_, err := stdoutReader.Read(versionOut)
 		Expect(err).To(BeNil())
-		Expect(string(versionOut)).To(ContainSubstring("0.1.0"))
+		Expect(string(versionOut)).To(ContainSubstring(expectedVersion))
 	}
 
 	testMerge := func() {
@@ -116,19 +117,28 @@ var _ = Describe("end to end", func() {
 		Expect(string(changeFile)).To(Equal(changeContents))
 	}
 
+	testGen := func() {
+		docsPath := filepath.Join(tempDir, "website", "content", "cli")
+		Expect(os.MkdirAll(docsPath, os.ModePerm)).To(Succeed())
+		rootCmd.SetArgs([]string{"gen"})
+		Expect(Execute("")).To(Succeed())
+
+		// test a few command files exist
+		Expect(filepath.Join(docsPath, "changie.md")).To(BeARegularFile())
+		Expect(filepath.Join(docsPath, "changie_init.md")).To(BeARegularFile())
+		Expect(filepath.Join(docsPath, "changie_batch.md")).To(BeARegularFile())
+		Expect(filepath.Join(docsPath, "changie_merge.md")).To(BeARegularFile())
+	}
+
 	It("should all work", func() {
 		testInit()
+		testLatest("0.0.0")
 		testNew("first")
 		time.Sleep(2 * time.Second) // let time pass for the next change
 		testNew("second")
 		testBatch()
-		testLatest()
+		testLatest("0.1.0")
 		testMerge()
-	})
-
-	It("should fail to find latest when no changes", func() {
-		rootCmd.SetArgs([]string{"latest"})
-		err := Execute("")
-		Expect(err).NotTo(BeNil())
+		testGen()
 	})
 })
