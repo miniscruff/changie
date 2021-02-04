@@ -141,4 +141,10 @@ var _ = Describe("end to end", func() {
 		testMerge()
 		testGen()
 	})
+
+	It("should fail to find latest if you do not init", func() {
+		rootCmd.SetArgs([]string{"latest"})
+		err := Execute("")
+		Expect(err).NotTo(BeNil())
+	})
 })
