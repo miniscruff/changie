@@ -51,11 +51,12 @@ jobs:
       run: |
         awk 'NR > 1' CHANGELOG.md >> website/content/guide/changelog/index.md
         go run main.go gen
-        hugo --minify -s website -b https://miniscruff.github.io/changie/
+        hugo --minify -s website -b https://changie.dev/
 
     - name: Deploy docs
       uses: peaceiris/actions-gh-pages@v3
       with:
         github_token: ${{ secrets.GITHUB_TOKEN }}
         publish_dir: ./website/public
+        cname: changie.dev
 
