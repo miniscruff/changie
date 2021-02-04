@@ -50,6 +50,7 @@ jobs:
     - name: Build docs
       run: |
         awk 'NR > 1' CHANGELOG.md >> website/content/guide/changelog/index.md
+        go run main.go gen
         hugo --minify -s website -b https://miniscruff.github.io/changie/
 
     - name: Deploy docs

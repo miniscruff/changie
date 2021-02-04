@@ -17,6 +17,11 @@ summaryLength = 30
     weight = 1
 
 [[menu.main]]
+    name = "CLI"
+    url = "/cli/"
+    weight = 2
+
+[[menu.main]]
     name = "Config"
     url = "/config/"
     weight = 3
@@ -30,7 +35,7 @@ summaryLength = 30
   homepage_intro = 'Changie is a file based changelog management tool.'
   mainSections = [
       "guide",
-      # "cli",
+      "cli",
       "config",
       # "examples",
   ]
