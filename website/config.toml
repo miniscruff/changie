@@ -19,7 +19,7 @@ summaryLength = 30
 [[menu.main]]
     name = "CLI"
     url = "/cli/"
-    weight = 3
+    weight = 2
 
 [[menu.main]]
     name = "Config"
