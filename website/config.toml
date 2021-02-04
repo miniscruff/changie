@@ -33,7 +33,6 @@ summaryLength = 30
       # "cli",
       "config",
       # "examples",
-      # "changelog",
   ]
   enable_anchor_link = true
 
