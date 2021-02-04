@@ -58,4 +58,5 @@ jobs:
       with:
         github_token: ${{ secrets.GITHUB_TOKEN }}
         publish_dir: ./website/public
+        cname: changie.dev
 
