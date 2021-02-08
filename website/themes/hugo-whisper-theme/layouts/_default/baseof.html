@@ -53,6 +53,8 @@
     {{ end}}
   </div>
 
+  {{ partial "contribute-footer.html" . }}
+
   {{ $scripts := resources.Get "js/scripts.js" }}
 
   {{ block "footer_js" . }}

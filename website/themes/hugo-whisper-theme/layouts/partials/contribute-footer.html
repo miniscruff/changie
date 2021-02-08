@@ -1,0 +1,16 @@
+<footer class="mx-auto text-center pt-1 pb-1">
+  <div>
+    Help make our documentation better.
+  </div>
+  <div>
+    <a class="button button-primary" href="https://github.com/miniscruff/changie/edit/main/website/content/{{ .File.Path }}" role="button">
+      edit page
+    </a>
+    <a class="button button-danger" href="{{ .Site.Params.issues_url }}?{{ (querify "title" (printf "Documentation issue in %s" .File.Path) ) | safeURL }}" role="button">
+      report issue
+    </a>
+  </div>
+  <div>
+    <a href="https://github.com/zerostaticthemes/hugo-whisper-theme">Base Theme</a>&nbsp;by&nbsp;<a href="https://www.zerostatic.io">zerostatic</a>
+  </div>
+</footer>
