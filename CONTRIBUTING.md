@@ -15,6 +15,13 @@ Did you run Changie and see a go panic error?
 Maybe your `CHANGELOG.md` file is empty after running merge.
 
 Head on over to the [issues page](https://github.com/miniscruff/changie/issues) and let us know what you did.
+The more information included, the faster it can be resolved.
+
+<!-- TODO: Create an issue template -->
+Some elements of a good bug report:
+* What steps you took
+* What happened
+* What you expected to happen
 
 ## Need an additional feature?
 Post a [discussion] to present your idea and use cases.
