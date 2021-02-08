@@ -29,6 +29,11 @@ tasks:
       - gofmt -s -w .
       - goimports -w -local github.com/miniscruff/changie .
 
+  gen-cli-docs:
+    desc: Generate markdown documentation for CLI commands
+    cmds:
+      - go run main.go gen
+
   docs-serve:
     desc: Serve documentation
     cmds:
