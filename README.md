@@ -1,6 +1,6 @@
 # Changie
 
-_changie is in early development and is subject to change_
+[Changie](https://changie.dev) is a tool to automate changelog management.
 
 [![codecov](https://codecov.io/gh/miniscruff/changie/branch/main/graph/badge.svg?token=7HT2E32FMB)](https://codecov.io/gh/miniscruff/changie)
 [![Go Report Card](https://goreportcard.com/badge/github.com/miniscruff/changie)](https://goreportcard.com/report/github.com/miniscruff/changie)
@@ -9,14 +9,26 @@ _changie is in early development and is subject to change_
 [![PkgGoDev](https://pkg.go.dev/badge/github.com/miniscruff/changie)](https://pkg.go.dev/github.com/miniscruff/changie)
 [![Mentioned in Awesome Go](https://awesome.re/mentioned-badge.svg)](https://github.com/avelino/awesome-go)
 
-Automated changelog tool for preparing releases with lots of customization options.
-Changie aims to be a universal tool for any project language or style but limiting itself to changelogs and version management.
+## Features
+* File based changelog management keeps your commit history and release notes separate.
+* Track changes while you work while the knowledge is fresh.
+* Extensive [configuration options](https://changie.dev/config) to fit your project.
+* Language and framework agnostic using a single go binary.
 
-[website](https://miniscruff.github.com/changie) |
-[guide](https://miniscruff.github.com/changie/guide)
+## Getting Started
+* User documentation is available on the [website](https://changie.dev/).
+* Specifically, the [guide](https://changie.dev/guide/) is a good place to start.
+* View Changie's [Changelog](CHANGELOG.md) for an example.
 
-## Contributing
-_in progress_
+## Need help?
+Use the [discussions page](https://github.com/miniscruff/changie/discussions) for help requests and how-to questions.
+
+Please open [GitHub issues](https://github.com/miniscruff/changie/issues) for bugs and feature requests.
+File an issue before creating a pull request, unless it is something simple like a typo.
+
+## Want to Contribute?
+If you want to contribute through code or documentation, the [Contributing guide](CONTRIBUTING.md) is the place to start.
+If you need additional help create an issue or post on discussions.
 
 ## License
-Distributed under the MIT License. See `LICENSE` for more information.
+Distributed under the [MIT License](LICENSE).
