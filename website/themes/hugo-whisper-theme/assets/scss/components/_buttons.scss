@@ -5,19 +5,14 @@
   background: $primary;
   font-weight: normal;
   text-transform: uppercase;
-  color: lighten($black, 10%);
+  color: $black;
   text-decoration: none;
   -webkit-transition: all 0.15s ease;
   transition: all 0.15s ease;
   border-radius: 3px;
   &:hover {
     color: $white;
-    background-color: darken($primary, 20%);
+    background-color: darken($primary, 40%);
     text-decoration: none;
   }
-}
-.button-white {
-  background: none;
-  color: #fff;
-  border: 2px solid #fff;
 }
