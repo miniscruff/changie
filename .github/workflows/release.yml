@@ -9,27 +9,47 @@ jobs:
   release:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
-        uses: actions/checkout@v2
 
-      - name: Set up Go
-        uses: actions/setup-go@v2
-        with:
-          go-version: 1.15
+    - name: Checkout
+      uses: actions/checkout@v2
 
-      - name: Add env vars
-        run: |
-          echo GORELEASER_CURRENT_TAG=$(go run main.go latest) >> $GITHUB_ENV
-          echo RELEASE_NOTES_PATH=changes/$(go run main.go latest).md >> $GITHUB_ENV
+    - name: Set up Go
+      uses: actions/setup-go@v2
+      with:
+        go-version: 1.15
 
-      - name: install GoReleaser
-        uses: goreleaser/goreleaser-action@v2
-        with:
-          version: latest
-          install-only: true
+    - name: Add env vars
+      run: |
+        echo GORELEASER_CURRENT_TAG=$(go run main.go latest) >> $GITHUB_ENV
+        echo RELEASE_NOTES_PATH=changes/$(go run main.go latest).md >> $GITHUB_ENV
 
-      - name: Run GoReleaser
-        run: |
-          goreleaser --rm-dist --release-notes=${RELEASE_NOTES_PATH} --skip-validate
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    - name: install GoReleaser
+      uses: goreleaser/goreleaser-action@v2
+      with:
+        version: latest
+        install-only: true
+
+    - name: Run GoReleaser
+      run: |
+        goreleaser --rm-dist --release-notes=${RELEASE_NOTES_PATH} --skip-validate
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Setup Hugo
+      uses: peaceiris/actions-hugo@v2
+      with:
+        hugo-version: 'latest'
+        extended: true
+
+    - name: Build docs
+      run: |
+        awk 'NR > 1' CHANGELOG.md >> website/content/guide/changelog/index.md
+        go run main.go gen
+        hugo --minify -s website -b https://changie.dev/
+
+    - name: Deploy docs
+      uses: peaceiris/actions-gh-pages@v3
+      with:
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+        publish_dir: ./website/public
+        cname: changie.dev
