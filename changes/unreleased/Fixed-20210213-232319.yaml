@@ -1,0 +1,4 @@
+kind: Fixed
+body: Update homepage in releases to changie.dev
+custom:
+  Issue: "48"
