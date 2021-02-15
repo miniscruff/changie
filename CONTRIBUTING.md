@@ -15,17 +15,12 @@ Did you run Changie and see a go panic error?
 Maybe your `CHANGELOG.md` file is empty after running merge.
 
 Head on over to the [issues page](https://github.com/miniscruff/changie/issues) and let us know what you did.
-The more information included, the faster it can be resolved.
-
-<!-- TODO: Create an issue template -->
-Some elements of a good bug report:
-* What steps you took
-* What happened
-* What you expected to happen
+Follow the 'Bug Report' issue template for a guide.
 
 ## Need an additional feature?
 Post a [discussion] to present your idea and use cases.
 If the new feature falls in line with the goals of the project it may be approved and implemented.
+Follow the 'Feature Request' issue template for a guide.
 
 ## Making changes
 Before making changes please create an issue to discuss if it is a good fit.
@@ -86,15 +81,7 @@ Be sure to commit the generated file to your branch as part of your pull request
 
 ### Prepare your pull request
 Check the [taskfile] for commands to check tests and formatting.
-
-Before being approved changes must:
-* Keep 100% code coverage
-* Be properly formatted
-* Have no linting errors
-* Documentation changes are included
-* Include a change file if expected
-
-If you have completed all of these, continue on to making your pull request.
+The pull request template includes a checklist to follow before your pull request can be approved.
 
 ## Creating your pull request
 When you are ready to get your work merged into the main repository you can
