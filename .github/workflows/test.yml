@@ -20,17 +20,19 @@ jobs:
 
     - name: Check out code into the Go module directory
       uses: actions/checkout@v2
+      with:
+        fetch-depth: 0
+      
+    - name: Super-Linter
+      uses: github/super-linter@v3.14.0
+      env:
+        DEFAULT_BRANCH: main
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
     - name: Install Taskfile
       run: |
         sh -c "$(curl -ssL https://taskfile.dev/install.sh)" -- -d
         echo "./bin" >> $GITHUB_PATH
-
-    - name: golangci-lint
-      uses: golangci/golangci-lint-action@v2.4.0
-      with:
-        # Required: the version of golangci-lint is required and must be specified without patch version: we always use the latest patch version.
-        version: v1.29
 
     - name: Test
       run: task test
