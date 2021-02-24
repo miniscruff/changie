@@ -37,7 +37,6 @@ summaryLength = 30
       "guide",
       "cli",
       "config",
-      # "examples",
   ]
   enable_anchor_link = true
   issues_url = 'https://github.com/miniscruff/changie/issues/new'
@@ -47,14 +46,14 @@ summaryLength = 30
     meta_og_title = "Changie Documentation"
     meta_og_type = "website"
     meta_og_url = "https://changie.dev"
-    meta_og_image = "" # need a png
+    meta_og_image = "https://changie.dev/og_image.png"
     meta_og_description = "Changie is a file based changelog management tool."
     meta_twitter_card = "summary"
     meta_twitter_site = "@miniScruffDev"
     meta_twitter_creator = "@miniScruffDev"
 
   [params.logo]
-      mobile = "/images/logo-mobile.svg"
+      mobile = "/images/logo.svg"
       standard  = "/images/logo.svg"
 
 [markup]
