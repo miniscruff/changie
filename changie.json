@@ -1,22 +1,22 @@
 {
-    "version": "0.4.0",
+    "version": "0.4.1",
     "architecture": {
         "32bit": {
-            "url": "https://github.com/miniscruff/changie/releases/download/v0.4.0/changie_0.4.0_windows_386.zip",
+            "url": "https://github.com/miniscruff/changie/releases/download/v0.4.1/changie_0.4.1_windows_386.zip",
             "bin": [
                 "changie.exe"
             ],
-            "hash": "5f1c68d84531815f3183cda384c55238672a0b1020f91bd0c83dfc9567bded3d"
+            "hash": "8a7f90ff61826d176c62fcca45f1ba80b6466da5c7e6ffce632615bbf20e7c0f"
         },
         "64bit": {
-            "url": "https://github.com/miniscruff/changie/releases/download/v0.4.0/changie_0.4.0_windows_amd64.zip",
+            "url": "https://github.com/miniscruff/changie/releases/download/v0.4.1/changie_0.4.1_windows_amd64.zip",
             "bin": [
                 "changie.exe"
             ],
-            "hash": "9a7c7419a7aad4c87be25401c66ae9ff2d41921ddb09adcfcadaae8e0b68be1e"
+            "hash": "2608d5e6ba361cc7105961c62704a1a609bd9a706c8fd57b97dd6fadf246a4b2"
         }
     },
-    "homepage": "https://github.com/miniscruff/changie",
+    "homepage": "https://changie.dev",
     "license": "MIT",
     "description": "Automated changelog tool for preparing releases with lots of customization options."
 }
