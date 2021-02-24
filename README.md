@@ -1,6 +1,10 @@
-# Changie
-
-[Changie](https://changie.dev) is a tool to automate changelog management.
+<p align="center">
+  <a href="https://changie.dev">
+    <img alt="Changie Logo" src="./website/themes/hugo-whisper-theme/static/images/logo.svg" height="256" />
+  </a>
+  <h3 align="center">Changie</h3>
+  <p align="center">Separate your changelog from commit messages without conflicts.</p>
+</p>
 
 [![codecov](https://codecov.io/gh/miniscruff/changie/branch/main/graph/badge.svg?token=7HT2E32FMB)](https://codecov.io/gh/miniscruff/changie)
 [![Go Report Card](https://goreportcard.com/badge/github.com/miniscruff/changie)](https://goreportcard.com/report/github.com/miniscruff/changie)
