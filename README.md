@@ -1,5 +1,7 @@
 <p align="center">
-  <img alt="Changie Logo" src="./website/themes/hugo-whisper-theme/static/images/logo.svg" height="256" href="https://changie.dev" />
+  <a href="https://changie.dev">
+    <img alt="Changie Logo" src="./website/themes/hugo-whisper-theme/static/images/logo.svg" height="256" />
+  </a>
   <h3 align="center">Changie</h3>
   <p align="center">Separate your changelog from commit messages without conflicts.</p>
 </p>
