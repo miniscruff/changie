@@ -1,5 +1,7 @@
 # Changie
 
+![Changie Logo](./website/themes/hugo-whisper-theme/static/images/logo.svg)
+
 [Changie](https://changie.dev) is a tool to automate changelog management.
 
 [![codecov](https://codecov.io/gh/miniscruff/changie/branch/main/graph/badge.svg?token=7HT2E32FMB)](https://codecov.io/gh/miniscruff/changie)

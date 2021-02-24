@@ -1,4 +1,0 @@
-kind: Fixed
-body: Add maintainer to deb and rpm releases
-custom:
-  Issue: "48"
