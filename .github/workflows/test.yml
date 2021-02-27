@@ -3,8 +3,20 @@ name: test
 on:
   push:
     branches: [ main ]
+    paths:
+    - 'cmd/**'
+    - 'golangci.yml'
+    - 'go.mod'
+    - 'go.sum'
+    - 'main.go'
   pull_request:
     branches: [ main ]
+    paths:
+    - 'cmd/**'
+    - 'golangci.yml'
+    - 'go.mod'
+    - 'go.sum'
+    - 'main.go'
 
 jobs:
 
@@ -18,13 +30,8 @@ jobs:
       with:
         go-version: 1.15
 
-    - name: Check out code into the Go module directory
+    - name: Check out code
       uses: actions/checkout@v2
-
-    - name: Install Taskfile
-      run: |
-        sh -c "$(curl -ssL https://taskfile.dev/install.sh)" -- -d
-        echo "./bin" >> $GITHUB_PATH
 
     - name: golangci-lint
       uses: golangci/golangci-lint-action@v2.5.1
@@ -33,22 +40,10 @@ jobs:
         version: v1.29
 
     - name: Test
-      run: task test
+      run: go test -coverprofile=c.out ./...
 
     - name: Coverage
       uses: codecov/codecov-action@v1
       with:
         file: ./c.out
         fail_ci_if_error: true
-
-    - name: Setup Hugo
-      uses: peaceiris/actions-hugo@v2
-      with:
-        hugo-version: 'latest'
-        extended: true
-
-    - name: Build docs
-      run: |
-        awk 'NR > 1' CHANGELOG.md >> website/content/guide/changelog/index.md
-        go run main.go gen
-        hugo --minify -s website -b https://changie.dev/
