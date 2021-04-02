@@ -10,6 +10,6 @@ require (
 	github.com/onsi/gomega v1.11.0
 	github.com/spf13/afero v1.6.0
 	github.com/spf13/cobra v1.1.3
-	golang.org/x/text v0.3.5
+	golang.org/x/text v0.3.6
 	gopkg.in/yaml.v2 v2.4.0
 )
