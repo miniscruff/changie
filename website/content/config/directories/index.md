@@ -29,6 +29,17 @@ A default header is created when initializing that follows "Keep a Changelog".
 Filepath for your changelog header file.
 Relative to `changesDir`.
 
+### versionHeaderPath
+type: *string*
+
+When batching change fragments into a single version file you can include a version header
+paragraph by creating a file at the path specified.
+This file must be placed in your unreleased directory.
+This is empty by default and is considered optional and will be skipped if the file is not found.
+
+Filepath for your version header file.
+Relative to `unreleasedDir`.
+
 ### changelogPath
 type: *string*
 
