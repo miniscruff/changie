@@ -38,7 +38,7 @@ var _ = Describe("Batch", func() {
 		}
 
 		// reset our shared header path
-		headerPath = ""
+		versionHeaderPath = ""
 	})
 
 	It("can batch version", func() {
@@ -82,12 +82,13 @@ var _ = Describe("Batch", func() {
 	})
 
 	It("can batch version with header", func() {
-		testConfig.VersionHeaderPath = "header.md"
+		testConfig.VersionHeaderPath = "h.md"
 		err := testConfig.Save(afs.WriteFile)
 		Expect(err).To(BeNil())
 
 		futurePath := filepath.Join("news", "future")
 		newVerPath := filepath.Join("news", "v0.2.0.md")
+		headerPath := filepath.Join(futurePath, testConfig.VersionHeaderPath)
 
 		aVer := []byte("kind: added\nbody: A\n")
 		err = afs.WriteFile(filepath.Join(futurePath, "a.yaml"), aVer, os.ModePerm)
@@ -102,7 +103,7 @@ var _ = Describe("Batch", func() {
 		Expect(err).To(BeNil())
 
 		headerData := []byte("this is a new version that adds cool features")
-		err = afs.WriteFile(filepath.Join(futurePath, "header.md"), headerData, os.ModePerm)
+		err = afs.WriteFile(headerPath, headerData, os.ModePerm)
 		Expect(err).To(BeNil())
 
 		err = batchPipeline(afs, "v0.2.0")
@@ -127,7 +128,7 @@ this is a new version that adds cool features
 	})
 
 	It("can batch version with header parameter", func() {
-		headerPath = "head.md"
+		versionHeaderPath = "head.md"
 		err := testConfig.Save(afs.WriteFile)
 		Expect(err).To(BeNil())
 
@@ -230,12 +231,10 @@ this is a new version that adds cool features
 	})
 
 	It("returns error on bad header file", func() {
-		headerPath = "header.md"
+		versionHeaderPath = "header.md"
 		badOpen := errors.New("bad open file")
 		fs.mockOpen = func(name string) (afero.File, error) {
-			fmt.Println(name)
-			if strings.HasSuffix(name, headerPath) {
-				fmt.Println("found file to return error for")
+			if strings.HasSuffix(name, versionHeaderPath) {
 				return nil, badOpen
 			}
 			return fs.memFs.Open(name)
@@ -443,32 +442,6 @@ Can also have newlines.
 			ChangesPerKind: map[string][]Change{},
 		})
 		Expect(err).NotTo(BeNil())
-	})
-
-	It("returns error when failing to write string", func() {
-		err := afs.MkdirAll("news", 0644)
-		Expect(err).To(BeNil())
-
-		vFile := newMockFile(fs, "v0.1.0.md")
-
-		fs.mockCreate = func(path string) (afero.File, error) {
-			return vFile, nil
-		}
-
-		vFile.mockWriteString = func(data string) (int, error) {
-			return len(data), mockError
-		}
-
-		changesPerKind := map[string][]Change{
-			"added":   {{Body: "w"}, {Body: "x"}},
-			"removed": {{Body: "y"}, {Body: "z"}},
-		}
-
-		err = batchNewVersion(fs, testConfig, batchData{
-			Version:        "v0.1.0",
-			ChangesPerKind: changesPerKind,
-		})
-		Expect(err).To(Equal(mockError))
 	})
 
 	templateTests := []struct {

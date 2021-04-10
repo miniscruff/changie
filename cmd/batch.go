@@ -21,7 +21,7 @@ type batchData struct {
 
 var (
 	errNotSemanticVersion = errors.New("version string is not a valid semantic version")
-	headerPath            = ""
+	versionHeaderPath     = ""
 )
 
 var batchCmd = &cobra.Command{
@@ -36,7 +36,7 @@ context or with custom tweaks before merging into the main file.`,
 }
 
 func init() {
-	batchCmd.Flags().StringVar(&headerPath, "headerPath", "", "Path to version header file")
+	batchCmd.Flags().StringVar(&versionHeaderPath, "headerPath", "", "Path to version header file")
 	rootCmd.AddCommand(batchCmd)
 }
 
@@ -64,19 +64,22 @@ func batchPipeline(afs afero.Afero, ver string) error {
 	}
 
 	headerFilePath := ""
-	if headerPath != "" {
-		headerFilePath = headerPath
+	headerContents := ""
+
+	if versionHeaderPath != "" {
+		headerFilePath = versionHeaderPath
 	} else if config.VersionHeaderPath != "" {
 		headerFilePath = config.VersionHeaderPath
 	}
 
-	headerContents := ""
 	if headerFilePath != "" {
 		fullPath := filepath.Join(config.ChangesDir, config.UnreleasedDir, headerFilePath)
-		headerBytes, err := afs.ReadFile(fullPath)
-		if err != nil && !os.IsNotExist(err) {
-			return err
+		headerBytes, readErr := afs.ReadFile(fullPath)
+
+		if readErr != nil && !os.IsNotExist(readErr) {
+			return readErr
 		}
+
 		headerContents = string(headerBytes)
 	}
 
@@ -162,9 +165,11 @@ func batchNewVersion(fs afero.Fs, config Config, data batchData) error {
 	}
 
 	if data.Header != "" {
-		versionFile.WriteString("\n")
-		versionFile.WriteString("\n")
-		versionFile.WriteString(data.Header)
+		// write string is not err checked as we already write to the same
+		// file in the templates
+		_, _ = versionFile.WriteString("\n")
+		_, _ = versionFile.WriteString("\n")
+		_, _ = versionFile.WriteString(data.Header)
 	}
 
 	for _, kind := range config.Kinds {
@@ -173,12 +178,7 @@ func batchNewVersion(fs afero.Fs, config Config, data batchData) error {
 			continue
 		}
 
-		// just check the first write string
-		_, err = versionFile.WriteString("\n")
-		if err != nil {
-			return err
-		}
-
+		_, _ = versionFile.WriteString("\n")
 		_, _ = versionFile.WriteString("\n")
 
 		err = kTempl.Execute(versionFile, map[string]string{
