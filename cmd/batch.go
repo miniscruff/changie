@@ -15,6 +15,7 @@ import (
 type batchData struct {
 	Version        string
 	ChangesPerKind map[string][]Change
+	Header         string
 }
 
 var errNotSemanticVersion = errors.New("version string is not a valid semantic version")
@@ -135,6 +136,12 @@ func batchNewVersion(fs afero.Fs, config Config, data batchData) error {
 	})
 	if err != nil {
 		return err
+	}
+
+	if data.Header != "" {
+		versionFile.WriteString("\n")
+		versionFile.WriteString("\n")
+		versionFile.WriteString(data.Header)
 	}
 
 	for _, kind := range config.Kinds {

@@ -226,6 +226,53 @@ var _ = Describe("Batch", func() {
 		Expect(contents).To(Equal(expected))
 	})
 
+	It("can create new version file with header", func() {
+		err := afs.MkdirAll("news", 0644)
+		Expect(err).To(BeNil())
+
+		vFile := newMockFile(fs, "v0.1.0.md")
+		contents := ""
+
+		fs.mockCreate = func(path string) (afero.File, error) {
+			return vFile, nil
+		}
+
+		vFile.mockWrite = func(data []byte) (int, error) {
+			contents += string(data)
+			return len(data), nil
+		}
+		vFile.mockWriteString = func(data string) (int, error) {
+			contents += data
+			return len(data), nil
+		}
+
+		changesPerKind := map[string][]Change{
+			"added":   {{Body: "w"}, {Body: "x"}},
+			"removed": {{Body: "y"}, {Body: "z"}},
+		}
+
+		err = batchNewVersion(fs, testConfig, batchData{
+			Version:        "v0.1.0",
+			ChangesPerKind: changesPerKind,
+			Header:         "Some header we want included in our new version.\nCan also have newlines.",
+		})
+		Expect(err).To(BeNil())
+
+		expected := `## v0.1.0
+
+Some header we want included in our new version.
+Can also have newlines.
+
+### added
+* w
+* x
+
+### removed
+* y
+* z`
+		Expect(contents).To(Equal(expected))
+	})
+
 	It("returns error where when failing to create version file", func() {
 		fs.mockCreate = func(path string) (afero.File, error) {
 			var f afero.File
