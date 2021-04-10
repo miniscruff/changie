@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"errors"
+	"os"
 	"path/filepath"
 	"text/template"
 	"time"
@@ -18,7 +19,10 @@ type batchData struct {
 	Header         string
 }
 
-var errNotSemanticVersion = errors.New("version string is not a valid semantic version")
+var (
+	errNotSemanticVersion = errors.New("version string is not a valid semantic version")
+	headerPath            = ""
+)
 
 var batchCmd = &cobra.Command{
 	Use:   "batch version",
@@ -27,11 +31,12 @@ var batchCmd = &cobra.Command{
 
 The new version changelog can then be modified with extra descriptions,
 context or with custom tweaks before merging into the main file.`,
-	Args: cobra.MinimumNArgs(1),
+	Args: cobra.ExactArgs(1),
 	RunE: runBatch,
 }
 
 func init() {
+	batchCmd.Flags().StringVar(&headerPath, "headerPath", "", "Path to version header file")
 	rootCmd.AddCommand(batchCmd)
 }
 
@@ -58,15 +63,33 @@ func batchPipeline(afs afero.Afero, ver string) error {
 		return err
 	}
 
+	headerFilePath := ""
+	if headerPath != "" {
+		headerFilePath = headerPath
+	} else if config.VersionHeaderPath != "" {
+		headerFilePath = config.VersionHeaderPath
+	}
+
+	headerContents := ""
+	if headerFilePath != "" {
+		fullPath := filepath.Join(config.ChangesDir, config.UnreleasedDir, headerFilePath)
+		headerBytes, err := afs.ReadFile(fullPath)
+		if err != nil && !os.IsNotExist(err) {
+			return err
+		}
+		headerContents = string(headerBytes)
+	}
+
 	err = batchNewVersion(afs.Fs, config, batchData{
 		Version:        ver,
 		ChangesPerKind: changesPerKind,
+		Header:         headerContents,
 	})
 	if err != nil {
 		return err
 	}
 
-	err = deleteUnreleased(afs, config)
+	err = deleteUnreleased(afs, config, headerFilePath)
 	if err != nil {
 		return err
 	}
@@ -178,10 +201,10 @@ func batchNewVersion(fs afero.Fs, config Config, data batchData) error {
 	return nil
 }
 
-func deleteUnreleased(afs afero.Afero, config Config) error {
+func deleteUnreleased(afs afero.Afero, config Config, headerPath string) error {
 	fileInfos, _ := afs.ReadDir(filepath.Join(config.ChangesDir, config.UnreleasedDir))
 	for _, file := range fileInfos {
-		if filepath.Ext(file.Name()) != ".yaml" {
+		if filepath.Ext(file.Name()) != ".yaml" && file.Name() != headerPath {
 			continue
 		}
 
