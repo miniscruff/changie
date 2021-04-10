@@ -208,7 +208,10 @@ var _ = Describe("Batch", func() {
 			"removed": {{Body: "y"}, {Body: "z"}},
 		}
 
-		err = batchNewVersion(fs, testConfig, "v0.1.0", changesPerKind)
+		err = batchNewVersion(fs, testConfig, batchData{
+			Version:        "v0.1.0",
+			ChangesPerKind: changesPerKind,
+		})
 		Expect(err).To(BeNil())
 
 		expected := `## v0.1.0
@@ -229,7 +232,10 @@ var _ = Describe("Batch", func() {
 			return f, mockError
 		}
 
-		err := batchNewVersion(fs, testConfig, "v0.1.0", map[string][]Change{})
+		err := batchNewVersion(fs, testConfig, batchData{
+			Version:        "v0.1.0",
+			ChangesPerKind: map[string][]Change{},
+		})
 		Expect(err).To(Equal(mockError))
 	})
 
@@ -239,7 +245,10 @@ var _ = Describe("Batch", func() {
 
 		testConfig.VersionFormat = "{{juuunk...}}"
 
-		err = batchNewVersion(fs, testConfig, "v0.1.0", map[string][]Change{})
+		err = batchNewVersion(fs, testConfig, batchData{
+			Version:        "v0.1.0",
+			ChangesPerKind: map[string][]Change{},
+		})
 		Expect(err).NotTo(BeNil())
 	})
 
@@ -249,7 +258,10 @@ var _ = Describe("Batch", func() {
 
 		testConfig.KindFormat = "{{randoooom../././}}"
 
-		err = batchNewVersion(fs, testConfig, "v0.1.0", map[string][]Change{})
+		err = batchNewVersion(fs, testConfig, batchData{
+			Version:        "v0.1.0",
+			ChangesPerKind: map[string][]Change{},
+		})
 		Expect(err).NotTo(BeNil())
 	})
 
@@ -259,7 +271,10 @@ var _ = Describe("Batch", func() {
 
 		testConfig.ChangeFormat = "{{not.valid.syntax....}}"
 
-		err = batchNewVersion(fs, testConfig, "v0.1.0", map[string][]Change{})
+		err = batchNewVersion(fs, testConfig, batchData{
+			Version:        "v0.1.0",
+			ChangesPerKind: map[string][]Change{},
+		})
 		Expect(err).NotTo(BeNil())
 	})
 
@@ -282,86 +297,12 @@ var _ = Describe("Batch", func() {
 			"removed": {{Body: "y"}, {Body: "z"}},
 		}
 
-		err = batchNewVersion(fs, testConfig, "v0.1.0", changesPerKind)
+		err = batchNewVersion(fs, testConfig, batchData{
+			Version:        "v0.1.0",
+			ChangesPerKind: changesPerKind,
+		})
 		Expect(err).To(Equal(mockError))
 	})
-
-	/*
-		It("returns error when failing to execute version template", func() {
-			err := afs.MkdirAll("news", 0644)
-			Expect(err).To(BeNil())
-
-			vFile := newMockFile(fs, "v0.1.0.md")
-
-			fs.mockCreate = func(path string) (afero.File, error) {
-				return vFile, nil
-			}
-
-			vFile.mockWrite = func(data []byte) (int, error) {
-				return len(data), mockError
-			}
-
-			changesPerKind := map[string][]Change{
-				"added":   {{Body: "w"}, {Body: "x"}},
-				"removed": {{Body: "y"}, {Body: "z"}},
-			}
-
-			err = batchNewVersion(fs, testConfig, "v0.1.0", changesPerKind)
-			Expect(err).To(Equal(mockError))
-		})
-
-		It("returns error when failing to execute kind template", func() {
-			err := afs.MkdirAll("news", 0644)
-			Expect(err).To(BeNil())
-
-			vFile := newMockFile(fs, "v0.1.0.md")
-
-			fs.mockCreate = func(path string) (afero.File, error) {
-				return vFile, nil
-			}
-
-			vFile.mockWrite = func(data []byte) (int, error) {
-				if strings.HasPrefix(string(data), "### ") {
-					return len(data), mockError
-				}
-				return vFile.memFile.Write(data)
-			}
-
-			changesPerKind := map[string][]Change{
-				"added":   {{Body: "w"}, {Body: "x"}},
-				"removed": {{Body: "y"}, {Body: "z"}},
-			}
-
-			err = batchNewVersion(fs, testConfig, "v0.1.0", changesPerKind)
-			Expect(err).To(Equal(mockError))
-		})
-
-		It("returns error when failing to execute change template", func() {
-			err := afs.MkdirAll("news", 0644)
-			Expect(err).To(BeNil())
-
-			vFile := newMockFile(fs, "v0.1.0.md")
-
-			fs.mockCreate = func(path string) (afero.File, error) {
-				return vFile, nil
-			}
-
-			vFile.mockWrite = func(data []byte) (int, error) {
-				if strings.HasPrefix(string(data), "*") {
-					return len(data), mockError
-				}
-				return vFile.memFile.Write(data)
-			}
-
-			changesPerKind := map[string][]Change{
-				"added":   {{Body: "w"}, {Body: "x"}},
-				"removed": {{Body: "y"}, {Body: "z"}},
-			}
-
-			err = batchNewVersion(fs, testConfig, "v0.1.0", changesPerKind)
-			Expect(err).To(Equal(mockError))
-		})
-	*/
 
 	templateTests := []struct {
 		key    string
@@ -396,7 +337,10 @@ var _ = Describe("Batch", func() {
 				"removed": {{Body: "y"}, {Body: "z"}},
 			}
 
-			err = batchNewVersion(fs, testConfig, "v0.1.0", changesPerKind)
+			err = batchNewVersion(fs, testConfig, batchData{
+				Version:        "v0.1.0",
+				ChangesPerKind: changesPerKind,
+			})
 			Expect(err).To(Equal(mockError))
 		})
 	}

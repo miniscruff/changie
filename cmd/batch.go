@@ -11,6 +11,12 @@ import (
 	"github.com/spf13/cobra"
 )
 
+// batchData organizes all the prerequisite data we need to batch a version
+type batchData struct {
+	Version        string
+	ChangesPerKind map[string][]Change
+}
+
 var errNotSemanticVersion = errors.New("version string is not a valid semantic version")
 
 var batchCmd = &cobra.Command{
@@ -51,7 +57,10 @@ func batchPipeline(afs afero.Afero, ver string) error {
 		return err
 	}
 
-	err = batchNewVersion(afs.Fs, config, ver, changesPerKind)
+	err = batchNewVersion(afs.Fs, config, batchData{
+		Version:        ver,
+		ChangesPerKind: changesPerKind,
+	})
 	if err != nil {
 		return err
 	}
@@ -96,10 +105,8 @@ func getChanges(afs afero.Afero, config Config) (map[string][]Change, error) {
 	return changesPerKind, nil
 }
 
-func batchNewVersion(
-	fs afero.Fs, config Config, version string, changesPerKind map[string][]Change,
-) error {
-	versionPath := filepath.Join(config.ChangesDir, version+"."+config.VersionExt)
+func batchNewVersion(fs afero.Fs, config Config, data batchData) error {
+	versionPath := filepath.Join(config.ChangesDir, data.Version+"."+config.VersionExt)
 
 	versionFile, err := fs.Create(versionPath)
 	if err != nil {
@@ -123,7 +130,7 @@ func batchNewVersion(
 	}
 
 	err = vTempl.Execute(versionFile, map[string]interface{}{
-		"Version": version,
+		"Version": data.Version,
 		"Time":    time.Now(),
 	})
 	if err != nil {
@@ -131,7 +138,7 @@ func batchNewVersion(
 	}
 
 	for _, kind := range config.Kinds {
-		changes, ok := changesPerKind[kind]
+		changes, ok := data.ChangesPerKind[kind]
 		if !ok {
 			continue
 		}
