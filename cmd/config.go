@@ -141,11 +141,12 @@ func (r Replacement) Execute(readFile ReadFiler, writeFile WriteFiler, data Repl
 
 // Config handles configuration for a changie project
 type Config struct {
-	ChangesDir    string `yaml:"changesDir"`
-	UnreleasedDir string `yaml:"unreleasedDir"`
-	HeaderPath    string `yaml:"headerPath"`
-	ChangelogPath string `yaml:"changelogPath"`
-	VersionExt    string `yaml:"versionExt"`
+	ChangesDir        string `yaml:"changesDir"`
+	UnreleasedDir     string `yaml:"unreleasedDir"`
+	HeaderPath        string `yaml:"headerPath"`
+	VersionHeaderPath string `yaml:"versionHeaderPath"`
+	ChangelogPath     string `yaml:"changelogPath"`
+	VersionExt        string `yaml:"versionExt"`
 	// formats
 	VersionFormat string `yaml:"versionFormat"`
 	KindFormat    string `yaml:"kindFormat"`

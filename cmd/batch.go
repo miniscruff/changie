@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"errors"
+	"os"
 	"path/filepath"
 	"text/template"
 	"time"
@@ -11,7 +12,17 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var errNotSemanticVersion = errors.New("version string is not a valid semantic version")
+// batchData organizes all the prerequisite data we need to batch a version
+type batchData struct {
+	Version        string
+	ChangesPerKind map[string][]Change
+	Header         string
+}
+
+var (
+	errNotSemanticVersion = errors.New("version string is not a valid semantic version")
+	versionHeaderPath     = ""
+)
 
 var batchCmd = &cobra.Command{
 	Use:   "batch version",
@@ -20,11 +31,12 @@ var batchCmd = &cobra.Command{
 
 The new version changelog can then be modified with extra descriptions,
 context or with custom tweaks before merging into the main file.`,
-	Args: cobra.MinimumNArgs(1),
+	Args: cobra.ExactArgs(1),
 	RunE: runBatch,
 }
 
 func init() {
+	batchCmd.Flags().StringVar(&versionHeaderPath, "headerPath", "", "Path to version header file")
 	rootCmd.AddCommand(batchCmd)
 }
 
@@ -51,12 +63,36 @@ func batchPipeline(afs afero.Afero, ver string) error {
 		return err
 	}
 
-	err = batchNewVersion(afs.Fs, config, ver, changesPerKind)
+	headerFilePath := ""
+	headerContents := ""
+
+	if versionHeaderPath != "" {
+		headerFilePath = versionHeaderPath
+	} else if config.VersionHeaderPath != "" {
+		headerFilePath = config.VersionHeaderPath
+	}
+
+	if headerFilePath != "" {
+		fullPath := filepath.Join(config.ChangesDir, config.UnreleasedDir, headerFilePath)
+		headerBytes, readErr := afs.ReadFile(fullPath)
+
+		if readErr != nil && !os.IsNotExist(readErr) {
+			return readErr
+		}
+
+		headerContents = string(headerBytes)
+	}
+
+	err = batchNewVersion(afs.Fs, config, batchData{
+		Version:        ver,
+		ChangesPerKind: changesPerKind,
+		Header:         headerContents,
+	})
 	if err != nil {
 		return err
 	}
 
-	err = deleteUnreleased(afs, config)
+	err = deleteUnreleased(afs, config, headerFilePath)
 	if err != nil {
 		return err
 	}
@@ -96,10 +132,8 @@ func getChanges(afs afero.Afero, config Config) (map[string][]Change, error) {
 	return changesPerKind, nil
 }
 
-func batchNewVersion(
-	fs afero.Fs, config Config, version string, changesPerKind map[string][]Change,
-) error {
-	versionPath := filepath.Join(config.ChangesDir, version+"."+config.VersionExt)
+func batchNewVersion(fs afero.Fs, config Config, data batchData) error {
+	versionPath := filepath.Join(config.ChangesDir, data.Version+"."+config.VersionExt)
 
 	versionFile, err := fs.Create(versionPath)
 	if err != nil {
@@ -123,25 +157,28 @@ func batchNewVersion(
 	}
 
 	err = vTempl.Execute(versionFile, map[string]interface{}{
-		"Version": version,
+		"Version": data.Version,
 		"Time":    time.Now(),
 	})
 	if err != nil {
 		return err
 	}
 
+	if data.Header != "" {
+		// write string is not err checked as we already write to the same
+		// file in the templates
+		_, _ = versionFile.WriteString("\n")
+		_, _ = versionFile.WriteString("\n")
+		_, _ = versionFile.WriteString(data.Header)
+	}
+
 	for _, kind := range config.Kinds {
-		changes, ok := changesPerKind[kind]
+		changes, ok := data.ChangesPerKind[kind]
 		if !ok {
 			continue
 		}
 
-		// just check the first write string
-		_, err = versionFile.WriteString("\n")
-		if err != nil {
-			return err
-		}
-
+		_, _ = versionFile.WriteString("\n")
 		_, _ = versionFile.WriteString("\n")
 
 		err = kTempl.Execute(versionFile, map[string]string{
@@ -164,10 +201,10 @@ func batchNewVersion(
 	return nil
 }
 
-func deleteUnreleased(afs afero.Afero, config Config) error {
+func deleteUnreleased(afs afero.Afero, config Config, headerPath string) error {
 	fileInfos, _ := afs.ReadDir(filepath.Join(config.ChangesDir, config.UnreleasedDir))
 	for _, file := range fileInfos {
-		if filepath.Ext(file.Name()) != ".yaml" {
+		if filepath.Ext(file.Name()) != ".yaml" && file.Name() != headerPath {
 			continue
 		}
 

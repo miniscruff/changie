@@ -13,15 +13,17 @@ import (
 var _ = Describe("Config", func() {
 	It("should save the config", func() {
 		config := Config{
-			ChangesDir:    "Changes",
-			UnreleasedDir: "Unrel",
-			HeaderPath:    "header.tpl.md",
-			ChangelogPath: "CHANGELOG.md",
+			ChangesDir:        "Changes",
+			UnreleasedDir:     "Unrel",
+			HeaderPath:        "header.tpl.md",
+			VersionHeaderPath: "header.md",
+			ChangelogPath:     "CHANGELOG.md",
 		}
 
 		configYaml := `changesDir: Changes
 unreleasedDir: Unrel
 headerPath: header.tpl.md
+versionHeaderPath: header.md
 changelogPath: CHANGELOG.md
 versionExt: ""
 versionFormat: ""
@@ -62,6 +64,7 @@ kinds: []
 		configYaml := `changesDir: Changes
 unreleasedDir: Unrel
 headerPath: header.tpl.md
+versionHeaderPath: ""
 changelogPath: CHANGELOG.md
 versionExt: ""
 versionFormat: ""

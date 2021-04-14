@@ -1,0 +1,4 @@
+kind: Added
+body: Option to include a header file when batching fragments into a version file.
+custom:
+  Issue: "92"

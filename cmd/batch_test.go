@@ -36,9 +36,14 @@ var _ = Describe("Batch", func() {
 				"added", "removed", "other",
 			},
 		}
+
+		// reset our shared header path
+		versionHeaderPath = ""
 	})
 
 	It("can batch version", func() {
+		// declared path but missing is accepted
+		testConfig.VersionHeaderPath = "header.md"
 		err := testConfig.Save(afs.WriteFile)
 		Expect(err).To(BeNil())
 
@@ -61,6 +66,97 @@ var _ = Describe("Batch", func() {
 		Expect(err).To(BeNil())
 
 		verContents := `## v0.2.0
+
+### added
+* A
+* B
+
+### removed
+* C`
+
+		Expect(newVerPath).To(HaveContents(afs, verContents))
+
+		infos, err := afs.ReadDir(futurePath)
+		Expect(err).To(BeNil())
+		Expect(len(infos)).To(Equal(0))
+	})
+
+	It("can batch version with header", func() {
+		testConfig.VersionHeaderPath = "h.md"
+		err := testConfig.Save(afs.WriteFile)
+		Expect(err).To(BeNil())
+
+		futurePath := filepath.Join("news", "future")
+		newVerPath := filepath.Join("news", "v0.2.0.md")
+		headerPath := filepath.Join(futurePath, testConfig.VersionHeaderPath)
+
+		aVer := []byte("kind: added\nbody: A\n")
+		err = afs.WriteFile(filepath.Join(futurePath, "a.yaml"), aVer, os.ModePerm)
+		Expect(err).To(BeNil())
+
+		bVer := []byte("kind: added\nbody: B\n")
+		err = afs.WriteFile(filepath.Join(futurePath, "b.yaml"), bVer, os.ModePerm)
+		Expect(err).To(BeNil())
+
+		cVer := []byte("kind: removed\nbody: C\n")
+		err = afs.WriteFile(filepath.Join(futurePath, "c.yaml"), cVer, os.ModePerm)
+		Expect(err).To(BeNil())
+
+		headerData := []byte("this is a new version that adds cool features")
+		err = afs.WriteFile(headerPath, headerData, os.ModePerm)
+		Expect(err).To(BeNil())
+
+		err = batchPipeline(afs, "v0.2.0")
+		Expect(err).To(BeNil())
+
+		verContents := `## v0.2.0
+
+this is a new version that adds cool features
+
+### added
+* A
+* B
+
+### removed
+* C`
+
+		Expect(newVerPath).To(HaveContents(afs, verContents))
+
+		infos, err := afs.ReadDir(futurePath)
+		Expect(err).To(BeNil())
+		Expect(len(infos)).To(Equal(0))
+	})
+
+	It("can batch version with header parameter", func() {
+		versionHeaderPath = "head.md"
+		err := testConfig.Save(afs.WriteFile)
+		Expect(err).To(BeNil())
+
+		futurePath := filepath.Join("news", "future")
+		newVerPath := filepath.Join("news", "v0.2.0.md")
+
+		aVer := []byte("kind: added\nbody: A\n")
+		err = afs.WriteFile(filepath.Join(futurePath, "a.yaml"), aVer, os.ModePerm)
+		Expect(err).To(BeNil())
+
+		bVer := []byte("kind: added\nbody: B\n")
+		err = afs.WriteFile(filepath.Join(futurePath, "b.yaml"), bVer, os.ModePerm)
+		Expect(err).To(BeNil())
+
+		cVer := []byte("kind: removed\nbody: C\n")
+		err = afs.WriteFile(filepath.Join(futurePath, "c.yaml"), cVer, os.ModePerm)
+		Expect(err).To(BeNil())
+
+		headerData := []byte("this is a new version that adds cool features")
+		err = afs.WriteFile(filepath.Join(futurePath, "head.md"), headerData, os.ModePerm)
+		Expect(err).To(BeNil())
+
+		err = batchPipeline(afs, "v0.2.0")
+		Expect(err).To(BeNil())
+
+		verContents := `## v0.2.0
+
+this is a new version that adds cool features
 
 ### added
 * A
@@ -132,6 +228,29 @@ var _ = Describe("Batch", func() {
 
 		err = batchPipeline(afs, "v1.0.0")
 		Expect(err).NotTo(BeNil())
+	})
+
+	It("returns error on bad header file", func() {
+		versionHeaderPath = "header.md"
+		badOpen := errors.New("bad open file")
+		fs.mockOpen = func(name string) (afero.File, error) {
+			if strings.HasSuffix(name, versionHeaderPath) {
+				return nil, badOpen
+			}
+			return fs.memFs.Open(name)
+		}
+
+		err := testConfig.Save(afs.WriteFile)
+		Expect(err).To(BeNil())
+
+		futurePath := filepath.Join("news", "future")
+
+		aVer := []byte("kind: added\nbody: A\n")
+		err = afs.WriteFile(filepath.Join(futurePath, "a.yaml"), aVer, os.ModePerm)
+		Expect(err).To(BeNil())
+
+		err = batchPipeline(afs, "v0.2.0")
+		Expect(err).To(Equal(badOpen))
 	})
 
 	It("can get all changes", func() {
@@ -208,10 +327,60 @@ var _ = Describe("Batch", func() {
 			"removed": {{Body: "y"}, {Body: "z"}},
 		}
 
-		err = batchNewVersion(fs, testConfig, "v0.1.0", changesPerKind)
+		err = batchNewVersion(fs, testConfig, batchData{
+			Version:        "v0.1.0",
+			ChangesPerKind: changesPerKind,
+		})
 		Expect(err).To(BeNil())
 
 		expected := `## v0.1.0
+
+### added
+* w
+* x
+
+### removed
+* y
+* z`
+		Expect(contents).To(Equal(expected))
+	})
+
+	It("can create new version file with header", func() {
+		err := afs.MkdirAll("news", 0644)
+		Expect(err).To(BeNil())
+
+		vFile := newMockFile(fs, "v0.1.0.md")
+		contents := ""
+
+		fs.mockCreate = func(path string) (afero.File, error) {
+			return vFile, nil
+		}
+
+		vFile.mockWrite = func(data []byte) (int, error) {
+			contents += string(data)
+			return len(data), nil
+		}
+		vFile.mockWriteString = func(data string) (int, error) {
+			contents += data
+			return len(data), nil
+		}
+
+		changesPerKind := map[string][]Change{
+			"added":   {{Body: "w"}, {Body: "x"}},
+			"removed": {{Body: "y"}, {Body: "z"}},
+		}
+
+		err = batchNewVersion(fs, testConfig, batchData{
+			Version:        "v0.1.0",
+			ChangesPerKind: changesPerKind,
+			Header:         "Some header we want included in our new version.\nCan also have newlines.",
+		})
+		Expect(err).To(BeNil())
+
+		expected := `## v0.1.0
+
+Some header we want included in our new version.
+Can also have newlines.
 
 ### added
 * w
@@ -229,7 +398,10 @@ var _ = Describe("Batch", func() {
 			return f, mockError
 		}
 
-		err := batchNewVersion(fs, testConfig, "v0.1.0", map[string][]Change{})
+		err := batchNewVersion(fs, testConfig, batchData{
+			Version:        "v0.1.0",
+			ChangesPerKind: map[string][]Change{},
+		})
 		Expect(err).To(Equal(mockError))
 	})
 
@@ -239,7 +411,10 @@ var _ = Describe("Batch", func() {
 
 		testConfig.VersionFormat = "{{juuunk...}}"
 
-		err = batchNewVersion(fs, testConfig, "v0.1.0", map[string][]Change{})
+		err = batchNewVersion(fs, testConfig, batchData{
+			Version:        "v0.1.0",
+			ChangesPerKind: map[string][]Change{},
+		})
 		Expect(err).NotTo(BeNil())
 	})
 
@@ -249,7 +424,10 @@ var _ = Describe("Batch", func() {
 
 		testConfig.KindFormat = "{{randoooom../././}}"
 
-		err = batchNewVersion(fs, testConfig, "v0.1.0", map[string][]Change{})
+		err = batchNewVersion(fs, testConfig, batchData{
+			Version:        "v0.1.0",
+			ChangesPerKind: map[string][]Change{},
+		})
 		Expect(err).NotTo(BeNil())
 	})
 
@@ -259,109 +437,12 @@ var _ = Describe("Batch", func() {
 
 		testConfig.ChangeFormat = "{{not.valid.syntax....}}"
 
-		err = batchNewVersion(fs, testConfig, "v0.1.0", map[string][]Change{})
+		err = batchNewVersion(fs, testConfig, batchData{
+			Version:        "v0.1.0",
+			ChangesPerKind: map[string][]Change{},
+		})
 		Expect(err).NotTo(BeNil())
 	})
-
-	It("returns error when failing to write string", func() {
-		err := afs.MkdirAll("news", 0644)
-		Expect(err).To(BeNil())
-
-		vFile := newMockFile(fs, "v0.1.0.md")
-
-		fs.mockCreate = func(path string) (afero.File, error) {
-			return vFile, nil
-		}
-
-		vFile.mockWriteString = func(data string) (int, error) {
-			return len(data), mockError
-		}
-
-		changesPerKind := map[string][]Change{
-			"added":   {{Body: "w"}, {Body: "x"}},
-			"removed": {{Body: "y"}, {Body: "z"}},
-		}
-
-		err = batchNewVersion(fs, testConfig, "v0.1.0", changesPerKind)
-		Expect(err).To(Equal(mockError))
-	})
-
-	/*
-		It("returns error when failing to execute version template", func() {
-			err := afs.MkdirAll("news", 0644)
-			Expect(err).To(BeNil())
-
-			vFile := newMockFile(fs, "v0.1.0.md")
-
-			fs.mockCreate = func(path string) (afero.File, error) {
-				return vFile, nil
-			}
-
-			vFile.mockWrite = func(data []byte) (int, error) {
-				return len(data), mockError
-			}
-
-			changesPerKind := map[string][]Change{
-				"added":   {{Body: "w"}, {Body: "x"}},
-				"removed": {{Body: "y"}, {Body: "z"}},
-			}
-
-			err = batchNewVersion(fs, testConfig, "v0.1.0", changesPerKind)
-			Expect(err).To(Equal(mockError))
-		})
-
-		It("returns error when failing to execute kind template", func() {
-			err := afs.MkdirAll("news", 0644)
-			Expect(err).To(BeNil())
-
-			vFile := newMockFile(fs, "v0.1.0.md")
-
-			fs.mockCreate = func(path string) (afero.File, error) {
-				return vFile, nil
-			}
-
-			vFile.mockWrite = func(data []byte) (int, error) {
-				if strings.HasPrefix(string(data), "### ") {
-					return len(data), mockError
-				}
-				return vFile.memFile.Write(data)
-			}
-
-			changesPerKind := map[string][]Change{
-				"added":   {{Body: "w"}, {Body: "x"}},
-				"removed": {{Body: "y"}, {Body: "z"}},
-			}
-
-			err = batchNewVersion(fs, testConfig, "v0.1.0", changesPerKind)
-			Expect(err).To(Equal(mockError))
-		})
-
-		It("returns error when failing to execute change template", func() {
-			err := afs.MkdirAll("news", 0644)
-			Expect(err).To(BeNil())
-
-			vFile := newMockFile(fs, "v0.1.0.md")
-
-			fs.mockCreate = func(path string) (afero.File, error) {
-				return vFile, nil
-			}
-
-			vFile.mockWrite = func(data []byte) (int, error) {
-				if strings.HasPrefix(string(data), "*") {
-					return len(data), mockError
-				}
-				return vFile.memFile.Write(data)
-			}
-
-			changesPerKind := map[string][]Change{
-				"added":   {{Body: "w"}, {Body: "x"}},
-				"removed": {{Body: "y"}, {Body: "z"}},
-			}
-
-			err = batchNewVersion(fs, testConfig, "v0.1.0", changesPerKind)
-			Expect(err).To(Equal(mockError))
-		})
-	*/
 
 	templateTests := []struct {
 		key    string
@@ -396,17 +477,20 @@ var _ = Describe("Batch", func() {
 				"removed": {{Body: "y"}, {Body: "z"}},
 			}
 
-			err = batchNewVersion(fs, testConfig, "v0.1.0", changesPerKind)
+			err = batchNewVersion(fs, testConfig, batchData{
+				Version:        "v0.1.0",
+				ChangesPerKind: changesPerKind,
+			})
 			Expect(err).To(Equal(mockError))
 		})
 	}
 
-	It("delete unreleased removes unreleased files", func() {
+	It("delete unreleased removes unreleased files including header", func() {
 		futurePath := filepath.Join("news", "future")
 		err := afs.MkdirAll(futurePath, 0644)
 		Expect(err).To(BeNil())
 
-		for _, name := range []string{"a.yaml", "b.yaml", "c.yaml", ".gitkeep"} {
+		for _, name := range []string{"a.yaml", "b.yaml", "c.yaml", ".gitkeep", "header.md"} {
 			var f afero.File
 			f, err = afs.Create(filepath.Join(futurePath, name))
 			Expect(err).To(BeNil())
@@ -415,7 +499,7 @@ var _ = Describe("Batch", func() {
 			Expect(err).To(BeNil())
 		}
 
-		err = deleteUnreleased(afs, testConfig)
+		err = deleteUnreleased(afs, testConfig, "header.md")
 		Expect(err).To(BeNil())
 
 		infos, err := afs.ReadDir(futurePath)
@@ -441,7 +525,7 @@ var _ = Describe("Batch", func() {
 			return mockError
 		}
 
-		err = deleteUnreleased(afs, testConfig)
+		err = deleteUnreleased(afs, testConfig, "")
 		Expect(err).To(Equal(mockError))
 	})
 })
