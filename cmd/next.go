@@ -32,7 +32,7 @@ func runNext(cmd *cobra.Command, args []string) error {
 	fs := afero.NewOsFs()
 	afs := afero.Afero{Fs: fs}
 
-	result, err := nextPipeline(afs, args[0])
+	result, err := nextPipeline(afs, strings.ToLower(args[0]))
 	if err != nil {
 		return err
 	}
