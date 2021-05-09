@@ -43,14 +43,15 @@ func runNext(cmd *cobra.Command, args []string) error {
 }
 
 func nextPipeline(afs afero.Afero, part string) (string, error) {
-
 	ver, err := latestPipeline(afs)
 	if err != nil {
 		return "", err
 	}
+
 	sver, _ := semver.NewVersion(strings.Trim(ver, "\n"))
 
 	var next semver.Version
+
 	switch part {
 	case "major":
 		next = sver.IncMajor()
