@@ -16,7 +16,7 @@ var (
 
 var nextCmd = &cobra.Command{
 	Use:   "next part",
-	Short: "Next increment version based on semantic versioning",
+	Short: "Next echos the next version based on semantic versioning",
 	Long: `Next increment version based on semantic versioning.
 Check latest version and increment part (major, minor, patch).
 Echo the next release version number to be used by CI tools or other commands like batch.`,
