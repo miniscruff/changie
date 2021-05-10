@@ -77,3 +77,17 @@ func getAllVersions(readDir ReadDirer, config Config) ([]*semver.Version, error)
 
 	return allVersions, nil
 }
+
+func getLatestVersion(readDir ReadDirer, config Config) (*semver.Version, error) {
+	allVersions, err := getAllVersions(readDir, config)
+	if err != nil {
+		return nil, err
+	}
+
+	// if no versions exist default to v0.0.0
+	if len(allVersions) == 0 {
+		return semver.MustParse("v0.0.0"), nil
+	}
+
+	return allVersions[0], nil
+}

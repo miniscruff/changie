@@ -91,4 +91,61 @@ var _ = Describe("Utils", func() {
 		Expect(vers).To(BeEmpty())
 		Expect(err).To(Equal(mockError))
 	})
+
+	It("get latest version returns most recent version", func() {
+		config := Config{
+			ChangesDir: "changes",
+			HeaderPath: "header.md",
+		}
+		fs := newMockFs()
+		afs := afero.Afero{Fs: fs}
+
+		headerFile, err := afs.Create(filepath.Join("changes", "header.md"))
+		Expect(err).To(BeNil())
+		file1, err := afs.Create(filepath.Join("changes", "v0.1.0.md"))
+		Expect(err).To(BeNil())
+		file2, err := afs.Create(filepath.Join("changes", "v0.2.0.md"))
+		Expect(err).To(BeNil())
+		file3, err := afs.Create(filepath.Join("changes", "not-sem-ver.md"))
+		Expect(err).To(BeNil())
+
+		mockRead := func(dirname string) ([]os.FileInfo, error) {
+			return []os.FileInfo{
+				headerFile.(*mem.File).Info(),
+				file1.(*mem.File).Info(),
+				file2.(*mem.File).Info(),
+				file3.(*mem.File).Info(),
+			}, nil
+		}
+
+		ver, err := getLatestVersion(mockRead, config)
+		Expect(err).To(BeNil())
+		Expect(ver.Original()).To(Equal("v0.2.0"))
+	})
+
+	It("get latest version returns v0.0.0 if no versions exist", func() {
+		config := Config{
+			ChangesDir: "changes",
+			HeaderPath: "header.md",
+		}
+		mockRead := func(dirname string) ([]os.FileInfo, error) {
+			return []os.FileInfo{}, nil
+		}
+
+		ver, err := getLatestVersion(mockRead, config)
+		Expect(err).To(BeNil())
+		Expect(ver.Original()).To(Equal("v0.0.0"))
+	})
+
+	It("get latest version returns error if get all version errors", func() {
+		config := Config{}
+		mockError := errors.New("bad stuff")
+		mockRead := func(dirname string) ([]os.FileInfo, error) {
+			return []os.FileInfo{}, mockError
+		}
+
+		vers, err := getLatestVersion(mockRead, config)
+		Expect(vers).To(BeNil())
+		Expect(err).To(Equal(mockError))
+	})
 })
