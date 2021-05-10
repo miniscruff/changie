@@ -82,6 +82,50 @@ var _ = Describe("Batch", func() {
 		Expect(len(infos)).To(Equal(0))
 	})
 
+	It("can batch version and bump", func() {
+		// declared path but missing is accepted
+		testConfig.VersionHeaderPath = "header.md"
+		err := testConfig.Save(afs.WriteFile)
+		Expect(err).To(BeNil())
+
+		futurePath := filepath.Join("news", "future")
+		newVerPath := filepath.Join("news", "v0.1.1.md")
+
+		aVer := []byte("kind: added\nbody: A\n")
+		err = afs.WriteFile(filepath.Join(futurePath, "a.yaml"), aVer, os.ModePerm)
+		Expect(err).To(BeNil())
+
+		bVer := []byte("kind: added\nbody: B\n")
+		err = afs.WriteFile(filepath.Join(futurePath, "b.yaml"), bVer, os.ModePerm)
+		Expect(err).To(BeNil())
+
+		cVer := []byte("kind: removed\nbody: C\n")
+		err = afs.WriteFile(filepath.Join(futurePath, "c.yaml"), cVer, os.ModePerm)
+		Expect(err).To(BeNil())
+
+		latestVer := []byte("contents do not matter")
+		err = afs.WriteFile(filepath.Join("news", "v0.1.0.md"), latestVer, os.ModePerm)
+		Expect(err).To(BeNil())
+
+		err = batchPipeline(afs, "patch")
+		Expect(err).To(BeNil())
+
+		verContents := `## v0.1.1
+
+### added
+* A
+* B
+
+### removed
+* C`
+
+		Expect(newVerPath).To(HaveContents(afs, verContents))
+
+		infos, err := afs.ReadDir(futurePath)
+		Expect(err).To(BeNil())
+		Expect(len(infos)).To(Equal(0))
+	})
+
 	It("can batch version with header", func() {
 		testConfig.VersionHeaderPath = "h.md"
 		err := testConfig.Save(afs.WriteFile)
