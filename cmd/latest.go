@@ -50,19 +50,14 @@ func latestPipeline(afs afero.Afero) (string, error) {
 		return "", err
 	}
 
-	allVersions, err := getAllVersions(afs.ReadDir, config)
+	ver, err := getLatestVersion(afs.ReadDir, config)
 	if err != nil {
 		return "", err
 	}
 
-	// if no versions exist default to v0.0.0
-	if len(allVersions) == 0 {
-		return "v0.0.0\n", nil
-	}
-
 	if removePrefix {
-		return fmt.Sprintln(strings.TrimPrefix(allVersions[0].Original(), "v")), nil
+		return fmt.Sprintln(strings.TrimPrefix(ver.Original(), "v")), nil
 	}
 
-	return fmt.Sprintln(allVersions[0].Original()), nil
+	return fmt.Sprintln(ver.Original()), nil
 }

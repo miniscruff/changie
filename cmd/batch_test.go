@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/Masterminds/semver/v3"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/spf13/afero"
@@ -66,6 +67,48 @@ var _ = Describe("Batch", func() {
 		Expect(err).To(BeNil())
 
 		verContents := `## v0.2.0
+
+### added
+* A
+* B
+
+### removed
+* C`
+
+		Expect(newVerPath).To(HaveContents(afs, verContents))
+
+		infos, err := afs.ReadDir(futurePath)
+		Expect(err).To(BeNil())
+		Expect(len(infos)).To(Equal(0))
+	})
+
+	It("can batch version and bump", func() {
+		err := testConfig.Save(afs.WriteFile)
+		Expect(err).To(BeNil())
+
+		futurePath := filepath.Join("news", "future")
+		newVerPath := filepath.Join("news", "v0.1.1.md")
+
+		aVer := []byte("kind: added\nbody: A\n")
+		err = afs.WriteFile(filepath.Join(futurePath, "a.yaml"), aVer, os.ModePerm)
+		Expect(err).To(BeNil())
+
+		bVer := []byte("kind: added\nbody: B\n")
+		err = afs.WriteFile(filepath.Join(futurePath, "b.yaml"), bVer, os.ModePerm)
+		Expect(err).To(BeNil())
+
+		cVer := []byte("kind: removed\nbody: C\n")
+		err = afs.WriteFile(filepath.Join(futurePath, "c.yaml"), cVer, os.ModePerm)
+		Expect(err).To(BeNil())
+
+		latestVer := []byte("contents do not matter")
+		err = afs.WriteFile(filepath.Join("news", "v0.1.0.md"), latestVer, os.ModePerm)
+		Expect(err).To(BeNil())
+
+		err = batchPipeline(afs, "patch")
+		Expect(err).To(BeNil())
+
+		verContents := `## v0.1.1
 
 ### added
 * A
@@ -173,8 +216,17 @@ this is a new version that adds cool features
 	})
 
 	It("returns error on bad semver", func() {
-		err := batchPipeline(afs, "not-semanticly-correct")
-		Expect(err).To(Equal(errNotSemanticVersion))
+		err := testConfig.Save(afs.WriteFile)
+		Expect(err).To(BeNil())
+
+		futurePath := filepath.Join("news", "future")
+
+		aVer := []byte("kind: added\nbody: A\n")
+		err = afs.WriteFile(filepath.Join(futurePath, "a.yaml"), aVer, os.ModePerm)
+		Expect(err).To(BeNil())
+
+		err = batchPipeline(afs, "not-semanticly-correct")
+		Expect(err).To(Equal(errBadVersionOrPart))
 	})
 
 	It("returns error on bad config", func() {
@@ -328,7 +380,7 @@ this is a new version that adds cool features
 		}
 
 		err = batchNewVersion(fs, testConfig, batchData{
-			Version:        "v0.1.0",
+			Version:        semver.MustParse("v0.1.0"),
 			ChangesPerKind: changesPerKind,
 		})
 		Expect(err).To(BeNil())
@@ -371,7 +423,7 @@ this is a new version that adds cool features
 		}
 
 		err = batchNewVersion(fs, testConfig, batchData{
-			Version:        "v0.1.0",
+			Version:        semver.MustParse("v0.1.0"),
 			ChangesPerKind: changesPerKind,
 			Header:         "Some header we want included in our new version.\nCan also have newlines.",
 		})
@@ -399,7 +451,7 @@ Can also have newlines.
 		}
 
 		err := batchNewVersion(fs, testConfig, batchData{
-			Version:        "v0.1.0",
+			Version:        semver.MustParse("v0.1.0"),
 			ChangesPerKind: map[string][]Change{},
 		})
 		Expect(err).To(Equal(mockError))
@@ -412,7 +464,7 @@ Can also have newlines.
 		testConfig.VersionFormat = "{{juuunk...}}"
 
 		err = batchNewVersion(fs, testConfig, batchData{
-			Version:        "v0.1.0",
+			Version:        semver.MustParse("v0.1.0"),
 			ChangesPerKind: map[string][]Change{},
 		})
 		Expect(err).NotTo(BeNil())
@@ -425,7 +477,7 @@ Can also have newlines.
 		testConfig.KindFormat = "{{randoooom../././}}"
 
 		err = batchNewVersion(fs, testConfig, batchData{
-			Version:        "v0.1.0",
+			Version:        semver.MustParse("v0.1.0"),
 			ChangesPerKind: map[string][]Change{},
 		})
 		Expect(err).NotTo(BeNil())
@@ -438,7 +490,7 @@ Can also have newlines.
 		testConfig.ChangeFormat = "{{not.valid.syntax....}}"
 
 		err = batchNewVersion(fs, testConfig, batchData{
-			Version:        "v0.1.0",
+			Version:        semver.MustParse("v0.1.0"),
 			ChangesPerKind: map[string][]Change{},
 		})
 		Expect(err).NotTo(BeNil())
@@ -478,7 +530,7 @@ Can also have newlines.
 			}
 
 			err = batchNewVersion(fs, testConfig, batchData{
-				Version:        "v0.1.0",
+				Version:        semver.MustParse("v0.1.0"),
 				ChangesPerKind: changesPerKind,
 			})
 			Expect(err).To(Equal(mockError))

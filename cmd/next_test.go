@@ -32,6 +32,8 @@ var _ = Describe("next", func() {
 	})
 
 	It("echos next patch version", func() {
+		// major and minor are not tested directly
+		// as next version is tested in utils
 		_, err := afs.Create("chgs/v0.0.1.md")
 		Expect(err).To(BeNil())
 		_, err = afs.Create("chgs/v0.1.0.md")
@@ -41,33 +43,7 @@ var _ = Describe("next", func() {
 
 		res, err := nextPipeline(afs, "patch")
 		Expect(err).To(BeNil())
-		Expect(res).To(Equal("0.1.1\n"))
-	})
-
-	It("echos next minor version", func() {
-		_, err := afs.Create("chgs/v0.0.1.md")
-		Expect(err).To(BeNil())
-		_, err = afs.Create("chgs/v0.1.0.md")
-		Expect(err).To(BeNil())
-		_, err = afs.Create("chgs/head.tpl.md")
-		Expect(err).To(BeNil())
-
-		res, err := nextPipeline(afs, "minor")
-		Expect(err).To(BeNil())
-		Expect(res).To(Equal("0.2.0\n"))
-	})
-
-	It("echos next major version", func() {
-		_, err := afs.Create("chgs/v0.0.1.md")
-		Expect(err).To(BeNil())
-		_, err = afs.Create("chgs/v0.1.0.md")
-		Expect(err).To(BeNil())
-		_, err = afs.Create("chgs/head.tpl.md")
-		Expect(err).To(BeNil())
-
-		res, err := nextPipeline(afs, "major")
-		Expect(err).To(BeNil())
-		Expect(res).To(Equal("1.0.0\n"))
+		Expect(res).To(Equal("v0.1.1\n"))
 	})
 
 	It("fails if bad config file", func() {
@@ -90,19 +66,9 @@ var _ = Describe("next", func() {
 		Expect(err).NotTo(BeNil())
 	})
 
-	It("returns 0.0.1 if no versions found (patch)", func() {
-		// include just the header
-		_, err := afs.Create("chgs/head.tpl.md")
-		Expect(err).To(BeNil())
-		res, err := nextPipeline(afs, "patch")
-		Expect(err).To(BeNil())
-		Expect(res).To(Equal("0.0.1\n"))
-	})
-
 	It("fails if unable to get versions", func() {
 		// no files, means bad read for get versions
 		_, err := nextPipeline(afs, "major")
 		Expect(err).NotTo(BeNil())
 	})
-
 })

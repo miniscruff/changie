@@ -75,6 +75,16 @@ var _ = Describe("end to end", func() {
 		Expect(err).To(BeNil())
 	}
 
+	testEcho := func(args []string, expect string) {
+		rootCmd.SetArgs(args)
+		Expect(Execute("")).To(Succeed())
+
+		versionOut := make([]byte, 10)
+		_, err := stdoutReader.Read(versionOut)
+		Expect(err).To(BeNil())
+		Expect(string(versionOut)).To(ContainSubstring(expect))
+	}
+
 	testNew := func(body string) {
 		rootCmd.SetArgs([]string{"new"})
 		go func() {
@@ -88,26 +98,6 @@ var _ = Describe("end to end", func() {
 	testBatch := func() {
 		rootCmd.SetArgs([]string{"batch", "v0.1.0"})
 		Expect(Execute("")).To(Succeed())
-	}
-
-	testLatest := func(expectedVersion string) {
-		rootCmd.SetArgs([]string{"latest"})
-		Expect(Execute("")).To(Succeed())
-
-		versionOut := make([]byte, 10)
-		_, err := stdoutReader.Read(versionOut)
-		Expect(err).To(BeNil())
-		Expect(string(versionOut)).To(ContainSubstring(expectedVersion))
-	}
-
-	testNext := func(expectedVersion string) {
-		rootCmd.SetArgs([]string{"next", "major"})
-		Expect(Execute("")).To(Succeed())
-
-		versionOut := make([]byte, 10)
-		_, err := stdoutReader.Read(versionOut)
-		Expect(err).To(BeNil())
-		Expect(string(versionOut)).To(ContainSubstring(expectedVersion))
 	}
 
 	testMerge := func() {
@@ -142,13 +132,13 @@ var _ = Describe("end to end", func() {
 
 	It("should all work", func() {
 		testInit()
-		testLatest("0.0.0")
+		testEcho([]string{"latest"}, "0.0.0")
 		testNew("first")
 		time.Sleep(2 * time.Second) // let time pass for the next change
 		testNew("second")
 		testBatch()
-		testLatest("0.1.0")
-		testNext("1.0.0")
+		testEcho([]string{"latest"}, "0.1.0")
+		testEcho([]string{"next", "major"}, "1.0.0")
 		testMerge()
 		testGen()
 	})
@@ -161,6 +151,14 @@ var _ = Describe("end to end", func() {
 
 	It("should fail to find next if you do not init", func() {
 		rootCmd.SetArgs([]string{"next", "patch"})
+		err := Execute("")
+		Expect(err).NotTo(BeNil())
+	})
+
+	It("should fail to echo next if bad input", func() {
+		testInit()
+
+		rootCmd.SetArgs([]string{"next", "blah-blah-blah"})
 		err := Execute("")
 		Expect(err).NotTo(BeNil())
 	})

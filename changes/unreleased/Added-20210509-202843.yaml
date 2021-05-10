@@ -1,4 +1,4 @@
 kind: Added
-body: Add next command that echoes the latest version incremented in by one.
+body: Add next command that echoes the latest version incremented by one.
 custom:
   Issue: "98"

@@ -1,23 +1,17 @@
 package cmd
 
 import (
-	"errors"
 	"fmt"
 	"strings"
 
-	"github.com/Masterminds/semver/v3"
 	"github.com/spf13/afero"
 	"github.com/spf13/cobra"
 )
 
-var (
-	errNotSupportedPart = errors.New("part string is not a supported next version increment")
-)
-
 var nextCmd = &cobra.Command{
-	Use:   "next part",
+	Use:   "next major|minor|patch",
 	Short: "Next echos the next version based on semantic versioning",
-	Long: `Next increment version based on semantic versioning.
+	Long: `Next increments version based on semantic versioning.
 Check latest version and increment part (major, minor, patch).
 Echo the next release version number to be used by CI tools or other commands like batch.`,
 	Args: cobra.ExactArgs(1),
@@ -42,49 +36,16 @@ func runNext(cmd *cobra.Command, args []string) error {
 	return err
 }
 
-func getLatestVersion(afs afero.Afero) (string, error) {
+func nextPipeline(afs afero.Afero, part string) (string, error) {
 	config, err := LoadConfig(afs.ReadFile)
 	if err != nil {
 		return "", err
 	}
 
-	allVersions, err := getAllVersions(afs.ReadDir, config)
+	next, err := getNextVersion(afs.ReadDir, config, part)
 	if err != nil {
 		return "", err
 	}
 
-	// if no versions exist default to v0.0.0
-	if len(allVersions) == 0 {
-		return "v0.0.0\n", nil
-	}
-
-	if removePrefix {
-		return fmt.Sprintln(strings.TrimPrefix(allVersions[0].Original(), "v")), nil
-	}
-
-	return fmt.Sprintln(allVersions[0].Original()), nil
-}
-
-func nextPipeline(afs afero.Afero, part string) (string, error) {
-	ver, err := getLatestVersion(afs)
-	if err != nil {
-		return "", err
-	}
-
-	sver, _ := semver.NewVersion(strings.Trim(ver, "\n"))
-
-	var next semver.Version
-
-	switch part {
-	case "major":
-		next = sver.IncMajor()
-	case "minor":
-		next = sver.IncMinor()
-	case "patch":
-		next = sver.IncPatch()
-	default:
-		return "", errNotSupportedPart
-	}
-
-	return fmt.Sprintln(next.String()), nil
+	return fmt.Sprintln(next.Original()), nil
 }
