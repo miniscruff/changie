@@ -9,9 +9,9 @@ import (
 )
 
 var nextCmd = &cobra.Command{
-	Use:   "next part",
+	Use:   "next major|minor|patch",
 	Short: "Next echos the next version based on semantic versioning",
-	Long: `Next increment version based on semantic versioning.
+	Long: `Next increments version based on semantic versioning.
 Check latest version and increment part (major, minor, patch).
 Echo the next release version number to be used by CI tools or other commands like batch.`,
 	Args: cobra.ExactArgs(1),

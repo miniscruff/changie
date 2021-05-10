@@ -23,7 +23,7 @@ var (
 )
 
 var batchCmd = &cobra.Command{
-	Use:   "batch version",
+	Use:   "batch version|major|minor|patch",
 	Short: "Batch unreleased changes into a single changelog",
 	Long: `Merges all unreleased changes into one version changelog.
 
