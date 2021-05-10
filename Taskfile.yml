@@ -16,7 +16,7 @@ tasks:
   watch:
     desc: Run unit tests and rerun on file changes with ginkgo
     cmds:
-      - ginkgo watch ./...
+      - ginkgo watch ./... -failFast
 
   lint:
     desc: Run lint checks with golangci
