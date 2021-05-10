@@ -83,11 +83,7 @@ func nextPipeline(afs afero.Afero, part string) (string, error) {
 	case "patch":
 		next = sver.IncPatch()
 	default:
-		err = errNotSupportedPart
-	}
-
-	if err != nil {
-		return "", err
+		return "", errNotSupportedPart
 	}
 
 	return fmt.Sprintln(next.String()), nil
