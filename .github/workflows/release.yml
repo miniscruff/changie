@@ -3,8 +3,7 @@ name: release
 on:
   push:
     branches: [ main ]
-    # skip path check for a fix to release script
-    # paths: [ CHANGELOG.md ]
+    paths: [ CHANGELOG.md ]
 
 jobs:
   release:
