@@ -95,7 +95,9 @@ func getLatestVersion(readDir ReadDirer, config Config) (*semver.Version, error)
 	return allVersions[0], nil
 }
 
-func getNextVersion(readDir ReadDirer, config Config, partOrVersion string) (*semver.Version, error) {
+func getNextVersion(
+	readDir ReadDirer, config Config, partOrVersion string,
+) (*semver.Version, error) {
 	// if part or version is a valid version, then return it
 	newVer, newErr := semver.NewVersion(partOrVersion)
 	if newErr == nil {
@@ -109,6 +111,7 @@ func getNextVersion(readDir ReadDirer, config Config, partOrVersion string) (*se
 	}
 
 	var next semver.Version
+
 	switch partOrVersion {
 	case "major":
 		next = ver.IncMajor()
