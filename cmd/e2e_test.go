@@ -158,4 +158,10 @@ var _ = Describe("end to end", func() {
 		err := Execute("")
 		Expect(err).NotTo(BeNil())
 	})
+
+	It("should fail to find next if you do not init", func() {
+		rootCmd.SetArgs([]string{"next", "patch"})
+		err := Execute("")
+		Expect(err).NotTo(BeNil())
+	})
 })
