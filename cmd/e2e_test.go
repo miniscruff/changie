@@ -100,6 +100,16 @@ var _ = Describe("end to end", func() {
 		Expect(string(versionOut)).To(ContainSubstring(expectedVersion))
 	}
 
+	testNext := func(expectedVersion string) {
+		rootCmd.SetArgs([]string{"next", "major"})
+		Expect(Execute("")).To(Succeed())
+
+		versionOut := make([]byte, 10)
+		_, err := stdoutReader.Read(versionOut)
+		Expect(err).To(BeNil())
+		Expect(string(versionOut)).To(ContainSubstring(expectedVersion))
+	}
+
 	testMerge := func() {
 		rootCmd.SetArgs([]string{"merge"})
 		Expect(Execute("")).To(Succeed())
@@ -138,12 +148,19 @@ var _ = Describe("end to end", func() {
 		testNew("second")
 		testBatch()
 		testLatest("0.1.0")
+		testNext("1.0.0")
 		testMerge()
 		testGen()
 	})
 
 	It("should fail to find latest if you do not init", func() {
 		rootCmd.SetArgs([]string{"latest"})
+		err := Execute("")
+		Expect(err).NotTo(BeNil())
+	})
+
+	It("should fail to find next if you do not init", func() {
+		rootCmd.SetArgs([]string{"next", "patch"})
 		err := Execute("")
 		Expect(err).NotTo(BeNil())
 	})
