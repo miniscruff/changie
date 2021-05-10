@@ -70,9 +70,33 @@ var _ = Describe("next", func() {
 		Expect(res).To(Equal("1.0.0\n"))
 	})
 
-	It("fails if part not supported", func() {
-		_, err := nextPipeline(afs, "notsupported")
+	It("fails if bad config file", func() {
+		err := afs.Remove(configPath)
+		Expect(err).To(BeNil())
+
+		_, err = nextPipeline(afs, "major")
 		Expect(err).NotTo(BeNil())
+	})
+
+	It("fails if part not supported", func() {
+		_, err := afs.Create("chgs/v0.0.1.md")
+		Expect(err).To(BeNil())
+		_, err = afs.Create("chgs/v0.1.0.md")
+		Expect(err).To(BeNil())
+		_, err = afs.Create("chgs/head.tpl.md")
+		Expect(err).To(BeNil())
+
+		_, err = nextPipeline(afs, "notsupported")
+		Expect(err).NotTo(BeNil())
+	})
+
+	It("returns 0.0.1 if no versions found (patch)", func() {
+		// include just the header
+		_, err := afs.Create("chgs/head.tpl.md")
+		Expect(err).To(BeNil())
+		res, err := nextPipeline(afs, "patch")
+		Expect(err).To(BeNil())
+		Expect(res).To(Equal("0.0.1\n"))
 	})
 
 	It("fails if unable to get versions", func() {

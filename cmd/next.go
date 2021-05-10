@@ -42,8 +42,31 @@ func runNext(cmd *cobra.Command, args []string) error {
 	return err
 }
 
+func getLatestVersion(afs afero.Afero) (string, error) {
+	config, err := LoadConfig(afs.ReadFile)
+	if err != nil {
+		return "", err
+	}
+
+	allVersions, err := getAllVersions(afs.ReadDir, config)
+	if err != nil {
+		return "", err
+	}
+
+	// if no versions exist default to v0.0.0
+	if len(allVersions) == 0 {
+		return "v0.0.0\n", nil
+	}
+
+	if removePrefix {
+		return fmt.Sprintln(strings.TrimPrefix(allVersions[0].Original(), "v")), nil
+	}
+
+	return fmt.Sprintln(allVersions[0].Original()), nil
+}
+
 func nextPipeline(afs afero.Afero, part string) (string, error) {
-	ver, err := latestPipeline(afs)
+	ver, err := getLatestVersion(afs)
 	if err != nil {
 		return "", err
 	}
