@@ -83,8 +83,6 @@ var _ = Describe("Batch", func() {
 	})
 
 	It("can batch version and bump", func() {
-		// declared path but missing is accepted
-		testConfig.VersionHeaderPath = "header.md"
 		err := testConfig.Save(afs.WriteFile)
 		Expect(err).To(BeNil())
 
@@ -218,7 +216,6 @@ this is a new version that adds cool features
 	})
 
 	It("returns error on bad semver", func() {
-		testConfig.VersionHeaderPath = "h.md"
 		err := testConfig.Save(afs.WriteFile)
 		Expect(err).To(BeNil())
 
