@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"errors"
 	"io"
 	"os"
 	"path/filepath"
@@ -11,6 +12,8 @@ import (
 	"github.com/Masterminds/semver/v3"
 	"github.com/spf13/afero"
 )
+
+var errBadVersionOrPart = errors.New("part string is not a supported version or version increment")
 
 // TimeNow is a func type for time.Now
 type TimeNow func() time.Time
@@ -90,4 +93,32 @@ func getLatestVersion(readDir ReadDirer, config Config) (*semver.Version, error)
 	}
 
 	return allVersions[0], nil
+}
+
+func getNextVersion(readDir ReadDirer, config Config, partOrVersion string) (*semver.Version, error) {
+	// if part or version is a valid version, then return it
+	newVer, newErr := semver.NewVersion(partOrVersion)
+	if newErr == nil {
+		return newVer, nil
+	}
+
+	// otherwise use a bump type command
+	ver, err := getLatestVersion(readDir, config)
+	if err != nil {
+		return nil, err
+	}
+
+	var next semver.Version
+	switch partOrVersion {
+	case "major":
+		next = ver.IncMajor()
+	case "minor":
+		next = ver.IncMinor()
+	case "patch":
+		next = ver.IncPatch()
+	default:
+		return nil, errBadVersionOrPart
+	}
+
+	return &next, nil
 }

@@ -32,6 +32,8 @@ var _ = Describe("next", func() {
 	})
 
 	It("echos next patch version", func() {
+		// major and minor are not tested directly
+		// as next version is tested in utils
 		_, err := afs.Create("chgs/v0.0.1.md")
 		Expect(err).To(BeNil())
 		_, err = afs.Create("chgs/v0.1.0.md")
@@ -39,42 +41,16 @@ var _ = Describe("next", func() {
 		_, err = afs.Create("chgs/head.tpl.md")
 		Expect(err).To(BeNil())
 
-		res, err := nextPipeline(afs, testConfig, "patch")
+		res, err := nextPipeline(afs, "patch")
 		Expect(err).To(BeNil())
 		Expect(res).To(Equal("v0.1.1\n"))
-	})
-
-	It("echos next minor version", func() {
-		_, err := afs.Create("chgs/0.0.1.md")
-		Expect(err).To(BeNil())
-		_, err = afs.Create("chgs/0.1.0.md")
-		Expect(err).To(BeNil())
-		_, err = afs.Create("chgs/head.tpl.md")
-		Expect(err).To(BeNil())
-
-		res, err := nextPipeline(afs, testConfig, "minor")
-		Expect(err).To(BeNil())
-		Expect(res).To(Equal("0.2.0\n"))
-	})
-
-	It("echos next major version", func() {
-		_, err := afs.Create("chgs/v0.0.1.md")
-		Expect(err).To(BeNil())
-		_, err = afs.Create("chgs/v0.1.0.md")
-		Expect(err).To(BeNil())
-		_, err = afs.Create("chgs/head.tpl.md")
-		Expect(err).To(BeNil())
-
-		res, err := nextPipeline(afs, testConfig, "major")
-		Expect(err).To(BeNil())
-		Expect(res).To(Equal("v1.0.0\n"))
 	})
 
 	It("fails if bad config file", func() {
 		err := afs.Remove(configPath)
 		Expect(err).To(BeNil())
 
-		_, err = nextPipeline(afs, testConfig, "major")
+		_, err = nextPipeline(afs, "major")
 		Expect(err).NotTo(BeNil())
 	})
 
@@ -86,23 +62,13 @@ var _ = Describe("next", func() {
 		_, err = afs.Create("chgs/head.tpl.md")
 		Expect(err).To(BeNil())
 
-		_, err = nextPipeline(afs, testConfig, "notsupported")
+		_, err = nextPipeline(afs, "notsupported")
 		Expect(err).NotTo(BeNil())
-	})
-
-	It("returns v0.0.1 if no versions found (patch)", func() {
-		// include just the header
-		_, err := afs.Create("chgs/head.tpl.md")
-		Expect(err).To(BeNil())
-		res, err := nextPipeline(afs, testConfig, "patch")
-		Expect(err).To(BeNil())
-		Expect(res).To(Equal("v0.0.1\n"))
 	})
 
 	It("fails if unable to get versions", func() {
 		// no files, means bad read for get versions
-		_, err := nextPipeline(afs, testConfig, "major")
+		_, err := nextPipeline(afs, "major")
 		Expect(err).NotTo(BeNil())
 	})
-
 })

@@ -137,7 +137,7 @@ var _ = Describe("end to end", func() {
 		time.Sleep(2 * time.Second) // let time pass for the next change
 		testNew("second")
 		testBatch()
-		testEcho([]string{"latest"}, "v0.1.0")
+		testEcho([]string{"latest"}, "0.1.0")
 		testEcho([]string{"next", "major"}, "1.0.0")
 		testMerge()
 		testGen()

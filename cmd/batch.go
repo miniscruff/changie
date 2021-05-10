@@ -1,7 +1,6 @@
 package cmd
 
 import (
-	"errors"
 	"os"
 	"path/filepath"
 	"text/template"
@@ -14,20 +13,21 @@ import (
 
 // batchData organizes all the prerequisite data we need to batch a version
 type batchData struct {
-	Version        string
+	Version        *semver.Version
 	ChangesPerKind map[string][]Change
 	Header         string
 }
 
 var (
-	errNotSemanticVersion = errors.New("version string is not a valid semantic version")
-	versionHeaderPath     = ""
+	versionHeaderPath = ""
 )
 
 var batchCmd = &cobra.Command{
 	Use:   "batch version",
 	Short: "Batch unreleased changes into a single changelog",
 	Long: `Merges all unreleased changes into one version changelog.
+
+Can use major, minor or patch as version to use the latest release and bump.
 
 The new version changelog can then be modified with extra descriptions,
 context or with custom tweaks before merging into the main file.`,
@@ -47,13 +47,13 @@ func runBatch(cmd *cobra.Command, args []string) error {
 	return batchPipeline(afs, args[0])
 }
 
-func batchPipeline(afs afero.Afero, ver string) error {
-	_, err := semver.NewVersion(ver)
+func batchPipeline(afs afero.Afero, version string) error {
+	config, err := LoadConfig(afs.ReadFile)
 	if err != nil {
-		return errNotSemanticVersion
+		return err
 	}
 
-	config, err := LoadConfig(afs.ReadFile)
+	ver, err := getNextVersion(afs.ReadDir, config, version)
 	if err != nil {
 		return err
 	}
@@ -133,7 +133,7 @@ func getChanges(afs afero.Afero, config Config) (map[string][]Change, error) {
 }
 
 func batchNewVersion(fs afero.Fs, config Config, data batchData) error {
-	versionPath := filepath.Join(config.ChangesDir, data.Version+"."+config.VersionExt)
+	versionPath := filepath.Join(config.ChangesDir, data.Version.Original()+"."+config.VersionExt)
 
 	versionFile, err := fs.Create(versionPath)
 	if err != nil {
@@ -157,7 +157,7 @@ func batchNewVersion(fs afero.Fs, config Config, data batchData) error {
 	}
 
 	err = vTempl.Execute(versionFile, map[string]interface{}{
-		"Version": data.Version,
+		"Version": data.Version.Original(),
 		"Time":    time.Now(),
 	})
 	if err != nil {

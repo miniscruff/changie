@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/Masterminds/semver/v3"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/spf13/afero"
@@ -173,8 +174,18 @@ this is a new version that adds cool features
 	})
 
 	It("returns error on bad semver", func() {
-		err := batchPipeline(afs, "not-semanticly-correct")
-		Expect(err).To(Equal(errNotSemanticVersion))
+		testConfig.VersionHeaderPath = "h.md"
+		err := testConfig.Save(afs.WriteFile)
+		Expect(err).To(BeNil())
+
+		futurePath := filepath.Join("news", "future")
+
+		aVer := []byte("kind: added\nbody: A\n")
+		err = afs.WriteFile(filepath.Join(futurePath, "a.yaml"), aVer, os.ModePerm)
+		Expect(err).To(BeNil())
+
+		err = batchPipeline(afs, "not-semanticly-correct")
+		Expect(err).To(Equal(errBadVersionOrPart))
 	})
 
 	It("returns error on bad config", func() {
@@ -328,7 +339,7 @@ this is a new version that adds cool features
 		}
 
 		err = batchNewVersion(fs, testConfig, batchData{
-			Version:        "v0.1.0",
+			Version:        semver.MustParse("v0.1.0"),
 			ChangesPerKind: changesPerKind,
 		})
 		Expect(err).To(BeNil())
@@ -371,7 +382,7 @@ this is a new version that adds cool features
 		}
 
 		err = batchNewVersion(fs, testConfig, batchData{
-			Version:        "v0.1.0",
+			Version:        semver.MustParse("v0.1.0"),
 			ChangesPerKind: changesPerKind,
 			Header:         "Some header we want included in our new version.\nCan also have newlines.",
 		})
@@ -399,7 +410,7 @@ Can also have newlines.
 		}
 
 		err := batchNewVersion(fs, testConfig, batchData{
-			Version:        "v0.1.0",
+			Version:        semver.MustParse("v0.1.0"),
 			ChangesPerKind: map[string][]Change{},
 		})
 		Expect(err).To(Equal(mockError))
@@ -412,7 +423,7 @@ Can also have newlines.
 		testConfig.VersionFormat = "{{juuunk...}}"
 
 		err = batchNewVersion(fs, testConfig, batchData{
-			Version:        "v0.1.0",
+			Version:        semver.MustParse("v0.1.0"),
 			ChangesPerKind: map[string][]Change{},
 		})
 		Expect(err).NotTo(BeNil())
@@ -425,7 +436,7 @@ Can also have newlines.
 		testConfig.KindFormat = "{{randoooom../././}}"
 
 		err = batchNewVersion(fs, testConfig, batchData{
-			Version:        "v0.1.0",
+			Version:        semver.MustParse("v0.1.0"),
 			ChangesPerKind: map[string][]Change{},
 		})
 		Expect(err).NotTo(BeNil())
@@ -438,7 +449,7 @@ Can also have newlines.
 		testConfig.ChangeFormat = "{{not.valid.syntax....}}"
 
 		err = batchNewVersion(fs, testConfig, batchData{
-			Version:        "v0.1.0",
+			Version:        semver.MustParse("v0.1.0"),
 			ChangesPerKind: map[string][]Change{},
 		})
 		Expect(err).NotTo(BeNil())
@@ -478,7 +489,7 @@ Can also have newlines.
 			}
 
 			err = batchNewVersion(fs, testConfig, batchData{
-				Version:        "v0.1.0",
+				Version:        semver.MustParse("v0.1.0"),
 				ChangesPerKind: changesPerKind,
 			})
 			Expect(err).To(Equal(mockError))
