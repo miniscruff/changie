@@ -1,4 +1,0 @@
-kind: Added
-body: Batch now supports bumping major, minor, and patch
-custom:
-  Issue: "100"

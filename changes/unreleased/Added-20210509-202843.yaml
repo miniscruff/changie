@@ -1,4 +1,0 @@
-kind: Added
-body: Add next command that echoes the latest version incremented by one.
-custom:
-  Issue: "98"
