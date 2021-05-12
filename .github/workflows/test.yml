@@ -31,7 +31,7 @@ jobs:
         go-version: 1.15
 
     - name: Check out code
-      uses: actions/checkout@v2
+      uses: actions/checkout@v2.3.4
 
     - name: golangci-lint
       uses: golangci/golangci-lint-action@v2.5.2
@@ -43,7 +43,7 @@ jobs:
       run: go test -coverprofile=c.out ./...
 
     - name: Coverage
-      uses: codecov/codecov-action@v1
+      uses: codecov/codecov-action@v1.5.0
       with:
         file: ./c.out
         fail_ci_if_error: true
