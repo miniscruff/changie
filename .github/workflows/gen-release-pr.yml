@@ -21,7 +21,7 @@ jobs:
 
     - name: Batch and merge
       run: |
-        go run main.go batch ${github.event.inputs.next-version}
+        go run main.go batch ${{ github.event.inputs.next-version }}
         go run main.go merge
 
     - name: Create Pull Request
