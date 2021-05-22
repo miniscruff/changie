@@ -16,13 +16,13 @@ jobs:
       uses: actions/setup-go@v2
       with:
         go-version: 1.15
-        
+
     - uses: actions/checkout@v2
-    
+
     - name: Batch and merge
       run: |
         go run main.go batch ${github.event.inputs.next-version}
         go run main.go merge
-    
+
     - name: Create Pull Request
       uses: peter-evans/create-pull-request@v3
