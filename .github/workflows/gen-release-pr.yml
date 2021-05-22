@@ -1,0 +1,28 @@
+name: Generate release pull request
+
+on:
+  workflow_dispatch:
+    inputs:
+      next-version:
+        description: 'Next version use vX.Y.Z, patch, minor or major'
+        default: 'patch'
+        required: true
+
+jobs:
+  generate-pr:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Set up Go 1.x
+      uses: actions/setup-go@v2
+      with:
+        go-version: 1.15
+        
+    - uses: actions/checkout@v2
+    
+    - name: Batch and merge
+      run: |
+        go run main.go batch ${github.event.inputs.next-version}
+        go run main.go merge
+    
+    - name: Create Pull Request
+      uses: peter-evans/create-pull-request@v3
