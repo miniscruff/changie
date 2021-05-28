@@ -1,0 +1,25 @@
+# This is a basic workflow to help you get started with Actions
+
+name: Require change fragment
+
+on:
+  pull_request:
+    types:
+      # On by default if you specify no types.
+      - "opened"
+      - "reopened"
+      - "synchronize"
+      # For `skip-label` only.
+      - "labeled"
+      - "unlabeled"
+
+jobs:
+  check-changelog:
+    runs-on: ubuntu-latest
+    steps:
+      - name: "Check for changelog entry"
+        uses: brettcannon/check-for-changed-files@v1
+        with:
+          file-pattern: "changes/unreleased/*.md"
+          skip-label: "skip changelog"
+          failure-message: "Missing a changelog file in ${file-pattern}; please add one or apply the ${skip-label} label to the pull request"
