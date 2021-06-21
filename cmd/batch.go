@@ -109,6 +109,7 @@ func batchPipeline(afs afero.Afero, version string) error {
 
 func getChanges(afs afero.Afero, config Config) ([]Change, error) {
 	var changes []Change
+
 	unreleasedPath := filepath.Join(config.ChangesDir, config.UnreleasedDir)
 
 	// read all markdown files from changes/unreleased
@@ -137,6 +138,36 @@ func getChanges(afs afero.Afero, config Config) ([]Change, error) {
 	return changes, nil
 }
 
+func loadTemplates(config Config) (
+	versionTemplate *template.Template,
+	componentTemplate *template.Template,
+	kindTemplate *template.Template,
+	changeTemplate *template.Template,
+	err error,
+) {
+	versionTemplate, err = template.New("version").Parse(config.VersionFormat)
+	if err != nil {
+		return
+	}
+
+	componentTemplate, err = template.New("component").Parse(config.ComponentFormat)
+	if err != nil {
+		return
+	}
+
+	kindTemplate, err = template.New("kind").Parse(config.KindFormat)
+	if err != nil {
+		return
+	}
+
+	changeTemplate, err = template.New("change").Parse(config.ChangeFormat)
+	if err != nil {
+		return
+	}
+
+	return
+}
+
 func batchNewVersion(fs afero.Fs, config Config, data batchData) error {
 	versionPath := filepath.Join(config.ChangesDir, data.Version.Original()+"."+config.VersionExt)
 
@@ -146,27 +177,12 @@ func batchNewVersion(fs afero.Fs, config Config, data batchData) error {
 	}
 	defer versionFile.Close()
 
-	vTempl, err := template.New("version").Parse(config.VersionFormat)
+	versionTemplate, componentTemplate, kindTemplate, changeTemplate, err := loadTemplates(config)
 	if err != nil {
 		return err
 	}
 
-	compTempl, err := template.New("change").Parse(config.ComponentFormat)
-	if err != nil {
-		return err
-	}
-
-	kTempl, err := template.New("kind").Parse(config.KindFormat)
-	if err != nil {
-		return err
-	}
-
-	cTempl, err := template.New("change").Parse(config.ChangeFormat)
-	if err != nil {
-		return err
-	}
-
-	err = vTempl.Execute(versionFile, map[string]interface{}{
+	err = versionTemplate.Execute(versionFile, map[string]interface{}{
 		"Version": data.Version.Original(),
 		"Time":    time.Now(),
 	})
@@ -189,7 +205,8 @@ func batchNewVersion(fs afero.Fs, config Config, data batchData) error {
 			lastComponent = change.Component
 			lastKind = ""
 			_, _ = versionFile.WriteString("\n")
-			err = compTempl.Execute(versionFile, map[string]string{
+
+			err = componentTemplate.Execute(versionFile, map[string]string{
 				"Component": change.Component,
 			})
 			if err != nil {
@@ -201,7 +218,7 @@ func batchNewVersion(fs afero.Fs, config Config, data batchData) error {
 			lastKind = change.Kind
 			_, _ = versionFile.WriteString("\n")
 
-			err = kTempl.Execute(versionFile, map[string]string{
+			err = kindTemplate.Execute(versionFile, map[string]string{
 				"Kind": change.Kind,
 			})
 			if err != nil {
@@ -210,7 +227,7 @@ func batchNewVersion(fs afero.Fs, config Config, data batchData) error {
 		}
 
 		_, _ = versionFile.WriteString("\n")
-		err = cTempl.Execute(versionFile, change)
+		err = changeTemplate.Execute(versionFile, change)
 
 		if err != nil {
 			return err

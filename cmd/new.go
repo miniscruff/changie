@@ -46,10 +46,11 @@ func newPipeline(afs afero.Afero, tn TimeNow, stdinReader io.ReadCloser) error {
 			Stdin: stdinReader,
 		}
 
-		_, comp, err := compPrompt.Run()
-		if err != nil {
-			return err
+		_, comp, compPromptErr := compPrompt.Run()
+		if compPromptErr != nil {
+			return compPromptErr
 		}
+
 		change.Component = comp
 	}
 
@@ -60,10 +61,11 @@ func newPipeline(afs afero.Afero, tn TimeNow, stdinReader io.ReadCloser) error {
 			Stdin: stdinReader,
 		}
 
-		_, kind, err := kindPrompt.Run()
-		if err != nil {
-			return err
+		_, kind, kindPromptErr := kindPrompt.Run()
+		if kindPromptErr != nil {
+			return kindPromptErr
 		}
+
 		change.Kind = kind
 	}
 

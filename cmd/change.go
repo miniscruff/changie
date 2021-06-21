@@ -63,30 +63,30 @@ func LoadChange(path string, rf ReadFiler) (Change, error) {
 	return c, nil
 }
 
-type changesConfigSorter struct {
+type ChangesConfigSorter struct {
 	changes []Change
 	config  Config
 }
 
-func SortByConfig(config Config) *changesConfigSorter {
-	return &changesConfigSorter{
+func SortByConfig(config Config) *ChangesConfigSorter {
+	return &ChangesConfigSorter{
 		config: config,
 	}
 }
 
 // Sort sorts the argument slice according to the less functions passed to OrderedBy.
-func (s *changesConfigSorter) Sort(changes []Change) {
+func (s *ChangesConfigSorter) Sort(changes []Change) {
 	s.changes = changes
 	sort.Sort(s)
 }
 
 // Len is part of sort.Interface.
-func (s *changesConfigSorter) Len() int {
+func (s *ChangesConfigSorter) Len() int {
 	return len(s.changes)
 }
 
 // Swap is part of sort.Interface.
-func (s *changesConfigSorter) Swap(i, j int) {
+func (s *ChangesConfigSorter) Swap(i, j int) {
 	s.changes[i], s.changes[j] = s.changes[j], s.changes[i]
 }
 
@@ -94,7 +94,7 @@ func (s *changesConfigSorter) Swap(i, j int) {
 // * Components, if enabled, are sorted by index in config
 // * Kind, if enabled, are sorted by index in config
 // * Time sorted newest first
-func (s *changesConfigSorter) Less(i, j int) bool {
+func (s *ChangesConfigSorter) Less(i, j int) bool {
 	a, b := &s.changes[i], &s.changes[j]
 
 	// Start by sorting by component index
