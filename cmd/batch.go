@@ -13,9 +13,9 @@ import (
 
 // batchData organizes all the prerequisite data we need to batch a version
 type batchData struct {
-	Version        *semver.Version
-	ChangesPerKind map[string][]Change
-	Header         string
+	Version *semver.Version
+	Changes []Change
+	Header  string
 }
 
 var (
@@ -30,7 +30,14 @@ var batchCmd = &cobra.Command{
 Can use major, minor or patch as version to use the latest release and bump.
 
 The new version changelog can then be modified with extra descriptions,
-context or with custom tweaks before merging into the main file.`,
+context or with custom tweaks before merging into the main file.
+Line breaks are added before each formatted line except the first, if you wish to
+add more line breaks include them in your format configurations.
+
+Changes are sorted in the following order:
+* Components if enabled, in order specified by config.components
+* Kinds if enabled, in order specified by config.kinds
+* Timestamp newest first`,
 	Args: cobra.ExactArgs(1),
 	RunE: runBatch,
 }
@@ -58,7 +65,7 @@ func batchPipeline(afs afero.Afero, version string) error {
 		return err
 	}
 
-	changesPerKind, err := getChanges(afs, config)
+	allChanges, err := getChanges(afs, config)
 	if err != nil {
 		return err
 	}
@@ -84,9 +91,9 @@ func batchPipeline(afs afero.Afero, version string) error {
 	}
 
 	err = batchNewVersion(afs.Fs, config, batchData{
-		Version:        ver,
-		ChangesPerKind: changesPerKind,
-		Header:         headerContents,
+		Version: ver,
+		Changes: allChanges,
+		Header:  headerContents,
 	})
 	if err != nil {
 		return err
@@ -100,14 +107,14 @@ func batchPipeline(afs afero.Afero, version string) error {
 	return nil
 }
 
-func getChanges(afs afero.Afero, config Config) (map[string][]Change, error) {
-	changesPerKind := make(map[string][]Change)
+func getChanges(afs afero.Afero, config Config) ([]Change, error) {
+	var changes []Change
 	unreleasedPath := filepath.Join(config.ChangesDir, config.UnreleasedDir)
 
 	// read all markdown files from changes/unreleased
 	fileInfos, err := afs.ReadDir(unreleasedPath)
 	if err != nil {
-		return changesPerKind, err
+		return []Change{}, err
 	}
 
 	for _, file := range fileInfos {
@@ -119,17 +126,15 @@ func getChanges(afs afero.Afero, config Config) (map[string][]Change, error) {
 
 		c, err := LoadChange(path, afs.ReadFile)
 		if err != nil {
-			return changesPerKind, err
+			return changes, err
 		}
 
-		if _, ok := changesPerKind[c.Kind]; !ok {
-			changesPerKind[c.Kind] = make([]Change, 0)
-		}
-
-		changesPerKind[c.Kind] = append(changesPerKind[c.Kind], c)
+		changes = append(changes, c)
 	}
 
-	return changesPerKind, nil
+	SortByConfig(config).Sort(changes)
+
+	return changes, nil
 }
 
 func batchNewVersion(fs afero.Fs, config Config, data batchData) error {
@@ -142,6 +147,11 @@ func batchNewVersion(fs afero.Fs, config Config, data batchData) error {
 	defer versionFile.Close()
 
 	vTempl, err := template.New("version").Parse(config.VersionFormat)
+	if err != nil {
+		return err
+	}
+
+	compTempl, err := template.New("change").Parse(config.ComponentFormat)
 	if err != nil {
 		return err
 	}
@@ -168,33 +178,42 @@ func batchNewVersion(fs afero.Fs, config Config, data batchData) error {
 		// write string is not err checked as we already write to the same
 		// file in the templates
 		_, _ = versionFile.WriteString("\n")
-		_, _ = versionFile.WriteString("\n")
 		_, _ = versionFile.WriteString(data.Header)
 	}
 
-	for _, kind := range config.Kinds {
-		changes, ok := data.ChangesPerKind[kind]
-		if !ok {
-			continue
-		}
+	lastComponent := ""
+	lastKind := ""
 
-		_, _ = versionFile.WriteString("\n")
-		_, _ = versionFile.WriteString("\n")
-
-		err = kTempl.Execute(versionFile, map[string]string{
-			"Kind": kind,
-		})
-		if err != nil {
-			return err
-		}
-
-		for _, change := range changes {
+	for _, change := range data.Changes {
+		if config.ComponentFormat != "" && lastComponent != change.Component {
+			lastComponent = change.Component
+			lastKind = ""
 			_, _ = versionFile.WriteString("\n")
-			err = cTempl.Execute(versionFile, change)
-
+			err = compTempl.Execute(versionFile, map[string]string{
+				"Component": change.Component,
+			})
 			if err != nil {
 				return err
 			}
+		}
+
+		if config.KindFormat != "" && lastKind != change.Kind {
+			lastKind = change.Kind
+			_, _ = versionFile.WriteString("\n")
+
+			err = kTempl.Execute(versionFile, map[string]string{
+				"Kind": change.Kind,
+			})
+			if err != nil {
+				return err
+			}
+		}
+
+		_, _ = versionFile.WriteString("\n")
+		err = cTempl.Execute(versionFile, change)
+
+		if err != nil {
+			return err
 		}
 	}
 

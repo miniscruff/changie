@@ -28,24 +28,43 @@ func runNew(cmd *cobra.Command, args []string) error {
 	fs := afero.NewOsFs()
 	afs := afero.Afero{Fs: fs}
 
-	return newPipeline(afs, os.Stdin)
+	return newPipeline(afs, time.Now, os.Stdin)
 }
 
-func newPipeline(afs afero.Afero, stdinReader io.ReadCloser) error {
+func newPipeline(afs afero.Afero, tn TimeNow, stdinReader io.ReadCloser) error {
 	config, err := LoadConfig(afs.ReadFile)
 	if err != nil {
 		return err
 	}
 
-	kindPrompt := promptui.Select{
-		Label: "Kind",
-		Items: config.Kinds,
-		Stdin: stdinReader,
+	var change Change
+
+	if len(config.Components) > 0 {
+		compPrompt := promptui.Select{
+			Label: "Component",
+			Items: config.Components,
+			Stdin: stdinReader,
+		}
+
+		_, comp, err := compPrompt.Run()
+		if err != nil {
+			return err
+		}
+		change.Component = comp
 	}
 
-	_, kind, err := kindPrompt.Run()
-	if err != nil {
-		return err
+	if len(config.Kinds) > 0 {
+		kindPrompt := promptui.Select{
+			Label: "Kind",
+			Items: config.Kinds,
+			Stdin: stdinReader,
+		}
+
+		_, kind, err := kindPrompt.Run()
+		if err != nil {
+			return err
+		}
+		change.Kind = kind
 	}
 
 	bodyPrompt := promptui.Prompt{
@@ -57,6 +76,8 @@ func newPipeline(afs afero.Afero, stdinReader io.ReadCloser) error {
 	if err != nil {
 		return err
 	}
+
+	change.Body = body
 
 	customs := make(map[string]string)
 
@@ -72,11 +93,8 @@ func newPipeline(afs afero.Afero, stdinReader io.ReadCloser) error {
 		}
 	}
 
-	change := Change{
-		Kind:   kind,
-		Body:   body,
-		Custom: customs,
-	}
+	change.Custom = customs
+	change.Time = tn()
 
-	return change.SaveUnreleased(afs.WriteFile, time.Now, config)
+	return change.SaveUnreleased(afs.WriteFile, config)
 }

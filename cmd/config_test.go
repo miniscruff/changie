@@ -27,9 +27,7 @@ versionHeaderPath: header.md
 changelogPath: CHANGELOG.md
 versionExt: ""
 versionFormat: ""
-kindFormat: ""
 changeFormat: ""
-kinds: []
 `
 
 		writeCalled := false
@@ -46,12 +44,18 @@ kinds: []
 		Expect(writeCalled).To(Equal(true))
 	})
 
-	It("should save the config with custom choices", func() {
+	It("should save the config with custom choices and optionals", func() {
 		config := Config{
-			ChangesDir:    "Changes",
-			UnreleasedDir: "Unrel",
-			HeaderPath:    "header.tpl.md",
-			ChangelogPath: "CHANGELOG.md",
+			ChangesDir:      "Changes",
+			UnreleasedDir:   "Unrel",
+			HeaderPath:      "header.tpl.md",
+			ChangelogPath:   "CHANGELOG.md",
+			VersionFormat:   "vers",
+			ComponentFormat: "comp",
+			KindFormat:      "kind",
+			ChangeFormat:    "chng",
+			Components:      []string{"A", "D", "G"},
+			Kinds:           []string{"B", "C", "E"},
 			CustomChoices: []Custom{
 				{
 					Key:   "first",
@@ -67,10 +71,18 @@ headerPath: header.tpl.md
 versionHeaderPath: ""
 changelogPath: CHANGELOG.md
 versionExt: ""
-versionFormat: ""
-kindFormat: ""
-changeFormat: ""
-kinds: []
+versionFormat: vers
+componentFormat: comp
+kindFormat: kind
+changeFormat: chng
+components:
+- A
+- D
+- G
+kinds:
+- B
+- C
+- E
 custom:
 - key: first
   type: string

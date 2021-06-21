@@ -10,7 +10,10 @@ import (
 var mergeCmd = &cobra.Command{
 	Use:   "merge",
 	Short: "Merge all versions into one changelog",
-	RunE:  runMerge,
+	Long: `Merge all version files into one changelog file and run any replacement commands.
+
+Note that a newline is added between each version file.`,
+	RunE: runMerge,
 }
 
 func init() {
