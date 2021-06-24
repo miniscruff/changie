@@ -1,0 +1,5 @@
+kind: Changed
+body: Kind prompt can be toggled off
+time: 2021-06-24T01:19:29.782752-07:00
+custom:
+  Issue: "116"

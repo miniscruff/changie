@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"errors"
+	"fmt"
 	"os"
 	"time"
 
@@ -10,32 +11,72 @@ import (
 )
 
 var _ = Describe("Change", func() {
+	mockTime := func() time.Time {
+		return time.Date(2016, 5, 24, 3, 30, 10, 5, time.Local)
+	}
+
+	orderedTimes := []time.Time{
+		time.Date(2018, 5, 24, 3, 30, 10, 5, time.Local),
+		time.Date(2017, 5, 24, 3, 30, 10, 5, time.Local),
+		time.Date(2016, 5, 24, 3, 30, 10, 5, time.Local),
+	}
+
 	It("should save an unreleased file", func() {
 		config := Config{
 			ChangesDir:    "Changes",
 			UnreleasedDir: "Unrel",
 		}
 		change := Change{
-			Kind: "kind",
 			Body: "some body message",
+			Time: mockTime(),
 		}
 
-		mockTime := func() time.Time {
-			return time.Date(2015, 5, 24, 3, 30, 10, 5, time.Local)
-		}
-
-		changesYaml := "kind: kind\nbody: some body message\n"
+		changesYaml := fmt.Sprintf(
+			"body: some body message\ntime: %s\n",
+			mockTime().Format(time.RFC3339Nano),
+		)
 
 		writeCalled := false
 
 		mockWf := func(filepath string, bytes []byte, perm os.FileMode) error {
 			writeCalled = true
-			Expect(filepath).To(Equal("Changes/Unrel/kind-20150524-033010.yaml"))
-			Expect(bytes).To(Equal([]byte(changesYaml)))
+			Expect(filepath).To(Equal("Changes/Unrel/20160524-033010.yaml"))
+			Expect(string(bytes)).To(Equal(changesYaml))
 			return nil
 		}
 
-		err := change.SaveUnreleased(mockWf, mockTime, config)
+		err := change.SaveUnreleased(mockWf, config)
+		Expect(err).To(BeNil())
+		Expect(writeCalled).To(Equal(true))
+	})
+
+	It("should save an unreleased file with optionals", func() {
+		config := Config{
+			ChangesDir:    "Changes",
+			UnreleasedDir: "Unrel",
+		}
+		change := Change{
+			Component: "comp",
+			Kind:      "kind",
+			Body:      "some body message",
+			Time:      mockTime(),
+		}
+
+		changesYaml := fmt.Sprintf(
+			"component: comp\nkind: kind\nbody: some body message\ntime: %s\n",
+			mockTime().Format(time.RFC3339Nano),
+		)
+
+		writeCalled := false
+
+		mockWf := func(filepath string, bytes []byte, perm os.FileMode) error {
+			writeCalled = true
+			Expect(filepath).To(Equal("Changes/Unrel/comp-kind-20160524-033010.yaml"))
+			Expect(string(bytes)).To(Equal(changesYaml))
+			return nil
+		}
+
+		err := change.SaveUnreleased(mockWf, config)
 		Expect(err).To(BeNil())
 		Expect(writeCalled).To(Equal(true))
 	})
@@ -72,5 +113,54 @@ var _ = Describe("Change", func() {
 
 		_, err := LoadChange("some_file.yaml", mockRf)
 		Expect(err).NotTo(BeNil())
+	})
+
+	It("should sort by time", func() {
+		changes := []Change{
+			{Body: "third", Time: orderedTimes[2]},
+			{Body: "second", Time: orderedTimes[1]},
+			{Body: "first", Time: orderedTimes[0]},
+		}
+		config := Config{}
+		SortByConfig(config).Sort(changes)
+
+		Expect(changes[0].Body).To(Equal("first"))
+		Expect(changes[1].Body).To(Equal("second"))
+		Expect(changes[2].Body).To(Equal("third"))
+	})
+
+	It("should sort by kind then time", func() {
+		config := Config{
+			Kinds: []string{"A", "B"},
+		}
+		changes := []Change{
+			{Body: "third", Kind: "B", Time: orderedTimes[0]},
+			{Body: "second", Kind: "A", Time: orderedTimes[2]},
+			{Body: "first", Kind: "A", Time: orderedTimes[1]},
+		}
+		SortByConfig(config).Sort(changes)
+
+		Expect(changes[0].Body).To(Equal("first"))
+		Expect(changes[1].Body).To(Equal("second"))
+		Expect(changes[2].Body).To(Equal("third"))
+	})
+
+	It("should sort by component then kind", func() {
+		config := Config{
+			Kinds:      []string{"D", "E"},
+			Components: []string{"A", "B", "C"},
+		}
+		changes := []Change{
+			{Body: "second", Component: "A", Kind: "E"},
+			{Body: "third", Component: "B", Kind: "D"},
+			{Body: "first", Component: "A", Kind: "D"},
+			{Body: "fourth", Component: "C", Kind: "D"},
+		}
+		SortByConfig(config).Sort(changes)
+
+		Expect(changes[0].Body).To(Equal("first"))
+		Expect(changes[1].Body).To(Equal("second"))
+		Expect(changes[2].Body).To(Equal("third"))
+		Expect(changes[3].Body).To(Equal("fourth"))
 	})
 })

@@ -51,7 +51,7 @@ func runInit(cmd *cobra.Command, args []string) error {
 		ChangelogPath: changelogPath,
 		VersionExt:    "md",
 		VersionFormat: "## {{.Version}} - {{.Time.Format \"2006-01-02\"}}",
-		KindFormat:    "### {{.Kind}}",
+		KindFormat:    "\n### {{.Kind}}",
 		ChangeFormat:  "* {{.Body}}",
 		Kinds: []string{
 			"Added", "Changed", "Deprecated", "Removed", "Fixed", "Security",

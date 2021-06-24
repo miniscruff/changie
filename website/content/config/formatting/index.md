@@ -10,16 +10,32 @@ Changie utilizes [go template](https://golang.org/pkg/text/template/) for format
 Additional fields can be added to change lines by adding [custom choices](/config/choices).
 
 > Due to the ordering of commands you must add custom choices before
-you added any change files in order to use the custom values in your format.
+> you added any change files in order to use the custom values in your format.
+
+When batching changes into a version, changes are sorted by:
+1. Component, if enabled, sorted by index in components config
+1. Kind, if enabled, sorted by index in kinds config
+1. Time sorted newest first
+
+### components
+type: _[]string_
+
+Components are an optional layer of changelogs suited for projects that want to
+split change fragments by an area of the project.
+An example could be splitting your changelogs by packages for a monorepo.
+
+If no components are listed then the component prompt will be skipped and no
+component header included.
+By default no components are configured.
 
 ### kinds
 type: _[]string_
 
-Every change documented for end users fall under a kind.
-The default list comes from keep a changelog and includes; added, changed, removed, deprecated, fixed and security.
-When creating a new change you must select which of these changes fits your change.
+Kinds are another optional layer of changelogs suited for specifying what type
+of change we are making.
+If configured, developers will be prompted to select a kind.
 
-When batching changes into a version, changes are sorted by kind in the order listed, so if you want new features listed on top place them on top of the list.
+The default list comes from keep a changelog and includes; added, changed, removed, deprecated, fixed, and security.
 
 ### versionFormat
 type: _string_
@@ -30,13 +46,28 @@ Template used to generate version headers in version files and changelog.
 
 | Field | Type | Description |
 | --- | --- | --- |
-| **Version** | _string_ | Semantic version of the changes. |
-| **Time** | _time.Time_ | Time of generated version. |
+| **Version** | _string_ | Semantic version of the changes |
+| **Time** | _time.Time_ | Time of generated version |
+
+### componentFormat
+type: _string_
+
+Template used to generate component headers.
+If format is empty no header will be included.
+If components are disabled, the format is unused.
+
+**Component Arguments**
+
+| Field | Type | Description |
+| --- | --- | --- |
+| **Component** | _string_ | Name of the component |
 
 ### kindFormat
 type: _string_
 
-Template used to generate kind headers for version files and changelog.
+Template used to generate kind headers.
+If format is empty no header will be included.
+If kinds are disabled, the format is unused.
 
 **Kind Arguments**
 
@@ -55,6 +86,8 @@ For example, if you had a custom value named `Issue` you can include that in you
 
 | Field | Type | Description |
 | --- | --- | --- |
-| **Kind** | _string_ | What kind of change this is |
+| **Component** | _string_ | What kind of component we are changing, only included if enabled |
+| **Kind** | _string_ | What kind of change this is, only included if enabled |
 | **Body** | _string_ | Body message of the change |
+| **Time** | _time.Time_ | Time of generated change |
 | **Custom** | _map[string]string_ | Map of custom values if any exist |

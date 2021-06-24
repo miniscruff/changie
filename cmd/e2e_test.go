@@ -110,8 +110,8 @@ var _ = Describe("end to end", func() {
 ## v0.1.0 - %s
 
 ### Changed
-* first
-* second`, defaultHeader, date)
+* newer
+* older`, defaultHeader, date)
 		changeFile, err := ioutil.ReadFile("CHANGELOG.md")
 		Expect(err).To(BeNil())
 		Expect(string(changeFile)).To(Equal(changeContents))
@@ -133,9 +133,9 @@ var _ = Describe("end to end", func() {
 	It("should all work", func() {
 		testInit()
 		testEcho([]string{"latest"}, "0.0.0")
-		testNew("first")
+		testNew("older")
 		time.Sleep(2 * time.Second) // let time pass for the next change
-		testNew("second")
+		testNew("newer")
 		testBatch()
 		testEcho([]string{"latest"}, "0.1.0")
 		testEcho([]string{"next", "major"}, "1.0.0")

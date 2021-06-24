@@ -148,11 +148,13 @@ type Config struct {
 	ChangelogPath     string `yaml:"changelogPath"`
 	VersionExt        string `yaml:"versionExt"`
 	// formats
-	VersionFormat string `yaml:"versionFormat"`
-	KindFormat    string `yaml:"kindFormat"`
-	ChangeFormat  string `yaml:"changeFormat"`
+	VersionFormat   string `yaml:"versionFormat"`
+	ComponentFormat string `yaml:"componentFormat,omitempty"`
+	KindFormat      string `yaml:"kindFormat,omitempty"`
+	ChangeFormat    string `yaml:"changeFormat"`
 	// custom
-	Kinds         []string      `yaml:"kinds"`
+	Components    []string      `yaml:"components,omitempty"`
+	Kinds         []string      `yaml:"kinds,omitempty"`
 	CustomChoices []Custom      `yaml:"custom,omitempty"`
 	Replacements  []Replacement `yaml:"replacements,omitempty"`
 }

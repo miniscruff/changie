@@ -6,6 +6,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/Masterminds/semver/v3"
 	. "github.com/onsi/ginkgo"
@@ -14,12 +15,24 @@ import (
 )
 
 var _ = Describe("Batch", func() {
+
 	var (
 		fs         *mockFs
 		afs        afero.Afero
 		mockError  error
 		testConfig Config
+
+		orderedTimes = []time.Time{
+			time.Date(2019, 5, 25, 20, 45, 0, 0, time.UTC),
+			time.Date(2017, 4, 25, 15, 20, 0, 0, time.UTC),
+			time.Date(2015, 3, 25, 10, 5, 0, 0, time.UTC),
+		}
+
+		formatTime = func(t time.Time) string {
+			return t.Format(time.RFC3339Nano)
+		}
 	)
+
 	BeforeEach(func() {
 		fs = newMockFs()
 		afs = afero.Afero{Fs: fs}
@@ -31,7 +44,7 @@ var _ = Describe("Batch", func() {
 			ChangelogPath: "news.md",
 			VersionExt:    "md",
 			VersionFormat: "## {{.Version}}",
-			KindFormat:    "### {{.Kind}}",
+			KindFormat:    "\n### {{.Kind}}",
 			ChangeFormat:  "* {{.Body}}",
 			Kinds: []string{
 				"added", "removed", "other",
@@ -126,6 +139,7 @@ var _ = Describe("Batch", func() {
 
 	It("can batch version with header", func() {
 		testConfig.VersionHeaderPath = "h.md"
+		testConfig.VersionFormat = testConfig.VersionFormat + "\n"
 		err := testConfig.Save(afs.WriteFile)
 		Expect(err).To(BeNil())
 
@@ -172,6 +186,7 @@ this is a new version that adds cool features
 
 	It("can batch version with header parameter", func() {
 		versionHeaderPath = "head.md"
+		testConfig.VersionFormat = testConfig.VersionFormat + "\n"
 		err := testConfig.Save(afs.WriteFile)
 		Expect(err).To(BeNil())
 
@@ -308,15 +323,24 @@ this is a new version that adds cool features
 	It("can get all changes", func() {
 		unrelPath := filepath.Join("news", "future")
 
-		aVer := []byte("kind: added\nbody: A\n")
+		aVer := []byte(fmt.Sprintf(
+			"kind: removed\nbody: third\ntime: %s",
+			formatTime(orderedTimes[2]),
+		))
 		err := afs.WriteFile(filepath.Join(unrelPath, "a.yaml"), aVer, os.ModePerm)
 		Expect(err).To(BeNil())
 
-		bVer := []byte("kind: added\nbody: B\n")
+		bVer := []byte(fmt.Sprintf(
+			"kind: added\nbody: first\ntime: %s",
+			formatTime(orderedTimes[0]),
+		))
 		err = afs.WriteFile(filepath.Join(unrelPath, "b.yaml"), bVer, os.ModePerm)
 		Expect(err).To(BeNil())
 
-		cVer := []byte("kind: removed\nbody: C\n")
+		cVer := []byte(fmt.Sprintf(
+			"kind: added\nbody: second\ntime: %s",
+			formatTime(orderedTimes[1]),
+		))
 		err = afs.WriteFile(filepath.Join(unrelPath, "c.yaml"), cVer, os.ModePerm)
 		Expect(err).To(BeNil())
 
@@ -325,12 +349,44 @@ this is a new version that adds cool features
 
 		changes, err := getChanges(afs, testConfig)
 		Expect(err).To(BeNil())
-		Expect(changes["added"][0].Kind).To(Equal("added"))
-		Expect(changes["added"][0].Body).To(Equal("A"))
-		Expect(changes["added"][1].Kind).To(Equal("added"))
-		Expect(changes["added"][1].Body).To(Equal("B"))
-		Expect(changes["removed"][0].Kind).To(Equal("removed"))
-		Expect(changes["removed"][0].Body).To(Equal("C"))
+		Expect(changes[0].Body).To(Equal("first"))
+		Expect(changes[1].Body).To(Equal("second"))
+		Expect(changes[2].Body).To(Equal("third"))
+	})
+
+	It("can get all changes with components", func() {
+		unrelPath := filepath.Join("news", "future")
+
+		aVer := []byte(fmt.Sprintf(
+			"component: compiler\nkind: removed\nbody: A\ntime: %s",
+			formatTime(orderedTimes[2]),
+		))
+		err := afs.WriteFile(filepath.Join(unrelPath, "a.yaml"), aVer, os.ModePerm)
+		Expect(err).To(BeNil())
+
+		bVer := []byte(fmt.Sprintf(
+			"component: linker\nkind: added\nbody: B\ntime: %s",
+			formatTime(orderedTimes[0]),
+		))
+		err = afs.WriteFile(filepath.Join(unrelPath, "b.yaml"), bVer, os.ModePerm)
+		Expect(err).To(BeNil())
+
+		cVer := []byte(fmt.Sprintf(
+			"component: linker\nkind: added\nbody: C\ntime: %s",
+			formatTime(orderedTimes[1]),
+		))
+		err = afs.WriteFile(filepath.Join(unrelPath, "c.yaml"), cVer, os.ModePerm)
+		Expect(err).To(BeNil())
+
+		err = afs.WriteFile(filepath.Join(unrelPath, "ignored.txt"), cVer, os.ModePerm)
+		Expect(err).To(BeNil())
+
+		testConfig.Components = []string{"linker", "compiler"}
+		changes, err := getChanges(afs, testConfig)
+		Expect(err).To(BeNil())
+		Expect(changes[0].Body).To(Equal("B"))
+		Expect(changes[1].Body).To(Equal("C"))
+		Expect(changes[2].Body).To(Equal("A"))
 	})
 
 	It("returns err if unable to read directory", func() {
@@ -374,14 +430,16 @@ this is a new version that adds cool features
 			return len(data), nil
 		}
 
-		changesPerKind := map[string][]Change{
-			"added":   {{Body: "w"}, {Body: "x"}},
-			"removed": {{Body: "y"}, {Body: "z"}},
+		changes := []Change{
+			{Kind: "added", Body: "w"},
+			{Kind: "added", Body: "x"},
+			{Kind: "removed", Body: "y"},
+			{Kind: "removed", Body: "z"},
 		}
 
 		err = batchNewVersion(fs, testConfig, batchData{
-			Version:        semver.MustParse("v0.1.0"),
-			ChangesPerKind: changesPerKind,
+			Version: semver.MustParse("v0.1.0"),
+			Changes: changes,
 		})
 		Expect(err).To(BeNil())
 
@@ -393,6 +451,101 @@ this is a new version that adds cool features
 
 ### removed
 * y
+* z`
+		Expect(contents).To(Equal(expected))
+	})
+
+	It("can create new version file without kind headers", func() {
+		err := afs.MkdirAll("news", 0644)
+		Expect(err).To(BeNil())
+
+		vFile := newMockFile(fs, "v0.1.0.md")
+		contents := ""
+
+		fs.mockCreate = func(path string) (afero.File, error) {
+			return vFile, nil
+		}
+
+		vFile.mockWrite = func(data []byte) (int, error) {
+			contents += string(data)
+			return len(data), nil
+		}
+		vFile.mockWriteString = func(data string) (int, error) {
+			contents += data
+			return len(data), nil
+		}
+
+		changes := []Change{
+			{Body: "w", Kind: "added"},
+			{Body: "x", Kind: "added"},
+			{Body: "y", Kind: "removed"},
+			{Body: "z", Kind: "removed"},
+		}
+
+		testConfig.KindFormat = ""
+		testConfig.ChangeFormat = "* {{.Body}} ({{.Kind}})"
+		err = batchNewVersion(fs, testConfig, batchData{
+			Version: semver.MustParse("v0.1.0"),
+			Changes: changes,
+		})
+		Expect(err).To(BeNil())
+
+		expected := `## v0.1.0
+* w (added)
+* x (added)
+* y (removed)
+* z (removed)`
+		Expect(contents).To(Equal(expected))
+	})
+
+	It("can create new version file with component headers", func() {
+		err := afs.MkdirAll("news", 0644)
+		Expect(err).To(BeNil())
+
+		vFile := newMockFile(fs, "v0.1.0.md")
+		contents := ""
+
+		fs.mockCreate = func(path string) (afero.File, error) {
+			return vFile, nil
+		}
+
+		vFile.mockWrite = func(data []byte) (int, error) {
+			contents += string(data)
+			return len(data), nil
+		}
+		vFile.mockWriteString = func(data string) (int, error) {
+			contents += data
+			return len(data), nil
+		}
+
+		changes := []Change{
+			{Body: "w", Kind: "added", Component: "linker"},
+			{Body: "x", Kind: "added", Component: "linker"},
+			{Body: "y", Kind: "removed", Component: "linker"},
+			{Body: "z", Kind: "removed", Component: "compiler"},
+		}
+
+		testConfig.Components = []string{"linker", "compiler"}
+		testConfig.ComponentFormat = "\n## {{.Component}}"
+		testConfig.KindFormat = "### {{.Kind}}"
+		testConfig.ChangeFormat = "* {{.Body}}"
+		err = batchNewVersion(fs, testConfig, batchData{
+			Version: semver.MustParse("v0.1.0"),
+			Changes: changes,
+		})
+		Expect(err).To(BeNil())
+
+		expected := `## v0.1.0
+
+## linker
+### added
+* w
+* x
+### removed
+* y
+
+## compiler
+### removed
 * z`
 		Expect(contents).To(Equal(expected))
 	})
@@ -417,15 +570,18 @@ this is a new version that adds cool features
 			return len(data), nil
 		}
 
-		changesPerKind := map[string][]Change{
-			"added":   {{Body: "w"}, {Body: "x"}},
-			"removed": {{Body: "y"}, {Body: "z"}},
+		changes := []Change{
+			{Body: "w", Kind: "added"},
+			{Body: "x", Kind: "added"},
+			{Body: "y", Kind: "removed"},
+			{Body: "z", Kind: "removed"},
 		}
 
+		testConfig.VersionFormat = testConfig.VersionFormat + "\n"
 		err = batchNewVersion(fs, testConfig, batchData{
-			Version:        semver.MustParse("v0.1.0"),
-			ChangesPerKind: changesPerKind,
-			Header:         "Some header we want included in our new version.\nCan also have newlines.",
+			Version: semver.MustParse("v0.1.0"),
+			Changes: changes,
+			Header:  "Some header we want included in our new version.\nCan also have newlines.",
 		})
 		Expect(err).To(BeNil())
 
@@ -451,8 +607,8 @@ Can also have newlines.
 		}
 
 		err := batchNewVersion(fs, testConfig, batchData{
-			Version:        semver.MustParse("v0.1.0"),
-			ChangesPerKind: map[string][]Change{},
+			Version: semver.MustParse("v0.1.0"),
+			Changes: []Change{},
 		})
 		Expect(err).To(Equal(mockError))
 	})
@@ -464,8 +620,8 @@ Can also have newlines.
 		testConfig.VersionFormat = "{{juuunk...}}"
 
 		err = batchNewVersion(fs, testConfig, batchData{
-			Version:        semver.MustParse("v0.1.0"),
-			ChangesPerKind: map[string][]Change{},
+			Version: semver.MustParse("v0.1.0"),
+			Changes: []Change{},
 		})
 		Expect(err).NotTo(BeNil())
 	})
@@ -477,8 +633,21 @@ Can also have newlines.
 		testConfig.KindFormat = "{{randoooom../././}}"
 
 		err = batchNewVersion(fs, testConfig, batchData{
-			Version:        semver.MustParse("v0.1.0"),
-			ChangesPerKind: map[string][]Change{},
+			Version: semver.MustParse("v0.1.0"),
+			Changes: []Change{},
+		})
+		Expect(err).NotTo(BeNil())
+	})
+
+	It("returns error when using bad component template", func() {
+		err := afs.MkdirAll("news", 0644)
+		Expect(err).To(BeNil())
+
+		testConfig.ComponentFormat = "{{deja vu}}"
+
+		err = batchNewVersion(fs, testConfig, batchData{
+			Version: semver.MustParse("v0.1.0"),
+			Changes: []Change{},
 		})
 		Expect(err).NotTo(BeNil())
 	})
@@ -490,8 +659,8 @@ Can also have newlines.
 		testConfig.ChangeFormat = "{{not.valid.syntax....}}"
 
 		err = batchNewVersion(fs, testConfig, batchData{
-			Version:        semver.MustParse("v0.1.0"),
-			ChangesPerKind: map[string][]Change{},
+			Version: semver.MustParse("v0.1.0"),
+			Changes: []Change{},
 		})
 		Expect(err).NotTo(BeNil())
 	})
@@ -501,7 +670,8 @@ Can also have newlines.
 		prefix string
 	}{
 		{key: "version", prefix: "## "},
-		{key: "kind", prefix: "### "},
+		{key: "component", prefix: "\n## "},
+		{key: "kind", prefix: "\n### "},
 		{key: "change", prefix: "* "},
 	}
 
@@ -524,14 +694,18 @@ Can also have newlines.
 				return vFile.memFile.Write(data)
 			}
 
-			changesPerKind := map[string][]Change{
-				"added":   {{Body: "w"}, {Body: "x"}},
-				"removed": {{Body: "y"}, {Body: "z"}},
+			changes := []Change{
+				{Component: "A", Kind: "added", Body: "w"},
+				{Component: "A", Kind: "added", Body: "x"},
+				{Component: "A", Kind: "removed", Body: "y"},
+				{Component: "B", Kind: "removed", Body: "z"},
 			}
 
+			testConfig.ComponentFormat = "\n## {{.Component}}"
+			testConfig.Components = []string{"A", "B"}
 			err = batchNewVersion(fs, testConfig, batchData{
-				Version:        semver.MustParse("v0.1.0"),
-				ChangesPerKind: changesPerKind,
+				Version: semver.MustParse("v0.1.0"),
+				Changes: changes,
 			})
 			Expect(err).To(Equal(mockError))
 		})
