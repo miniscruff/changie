@@ -5,7 +5,6 @@ import (
 	"os"
 	"time"
 
-	"github.com/manifoldco/promptui"
 	"github.com/spf13/afero"
 	"github.com/spf13/cobra"
 
@@ -41,64 +40,11 @@ func newPipeline(afs afero.Afero, tn shared.TimeNow, stdinReader io.ReadCloser) 
 	}
 
 	var change core.Change
-
-	if len(config.Components) > 0 {
-		compPrompt := promptui.Select{
-			Label: "Component",
-			Items: config.Components,
-			Stdin: stdinReader,
-		}
-
-		_, comp, compPromptErr := compPrompt.Run()
-		if compPromptErr != nil {
-			return compPromptErr
-		}
-
-		change.Component = comp
-	}
-
-	if len(config.Kinds) > 0 {
-		kindPrompt := promptui.Select{
-			Label: "Kind",
-			Items: config.Kinds,
-			Stdin: stdinReader,
-		}
-
-		_, kind, kindPromptErr := kindPrompt.Run()
-		if kindPromptErr != nil {
-			return kindPromptErr
-		}
-
-		change.Kind = kind
-	}
-
-	bodyPrompt := promptui.Prompt{
-		Label: "Body",
-		Stdin: stdinReader,
-	}
-
-	body, err := bodyPrompt.Run()
+	err = core.AskPrompts(&change, config, stdinReader)
 	if err != nil {
 		return err
 	}
 
-	change.Body = body
-
-	customs := make(map[string]string)
-
-	for _, custom := range config.CustomChoices {
-		prompt, err := custom.CreatePrompt(stdinReader)
-		if err != nil {
-			return err
-		}
-
-		customs[custom.Key], err = prompt.Run()
-		if err != nil {
-			return err
-		}
-	}
-
-	change.Custom = customs
 	change.Time = tn()
 
 	return change.SaveUnreleased(afs.WriteFile, config)
