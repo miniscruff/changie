@@ -5,9 +5,10 @@ import (
 	"os"
 
 	"github.com/manifoldco/promptui"
-	. "github.com/miniscruff/changie/test_utils"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+
+	. "github.com/miniscruff/changie/testutils"
 )
 
 var _ = Describe("Custom", func() {
@@ -85,6 +86,7 @@ var _ = Describe("Custom", func() {
 			Type:        CustomEnum,
 			EnumOptions: []string{"a", "b", "c"},
 		}.CreatePrompt(stdinReader)
+		Expect(err).To(BeNil())
 
 		go func() {
 			DelayWrite(stdinWriter, []byte{106, 13})

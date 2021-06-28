@@ -7,9 +7,10 @@ import (
 	"time"
 
 	"github.com/Masterminds/semver/v3"
-	"github.com/miniscruff/changie/core"
 	"github.com/spf13/afero"
 	"github.com/spf13/cobra"
+
+	"github.com/miniscruff/changie/core"
 )
 
 // batchData organizes all the prerequisite data we need to batch a version

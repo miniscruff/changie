@@ -4,10 +4,11 @@ import (
 	"errors"
 	"os"
 
-	. "github.com/miniscruff/changie/test_utils"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/spf13/afero"
+
+	. "github.com/miniscruff/changie/testutils"
 )
 
 var _ = Describe("Config", func() {

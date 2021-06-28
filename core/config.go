@@ -8,9 +8,10 @@ import (
 
 	"github.com/Masterminds/semver/v3"
 	"github.com/icholy/replace"
-	"github.com/miniscruff/changie/shared"
 	"golang.org/x/text/transform"
 	"gopkg.in/yaml.v2"
+
+	"github.com/miniscruff/changie/shared"
 )
 
 const (
@@ -31,7 +32,11 @@ type Replacement struct {
 	Replace string
 }
 
-func (r Replacement) Execute(readFile shared.ReadFiler, writeFile shared.WriteFiler, data ReplaceData) error {
+func (r Replacement) Execute(
+	readFile shared.ReadFiler,
+	writeFile shared.WriteFiler,
+	data ReplaceData,
+) error {
 	templ, err := template.New("replacement").Parse(r.Replace)
 	if err != nil {
 		return err

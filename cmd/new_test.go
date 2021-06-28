@@ -7,11 +7,12 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/miniscruff/changie/core"
-	. "github.com/miniscruff/changie/test_utils"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/spf13/afero"
+
+	"github.com/miniscruff/changie/core"
+	. "github.com/miniscruff/changie/testutils"
 )
 
 var _ = Describe("New", func() {

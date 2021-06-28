@@ -4,10 +4,11 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/miniscruff/changie/core"
-	"github.com/miniscruff/changie/shared"
 	"github.com/spf13/afero"
 	"github.com/spf13/cobra"
+
+	"github.com/miniscruff/changie/core"
+	"github.com/miniscruff/changie/shared"
 )
 
 // initCmd represents the init command

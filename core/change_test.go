@@ -134,8 +134,9 @@ var _ = Describe("Change", func() {
 			Kinds: []string{"A", "B"},
 		}
 		changes := []Change{
-			{Body: "third", Kind: "B", Time: orderedTimes[0]},
+			{Body: "fourth", Kind: "B", Time: orderedTimes[1]},
 			{Body: "second", Kind: "A", Time: orderedTimes[2]},
+			{Body: "third", Kind: "B", Time: orderedTimes[0]},
 			{Body: "first", Kind: "A", Time: orderedTimes[1]},
 		}
 		SortByConfig(config).Sort(changes)
@@ -143,22 +144,7 @@ var _ = Describe("Change", func() {
 		Expect(changes[0].Body).To(Equal("first"))
 		Expect(changes[1].Body).To(Equal("second"))
 		Expect(changes[2].Body).To(Equal("third"))
-	})
-
-	It("should sort by kind then time ( different order )", func() {
-		config := Config{
-			Kinds: []string{"A", "B"},
-		}
-		changes := []Change{
-			{Body: "first", Kind: "A", Time: orderedTimes[1]},
-			{Body: "third", Kind: "B", Time: orderedTimes[0]},
-			{Body: "second", Kind: "A", Time: orderedTimes[2]},
-		}
-		SortByConfig(config).Sort(changes)
-
-		Expect(changes[0].Body).To(Equal("first"))
-		Expect(changes[1].Body).To(Equal("second"))
-		Expect(changes[2].Body).To(Equal("third"))
+		Expect(changes[3].Body).To(Equal("fourth"))
 	})
 
 	It("should sort by component then kind", func() {

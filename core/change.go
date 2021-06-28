@@ -7,8 +7,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/miniscruff/changie/shared"
 	"gopkg.in/yaml.v2"
+
+	"github.com/miniscruff/changie/shared"
 )
 
 const timeFormat string = "20060102-150405"

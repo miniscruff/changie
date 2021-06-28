@@ -4,9 +4,10 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/miniscruff/changie/core"
 	"github.com/spf13/afero"
 	"github.com/spf13/cobra"
+
+	"github.com/miniscruff/changie/core"
 )
 
 var nextCmd = &cobra.Command{
