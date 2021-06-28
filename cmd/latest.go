@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/miniscruff/changie/core"
 	"github.com/spf13/afero"
 	"github.com/spf13/cobra"
 )
@@ -45,12 +46,12 @@ func runLatest(cmd *cobra.Command, args []string) error {
 }
 
 func latestPipeline(afs afero.Afero) (string, error) {
-	config, err := LoadConfig(afs.ReadFile)
+	config, err := core.LoadConfig(afs.ReadFile)
 	if err != nil {
 		return "", err
 	}
 
-	ver, err := getLatestVersion(afs.ReadDir, config)
+	ver, err := core.GetLatestVersion(afs.ReadDir, config)
 	if err != nil {
 		return "", err
 	}

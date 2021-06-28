@@ -1,4 +1,4 @@
-package cmd
+package core
 
 import (
 	"fmt"
@@ -7,6 +7,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/miniscruff/changie/shared"
 	"gopkg.in/yaml.v2"
 )
 
@@ -22,7 +23,7 @@ type Change struct {
 }
 
 // SaveUnreleased will save an unreleased change to the unreleased directory
-func (change Change) SaveUnreleased(wf WriteFiler, config Config) error {
+func (change Change) SaveUnreleased(wf shared.WriteFiler, config Config) error {
 	bs, _ := yaml.Marshal(&change)
 	nameParts := make([]string, 0)
 
@@ -47,7 +48,7 @@ func (change Change) SaveUnreleased(wf WriteFiler, config Config) error {
 }
 
 // LoadChange will load a change from file path
-func LoadChange(path string, rf ReadFiler) (Change, error) {
+func LoadChange(path string, rf shared.ReadFiler) (Change, error) {
 	var c Change
 
 	bs, err := rf(path)

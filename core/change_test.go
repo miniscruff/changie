@@ -1,4 +1,4 @@
-package cmd
+package core
 
 import (
 	"errors"
@@ -145,16 +145,32 @@ var _ = Describe("Change", func() {
 		Expect(changes[2].Body).To(Equal("third"))
 	})
 
+	It("should sort by kind then time ( different order )", func() {
+		config := Config{
+			Kinds: []string{"A", "B"},
+		}
+		changes := []Change{
+			{Body: "first", Kind: "A", Time: orderedTimes[1]},
+			{Body: "third", Kind: "B", Time: orderedTimes[0]},
+			{Body: "second", Kind: "A", Time: orderedTimes[2]},
+		}
+		SortByConfig(config).Sort(changes)
+
+		Expect(changes[0].Body).To(Equal("first"))
+		Expect(changes[1].Body).To(Equal("second"))
+		Expect(changes[2].Body).To(Equal("third"))
+	})
+
 	It("should sort by component then kind", func() {
 		config := Config{
 			Kinds:      []string{"D", "E"},
 			Components: []string{"A", "B", "C"},
 		}
 		changes := []Change{
+			{Body: "fourth", Component: "B", Kind: "E"},
 			{Body: "second", Component: "A", Kind: "E"},
 			{Body: "third", Component: "B", Kind: "D"},
 			{Body: "first", Component: "A", Kind: "D"},
-			{Body: "fourth", Component: "C", Kind: "D"},
 		}
 		SortByConfig(config).Sort(changes)
 

@@ -4,6 +4,8 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/miniscruff/changie/core"
+	"github.com/miniscruff/changie/shared"
 	"github.com/spf13/afero"
 	"github.com/spf13/cobra"
 )
@@ -44,7 +46,7 @@ func init() {
 }
 
 func runInit(cmd *cobra.Command, args []string) error {
-	config := Config{
+	config := core.Config{
 		ChangesDir:    changesDir,
 		UnreleasedDir: "unreleased",
 		HeaderPath:    "header.tpl.md",
@@ -63,7 +65,7 @@ func runInit(cmd *cobra.Command, args []string) error {
 	return initPipeline(afs.MkdirAll, afs.WriteFile, config)
 }
 
-func initPipeline(mkdir MkdirAller, wf WriteFiler, config Config) error {
+func initPipeline(mkdir shared.MkdirAller, wf shared.WriteFiler, config core.Config) error {
 	var err error
 
 	headerPath := filepath.Join(config.ChangesDir, config.HeaderPath)

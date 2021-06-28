@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/Masterminds/semver/v3"
+	"github.com/miniscruff/changie/core"
 	"github.com/spf13/afero"
 	"github.com/spf13/cobra"
 )
@@ -14,7 +15,7 @@ import (
 // batchData organizes all the prerequisite data we need to batch a version
 type batchData struct {
 	Version *semver.Version
-	Changes []Change
+	Changes []core.Change
 	Header  string
 }
 
@@ -55,12 +56,12 @@ func runBatch(cmd *cobra.Command, args []string) error {
 }
 
 func batchPipeline(afs afero.Afero, version string) error {
-	config, err := LoadConfig(afs.ReadFile)
+	config, err := core.LoadConfig(afs.ReadFile)
 	if err != nil {
 		return err
 	}
 
-	ver, err := getNextVersion(afs.ReadDir, config, version)
+	ver, err := core.GetNextVersion(afs.ReadDir, config, version)
 	if err != nil {
 		return err
 	}
@@ -107,15 +108,15 @@ func batchPipeline(afs afero.Afero, version string) error {
 	return nil
 }
 
-func getChanges(afs afero.Afero, config Config) ([]Change, error) {
-	var changes []Change
+func getChanges(afs afero.Afero, config core.Config) ([]core.Change, error) {
+	var changes []core.Change
 
 	unreleasedPath := filepath.Join(config.ChangesDir, config.UnreleasedDir)
 
 	// read all markdown files from changes/unreleased
 	fileInfos, err := afs.ReadDir(unreleasedPath)
 	if err != nil {
-		return []Change{}, err
+		return []core.Change{}, err
 	}
 
 	for _, file := range fileInfos {
@@ -125,7 +126,7 @@ func getChanges(afs afero.Afero, config Config) ([]Change, error) {
 
 		path := filepath.Join(config.ChangesDir, config.UnreleasedDir, file.Name())
 
-		c, err := LoadChange(path, afs.ReadFile)
+		c, err := core.LoadChange(path, afs.ReadFile)
 		if err != nil {
 			return changes, err
 		}
@@ -133,12 +134,12 @@ func getChanges(afs afero.Afero, config Config) ([]Change, error) {
 		changes = append(changes, c)
 	}
 
-	SortByConfig(config).Sort(changes)
+	core.SortByConfig(config).Sort(changes)
 
 	return changes, nil
 }
 
-func loadTemplates(config Config) (
+func loadTemplates(config core.Config) (
 	versionTemplate *template.Template,
 	componentTemplate *template.Template,
 	kindTemplate *template.Template,
@@ -168,7 +169,7 @@ func loadTemplates(config Config) (
 	return
 }
 
-func batchNewVersion(fs afero.Fs, config Config, data batchData) error {
+func batchNewVersion(fs afero.Fs, config core.Config, data batchData) error {
 	versionPath := filepath.Join(config.ChangesDir, data.Version.Original()+"."+config.VersionExt)
 
 	versionFile, err := fs.Create(versionPath)
@@ -237,7 +238,7 @@ func batchNewVersion(fs afero.Fs, config Config, data batchData) error {
 	return nil
 }
 
-func deleteUnreleased(afs afero.Afero, config Config, headerPath string) error {
+func deleteUnreleased(afs afero.Afero, config core.Config, headerPath string) error {
 	fileInfos, _ := afs.ReadDir(filepath.Join(config.ChangesDir, config.UnreleasedDir))
 	for _, file := range fileInfos {
 		if filepath.Ext(file.Name()) != ".yaml" && file.Name() != headerPath {

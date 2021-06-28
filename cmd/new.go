@@ -6,6 +6,8 @@ import (
 	"time"
 
 	"github.com/manifoldco/promptui"
+	"github.com/miniscruff/changie/core"
+	"github.com/miniscruff/changie/shared"
 	"github.com/spf13/afero"
 	"github.com/spf13/cobra"
 )
@@ -31,13 +33,13 @@ func runNew(cmd *cobra.Command, args []string) error {
 	return newPipeline(afs, time.Now, os.Stdin)
 }
 
-func newPipeline(afs afero.Afero, tn TimeNow, stdinReader io.ReadCloser) error {
-	config, err := LoadConfig(afs.ReadFile)
+func newPipeline(afs afero.Afero, tn shared.TimeNow, stdinReader io.ReadCloser) error {
+	config, err := core.LoadConfig(afs.ReadFile)
 	if err != nil {
 		return err
 	}
 
-	var change Change
+	var change core.Change
 
 	if len(config.Components) > 0 {
 		compPrompt := promptui.Select{

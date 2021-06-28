@@ -1,10 +1,11 @@
-package cmd
+package core
 
 import (
 	"errors"
 	"os"
 
 	"github.com/manifoldco/promptui"
+	. "github.com/miniscruff/changie/test_utils"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/spf13/afero"
@@ -34,7 +35,7 @@ changeFormat: ""
 
 		mockWf := func(filepath string, bytes []byte, perm os.FileMode) error {
 			writeCalled = true
-			Expect(filepath).To(Equal(configPath))
+			Expect(filepath).To(Equal(ConfigPath))
 			Expect(string(bytes)).To(Equal(configYaml))
 			return nil
 		}
@@ -59,7 +60,7 @@ changeFormat: ""
 			CustomChoices: []Custom{
 				{
 					Key:   "first",
-					Type:  customString,
+					Type:  CustomString,
 					Label: "First name",
 				},
 			},
@@ -93,7 +94,7 @@ custom:
 
 		mockWf := func(filepath string, bytes []byte, perm os.FileMode) error {
 			writeCalled = true
-			Expect(filepath).To(Equal(configPath))
+			Expect(filepath).To(Equal(ConfigPath))
 			Expect(string(bytes)).To(Equal(configYaml))
 			return nil
 		}
@@ -105,7 +106,7 @@ custom:
 
 	It("should load change from path", func() {
 		mockRf := func(filepath string) ([]byte, error) {
-			Expect(filepath).To(Equal(configPath))
+			Expect(filepath).To(Equal(ConfigPath))
 			return []byte("changesDir: C\nheaderPath: header.rst\n"), nil
 		}
 
@@ -119,7 +120,7 @@ custom:
 		mockErr := errors.New("bad file")
 
 		mockRf := func(filepath string) ([]byte, error) {
-			Expect(filepath).To(Equal(configPath))
+			Expect(filepath).To(Equal(ConfigPath))
 			return []byte(""), mockErr
 		}
 
@@ -129,7 +130,7 @@ custom:
 
 	It("should return error from bad file", func() {
 		mockRf := func(filepath string) ([]byte, error) {
-			Expect(filepath).To(Equal(configPath))
+			Expect(filepath).To(Equal(ConfigPath))
 			return []byte("not a yaml file---"), nil
 		}
 
@@ -143,12 +144,12 @@ var _ = Describe("Custom", func() {
 		_, err := Custom{
 			Type: "invalid type",
 		}.CreatePrompt(os.Stdin)
-		Expect(errors.Is(err, errInvalidPromptType)).To(BeTrue())
+		Expect(errors.Is(err, ErrInvalidPromptType)).To(BeTrue())
 	})
 
 	It("can create custom string prompt", func() {
 		prompt, err := Custom{
-			Type:  customString,
+			Type:  CustomString,
 			Label: "a label",
 		}.CreatePrompt(os.Stdin)
 		Expect(err).To(BeNil())
@@ -161,7 +162,7 @@ var _ = Describe("Custom", func() {
 	It("can create custom int prompt", func() {
 		prompt, err := Custom{
 			Key:  "name",
-			Type: customInt,
+			Type: CustomInt,
 		}.CreatePrompt(os.Stdin)
 		Expect(err).To(BeNil())
 
@@ -177,7 +178,7 @@ var _ = Describe("Custom", func() {
 		var min int64 = 5
 		var max int64 = 10
 		prompt, err := Custom{
-			Type:   customInt,
+			Type:   CustomInt,
 			MinInt: &min,
 			MaxInt: &max,
 		}.CreatePrompt(os.Stdin)
@@ -192,7 +193,7 @@ var _ = Describe("Custom", func() {
 
 	It("can create custom enum prompt", func() {
 		prompt, err := Custom{
-			Type:        customEnum,
+			Type:        CustomEnum,
 			EnumOptions: []string{"a", "b", "c"},
 		}.CreatePrompt(os.Stdin)
 		Expect(err).To(BeNil())
@@ -200,6 +201,27 @@ var _ = Describe("Custom", func() {
 		underPrompt, ok := prompt.(*enumWrapper)
 		Expect(ok).To(BeTrue())
 		Expect(underPrompt.Select.Items).To(Equal([]string{"a", "b", "c"}))
+	})
+
+	It("can run enum prompt", func() {
+		stdinReader, stdinWriter, err := os.Pipe()
+		Expect(err).To(BeNil())
+
+		defer stdinReader.Close()
+		defer stdinWriter.Close()
+
+		prompt, err := Custom{
+			Type:        CustomEnum,
+			EnumOptions: []string{"a", "b", "c"},
+		}.CreatePrompt(stdinReader)
+
+		go func() {
+			DelayWrite(stdinWriter, []byte{106, 13})
+		}()
+
+		out, err := prompt.Run()
+		Expect(err).To(BeNil())
+		Expect(out).To(Equal("b"))
 	})
 })
 

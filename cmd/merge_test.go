@@ -5,6 +5,8 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/miniscruff/changie/core"
+	. "github.com/miniscruff/changie/test_utils"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/spf13/afero"
@@ -12,14 +14,14 @@ import (
 
 var _ = Describe("Merge", func() {
 	var (
-		fs         *mockFs
+		fs         *MockFS
 		afs        afero.Afero
-		testConfig Config
+		testConfig core.Config
 	)
 	BeforeEach(func() {
-		fs = newMockFs()
+		fs = NewMockFS()
 		afs = afero.Afero{Fs: fs}
-		testConfig = Config{
+		testConfig = core.Config{
 			ChangesDir:    "news",
 			UnreleasedDir: "future",
 			HeaderPath:    "header.rst",
@@ -31,7 +33,7 @@ var _ = Describe("Merge", func() {
 			Kinds: []string{
 				"added", "removed", "other",
 			},
-			Replacements: []Replacement{
+			Replacements: []core.Replacement{
 				{
 					Path:    "replace.json",
 					Find:    `  "version": ".*",`,
@@ -135,12 +137,12 @@ first version`
 	It("returns error on bad header file", func() {
 		saveAndCheckConfig()
 		mockError := errors.New("bad open")
-		fs.mockOpen = func(filename string) (afero.File, error) {
+		fs.MockOpen = func(filename string) (afero.File, error) {
 			if filename == filepath.Join("news", "header.rst") {
 				return nil, mockError
 			}
 
-			return fs.memFs.Open(filename)
+			return fs.MemFS.Open(filename)
 		}
 
 		// need at least one change to exist
@@ -156,7 +158,7 @@ first version`
 	It("returns error on bad changelog write string", func() {
 		saveAndCheckConfig()
 		badError := errors.New("bad write string")
-		mockFile := newMockFile(afs, "changelog")
+		mockFile := NewMockFile(afs, "changelog")
 		mockCreate := func(filename string) (afero.File, error) {
 			if filename == "news.md" {
 				return mockFile, nil
@@ -165,12 +167,12 @@ first version`
 			return afs.Create(filename)
 		}
 
-		mockFile.mockWriteString = func(data string) (int, error) {
+		mockFile.MockWriteString = func(data string) (int, error) {
 			if data == "\n\n" {
 				return 0, badError
 			}
 
-			return mockFile.memFile.WriteString(data)
+			return mockFile.MemFile.WriteString(data)
 		}
 
 		// we need a header and at least one version
@@ -202,12 +204,12 @@ first version`
 		Expect(err).To(BeNil())
 
 		// create a version file, then fail to open it the second time
-		fs.mockOpen = func(filename string) (afero.File, error) {
+		fs.MockOpen = func(filename string) (afero.File, error) {
 			if filename == onePath {
 				return nil, badError
 			}
 
-			return fs.memFs.Open(filename)
+			return fs.MemFS.Open(filename)
 		}
 
 		err = mergePipeline(afs, afs.Create)

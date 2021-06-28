@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/miniscruff/changie/core"
 	"github.com/spf13/afero"
 	"github.com/spf13/cobra"
 )
@@ -37,12 +38,12 @@ func runNext(cmd *cobra.Command, args []string) error {
 }
 
 func nextPipeline(afs afero.Afero, part string) (string, error) {
-	config, err := LoadConfig(afs.ReadFile)
+	config, err := core.LoadConfig(afs.ReadFile)
 	if err != nil {
 		return "", err
 	}
 
-	next, err := getNextVersion(afs.ReadDir, config, part)
+	next, err := core.GetNextVersion(afs.ReadDir, config, part)
 	if err != nil {
 		return "", err
 	}

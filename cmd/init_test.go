@@ -5,6 +5,8 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/miniscruff/changie/core"
+	. "github.com/miniscruff/changie/test_utils"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/ginkgo/extensions/table"
 	. "github.com/onsi/gomega"
@@ -16,14 +18,14 @@ var _ = Describe("Init", func() {
 		fs         afero.Fs
 		afs        afero.Afero
 		mockError  error
-		testConfig Config
+		testConfig core.Config
 	)
 
 	BeforeEach(func() {
 		fs = afero.NewMemMapFs()
 		afs = afero.Afero{Fs: fs}
 		mockError = errors.New("dummy mock error")
-		testConfig = Config{
+		testConfig = core.Config{
 			ChangesDir:    "chgs",
 			UnreleasedDir: "unrel",
 			HeaderPath:    "head.tpl.md",

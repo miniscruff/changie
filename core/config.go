@@ -1,4 +1,4 @@
-package cmd
+package core
 
 import (
 	"bytes"
@@ -10,25 +10,30 @@ import (
 	"strconv"
 	"text/template"
 
+	"github.com/Masterminds/semver/v3"
 	"github.com/icholy/replace"
 	"github.com/manifoldco/promptui"
+	"github.com/miniscruff/changie/shared"
 	"golang.org/x/text/transform"
 	"gopkg.in/yaml.v2"
 )
 
 const (
-	configPath   string     = ".changie.yaml"
-	customString CustomType = "string"
-	customInt    CustomType = "int"
-	customEnum   CustomType = "enum"
+	ConfigPath   string     = ".changie.yaml"
+	CustomString CustomType = "string"
+	CustomInt    CustomType = "int"
+	CustomEnum   CustomType = "enum"
 )
 
 var (
-	errInvalidPromptType = errors.New("invalid prompt type")
+	ErrInvalidPromptType = errors.New("invalid prompt type")
 	errInvalidIntInput   = errors.New("invalid number")
 	errIntTooLow         = errors.New("input below minimum")
 	errIntTooHigh        = errors.New("input above maximum")
 )
+
+// GetVersions will return, in semver sorted order, all released versions
+type GetVersions func(shared.ReadDirer, Config) ([]*semver.Version, error)
 
 type enumWrapper struct {
 	*promptui.Select
@@ -65,12 +70,12 @@ func (c Custom) CreatePrompt(stdinReader io.ReadCloser) (Prompt, error) {
 	}
 
 	switch c.Type {
-	case customString:
+	case CustomString:
 		return &promptui.Prompt{
 			Label: label,
 			Stdin: stdinReader,
 		}, nil
-	case customInt:
+	case CustomInt:
 		return &promptui.Prompt{
 			Label: label,
 			Stdin: stdinReader,
@@ -88,7 +93,7 @@ func (c Custom) CreatePrompt(stdinReader io.ReadCloser) (Prompt, error) {
 				return nil
 			},
 		}, nil
-	case customEnum:
+	case CustomEnum:
 		return &enumWrapper{
 			Select: &promptui.Select{
 				Label: label,
@@ -97,7 +102,7 @@ func (c Custom) CreatePrompt(stdinReader io.ReadCloser) (Prompt, error) {
 			}}, nil
 	}
 
-	return nil, errInvalidPromptType
+	return nil, ErrInvalidPromptType
 }
 
 type ReplaceData struct {
@@ -111,7 +116,7 @@ type Replacement struct {
 	Replace string
 }
 
-func (r Replacement) Execute(readFile ReadFiler, writeFile WriteFiler, data ReplaceData) error {
+func (r Replacement) Execute(readFile shared.ReadFiler, writeFile shared.WriteFiler, data ReplaceData) error {
 	templ, err := template.New("replacement").Parse(r.Replace)
 	if err != nil {
 		return err
@@ -160,16 +165,16 @@ type Config struct {
 }
 
 // Save will save the config as a yaml file to the default path
-func (config Config) Save(wf WriteFiler) error {
+func (config Config) Save(wf shared.WriteFiler) error {
 	bs, _ := yaml.Marshal(&config)
-	return wf(configPath, bs, os.ModePerm)
+	return wf(ConfigPath, bs, os.ModePerm)
 }
 
 // LoadConfig will load the config from the default path
-func LoadConfig(rf ReadFiler) (Config, error) {
+func LoadConfig(rf shared.ReadFiler) (Config, error) {
 	var c Config
 
-	bs, err := rf(configPath)
+	bs, err := rf(ConfigPath)
 	if err != nil {
 		return c, err
 	}
