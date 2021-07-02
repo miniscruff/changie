@@ -257,6 +257,40 @@ var _ = Describe("Change ask prompts", func() {
 		Expect(AskPrompts(c, config, stdinReader)).NotTo(Succeed())
 	})
 
+	It("gets error for invalid component", func() {
+		config := Config{
+			Components: []string{"a", "b"},
+		}
+		go func() {
+			DelayWrite(stdinWriter, []byte{3})
+		}()
+
+		c := &Change{}
+		Expect(AskPrompts(c, config, stdinReader)).NotTo(Succeed())
+	})
+
+	It("gets error for invalid kind", func() {
+		config := Config{
+			Kinds: []string{"a", "b"},
+		}
+		go func() {
+			DelayWrite(stdinWriter, []byte{3})
+		}()
+
+		c := &Change{}
+		Expect(AskPrompts(c, config, stdinReader)).NotTo(Succeed())
+	})
+
+	It("gets error for invalid body", func() {
+		config := Config{}
+		go func() {
+			DelayWrite(stdinWriter, []byte{3})
+		}()
+
+		c := &Change{}
+		Expect(AskPrompts(c, config, stdinReader)).NotTo(Succeed())
+	})
+
 	It("gets error for invalid custom value", func() {
 		config := Config{
 			CustomChoices: []Custom{

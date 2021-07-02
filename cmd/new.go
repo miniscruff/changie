@@ -40,6 +40,7 @@ func newPipeline(afs afero.Afero, tn shared.TimeNow, stdinReader io.ReadCloser) 
 	}
 
 	var change core.Change
+
 	err = core.AskPrompts(&change, config, stdinReader)
 	if err != nil {
 		return err
