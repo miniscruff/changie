@@ -12,15 +12,18 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/spf13/afero"
+
+	"github.com/miniscruff/changie/core"
+	. "github.com/miniscruff/changie/testutils"
 )
 
 var _ = Describe("Batch", func() {
 
 	var (
-		fs         *mockFs
+		fs         *MockFS
 		afs        afero.Afero
 		mockError  error
-		testConfig Config
+		testConfig core.Config
 
 		orderedTimes = []time.Time{
 			time.Date(2019, 5, 25, 20, 45, 0, 0, time.UTC),
@@ -34,10 +37,10 @@ var _ = Describe("Batch", func() {
 	)
 
 	BeforeEach(func() {
-		fs = newMockFs()
+		fs = NewMockFS()
 		afs = afero.Afero{Fs: fs}
 		mockError = errors.New("dummy mock error")
-		testConfig = Config{
+		testConfig = core.Config{
 			ChangesDir:    "news",
 			UnreleasedDir: "future",
 			HeaderPath:    "header.rst",
@@ -241,12 +244,12 @@ this is a new version that adds cool features
 		Expect(err).To(BeNil())
 
 		err = batchPipeline(afs, "not-semanticly-correct")
-		Expect(err).To(Equal(errBadVersionOrPart))
+		Expect(err).To(Equal(core.ErrBadVersionOrPart))
 	})
 
 	It("returns error on bad config", func() {
 		configData := []byte("not a proper config")
-		err := afs.WriteFile(configPath, configData, os.ModePerm)
+		err := afs.WriteFile(core.ConfigPath, configData, os.ModePerm)
 		Expect(err).To(BeNil())
 
 		err = batchPipeline(afs, "v1.0.0")
@@ -289,7 +292,7 @@ this is a new version that adds cool features
 		err = afs.WriteFile(filepath.Join(futurePath, "a.yaml"), aVer, os.ModePerm)
 		Expect(err).To(BeNil())
 
-		fs.mockRemove = func(name string) error {
+		fs.MockRemove = func(name string) error {
 			return mockError
 		}
 
@@ -300,11 +303,11 @@ this is a new version that adds cool features
 	It("returns error on bad header file", func() {
 		versionHeaderPath = "header.md"
 		badOpen := errors.New("bad open file")
-		fs.mockOpen = func(name string) (afero.File, error) {
+		fs.MockOpen = func(name string) (afero.File, error) {
 			if strings.HasSuffix(name, versionHeaderPath) {
 				return nil, badOpen
 			}
-			return fs.memFs.Open(name)
+			return fs.MemFS.Open(name)
 		}
 
 		err := testConfig.Save(afs.WriteFile)
@@ -390,7 +393,7 @@ this is a new version that adds cool features
 	})
 
 	It("returns err if unable to read directory", func() {
-		fs.mockOpen = func(path string) (afero.File, error) {
+		fs.MockOpen = func(path string) (afero.File, error) {
 			var f afero.File
 			return f, mockError
 		}
@@ -414,23 +417,23 @@ this is a new version that adds cool features
 		err := afs.MkdirAll("news", 0644)
 		Expect(err).To(BeNil())
 
-		vFile := newMockFile(fs, "v0.1.0.md")
+		vFile := NewMockFile(fs, "v0.1.0.md")
 		contents := ""
 
-		fs.mockCreate = func(path string) (afero.File, error) {
+		fs.MockCreate = func(path string) (afero.File, error) {
 			return vFile, nil
 		}
 
-		vFile.mockWrite = func(data []byte) (int, error) {
+		vFile.MockWrite = func(data []byte) (int, error) {
 			contents += string(data)
 			return len(data), nil
 		}
-		vFile.mockWriteString = func(data string) (int, error) {
+		vFile.MockWriteString = func(data string) (int, error) {
 			contents += data
 			return len(data), nil
 		}
 
-		changes := []Change{
+		changes := []core.Change{
 			{Kind: "added", Body: "w"},
 			{Kind: "added", Body: "x"},
 			{Kind: "removed", Body: "y"},
@@ -459,23 +462,23 @@ this is a new version that adds cool features
 		err := afs.MkdirAll("news", 0644)
 		Expect(err).To(BeNil())
 
-		vFile := newMockFile(fs, "v0.1.0.md")
+		vFile := NewMockFile(fs, "v0.1.0.md")
 		contents := ""
 
-		fs.mockCreate = func(path string) (afero.File, error) {
+		fs.MockCreate = func(path string) (afero.File, error) {
 			return vFile, nil
 		}
 
-		vFile.mockWrite = func(data []byte) (int, error) {
+		vFile.MockWrite = func(data []byte) (int, error) {
 			contents += string(data)
 			return len(data), nil
 		}
-		vFile.mockWriteString = func(data string) (int, error) {
+		vFile.MockWriteString = func(data string) (int, error) {
 			contents += data
 			return len(data), nil
 		}
 
-		changes := []Change{
+		changes := []core.Change{
 			{Body: "w", Kind: "added"},
 			{Body: "x", Kind: "added"},
 			{Body: "y", Kind: "removed"},
@@ -502,23 +505,23 @@ this is a new version that adds cool features
 		err := afs.MkdirAll("news", 0644)
 		Expect(err).To(BeNil())
 
-		vFile := newMockFile(fs, "v0.1.0.md")
+		vFile := NewMockFile(fs, "v0.1.0.md")
 		contents := ""
 
-		fs.mockCreate = func(path string) (afero.File, error) {
+		fs.MockCreate = func(path string) (afero.File, error) {
 			return vFile, nil
 		}
 
-		vFile.mockWrite = func(data []byte) (int, error) {
+		vFile.MockWrite = func(data []byte) (int, error) {
 			contents += string(data)
 			return len(data), nil
 		}
-		vFile.mockWriteString = func(data string) (int, error) {
+		vFile.MockWriteString = func(data string) (int, error) {
 			contents += data
 			return len(data), nil
 		}
 
-		changes := []Change{
+		changes := []core.Change{
 			{Body: "w", Kind: "added", Component: "linker"},
 			{Body: "x", Kind: "added", Component: "linker"},
 			{Body: "y", Kind: "removed", Component: "linker"},
@@ -554,23 +557,23 @@ this is a new version that adds cool features
 		err := afs.MkdirAll("news", 0644)
 		Expect(err).To(BeNil())
 
-		vFile := newMockFile(fs, "v0.1.0.md")
+		vFile := NewMockFile(fs, "v0.1.0.md")
 		contents := ""
 
-		fs.mockCreate = func(path string) (afero.File, error) {
+		fs.MockCreate = func(path string) (afero.File, error) {
 			return vFile, nil
 		}
 
-		vFile.mockWrite = func(data []byte) (int, error) {
+		vFile.MockWrite = func(data []byte) (int, error) {
 			contents += string(data)
 			return len(data), nil
 		}
-		vFile.mockWriteString = func(data string) (int, error) {
+		vFile.MockWriteString = func(data string) (int, error) {
 			contents += data
 			return len(data), nil
 		}
 
-		changes := []Change{
+		changes := []core.Change{
 			{Body: "w", Kind: "added"},
 			{Body: "x", Kind: "added"},
 			{Body: "y", Kind: "removed"},
@@ -601,14 +604,14 @@ Can also have newlines.
 	})
 
 	It("returns error where when failing to create version file", func() {
-		fs.mockCreate = func(path string) (afero.File, error) {
+		fs.MockCreate = func(path string) (afero.File, error) {
 			var f afero.File
 			return f, mockError
 		}
 
 		err := batchNewVersion(fs, testConfig, batchData{
 			Version: semver.MustParse("v0.1.0"),
-			Changes: []Change{},
+			Changes: []core.Change{},
 		})
 		Expect(err).To(Equal(mockError))
 	})
@@ -621,7 +624,7 @@ Can also have newlines.
 
 		err = batchNewVersion(fs, testConfig, batchData{
 			Version: semver.MustParse("v0.1.0"),
-			Changes: []Change{},
+			Changes: []core.Change{},
 		})
 		Expect(err).NotTo(BeNil())
 	})
@@ -634,7 +637,7 @@ Can also have newlines.
 
 		err = batchNewVersion(fs, testConfig, batchData{
 			Version: semver.MustParse("v0.1.0"),
-			Changes: []Change{},
+			Changes: []core.Change{},
 		})
 		Expect(err).NotTo(BeNil())
 	})
@@ -647,7 +650,7 @@ Can also have newlines.
 
 		err = batchNewVersion(fs, testConfig, batchData{
 			Version: semver.MustParse("v0.1.0"),
-			Changes: []Change{},
+			Changes: []core.Change{},
 		})
 		Expect(err).NotTo(BeNil())
 	})
@@ -660,7 +663,7 @@ Can also have newlines.
 
 		err = batchNewVersion(fs, testConfig, batchData{
 			Version: semver.MustParse("v0.1.0"),
-			Changes: []Change{},
+			Changes: []core.Change{},
 		})
 		Expect(err).NotTo(BeNil())
 	})
@@ -681,20 +684,20 @@ Can also have newlines.
 			err := afs.MkdirAll("news", 0644)
 			Expect(err).To(BeNil())
 
-			vFile := newMockFile(fs, "v0.1.0.md")
+			vFile := NewMockFile(fs, "v0.1.0.md")
 
-			fs.mockCreate = func(path string) (afero.File, error) {
+			fs.MockCreate = func(path string) (afero.File, error) {
 				return vFile, nil
 			}
 
-			vFile.mockWrite = func(data []byte) (int, error) {
+			vFile.MockWrite = func(data []byte) (int, error) {
 				if strings.HasPrefix(string(data), prefix) {
 					return len(data), mockError
 				}
-				return vFile.memFile.Write(data)
+				return vFile.MemFile.Write(data)
 			}
 
-			changes := []Change{
+			changes := []core.Change{
 				{Component: "A", Kind: "added", Body: "w"},
 				{Component: "A", Kind: "added", Body: "x"},
 				{Component: "A", Kind: "removed", Body: "y"},
@@ -747,7 +750,7 @@ Can also have newlines.
 			Expect(err).To(BeNil())
 		}
 
-		fs.mockRemove = func(name string) error {
+		fs.MockRemove = func(name string) error {
 			return mockError
 		}
 

@@ -1,4 +1,4 @@
-package cmd
+package core
 
 import (
 	"errors"
@@ -8,6 +8,8 @@ import (
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+
+	. "github.com/miniscruff/changie/testutils"
 )
 
 var _ = Describe("Change", func() {
@@ -134,8 +136,9 @@ var _ = Describe("Change", func() {
 			Kinds: []string{"A", "B"},
 		}
 		changes := []Change{
-			{Body: "third", Kind: "B", Time: orderedTimes[0]},
+			{Body: "fourth", Kind: "B", Time: orderedTimes[1]},
 			{Body: "second", Kind: "A", Time: orderedTimes[2]},
+			{Body: "third", Kind: "B", Time: orderedTimes[0]},
 			{Body: "first", Kind: "A", Time: orderedTimes[1]},
 		}
 		SortByConfig(config).Sort(changes)
@@ -143,6 +146,7 @@ var _ = Describe("Change", func() {
 		Expect(changes[0].Body).To(Equal("first"))
 		Expect(changes[1].Body).To(Equal("second"))
 		Expect(changes[2].Body).To(Equal("third"))
+		Expect(changes[3].Body).To(Equal("fourth"))
 	})
 
 	It("should sort by component then kind", func() {
@@ -151,10 +155,10 @@ var _ = Describe("Change", func() {
 			Components: []string{"A", "B", "C"},
 		}
 		changes := []Change{
+			{Body: "fourth", Component: "B", Kind: "E"},
 			{Body: "second", Component: "A", Kind: "E"},
 			{Body: "third", Component: "B", Kind: "D"},
 			{Body: "first", Component: "A", Kind: "D"},
-			{Body: "fourth", Component: "C", Kind: "D"},
 		}
 		SortByConfig(config).Sort(changes)
 
@@ -162,5 +166,145 @@ var _ = Describe("Change", func() {
 		Expect(changes[1].Body).To(Equal("second"))
 		Expect(changes[2].Body).To(Equal("third"))
 		Expect(changes[3].Body).To(Equal("fourth"))
+	})
+})
+
+var _ = Describe("Change ask prompts", func() {
+	var (
+		stdinReader *os.File
+		stdinWriter *os.File
+	)
+
+	BeforeEach(func() {
+		var pipeErr error
+		stdinReader, stdinWriter, pipeErr = os.Pipe()
+		Expect(pipeErr).To(BeNil())
+	})
+
+	AfterEach(func() {
+		stdinReader.Close()
+		stdinWriter.Close()
+	})
+
+	It("for only body", func() {
+		config := Config{}
+		go func() {
+			DelayWrite(stdinWriter, []byte("body stuff"))
+			DelayWrite(stdinWriter, []byte{13})
+		}()
+
+		c := &Change{}
+		Expect(AskPrompts(c, config, stdinReader)).To(Succeed())
+		Expect(c.Component).To(BeEmpty())
+		Expect(c.Kind).To(BeEmpty())
+		Expect(c.Custom).To(BeEmpty())
+		Expect(c.Body).To(Equal("body stuff"))
+	})
+
+	It("for component, kind and body", func() {
+		config := Config{
+			Components: []string{"cli", "tests", "utils"},
+			Kinds:      []string{"added", "changed", "removed"},
+		}
+		go func() {
+			DelayWrite(stdinWriter, []byte{106, 13})
+			DelayWrite(stdinWriter, []byte{106, 106, 13})
+			DelayWrite(stdinWriter, []byte("body here"))
+			DelayWrite(stdinWriter, []byte{13})
+		}()
+
+		c := &Change{}
+		Expect(AskPrompts(c, config, stdinReader)).To(Succeed())
+		Expect(c.Component).To(Equal("tests"))
+		Expect(c.Kind).To(Equal("removed"))
+		Expect(c.Custom).To(BeEmpty())
+		Expect(c.Body).To(Equal("body here"))
+	})
+
+	It("for body and custom", func() {
+		config := Config{
+			CustomChoices: []Custom{
+				{Key: "check", Type: CustomString, Label: "a"},
+			},
+		}
+		go func() {
+			DelayWrite(stdinWriter, []byte("body again"))
+			DelayWrite(stdinWriter, []byte{13})
+			DelayWrite(stdinWriter, []byte("custom check value"))
+			DelayWrite(stdinWriter, []byte{13})
+		}()
+
+		c := &Change{}
+		Expect(AskPrompts(c, config, stdinReader)).To(Succeed())
+		Expect(c.Component).To(BeEmpty())
+		Expect(c.Kind).To(BeEmpty())
+		Expect(c.Custom["check"]).To(Equal("custom check value"))
+		Expect(c.Body).To(Equal("body again"))
+	})
+
+	It("gets error for invalid custom type", func() {
+		config := Config{
+			CustomChoices: []Custom{
+				{Key: "check", Type: "bad type", Label: "a"},
+			},
+		}
+		go func() {
+			DelayWrite(stdinWriter, []byte("body again"))
+			DelayWrite(stdinWriter, []byte{13})
+		}()
+
+		c := &Change{}
+		Expect(AskPrompts(c, config, stdinReader)).NotTo(Succeed())
+	})
+
+	It("gets error for invalid component", func() {
+		config := Config{
+			Components: []string{"a", "b"},
+		}
+		go func() {
+			DelayWrite(stdinWriter, []byte{3})
+		}()
+
+		c := &Change{}
+		Expect(AskPrompts(c, config, stdinReader)).NotTo(Succeed())
+	})
+
+	It("gets error for invalid kind", func() {
+		config := Config{
+			Kinds: []string{"a", "b"},
+		}
+		go func() {
+			DelayWrite(stdinWriter, []byte{3})
+		}()
+
+		c := &Change{}
+		Expect(AskPrompts(c, config, stdinReader)).NotTo(Succeed())
+	})
+
+	It("gets error for invalid body", func() {
+		config := Config{}
+		go func() {
+			DelayWrite(stdinWriter, []byte{3})
+		}()
+
+		c := &Change{}
+		Expect(AskPrompts(c, config, stdinReader)).NotTo(Succeed())
+	})
+
+	It("gets error for invalid custom value", func() {
+		config := Config{
+			CustomChoices: []Custom{
+				{Key: "check", Type: CustomString, Label: "a"},
+			},
+		}
+		go func() {
+			DelayWrite(stdinWriter, []byte("body again"))
+			DelayWrite(stdinWriter, []byte{13})
+			DelayWrite(stdinWriter, []byte("control C out"))
+			DelayWrite(stdinWriter, []byte{3})
+		}()
+
+		c := &Change{}
+		Expect(AskPrompts(c, config, stdinReader)).NotTo(Succeed())
 	})
 })

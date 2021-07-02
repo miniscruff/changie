@@ -5,6 +5,9 @@ import (
 
 	"github.com/spf13/afero"
 	"github.com/spf13/cobra"
+
+	"github.com/miniscruff/changie/core"
+	"github.com/miniscruff/changie/shared"
 )
 
 var mergeCmd = &cobra.Command{
@@ -27,8 +30,8 @@ func runMerge(cmd *cobra.Command, args []string) error {
 	return mergePipeline(afs, afs.Create)
 }
 
-func mergePipeline(afs afero.Afero, creator CreateFiler) error {
-	config, err := LoadConfig(afs.ReadFile)
+func mergePipeline(afs afero.Afero, creator shared.CreateFiler) error {
+	config, err := core.LoadConfig(afs.ReadFile)
 	if err != nil {
 		return err
 	}
@@ -39,12 +42,12 @@ func mergePipeline(afs afero.Afero, creator CreateFiler) error {
 	}
 	defer changeFile.Close()
 
-	allVersions, err := getAllVersions(afs.ReadDir, config)
+	allVersions, err := core.GetAllVersions(afs.ReadDir, config)
 	if err != nil {
 		return err
 	}
 
-	err = appendFile(afs.Open, changeFile, filepath.Join(config.ChangesDir, config.HeaderPath))
+	err = core.AppendFile(afs.Open, changeFile, filepath.Join(config.ChangesDir, config.HeaderPath))
 	if err != nil {
 		return err
 	}
@@ -61,13 +64,13 @@ func mergePipeline(afs afero.Afero, creator CreateFiler) error {
 
 		versionPath := filepath.Join(config.ChangesDir, version.Original()+"."+config.VersionExt)
 
-		err = appendFile(afs.Open, changeFile, versionPath)
+		err = core.AppendFile(afs.Open, changeFile, versionPath)
 		if err != nil {
 			return err
 		}
 	}
 
-	replaceData := ReplaceData{
+	replaceData := core.ReplaceData{
 		Version:         allVersions[0].Original(),
 		VersionNoPrefix: allVersions[0].String(),
 	}

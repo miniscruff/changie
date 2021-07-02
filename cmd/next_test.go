@@ -4,19 +4,21 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/spf13/afero"
+
+	"github.com/miniscruff/changie/core"
 )
 
 var _ = Describe("next", func() {
 	var (
 		fs         afero.Fs
 		afs        afero.Afero
-		testConfig Config
+		testConfig core.Config
 	)
 
 	BeforeEach(func() {
 		fs = afero.NewMemMapFs()
 		afs = afero.Afero{Fs: fs}
-		testConfig = Config{
+		testConfig = core.Config{
 			ChangesDir:    "chgs",
 			UnreleasedDir: "unrel",
 			HeaderPath:    "head.tpl.md",
@@ -47,7 +49,7 @@ var _ = Describe("next", func() {
 	})
 
 	It("fails if bad config file", func() {
-		err := afs.Remove(configPath)
+		err := afs.Remove(core.ConfigPath)
 		Expect(err).To(BeNil())
 
 		_, err = nextPipeline(afs, "major")
