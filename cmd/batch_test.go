@@ -84,7 +84,7 @@ var _ = Describe("Batch", func() {
 
 		// add an index to prevent clobbering
 		nameParts = append(nameParts, fmt.Sprintf("%v", fileCreateIndex))
-		fileCreateIndex += 1
+		fileCreateIndex++
 
 		filePath := fmt.Sprintf(
 			"%s/%s/%s.yaml",
