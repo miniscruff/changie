@@ -12,6 +12,7 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/spf13/afero"
+	"gopkg.in/yaml.v2"
 
 	"github.com/miniscruff/changie/core"
 	. "github.com/miniscruff/changie/testutils"
@@ -20,10 +21,13 @@ import (
 var _ = Describe("Batch", func() {
 
 	var (
-		fs         *MockFS
-		afs        afero.Afero
-		mockError  error
-		testConfig core.Config
+		fs              *MockFS
+		afs             afero.Afero
+		mockError       error
+		testConfig      core.Config
+		fileCreateIndex int
+		futurePath      string
+		newVerPath      string
 
 		orderedTimes = []time.Time{
 			time.Date(2019, 5, 25, 20, 45, 0, 0, time.UTC),
@@ -49,37 +53,65 @@ var _ = Describe("Batch", func() {
 			VersionFormat: "## {{.Version}}",
 			KindFormat:    "\n### {{.Kind}}",
 			ChangeFormat:  "* {{.Body}}",
-			Kinds: []string{
-				"added", "removed", "other",
+			Kinds: []core.KindConfig{
+				{Label: "added"},
+				{Label: "removed"},
+				{Label: "other"},
 			},
 		}
+
+		futurePath = filepath.Join("news", "future")
+		newVerPath = filepath.Join("news", "v0.2.0.md")
+		fileCreateIndex = 0
 
 		// reset our shared header path
 		versionHeaderPath = ""
 	})
 
+	// this mimics the change.SaveUnreleased but prevents clobbering in same
+	// second saves
+	writeChangeFile := func(change core.Change) {
+		bs, _ := yaml.Marshal(&change)
+		nameParts := make([]string, 0)
+
+		if change.Component != "" {
+			nameParts = append(nameParts, change.Component)
+		}
+
+		if change.Kind != "" {
+			nameParts = append(nameParts, change.Kind)
+		}
+
+		// add an index to prevent clobbering
+		nameParts = append(nameParts, fmt.Sprintf("%v", fileCreateIndex))
+		fileCreateIndex += 1
+
+		filePath := fmt.Sprintf(
+			"%s/%s/%s.yaml",
+			testConfig.ChangesDir,
+			testConfig.UnreleasedDir,
+			strings.Join(nameParts, "-"),
+		)
+
+		Expect(afs.WriteFile(filePath, bs, os.ModePerm)).To(Succeed())
+	}
+
+	writeHeader := func(header string) {
+		headerData := []byte(header)
+		headerPath := filepath.Join(futurePath, versionHeaderPath)
+		Expect(afs.WriteFile(headerPath, headerData, os.ModePerm)).To(Succeed())
+	}
+
 	It("can batch version", func() {
 		// declared path but missing is accepted
 		testConfig.VersionHeaderPath = "header.md"
-		err := testConfig.Save(afs.WriteFile)
-		Expect(err).To(BeNil())
+		Expect(testConfig.Save(afs.WriteFile)).To(Succeed())
 
-		futurePath := filepath.Join("news", "future")
-		newVerPath := filepath.Join("news", "v0.2.0.md")
+		writeChangeFile(core.Change{Kind: "added", Body: "A"})
+		writeChangeFile(core.Change{Kind: "added", Body: "B"})
+		writeChangeFile(core.Change{Kind: "removed", Body: "C"})
 
-		aVer := []byte("kind: added\nbody: A\n")
-		err = afs.WriteFile(filepath.Join(futurePath, "a.yaml"), aVer, os.ModePerm)
-		Expect(err).To(BeNil())
-
-		bVer := []byte("kind: added\nbody: B\n")
-		err = afs.WriteFile(filepath.Join(futurePath, "b.yaml"), bVer, os.ModePerm)
-		Expect(err).To(BeNil())
-
-		cVer := []byte("kind: removed\nbody: C\n")
-		err = afs.WriteFile(filepath.Join(futurePath, "c.yaml"), cVer, os.ModePerm)
-		Expect(err).To(BeNil())
-
-		err = batchPipeline(afs, "v0.2.0")
+		err := batchPipeline(afs, "v0.2.0")
 		Expect(err).To(BeNil())
 
 		verContents := `## v0.2.0
@@ -98,76 +130,18 @@ var _ = Describe("Batch", func() {
 		Expect(len(infos)).To(Equal(0))
 	})
 
-	It("can batch version and bump", func() {
-		err := testConfig.Save(afs.WriteFile)
-		Expect(err).To(BeNil())
-
-		futurePath := filepath.Join("news", "future")
-		newVerPath := filepath.Join("news", "v0.1.1.md")
-
-		aVer := []byte("kind: added\nbody: A\n")
-		err = afs.WriteFile(filepath.Join(futurePath, "a.yaml"), aVer, os.ModePerm)
-		Expect(err).To(BeNil())
-
-		bVer := []byte("kind: added\nbody: B\n")
-		err = afs.WriteFile(filepath.Join(futurePath, "b.yaml"), bVer, os.ModePerm)
-		Expect(err).To(BeNil())
-
-		cVer := []byte("kind: removed\nbody: C\n")
-		err = afs.WriteFile(filepath.Join(futurePath, "c.yaml"), cVer, os.ModePerm)
-		Expect(err).To(BeNil())
-
-		latestVer := []byte("contents do not matter")
-		err = afs.WriteFile(filepath.Join("news", "v0.1.0.md"), latestVer, os.ModePerm)
-		Expect(err).To(BeNil())
-
-		err = batchPipeline(afs, "patch")
-		Expect(err).To(BeNil())
-
-		verContents := `## v0.1.1
-
-### added
-* A
-* B
-
-### removed
-* C`
-
-		Expect(newVerPath).To(HaveContents(afs, verContents))
-
-		infos, err := afs.ReadDir(futurePath)
-		Expect(err).To(BeNil())
-		Expect(len(infos)).To(Equal(0))
-	})
-
 	It("can batch version with header", func() {
+		versionHeaderPath = "h.md"
 		testConfig.VersionHeaderPath = "h.md"
 		testConfig.VersionFormat = testConfig.VersionFormat + "\n"
-		err := testConfig.Save(afs.WriteFile)
-		Expect(err).To(BeNil())
+		Expect(testConfig.Save(afs.WriteFile)).To(Succeed())
 
-		futurePath := filepath.Join("news", "future")
-		newVerPath := filepath.Join("news", "v0.2.0.md")
-		headerPath := filepath.Join(futurePath, testConfig.VersionHeaderPath)
+		writeChangeFile(core.Change{Kind: "added", Body: "A"})
+		writeChangeFile(core.Change{Kind: "added", Body: "B"})
+		writeChangeFile(core.Change{Kind: "removed", Body: "C"})
+		writeHeader("this is a new version that adds cool features")
 
-		aVer := []byte("kind: added\nbody: A\n")
-		err = afs.WriteFile(filepath.Join(futurePath, "a.yaml"), aVer, os.ModePerm)
-		Expect(err).To(BeNil())
-
-		bVer := []byte("kind: added\nbody: B\n")
-		err = afs.WriteFile(filepath.Join(futurePath, "b.yaml"), bVer, os.ModePerm)
-		Expect(err).To(BeNil())
-
-		cVer := []byte("kind: removed\nbody: C\n")
-		err = afs.WriteFile(filepath.Join(futurePath, "c.yaml"), cVer, os.ModePerm)
-		Expect(err).To(BeNil())
-
-		headerData := []byte("this is a new version that adds cool features")
-		err = afs.WriteFile(headerPath, headerData, os.ModePerm)
-		Expect(err).To(BeNil())
-
-		err = batchPipeline(afs, "v0.2.0")
-		Expect(err).To(BeNil())
+		Expect(batchPipeline(afs, "v0.2.0")).To(Succeed())
 
 		verContents := `## v0.2.0
 
@@ -190,30 +164,14 @@ this is a new version that adds cool features
 	It("can batch version with header parameter", func() {
 		versionHeaderPath = "head.md"
 		testConfig.VersionFormat = testConfig.VersionFormat + "\n"
-		err := testConfig.Save(afs.WriteFile)
-		Expect(err).To(BeNil())
+		Expect(testConfig.Save(afs.WriteFile)).To(Succeed())
 
-		futurePath := filepath.Join("news", "future")
-		newVerPath := filepath.Join("news", "v0.2.0.md")
+		writeChangeFile(core.Change{Kind: "added", Body: "A"})
+		writeChangeFile(core.Change{Kind: "added", Body: "B"})
+		writeChangeFile(core.Change{Kind: "removed", Body: "C"})
+		writeHeader("this is a new version that adds cool features")
 
-		aVer := []byte("kind: added\nbody: A\n")
-		err = afs.WriteFile(filepath.Join(futurePath, "a.yaml"), aVer, os.ModePerm)
-		Expect(err).To(BeNil())
-
-		bVer := []byte("kind: added\nbody: B\n")
-		err = afs.WriteFile(filepath.Join(futurePath, "b.yaml"), bVer, os.ModePerm)
-		Expect(err).To(BeNil())
-
-		cVer := []byte("kind: removed\nbody: C\n")
-		err = afs.WriteFile(filepath.Join(futurePath, "c.yaml"), cVer, os.ModePerm)
-		Expect(err).To(BeNil())
-
-		headerData := []byte("this is a new version that adds cool features")
-		err = afs.WriteFile(filepath.Join(futurePath, "head.md"), headerData, os.ModePerm)
-		Expect(err).To(BeNil())
-
-		err = batchPipeline(afs, "v0.2.0")
-		Expect(err).To(BeNil())
+		Expect(batchPipeline(afs, "v0.2.0")).To(Succeed())
 
 		verContents := `## v0.2.0
 
@@ -234,16 +192,11 @@ this is a new version that adds cool features
 	})
 
 	It("returns error on bad semver", func() {
-		err := testConfig.Save(afs.WriteFile)
-		Expect(err).To(BeNil())
+		Expect(testConfig.Save(afs.WriteFile)).To(Succeed())
 
-		futurePath := filepath.Join("news", "future")
+		writeChangeFile(core.Change{Kind: "added", Body: "A"})
 
-		aVer := []byte("kind: added\nbody: A\n")
-		err = afs.WriteFile(filepath.Join(futurePath, "a.yaml"), aVer, os.ModePerm)
-		Expect(err).To(BeNil())
-
-		err = batchPipeline(afs, "not-semanticly-correct")
+		err := batchPipeline(afs, "not-semanticly-correct")
 		Expect(err).To(Equal(core.ErrBadVersionOrPart))
 	})
 
@@ -252,17 +205,14 @@ this is a new version that adds cool features
 		err := afs.WriteFile(core.ConfigPath, configData, os.ModePerm)
 		Expect(err).To(BeNil())
 
-		err = batchPipeline(afs, "v1.0.0")
-		Expect(err).NotTo(BeNil())
+		Expect(batchPipeline(afs, "v1.0.0")).NotTo(Succeed())
 	})
 
 	It("returns error on bad changes", func() {
-		err := testConfig.Save(afs.WriteFile)
-		Expect(err).To(BeNil())
+		Expect(testConfig.Save(afs.WriteFile)).To(Succeed())
 
-		futurePath := filepath.Join("news", "future")
 		aVer := []byte("not a valid change")
-		err = afs.WriteFile(filepath.Join(futurePath, "a.yaml"), aVer, os.ModePerm)
+		err := afs.WriteFile(filepath.Join(futurePath, "a.yaml"), aVer, os.ModePerm)
 		Expect(err).To(BeNil())
 
 		err = batchPipeline(afs, "v1.0.0")
@@ -271,36 +221,28 @@ this is a new version that adds cool features
 
 	It("returns error on bad batch", func() {
 		testConfig.VersionFormat = "{{bad.format}"
-		err := testConfig.Save(afs.WriteFile)
-		Expect(err).To(BeNil())
+		Expect(testConfig.Save(afs.WriteFile)).To(Succeed())
 
-		futurePath := filepath.Join("news", "future")
-		aVer := []byte("kind: removed\nbody: C\n")
-		err = afs.WriteFile(filepath.Join(futurePath, "a.yaml"), aVer, os.ModePerm)
-		Expect(err).To(BeNil())
+		writeChangeFile(core.Change{Kind: "removed", Body: "C"})
 
-		err = batchPipeline(afs, "v1.0.0")
-		Expect(err).NotTo(BeNil())
+		Expect(batchPipeline(afs, "v1.0.0")).NotTo(Succeed())
 	})
 
 	It("returns error on bad delete", func() {
-		err := testConfig.Save(afs.WriteFile)
-		Expect(err).To(BeNil())
+		Expect(testConfig.Save(afs.WriteFile)).To(Succeed())
 
-		futurePath := filepath.Join("news", "future")
-		aVer := []byte("kind: removed\nbody: C\n")
-		err = afs.WriteFile(filepath.Join(futurePath, "a.yaml"), aVer, os.ModePerm)
-		Expect(err).To(BeNil())
+		writeChangeFile(core.Change{Kind: "added", Body: "C"})
 
 		fs.MockRemove = func(name string) error {
 			return mockError
 		}
 
-		err = batchPipeline(afs, "v1.0.0")
-		Expect(err).NotTo(BeNil())
+		Expect(batchPipeline(afs, "v1.0.0")).NotTo(Succeed())
 	})
 
 	It("returns error on bad header file", func() {
+		Expect(testConfig.Save(afs.WriteFile)).To(Succeed())
+
 		versionHeaderPath = "header.md"
 		badOpen := errors.New("bad open file")
 		fs.MockOpen = func(name string) (afero.File, error) {
@@ -310,45 +252,18 @@ this is a new version that adds cool features
 			return fs.MemFS.Open(name)
 		}
 
-		err := testConfig.Save(afs.WriteFile)
-		Expect(err).To(BeNil())
+		writeChangeFile(core.Change{Kind: "added", Body: "A"})
 
-		futurePath := filepath.Join("news", "future")
-
-		aVer := []byte("kind: added\nbody: A\n")
-		err = afs.WriteFile(filepath.Join(futurePath, "a.yaml"), aVer, os.ModePerm)
-		Expect(err).To(BeNil())
-
-		err = batchPipeline(afs, "v0.2.0")
-		Expect(err).To(Equal(badOpen))
+		Expect(batchPipeline(afs, "v0.2.0")).To(Equal(badOpen))
 	})
 
 	It("can get all changes", func() {
-		unrelPath := filepath.Join("news", "future")
+		writeChangeFile(core.Change{Kind: "removed", Body: "third", Time: orderedTimes[2]})
+		writeChangeFile(core.Change{Kind: "added", Body: "first", Time: orderedTimes[0]})
+		writeChangeFile(core.Change{Kind: "added", Body: "second", Time: orderedTimes[1]})
 
-		aVer := []byte(fmt.Sprintf(
-			"kind: removed\nbody: third\ntime: %s",
-			formatTime(orderedTimes[2]),
-		))
-		err := afs.WriteFile(filepath.Join(unrelPath, "a.yaml"), aVer, os.ModePerm)
-		Expect(err).To(BeNil())
-
-		bVer := []byte(fmt.Sprintf(
-			"kind: added\nbody: first\ntime: %s",
-			formatTime(orderedTimes[0]),
-		))
-		err = afs.WriteFile(filepath.Join(unrelPath, "b.yaml"), bVer, os.ModePerm)
-		Expect(err).To(BeNil())
-
-		cVer := []byte(fmt.Sprintf(
-			"kind: added\nbody: second\ntime: %s",
-			formatTime(orderedTimes[1]),
-		))
-		err = afs.WriteFile(filepath.Join(unrelPath, "c.yaml"), cVer, os.ModePerm)
-		Expect(err).To(BeNil())
-
-		err = afs.WriteFile(filepath.Join(unrelPath, "ignored.txt"), cVer, os.ModePerm)
-		Expect(err).To(BeNil())
+		ignoredPath := filepath.Join(futurePath, "ignored.txt")
+		Expect(afs.WriteFile(ignoredPath, []byte("ignored"), os.ModePerm)).To(Succeed())
 
 		changes, err := getChanges(afs, testConfig)
 		Expect(err).To(BeNil())
@@ -357,31 +272,30 @@ this is a new version that adds cool features
 		Expect(changes[2].Body).To(Equal("third"))
 	})
 
+	// TODO: Keep refactoring tests
 	It("can get all changes with components", func() {
-		unrelPath := filepath.Join("news", "future")
-
 		aVer := []byte(fmt.Sprintf(
 			"component: compiler\nkind: removed\nbody: A\ntime: %s",
 			formatTime(orderedTimes[2]),
 		))
-		err := afs.WriteFile(filepath.Join(unrelPath, "a.yaml"), aVer, os.ModePerm)
+		err := afs.WriteFile(filepath.Join(futurePath, "a.yaml"), aVer, os.ModePerm)
 		Expect(err).To(BeNil())
 
 		bVer := []byte(fmt.Sprintf(
 			"component: linker\nkind: added\nbody: B\ntime: %s",
 			formatTime(orderedTimes[0]),
 		))
-		err = afs.WriteFile(filepath.Join(unrelPath, "b.yaml"), bVer, os.ModePerm)
+		err = afs.WriteFile(filepath.Join(futurePath, "b.yaml"), bVer, os.ModePerm)
 		Expect(err).To(BeNil())
 
 		cVer := []byte(fmt.Sprintf(
 			"component: linker\nkind: added\nbody: C\ntime: %s",
 			formatTime(orderedTimes[1]),
 		))
-		err = afs.WriteFile(filepath.Join(unrelPath, "c.yaml"), cVer, os.ModePerm)
+		err = afs.WriteFile(filepath.Join(futurePath, "c.yaml"), cVer, os.ModePerm)
 		Expect(err).To(BeNil())
 
-		err = afs.WriteFile(filepath.Join(unrelPath, "ignored.txt"), cVer, os.ModePerm)
+		err = afs.WriteFile(filepath.Join(futurePath, "ignored.txt"), cVer, os.ModePerm)
 		Expect(err).To(BeNil())
 
 		testConfig.Components = []string{"linker", "compiler"}
@@ -403,10 +317,8 @@ this is a new version that adds cool features
 	})
 
 	It("returns err if bad changes file", func() {
-		unrelPath := filepath.Join("news", "future")
-
 		aVer := []byte("not a valid yaml:::::file---___")
-		err := afs.WriteFile(filepath.Join(unrelPath, "a.yaml"), aVer, os.ModePerm)
+		err := afs.WriteFile(filepath.Join(futurePath, "a.yaml"), aVer, os.ModePerm)
 		Expect(err).To(BeNil())
 
 		_, err = getChanges(afs, testConfig)
@@ -715,7 +627,6 @@ Can also have newlines.
 	}
 
 	It("delete unreleased removes unreleased files including header", func() {
-		futurePath := filepath.Join("news", "future")
 		err := afs.MkdirAll(futurePath, 0644)
 		Expect(err).To(BeNil())
 
@@ -737,7 +648,6 @@ Can also have newlines.
 	})
 
 	It("delete unreleased fails if remove fails", func() {
-		futurePath := filepath.Join("news", "future")
 		err := afs.MkdirAll(futurePath, 0644)
 		Expect(err).To(BeNil())
 

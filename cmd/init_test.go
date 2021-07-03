@@ -35,7 +35,7 @@ var _ = Describe("Init", func() {
 			VersionFormat: "",
 			KindFormat:    "",
 			ChangeFormat:  "",
-			Kinds:         []string{},
+			Kinds:         []core.KindConfig{},
 		}
 	})
 

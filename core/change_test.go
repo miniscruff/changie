@@ -133,7 +133,10 @@ var _ = Describe("Change", func() {
 
 	It("should sort by kind then time", func() {
 		config := Config{
-			Kinds: []string{"A", "B"},
+			Kinds: []KindConfig{
+				{Label: "A"},
+				{Label: "B"},
+			},
 		}
 		changes := []Change{
 			{Body: "fourth", Kind: "B", Time: orderedTimes[1]},
@@ -151,7 +154,10 @@ var _ = Describe("Change", func() {
 
 	It("should sort by component then kind", func() {
 		config := Config{
-			Kinds:      []string{"D", "E"},
+			Kinds: []KindConfig{
+				{Label: "D"},
+				{Label: "E"},
+			},
 			Components: []string{"A", "B", "C"},
 		}
 		changes := []Change{
@@ -204,7 +210,11 @@ var _ = Describe("Change ask prompts", func() {
 	It("for component, kind and body", func() {
 		config := Config{
 			Components: []string{"cli", "tests", "utils"},
-			Kinds:      []string{"added", "changed", "removed"},
+			Kinds: []KindConfig{
+				{Label: "added"},
+				{Label: "changed"},
+				{Label: "removed"},
+			},
 		}
 		go func() {
 			DelayWrite(stdinWriter, []byte{106, 13})
@@ -271,7 +281,10 @@ var _ = Describe("Change ask prompts", func() {
 
 	It("gets error for invalid kind", func() {
 		config := Config{
-			Kinds: []string{"a", "b"},
+			Kinds: []KindConfig{
+				{Label: "a"},
+				{Label: "b"},
+			},
 		}
 		go func() {
 			DelayWrite(stdinWriter, []byte{3})

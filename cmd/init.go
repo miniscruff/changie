@@ -56,8 +56,13 @@ func runInit(cmd *cobra.Command, args []string) error {
 		VersionFormat: "## {{.Version}} - {{.Time.Format \"2006-01-02\"}}",
 		KindFormat:    "\n### {{.Kind}}",
 		ChangeFormat:  "* {{.Body}}",
-		Kinds: []string{
-			"Added", "Changed", "Deprecated", "Removed", "Fixed", "Security",
+		Kinds: []core.KindConfig{
+			{Label: "Added"},
+			{Label: "Changed"},
+			{Label: "Deprecated"},
+			{Label: "Removed"},
+			{Label: "Fixed"},
+			{Label: "Security"},
 		},
 	}
 

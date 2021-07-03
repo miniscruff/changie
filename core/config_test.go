@@ -53,7 +53,11 @@ changeFormat: ""
 			KindFormat:      "kind",
 			ChangeFormat:    "chng",
 			Components:      []string{"A", "D", "G"},
-			Kinds:           []string{"B", "C", "E"},
+			Kinds: []KindConfig{
+				{Label: "B"},
+				{Label: "C"},
+				{Label: "E"},
+			},
 			CustomChoices: []Custom{
 				{
 					Key:   "first",
@@ -78,9 +82,9 @@ components:
 - D
 - G
 kinds:
-- B
-- C
-- E
+- label: B
+- label: C
+- label: E
 custom:
 - key: first
   type: string

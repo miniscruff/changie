@@ -16,6 +16,15 @@ const (
 // GetVersions will return, in semver sorted order, all released versions
 type GetVersions func(shared.ReadDirer, Config) ([]*semver.Version, error)
 
+type KindConfig struct {
+	Label  string `yaml:"label"`
+	Format string `yaml:"format,omitempty"`
+}
+
+func (kc KindConfig) String() string {
+	return kc.Label
+}
+
 // Config handles configuration for a changie project
 type Config struct {
 	ChangesDir        string `yaml:"changesDir"`
@@ -31,7 +40,7 @@ type Config struct {
 	ChangeFormat    string `yaml:"changeFormat"`
 	// custom
 	Components    []string      `yaml:"components,omitempty"`
-	Kinds         []string      `yaml:"kinds,omitempty"`
+	Kinds         []KindConfig  `yaml:"kinds,omitempty"`
 	CustomChoices []Custom      `yaml:"custom,omitempty"`
 	Replacements  []Replacement `yaml:"replacements,omitempty"`
 }
