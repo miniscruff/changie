@@ -27,7 +27,7 @@ var _ = Describe("next", func() {
 			VersionFormat: "",
 			KindFormat:    "",
 			ChangeFormat:  "",
-			Kinds:         []string{},
+			Kinds:         []core.KindConfig{},
 		}
 		err := testConfig.Save(afs.WriteFile)
 		Expect(err).To(BeNil())

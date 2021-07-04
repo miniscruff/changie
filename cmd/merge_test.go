@@ -31,8 +31,10 @@ var _ = Describe("Merge", func() {
 			VersionFormat: "## {{.Version}}",
 			KindFormat:    "### {{.Kind}}",
 			ChangeFormat:  "* {{.Body}}",
-			Kinds: []string{
-				"added", "removed", "other",
+			Kinds: []core.KindConfig{
+				{Label: "added"},
+				{Label: "removed"},
+				{Label: "other"},
 			},
 			Replacements: []core.Replacement{
 				{

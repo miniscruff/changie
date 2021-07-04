@@ -1,0 +1,5 @@
+kind: Changed
+body: Kinds can be extended with custom headers
+time: 2021-07-03T17:35:49.6486101-07:00
+custom:
+  Issue: "118"

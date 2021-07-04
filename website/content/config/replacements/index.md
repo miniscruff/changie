@@ -2,7 +2,7 @@
 title: "Replacements"
 date: 2021-01-31T14:14:11-08:00
 draft: false
-weight: 5
+weight: 6
 summary: Automate version values in your entire project with find and replace options.
 ---
 

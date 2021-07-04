@@ -23,7 +23,7 @@ type haveContentMatcher struct {
 func (matcher *haveContentMatcher) Match(actual interface{}) (success bool, err error) {
 	pathStr, ok := actual.(string)
 	if !ok {
-		return false, fmt.Errorf("beAnEmptyFile matcher expects a string")
+		return false, fmt.Errorf("haveContents matcher expects a string")
 	}
 
 	bs, err := matcher.afs.ReadFile(pathStr)

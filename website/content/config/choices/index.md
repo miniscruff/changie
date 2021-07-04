@@ -2,7 +2,7 @@
 title: "Choices"
 date: 2021-01-31T14:14:04-08:00
 draft: false
-weight: 4
+weight: 5
 summary: Add additional custom choices to provide extra details to generated changelog.
 ---
 
@@ -11,7 +11,8 @@ type: _[]Choice_
 
 Changie will only ask developers for a kind and body message by default.
 You can add more metadata to change files by including custom choices.
-These choices add key value pairs to the change format, see [changeFormat](/config/formatting/#changeFormat) for more details.
+These choices add key value pairs to the change format, see [changeFormat](/config/shared-formatting/#changeformat)
+for more details.
 
 ## Choice
 type: _struct_

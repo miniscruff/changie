@@ -65,9 +65,9 @@ func (s *ChangesConfigSorter) Less(i, j int) bool {
 	// Then sort by kind index
 	if len(s.config.Kinds) > 0 && a.Kind != b.Kind {
 		for _, k := range s.config.Kinds {
-			if a.Kind == k {
+			if a.Kind == k.Label {
 				return true
-			} else if b.Kind == k {
+			} else if b.Kind == k.Label {
 				return false
 			}
 		}

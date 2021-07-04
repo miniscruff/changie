@@ -36,8 +36,10 @@ var _ = Describe("New", func() {
 			VersionFormat: "## {{.Version}}",
 			KindFormat:    "### {{.Kind}}",
 			ChangeFormat:  "* {{.Body}}",
-			Kinds: []string{
-				"added", "removed", "other",
+			Kinds: []core.KindConfig{
+				{Label: "added"},
+				{Label: "removed"},
+				{Label: "other"},
 			},
 		}
 	})
@@ -76,7 +78,7 @@ var _ = Describe("New", func() {
 	})
 
 	It("creates new file with just a body", func() {
-		testConfig.Kinds = []string{}
+		testConfig.Kinds = []core.KindConfig{}
 		err := testConfig.Save(afs.WriteFile)
 		Expect(err).To(BeNil())
 
