@@ -18,6 +18,7 @@ archives:
 release:
   github:
   prerelease: auto
+  discussion_category_name: Release
 nfpms:
   - homepage: https://changie.dev
     description: Automated changelog tool for preparing releases with lots of customization options.
