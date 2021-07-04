@@ -107,13 +107,15 @@ type MockFile struct {
 	MockWrite       func([]byte) (int, error)
 	MockWriteString func(string) (int, error)
 	MemFile         afero.File
+	contents        []byte
 }
 
 func NewMockFile(fs afero.Fs, filename string) *MockFile {
 	f, _ := fs.Create(filename)
 
 	return &MockFile{
-		MemFile: f,
+		MemFile:  f,
+		contents: []byte{},
 	}
 }
 
@@ -145,6 +147,7 @@ func (m *MockFile) Seek(offset int64, whence int) (int64, error) {
 }
 
 func (m *MockFile) Write(p []byte) (n int, err error) {
+	m.contents = append(m.contents, p...)
 	if m.MockWrite != nil {
 		return m.MockWrite(p)
 	}
@@ -181,9 +184,18 @@ func (m *MockFile) Truncate(size int64) error {
 }
 
 func (m *MockFile) WriteString(s string) (ret int, err error) {
+	m.contents = append(m.contents, []byte(s)...)
 	if m.MockWriteString != nil {
 		return m.MockWriteString(s)
 	}
 
 	return m.MemFile.WriteString(s)
+}
+
+func (m *MockFile) Contents() []byte {
+	return m.contents
+}
+
+func (m *MockFile) String() string {
+	return string(m.contents)
 }

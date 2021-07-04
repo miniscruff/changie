@@ -34,10 +34,6 @@ var _ = Describe("Batch", func() {
 			time.Date(2017, 4, 25, 15, 20, 0, 0, time.UTC),
 			time.Date(2015, 3, 25, 10, 5, 0, 0, time.UTC),
 		}
-
-		formatTime = func(t time.Time) string {
-			return t.Format(time.RFC3339Nano)
-		}
 	)
 
 	BeforeEach(func() {
@@ -272,31 +268,28 @@ this is a new version that adds cool features
 		Expect(changes[2].Body).To(Equal("third"))
 	})
 
-	// TODO: Keep refactoring tests
 	It("can get all changes with components", func() {
-		aVer := []byte(fmt.Sprintf(
-			"component: compiler\nkind: removed\nbody: A\ntime: %s",
-			formatTime(orderedTimes[2]),
-		))
-		err := afs.WriteFile(filepath.Join(futurePath, "a.yaml"), aVer, os.ModePerm)
-		Expect(err).To(BeNil())
+		writeChangeFile(core.Change{
+			Component: "compiler",
+			Kind:      "removed",
+			Body:      "A",
+			Time:      orderedTimes[2],
+		})
+		writeChangeFile(core.Change{
+			Component: "linker",
+			Kind:      "added",
+			Body:      "B",
+			Time:      orderedTimes[0],
+		})
+		writeChangeFile(core.Change{
+			Component: "linker",
+			Kind:      "added",
+			Body:      "C",
+			Time:      orderedTimes[1],
+		})
 
-		bVer := []byte(fmt.Sprintf(
-			"component: linker\nkind: added\nbody: B\ntime: %s",
-			formatTime(orderedTimes[0]),
-		))
-		err = afs.WriteFile(filepath.Join(futurePath, "b.yaml"), bVer, os.ModePerm)
-		Expect(err).To(BeNil())
-
-		cVer := []byte(fmt.Sprintf(
-			"component: linker\nkind: added\nbody: C\ntime: %s",
-			formatTime(orderedTimes[1]),
-		))
-		err = afs.WriteFile(filepath.Join(futurePath, "c.yaml"), cVer, os.ModePerm)
-		Expect(err).To(BeNil())
-
-		err = afs.WriteFile(filepath.Join(futurePath, "ignored.txt"), cVer, os.ModePerm)
-		Expect(err).To(BeNil())
+		ignoredPath := filepath.Join(futurePath, "ignored.txt")
+		Expect(afs.WriteFile(ignoredPath, []byte("ignored"), os.ModePerm)).To(Succeed())
 
 		testConfig.Components = []string{"linker", "compiler"}
 		changes, err := getChanges(afs, testConfig)
@@ -317,8 +310,8 @@ this is a new version that adds cool features
 	})
 
 	It("returns err if bad changes file", func() {
-		aVer := []byte("not a valid yaml:::::file---___")
-		err := afs.WriteFile(filepath.Join(futurePath, "a.yaml"), aVer, os.ModePerm)
+		badYaml := []byte("not a valid yaml:::::file---___")
+		err := afs.WriteFile(filepath.Join(futurePath, "a.yaml"), badYaml, os.ModePerm)
 		Expect(err).To(BeNil())
 
 		_, err = getChanges(afs, testConfig)
@@ -326,23 +319,10 @@ this is a new version that adds cool features
 	})
 
 	It("can create new version file", func() {
-		err := afs.MkdirAll("news", 0644)
-		Expect(err).To(BeNil())
-
 		vFile := NewMockFile(fs, "v0.1.0.md")
-		contents := ""
 
 		fs.MockCreate = func(path string) (afero.File, error) {
 			return vFile, nil
-		}
-
-		vFile.MockWrite = func(data []byte) (int, error) {
-			contents += string(data)
-			return len(data), nil
-		}
-		vFile.MockWriteString = func(data string) (int, error) {
-			contents += data
-			return len(data), nil
 		}
 
 		changes := []core.Change{
@@ -352,7 +332,7 @@ this is a new version that adds cool features
 			{Kind: "removed", Body: "z"},
 		}
 
-		err = batchNewVersion(fs, testConfig, batchData{
+		err := batchNewVersion(fs, testConfig, batchData{
 			Version: semver.MustParse("v0.1.0"),
 			Changes: changes,
 		})
@@ -367,27 +347,14 @@ this is a new version that adds cool features
 ### removed
 * y
 * z`
-		Expect(contents).To(Equal(expected))
+		Expect(vFile.String()).To(Equal(expected))
 	})
 
 	It("can create new version file without kind headers", func() {
-		err := afs.MkdirAll("news", 0644)
-		Expect(err).To(BeNil())
-
-		vFile := NewMockFile(fs, "v0.1.0.md")
-		contents := ""
+		vFile := NewMockFile(fs, "v0.2.0.md")
 
 		fs.MockCreate = func(path string) (afero.File, error) {
 			return vFile, nil
-		}
-
-		vFile.MockWrite = func(data []byte) (int, error) {
-			contents += string(data)
-			return len(data), nil
-		}
-		vFile.MockWriteString = func(data string) (int, error) {
-			contents += data
-			return len(data), nil
 		}
 
 		changes := []core.Change{
@@ -399,38 +366,25 @@ this is a new version that adds cool features
 
 		testConfig.KindFormat = ""
 		testConfig.ChangeFormat = "* {{.Body}} ({{.Kind}})"
-		err = batchNewVersion(fs, testConfig, batchData{
-			Version: semver.MustParse("v0.1.0"),
+		err := batchNewVersion(fs, testConfig, batchData{
+			Version: semver.MustParse("v0.2.0"),
 			Changes: changes,
 		})
 		Expect(err).To(BeNil())
 
-		expected := `## v0.1.0
+		expected := `## v0.2.0
 * w (added)
 * x (added)
 * y (removed)
 * z (removed)`
-		Expect(contents).To(Equal(expected))
+		Expect(vFile.String()).To(Equal(expected))
 	})
 
 	It("can create new version file with component headers", func() {
-		err := afs.MkdirAll("news", 0644)
-		Expect(err).To(BeNil())
-
 		vFile := NewMockFile(fs, "v0.1.0.md")
-		contents := ""
 
 		fs.MockCreate = func(path string) (afero.File, error) {
 			return vFile, nil
-		}
-
-		vFile.MockWrite = func(data []byte) (int, error) {
-			contents += string(data)
-			return len(data), nil
-		}
-		vFile.MockWriteString = func(data string) (int, error) {
-			contents += data
-			return len(data), nil
 		}
 
 		changes := []core.Change{
@@ -444,7 +398,7 @@ this is a new version that adds cool features
 		testConfig.ComponentFormat = "\n## {{.Component}}"
 		testConfig.KindFormat = "### {{.Kind}}"
 		testConfig.ChangeFormat = "* {{.Body}}"
-		err = batchNewVersion(fs, testConfig, batchData{
+		err := batchNewVersion(fs, testConfig, batchData{
 			Version: semver.MustParse("v0.1.0"),
 			Changes: changes,
 		})
@@ -462,27 +416,14 @@ this is a new version that adds cool features
 ## compiler
 ### removed
 * z`
-		Expect(contents).To(Equal(expected))
+		Expect(vFile.String()).To(Equal(expected))
 	})
 
 	It("can create new version file with header", func() {
-		err := afs.MkdirAll("news", 0644)
-		Expect(err).To(BeNil())
-
 		vFile := NewMockFile(fs, "v0.1.0.md")
-		contents := ""
 
 		fs.MockCreate = func(path string) (afero.File, error) {
 			return vFile, nil
-		}
-
-		vFile.MockWrite = func(data []byte) (int, error) {
-			contents += string(data)
-			return len(data), nil
-		}
-		vFile.MockWriteString = func(data string) (int, error) {
-			contents += data
-			return len(data), nil
 		}
 
 		changes := []core.Change{
@@ -493,7 +434,7 @@ this is a new version that adds cool features
 		}
 
 		testConfig.VersionFormat = testConfig.VersionFormat + "\n"
-		err = batchNewVersion(fs, testConfig, batchData{
+		err := batchNewVersion(fs, testConfig, batchData{
 			Version: semver.MustParse("v0.1.0"),
 			Changes: changes,
 			Header:  "Some header we want included in our new version.\nCan also have newlines.",
@@ -512,7 +453,41 @@ Can also have newlines.
 ### removed
 * y
 * z`
-		Expect(contents).To(Equal(expected))
+		Expect(vFile.String()).To(Equal(expected))
+	})
+
+	It("can create new version file with custom kind header", func() {
+		vFile := NewMockFile(fs, "v0.1.0.md")
+
+		fs.MockCreate = func(path string) (afero.File, error) {
+			return vFile, nil
+		}
+
+		changes := []core.Change{
+			{Body: "x", Kind: "added"},
+			{Body: "y", Kind: "removed"},
+			{Body: "z", Kind: "removed"},
+		}
+
+		testConfig.Kinds = []core.KindConfig{
+			{Label: "added", Header: "\n:rocket: Added"},
+			{Label: "removed"},
+		}
+		err := batchNewVersion(fs, testConfig, batchData{
+			Version: semver.MustParse("v0.1.0"),
+			Changes: changes,
+		})
+		Expect(err).To(BeNil())
+
+		expected := `## v0.1.0
+
+:rocket: Added
+* x
+
+### removed
+* y
+* z`
+		Expect(vFile.String()).To(Equal(expected))
 	})
 
 	It("returns error where when failing to create version file", func() {
@@ -529,12 +504,9 @@ Can also have newlines.
 	})
 
 	It("returns error when using bad version template", func() {
-		err := afs.MkdirAll("news", 0644)
-		Expect(err).To(BeNil())
-
 		testConfig.VersionFormat = "{{juuunk...}}"
 
-		err = batchNewVersion(fs, testConfig, batchData{
+		err := batchNewVersion(fs, testConfig, batchData{
 			Version: semver.MustParse("v0.1.0"),
 			Changes: []core.Change{},
 		})
@@ -542,40 +514,37 @@ Can also have newlines.
 	})
 
 	It("returns error when using bad kind template", func() {
-		err := afs.MkdirAll("news", 0644)
-		Expect(err).To(BeNil())
-
 		testConfig.KindFormat = "{{randoooom../././}}"
 
-		err = batchNewVersion(fs, testConfig, batchData{
+		err := batchNewVersion(fs, testConfig, batchData{
 			Version: semver.MustParse("v0.1.0"),
-			Changes: []core.Change{},
+			Changes: []core.Change{
+				{Body: "x", Kind: "added"},
+			},
 		})
 		Expect(err).NotTo(BeNil())
 	})
 
 	It("returns error when using bad component template", func() {
-		err := afs.MkdirAll("news", 0644)
-		Expect(err).To(BeNil())
-
 		testConfig.ComponentFormat = "{{deja vu}}"
 
-		err = batchNewVersion(fs, testConfig, batchData{
+		err := batchNewVersion(fs, testConfig, batchData{
 			Version: semver.MustParse("v0.1.0"),
-			Changes: []core.Change{},
+			Changes: []core.Change{
+				{Component: "x", Kind: "added"},
+			},
 		})
 		Expect(err).NotTo(BeNil())
 	})
 
 	It("returns error when using bad change template", func() {
-		err := afs.MkdirAll("news", 0644)
-		Expect(err).To(BeNil())
-
 		testConfig.ChangeFormat = "{{not.valid.syntax....}}"
 
-		err = batchNewVersion(fs, testConfig, batchData{
+		err := batchNewVersion(fs, testConfig, batchData{
 			Version: semver.MustParse("v0.1.0"),
-			Changes: []core.Change{},
+			Changes: []core.Change{
+				{Body: "x", Kind: "added"},
+			},
 		})
 		Expect(err).NotTo(BeNil())
 	})
@@ -593,9 +562,6 @@ Can also have newlines.
 	for _, test := range templateTests {
 		prefix := test.prefix
 		It(fmt.Sprintf("returns error when failing to execute %s template", test.key), func() {
-			err := afs.MkdirAll("news", 0644)
-			Expect(err).To(BeNil())
-
 			vFile := NewMockFile(fs, "v0.1.0.md")
 
 			fs.MockCreate = func(path string) (afero.File, error) {
@@ -618,7 +584,7 @@ Can also have newlines.
 
 			testConfig.ComponentFormat = "\n## {{.Component}}"
 			testConfig.Components = []string{"A", "B"}
-			err = batchNewVersion(fs, testConfig, batchData{
+			err := batchNewVersion(fs, testConfig, batchData{
 				Version: semver.MustParse("v0.1.0"),
 				Changes: changes,
 			})
@@ -635,8 +601,7 @@ Can also have newlines.
 			f, err = afs.Create(filepath.Join(futurePath, name))
 			Expect(err).To(BeNil())
 
-			err = f.Close()
-			Expect(err).To(BeNil())
+			Expect(f.Close()).To(Succeed())
 		}
 
 		err = deleteUnreleased(afs, testConfig, "header.md")
@@ -648,8 +613,7 @@ Can also have newlines.
 	})
 
 	It("delete unreleased fails if remove fails", func() {
-		err := afs.MkdirAll(futurePath, 0644)
-		Expect(err).To(BeNil())
+		var err error
 
 		for _, name := range []string{"a.yaml"} {
 			var f afero.File

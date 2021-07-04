@@ -18,7 +18,7 @@ type GetVersions func(shared.ReadDirer, Config) ([]*semver.Version, error)
 
 type KindConfig struct {
 	Label  string `yaml:"label"`
-	Format string `yaml:"format,omitempty"`
+	Header string `yaml:"format,omitempty"`
 }
 
 func (kc KindConfig) String() string {
