@@ -1,5 +1,5 @@
 ---
-title: "Formatting"
+title: "Shared Formatting"
 date: 2021-01-31T14:13:51-08:00
 draft: false
 weight: 3
@@ -8,6 +8,7 @@ summary: Customize how version and changelog files are generated.
 
 Changie utilizes [go template](https://golang.org/pkg/text/template/) for formatting version, kind, change and replacement lines.
 Additional fields can be added to change lines by adding [custom choices](/config/choices).
+You can also customize certain formatting options per kind using the [kind formatting](/config/kind-formatting).
 
 > Due to the ordering of commands you must add custom choices before
 > you added any change files in order to use the custom values in your format.
@@ -29,11 +30,12 @@ component header included.
 By default no components are configured.
 
 ### kinds
-type: _[]string_
+type: _[][KindConfig](/config/kind-formatting)_
 
 Kinds are another optional layer of changelogs suited for specifying what type
 of change we are making.
 If configured, developers will be prompted to select a kind.
+See [kind formatting](/config/kind-formatting) for how to further customize kinds.
 
 The default list comes from keep a changelog and includes; added, changed, removed, deprecated, fixed, and security.
 
@@ -76,13 +78,14 @@ If kinds are disabled, the format is unused.
 | **Kind** | _string_ | Name of the kind |
 
 ### changeFormat
-
-**Change Arguments**
+type: _string_
 
 Template used to generate change lines in version files and changelog.
 Custom values are created through [custom choices](/config/choices) and can be accessible through the Custom argument.
 
 For example, if you had a custom value named `Issue` you can include that in your change using `{{.Custom.Issue}}`.
+
+**Change Arguments**
 
 | Field | Type | Description |
 | --- | --- | --- |

@@ -42,4 +42,5 @@ tasks:
   docs-build:
     desc: Build documentation
     cmds:
+      - task: gen-cli-docs
       - hugo -s website --minify --gc
