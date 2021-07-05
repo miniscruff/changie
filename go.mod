@@ -9,7 +9,7 @@ require (
 	github.com/onsi/ginkgo v1.16.4
 	github.com/onsi/gomega v1.13.0
 	github.com/spf13/afero v1.6.0
-	github.com/spf13/cobra v1.2.0
+	github.com/spf13/cobra v1.2.1
 	golang.org/x/text v0.3.6
 	gopkg.in/yaml.v2 v2.4.0
 )
