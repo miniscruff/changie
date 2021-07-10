@@ -457,6 +457,33 @@ Can also have newlines.
 	})
 
 	It("can create new version file with custom kind header", func() {
+		vFile := NewMockFile(fs, "v0.2.0.md")
+
+		fs.MockCreate = func(path string) (afero.File, error) {
+			return vFile, nil
+		}
+
+		changes := []core.Change{
+			{Body: "z", Kind: "added"},
+		}
+
+		testConfig.Kinds = []core.KindConfig{
+			{Label: "added", Header: "\n:rocket: Added"},
+		}
+		err := batchNewVersion(fs, testConfig, batchData{
+			Version: semver.MustParse("v0.2.0"),
+			Changes: changes,
+		})
+		Expect(err).To(BeNil())
+
+		expected := `## v0.2.0
+
+:rocket: Added
+* z`
+		Expect(vFile.String()).To(Equal(expected))
+	})
+
+	It("can create new version file with custom kind change format", func() {
 		vFile := NewMockFile(fs, "v0.1.0.md")
 
 		fs.MockCreate = func(path string) (afero.File, error) {
@@ -465,13 +492,10 @@ Can also have newlines.
 
 		changes := []core.Change{
 			{Body: "x", Kind: "added"},
-			{Body: "y", Kind: "removed"},
-			{Body: "z", Kind: "removed"},
 		}
 
 		testConfig.Kinds = []core.KindConfig{
-			{Label: "added", Header: "\n:rocket: Added"},
-			{Label: "removed"},
+			{Label: "added", ChangeFormat: "* added -> {{.Body}}"},
 		}
 		err := batchNewVersion(fs, testConfig, batchData{
 			Version: semver.MustParse("v0.1.0"),
@@ -481,12 +505,8 @@ Can also have newlines.
 
 		expected := `## v0.1.0
 
-:rocket: Added
-* x
-
-### removed
-* y
-* z`
+### added
+* added -> x`
 		Expect(vFile.String()).To(Equal(expected))
 	})
 

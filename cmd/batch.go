@@ -149,6 +149,16 @@ func headerForKind(config core.Config, label string) string {
 	return config.KindFormat
 }
 
+func changeFormatFromKind(config core.Config, label string) string {
+	for _, kindConfig := range config.Kinds {
+		if kindConfig.ChangeFormat != "" && kindConfig.Label == label {
+			return kindConfig.ChangeFormat
+		}
+	}
+
+	return config.ChangeFormat
+}
+
 func batchNewVersion(fs afero.Fs, config core.Config, data batchData) error {
 	templateCache := core.NewTemplateCache()
 	versionPath := filepath.Join(config.ChangesDir, data.Version.Original()+"."+config.VersionExt)
@@ -206,7 +216,8 @@ func batchNewVersion(fs afero.Fs, config core.Config, data batchData) error {
 		}
 
 		_, _ = versionFile.WriteString("\n")
-		err = templateCache.Execute(config.ChangeFormat, versionFile, change)
+		changeFormat := changeFormatFromKind(config, lastKind)
+		err = templateCache.Execute(changeFormat, versionFile, change)
 
 		if err != nil {
 			return err
