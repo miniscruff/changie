@@ -28,3 +28,9 @@ Overrides the shared [kind format](/config/shared-formatting#kindformat) when sp
 | Field | Type | Description |
 | --- | --- | --- |
 | **Kind** | _string_ | Kind label value |
+
+### changeFormat
+type: _string_
+
+Change format allows you to override the output of a change for each kind.
+Overrides the shared [change format](/config/shared-formatting#changeformat) when specified.
