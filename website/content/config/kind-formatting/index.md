@@ -11,14 +11,14 @@ Most configurations are optional and will default to the
 [shared formatting](/config/shared-formatting) values when omitted.
 
 ### label
-type: _string_
+type: `string` | default: `""` | required
 
 Label is the only required element for kinds.
 This value is shown to users as part of the Kind selection prompt.
 It is also the value saved in change files.
 
 ### header
-type: _string_
+type: `string` | default: `""` | optional
 
 Header allows you to override the header output.
 Overrides the shared [kind format](/config/shared-formatting#kindformat) when specified.
@@ -30,7 +30,28 @@ Overrides the shared [kind format](/config/shared-formatting#kindformat) when sp
 | **Kind** | _string_ | Kind label value |
 
 ### changeFormat
-type: _string_
+type: `string` | default: `""` | optional
 
 Change format allows you to override the output of a change for each kind.
-Overrides the shared [change format](/config/shared-formatting#changeformat) when specified.
+Overrides the shared [change format](/config/shared-formatting#changeformat)
+when specified.
+
+### skipBody
+type: `bool` | default: `false` | optional
+
+Whether or not our kind will skip the default body prompt.
+
+### skipGlobalChoices
+type: `bool` | default: `false` | optional
+
+Whether or not our kind will skip the global choices configuration.
+This allows you to create kinds that have a specific set of custom choices separate
+from the other kinds.
+
+### additionalChoices
+type: `[]`[Choice](/config/choices) | default: `empty` | optional
+
+Additional choices is a list of custom choices identical to the global
+[choices](/config/choices#choice) but for only this one kind.
+These choices will be asked after the global choices.
+You will need to create a custom change format to use the new choices.

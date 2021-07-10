@@ -111,10 +111,23 @@ func (change Change) SaveUnreleased(wf shared.WriteFiler, config Config) error {
 	return wf(filePath, bs, os.ModePerm)
 }
 
+func kindFromLabel(config Config, label string) *KindConfig {
+	for _, kindConfig := range config.Kinds {
+		if kindConfig.Label == label {
+			return &kindConfig
+		}
+	}
+
+	panic("label not part of any kind")
+}
+
 // AskPrompts will ask the user prompts based on the configuration
 // updating the change as prompts are answered.
 func AskPrompts(change *Change, config Config, stdinReader io.ReadCloser) error {
-	var err error
+	var (
+		err  error
+		kind *KindConfig
+	)
 
 	if len(config.Components) > 0 {
 		compPrompt := promptui.Select{
@@ -140,21 +153,34 @@ func AskPrompts(change *Change, config Config, stdinReader io.ReadCloser) error 
 		if err != nil {
 			return err
 		}
+
+		kind = kindFromLabel(config, change.Kind)
 	}
 
-	bodyPrompt := promptui.Prompt{
-		Label: "Body",
-		Stdin: stdinReader,
-	}
+	if kind == nil || !kind.SkipBody {
+		bodyPrompt := promptui.Prompt{
+			Label: "Body",
+			Stdin: stdinReader,
+		}
 
-	change.Body, err = bodyPrompt.Run()
-	if err != nil {
-		return err
+		change.Body, err = bodyPrompt.Run()
+		if err != nil {
+			return err
+		}
 	}
 
 	change.Custom = make(map[string]string)
+	userChoices := make([]Custom, 0)
 
-	for _, custom := range config.CustomChoices {
+	if kind == nil || !kind.SkipGlobalChoices {
+		userChoices = append(userChoices, config.CustomChoices...)
+	}
+
+	if kind != nil {
+		userChoices = append(userChoices, kind.AdditionalChoices...)
+	}
+
+	for _, custom := range userChoices {
 		prompt, err := custom.CreatePrompt(stdinReader)
 		if err != nil {
 			return err

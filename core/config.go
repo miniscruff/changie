@@ -17,9 +17,12 @@ const (
 type GetVersions func(shared.ReadDirer, Config) ([]*semver.Version, error)
 
 type KindConfig struct {
-	Label        string `yaml:"label"`
-	Header       string `yaml:"format,omitempty"`
-	ChangeFormat string `yaml:"changeFormat,omitempty"`
+	Label             string   `yaml:"label"`
+	Header            string   `yaml:"format,omitempty"`
+	ChangeFormat      string   `yaml:"changeFormat,omitempty"`
+	SkipGlobalChoices bool     `yaml:"skipGlobalChoices,omitempty"`
+	SkipBody          bool     `yaml:"skipBody,omitempty"`
+	AdditionalChoices []Custom `yaml:"additionalChoices,omitempty"`
 }
 
 func (kc KindConfig) String() string {

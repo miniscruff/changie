@@ -7,26 +7,30 @@ summary: Automate version values in your entire project with find and replace op
 ---
 
 ### replacements
-type: _[]Replacement_
+type: `[]Replacement` | default: `empty` | optional
 
-When working in projects that include the version directly in the source code a replacement option exists to find and replace those values.
-This works similar to the find and replace from IDE tools but also includes the file path of the file.
+List of replacements.
 
 ## Replacement
-type: _struct_
+type: `struct`
+
+When working in projects that include the version directly in the source code
+replacements can be used to replace those values.
+This works similar to the find and replace from IDE tools but also includes the
+file path of the file.
 
 ### path
-type: _string_
+type: `string` | default: `""` | required
 
 Path of the file to find and replace in.
 
 ### find
-type: _string_
+type: `string` | default: `""` | required
 
 Regular expression to search for in the file.
 
 ### replace
-type: _string_
+type: `string` | default: `""` | required
 
 Template string to replace the line with.
 
@@ -34,5 +38,5 @@ Template string to replace the line with.
 
 | Field | Type | Description |
 | --- | --- | --- |
-| **Version** | _string_ | Semantic version of the release, includes `v` suffix if used |
-| **VersionNoPrefix** | _string_ | Semantic version of the release without the suffix if used |
+| **Version** | `string` | Semantic version of the release, includes `v` suffix if used |
+| **VersionNoPrefix** | `string` | Semantic version of the release without the suffix if used |

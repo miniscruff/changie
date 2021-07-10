@@ -1,0 +1,5 @@
+kind: Added
+body: Option to skip global choices per kind
+time: 2021-07-10T15:23:06.1677422-07:00
+custom:
+  Issue: "136"
