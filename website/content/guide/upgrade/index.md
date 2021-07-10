@@ -2,6 +2,7 @@
 title: 'Upgrade Guide'
 date: 2021-07-03T15:14:39+10:00
 weight: 4
+summary: How to upgrade versions that are backwards incompatible
 ---
 
 ## From v0.5.0
