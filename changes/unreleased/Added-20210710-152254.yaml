@@ -1,0 +1,5 @@
+kind: Added
+body: Option to skip body prompts per kind
+time: 2021-07-10T15:22:54.5749939-07:00
+custom:
+  Issue: "136"

@@ -9,19 +9,19 @@ summary: Configure paths and files to fit your project.
 Directories and files can have there paths adjusted from the config.
 
 ### changesDir
-type: _string_
+type: `string` | default: `""` | required
 
 Directory for change files, header file and unreleased files.
 Relative to project root.
 
 ### unreleasedDir
-type: _string_
+type: `string` | default: `""` | required
 
 Directory for all unreleased change files.
 Relative to `changesDir`.
 
 ### headerPath
-type: _string_
+type: `string` | default: `""` | required
 
 When merging all versions into one changelog file a header is added at the top.
 A default header is created when initializing that follows "Keep a Changelog".
@@ -30,7 +30,7 @@ Filepath for your changelog header file.
 Relative to `changesDir`.
 
 ### versionHeaderPath
-type: _string_
+type: `string` | default: `""` | optional
 
 When batching change fragments into a single version file you can include a version header
 paragraph by creating a file at the path specified.
@@ -43,13 +43,13 @@ It is also possible to use the `--headerPath` parameter when using the `batch` c
 CLI parameter has priority.
 
 ### changelogPath
-type: _string_
+type: `string` | default: `""` | required
 
 Filepath for the generated changelog file.
 Relative to project root.
 
 ### versionExt
-type: _string_
+type: `string` | default: `""` | required
 
 File extension for generated version files.
 This should probably match your changelog path file.

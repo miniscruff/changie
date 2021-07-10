@@ -19,7 +19,7 @@ When batching changes into a version, changes are sorted by:
 1. Time sorted newest first
 
 ### components
-type: _[]string_
+type: `[]string` | default: `empty` | optional
 
 Components are an optional layer of changelogs suited for projects that want to
 split change fragments by an area of the project.
@@ -30,7 +30,7 @@ component header included.
 By default no components are configured.
 
 ### kinds
-type: _[][KindConfig](/config/kind-formatting)_
+type: `[]`[KindConfig](/config/kind-formatting) | default: `empty` | optional
 
 Kinds are another optional layer of changelogs suited for specifying what type
 of change we are making.
@@ -40,7 +40,7 @@ See [kind formatting](/config/kind-formatting) for how to further customize kind
 The default list comes from keep a changelog and includes; added, changed, removed, deprecated, fixed, and security.
 
 ### versionFormat
-type: _string_
+type: `string` | default: `""` | required
 
 Template used to generate version headers in version files and changelog.
 
@@ -48,11 +48,11 @@ Template used to generate version headers in version files and changelog.
 
 | Field | Type | Description |
 | --- | --- | --- |
-| **Version** | _string_ | Semantic version of the changes |
-| **Time** | _time.Time_ | Time of generated version |
+| **Version** | `string` | Semantic version of the changes |
+| **Time** | `time.Time` | Time of generated version |
 
 ### componentFormat
-type: _string_
+type: `string` | default: `""` | optional
 
 Template used to generate component headers.
 If format is empty no header will be included.
@@ -62,10 +62,10 @@ If components are disabled, the format is unused.
 
 | Field | Type | Description |
 | --- | --- | --- |
-| **Component** | _string_ | Name of the component |
+| **Component** | `string` | Name of the component |
 
 ### kindFormat
-type: _string_
+type: `string` | default: `""` | optional
 
 Template used to generate kind headers.
 If format is empty no header will be included.
@@ -75,10 +75,10 @@ If kinds are disabled, the format is unused.
 
 | Field | Type | Description |
 | --- | --- | --- |
-| **Kind** | _string_ | Name of the kind |
+| **Kind** | `string` | Name of the kind |
 
 ### changeFormat
-type: _string_
+type: `string` | default: `""` | required
 
 Template used to generate change lines in version files and changelog.
 Custom values are created through [custom choices](/config/choices) and can be accessible through the Custom argument.
@@ -89,8 +89,8 @@ For example, if you had a custom value named `Issue` you can include that in you
 
 | Field | Type | Description |
 | --- | --- | --- |
-| **Component** | _string_ | What kind of component we are changing, only included if enabled |
-| **Kind** | _string_ | What kind of change this is, only included if enabled |
-| **Body** | _string_ | Body message of the change |
-| **Time** | _time.Time_ | Time of generated change |
-| **Custom** | _map[string]string_ | Map of custom values if any exist |
+| **Component** | `string` | What kind of component we are changing, only included if enabled |
+| **Kind** | `string` | What kind of change this is, only included if enabled |
+| **Body** | `string` | Body message of the change |
+| **Time** | `time.Time` | Time of generated change |
+| **Custom** | `map[string]string` | Map of custom values if any exist |

@@ -234,7 +234,7 @@ var _ = Describe("Change ask prompts", func() {
 	It("for body and custom", func() {
 		config := Config{
 			CustomChoices: []Custom{
-				{Key: "check", Type: CustomString, Label: "a"},
+				{Key: "check", Type: CustomString},
 			},
 		}
 		go func() {
@@ -250,6 +250,38 @@ var _ = Describe("Change ask prompts", func() {
 		Expect(c.Kind).To(BeEmpty())
 		Expect(c.Custom["check"]).To(Equal("custom check value"))
 		Expect(c.Body).To(Equal("body again"))
+	})
+
+	It("for skipped body, skipped global choices and kind choices", func() {
+		config := Config{
+			CustomChoices: []Custom{
+				{Key: "skipped", Type: CustomString, Label: "a"},
+			},
+			Kinds: []KindConfig{
+				{
+					Label:             "added",
+					SkipBody:          true,
+					SkipGlobalChoices: true,
+					AdditionalChoices: []Custom{
+						{Key: "break", Type: CustomString, Label: "b"},
+					},
+				},
+				{Label: "not used"},
+			},
+		}
+		go func() {
+			DelayWrite(stdinWriter, []byte{13})
+			DelayWrite(stdinWriter, []byte("breaking value"))
+			DelayWrite(stdinWriter, []byte{13})
+		}()
+
+		c := &Change{}
+		Expect(AskPrompts(c, config, stdinReader)).To(Succeed())
+		Expect(c.Component).To(BeEmpty())
+		Expect(c.Kind).To(Equal("added"))
+		Expect(c.Custom).NotTo(HaveKey("skipped"))
+		Expect(c.Custom).To(HaveKeyWithValue("break", "breaking value"))
+		Expect(c.Body).To(BeEmpty())
 	})
 
 	It("gets error for invalid custom type", func() {
@@ -319,5 +351,19 @@ var _ = Describe("Change ask prompts", func() {
 
 		c := &Change{}
 		Expect(AskPrompts(c, config, stdinReader)).NotTo(Succeed())
+	})
+
+	It("panics when trying to find kind from bad label", func() {
+		config := Config{
+			Kinds: []KindConfig{
+				{Label: "a"},
+			},
+		}
+		badKindFromLabel := func() {
+			_ = kindFromLabel(config, "not a")
+			Fail("should panic before this")
+		}
+		defer GinkgoRecover()
+		Expect(badKindFromLabel).To(Panic())
 	})
 })
