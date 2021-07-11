@@ -108,7 +108,6 @@ var _ = Describe("end to end", func() {
 		changeContents := fmt.Sprintf(`%s
 
 ## v0.1.0 - %s
-
 ### Changed
 * newer
 * older`, defaultHeader, date)
