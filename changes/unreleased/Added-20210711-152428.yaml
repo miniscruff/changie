@@ -1,0 +1,5 @@
+kind: Added
+body: Min and max length checks for string choices
+time: 2021-07-11T15:24:28.2231749-07:00
+custom:
+  Issue: "123"

@@ -3,20 +3,18 @@ name: test
 on:
   push:
     branches: [ main ]
-    paths:
-    - 'cmd/**'
-    - 'golangci.yml'
-    - 'go.mod'
-    - 'go.sum'
-    - 'main.go'
+    paths-ignore:
+    - '.github/'
+    - 'changes/'
+    - 'resources/'
+    - 'website/'
   pull_request:
     branches: [ main ]
-    paths:
-    - 'cmd/**'
-    - 'golangci.yml'
-    - 'go.mod'
-    - 'go.sum'
-    - 'main.go'
+    paths-ignore:
+    - '.github/'
+    - 'changes/'
+    - 'resources/'
+    - 'website/'
 
 jobs:
 

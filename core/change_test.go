@@ -284,6 +284,28 @@ var _ = Describe("Change ask prompts", func() {
 		Expect(c.Body).To(BeEmpty())
 	})
 
+	It("gets error for invalid body", func() {
+		var min int64 = 5
+		submitFailed := false
+		config := Config{
+			Body: BodyConfig{
+				MinLength: &min,
+			},
+		}
+		go func() {
+			DelayWrite(stdinWriter, []byte("abc"))
+			DelayWrite(stdinWriter, []byte{13})
+			// we need to ctrl-c out of the prompt or it will stick
+			DelayWrite(stdinWriter, []byte{3})
+			// use this boolean to check the control-c was required
+			submitFailed = true
+		}()
+
+		c := &Change{}
+		Expect(AskPrompts(c, config, stdinReader)).NotTo(Succeed())
+		Expect(submitFailed).To(BeTrue())
+	})
+
 	It("gets error for invalid custom type", func() {
 		config := Config{
 			CustomChoices: []Custom{

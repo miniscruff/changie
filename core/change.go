@@ -158,12 +158,9 @@ func AskPrompts(change *Change, config Config, stdinReader io.ReadCloser) error 
 	}
 
 	if kind == nil || !kind.SkipBody {
-		bodyPrompt := promptui.Prompt{
-			Label: "Body",
-			Stdin: stdinReader,
-		}
-
+		bodyPrompt := config.Body.CreatePrompt(stdinReader)
 		change.Body, err = bodyPrompt.Run()
+
 		if err != nil {
 			return err
 		}
