@@ -1,6 +1,7 @@
 package core
 
 import (
+	"io"
 	"os"
 
 	"github.com/Masterminds/semver/v3"
@@ -29,6 +30,22 @@ func (kc KindConfig) String() string {
 	return kc.Label
 }
 
+type BodyConfig struct {
+	MinLength *int64 `yaml:"minLength,omitempty"`
+	MaxLength *int64 `yaml:"minLength,omitempty"`
+}
+
+func (b BodyConfig) CreatePrompt(stdinReader io.ReadCloser) Prompt {
+	p, _ := Custom{
+		Label:     "Body",
+		Type:      CustomString,
+		MinLength: b.MinLength,
+		MaxLength: b.MaxLength,
+	}.CreatePrompt(stdinReader)
+
+	return p
+}
+
 // Config handles configuration for a changie project
 type Config struct {
 	ChangesDir        string `yaml:"changesDir"`
@@ -43,6 +60,7 @@ type Config struct {
 	KindFormat      string `yaml:"kindFormat,omitempty"`
 	ChangeFormat    string `yaml:"changeFormat"`
 	// custom
+	Body          BodyConfig    `yaml:"body,omitempty"`
 	Components    []string      `yaml:"components,omitempty"`
 	Kinds         []KindConfig  `yaml:"kinds,omitempty"`
 	CustomChoices []Custom      `yaml:"custom,omitempty"`

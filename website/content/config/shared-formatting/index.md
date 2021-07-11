@@ -18,6 +18,11 @@ When batching changes into a version, changes are sorted by:
 1. Kind, if enabled, sorted by index in kinds config
 1. Time sorted newest first
 
+### body
+type: [BodyConfig](/config/shared-formatting/#body-config) | default: `empty` | optional
+
+Customize the requirements of the body prompt.
+
 ### components
 type: `[]string` | default: `empty` | optional
 
@@ -94,3 +99,16 @@ For example, if you had a custom value named `Issue` you can include that in you
 | **Body** | `string` | Body message of the change |
 | **Time** | `time.Time` | Time of generated change |
 | **Custom** | `map[string]string` | Map of custom values if any exist |
+
+## Body Config
+type: `struct`
+
+### minLength
+type: `int` | default: `nil` | optional
+
+If specified the body must be at least this long.
+
+### maxLength
+type: `int` | default: `nil` | optional
+
+If specified the body must be no more than this long.

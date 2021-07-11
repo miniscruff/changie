@@ -4,6 +4,7 @@ import (
 	"errors"
 	"os"
 
+	"github.com/manifoldco/promptui"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )
@@ -137,5 +138,25 @@ custom:
 
 		_, err := LoadConfig(mockRf)
 		Expect(err).NotTo(BeNil())
+	})
+})
+
+var _ = Describe("Body Config", func() {
+	It("can create prompt when config empty", func() {
+		p := BodyConfig{}.CreatePrompt(os.Stdin)
+		underPrompt, ok := p.(*promptui.Prompt)
+		Expect(ok).To(BeTrue())
+		Expect(underPrompt.Label).To(Equal("Body"))
+		Expect(underPrompt.Validate("anything")).To(BeNil())
+	})
+
+	It("can create prompt with min and max", func() {
+		var max int64 = 10
+		longInput := "jas dklfjaklsd fjklasjd flkasjdfkl sd"
+		p := BodyConfig{MaxLength: &max}.CreatePrompt(os.Stdin)
+		underPrompt, ok := p.(*promptui.Prompt)
+		Expect(ok).To(BeTrue())
+		Expect(underPrompt.Label).To(Equal("Body"))
+		Expect(errors.Is(underPrompt.Validate(longInput), errInputTooLong)).To(BeTrue())
 	})
 })
