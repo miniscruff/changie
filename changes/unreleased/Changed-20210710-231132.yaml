@@ -1,5 +1,0 @@
-kind: Changed
-body: Default kind format does not have a newline to start
-time: 2021-07-10T23:11:32.1163401-07:00
-custom:
-  Issue: "141"
