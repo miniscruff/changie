@@ -5,25 +5,25 @@
 class Changie < Formula
   desc "Automated changelog tool for preparing releases with lots of customization options."
   homepage "https://changie.dev"
-  version "0.6.0"
+  version "0.7.0"
   license "MIT"
   bottle :unneeded
 
   on_macos do
     if Hardware::CPU.intel?
-      url "https://github.com/miniscruff/changie/releases/download/v0.6.0/changie_0.6.0_darwin_amd64.tar.gz"
-      sha256 "bf57f256bf3727bb0cda4aae3efc5e64d744cfcd68e802c9ae7e61da52d2f218"
+      url "https://github.com/miniscruff/changie/releases/download/v0.7.0/changie_0.7.0_darwin_amd64.tar.gz"
+      sha256 "af8d4d13b9c5a47b968f080760b3f0b804d32502a57cf1002869db0aebe96fb9"
     end
   end
 
   on_linux do
     if Hardware::CPU.intel?
-      url "https://github.com/miniscruff/changie/releases/download/v0.6.0/changie_0.6.0_linux_amd64.tar.gz"
-      sha256 "b55b74d1783ff505acebca5c78a44a17b68977a6ca8a86f122af5987d47a0cf1"
+      url "https://github.com/miniscruff/changie/releases/download/v0.7.0/changie_0.7.0_linux_amd64.tar.gz"
+      sha256 "dba31696022b6ca4a74af68a7121920df0c7dbac64bc0b707d91f5c191559bd0"
     end
     if Hardware::CPU.arm? && Hardware::CPU.is_64_bit?
-      url "https://github.com/miniscruff/changie/releases/download/v0.6.0/changie_0.6.0_linux_arm64.tar.gz"
-      sha256 "899f599449f0d6b793fc7689e06ad0eeff24d5b11cd0ae05e4273250a7e74c7d"
+      url "https://github.com/miniscruff/changie/releases/download/v0.7.0/changie_0.7.0_linux_arm64.tar.gz"
+      sha256 "dc74c45d17f1c58bbb55aab6196cfc84fca94b8ec98b5b39cb3da322a0bd5d2d"
     end
   end
 
