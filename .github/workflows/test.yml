@@ -41,7 +41,7 @@ jobs:
       run: go test -coverprofile=c.out ./...
 
     - name: Coverage
-      uses: codecov/codecov-action@v1.5.2
+      uses: codecov/codecov-action@v2.0.1
       with:
         file: ./c.out
         fail_ci_if_error: true
