@@ -34,5 +34,9 @@ File an issue before creating a pull request, unless it is something simple like
 If you want to contribute through code or documentation, the [Contributing guide](CONTRIBUTING.md) is the place to start.
 If you need additional help create an issue or post on discussions.
 
+## Semantic Version Compatibility
+Changie is focused around the CLI and its configuration options and aims to keep existing CLI commands and options suported in major versions.
+It is possible to use Changie as a dependent package but no support or compability is guaranteed.
+
 ## License
 Distributed under the [MIT License](LICENSE).
