@@ -17,7 +17,11 @@
   <link rel="stylesheet" href="{{ ($style | minify | fingerprint).RelPermalink }}">
   {{ end }}
 
-  {{ block "header_css" . }}{{ end }}
+  {{ block "header_css" . }}
+  {{ if .Params.asciinema }}
+      <link rel="stylesheet" type="text/css" href="{{ .Site.BaseURL }}asciinema-player.css" />
+  {{ end }}
+  {{ end }}
 
 </head>
 
@@ -58,6 +62,9 @@
   {{ $scripts := resources.Get "js/scripts.js" }}
 
   {{ block "footer_js" . }}
+  {{ if .Params.asciinema }}
+      <script src="{{ .Site.BaseURL }}asciinema-player.js"></script>
+  {{ end }}
   {{ end }}
 
   {{ if .Site.IsServer }}
