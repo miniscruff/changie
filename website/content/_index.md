@@ -7,7 +7,13 @@ asciinema: true
 Automated changelog tool for preparing releases with lots of customization options.
 Changie aims to be a universal tool for any project language or style but limiting itself to changelogs and version management.
 
-{{< asciinema key="overview" rows="25" preload="1" >}}
+{{< asciinema
+  key="overview"
+  rows="25"
+  preload="1"
+  author="miniscruff"
+  title="Changie overview"
+>}}
 
 ## Features
 * File based changelog management keeps your commit history and release notes separate.

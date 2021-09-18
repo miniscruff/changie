@@ -40,4 +40,9 @@ After you have batched a new version you can merge it into the parent changelog 
 changie merge
 ```
 
-{{< asciinema key="quick-start" rows="10" preload="1" >}}
+{{< asciinema
+  key="quick-start"
+  rows="10"
+  preload="1"
+  author="miniscruff"
+>}}

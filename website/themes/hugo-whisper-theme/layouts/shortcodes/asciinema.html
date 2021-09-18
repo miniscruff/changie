@@ -1,5 +1,5 @@
 <asciinema-player
-  src="/recordings/{{ with .Get "key" }}{{ . }}{{ end }}.cast"
+  src="{{ .Get "key" | printf "/recordings/%s.cast" }}"
   cols="{{ if .Get "cols" }}{{ .Get "cols" }}{{ else }}640{{ end }}"
   rows="{{ if .Get "rows" }}{{ .Get "rows" }}{{ else }}10{{ end }}"
   {{ if .Get "autoplay" }}autoplay="{{ .Get "autoplay" }}"{{ end }}
