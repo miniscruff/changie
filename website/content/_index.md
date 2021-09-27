@@ -9,8 +9,9 @@ Changie aims to be a universal tool for any project language or style but limiti
 
 {{< asciinema
   key="overview"
-  rows="25"
   preload="1"
+  cols="86"
+  rows="25"
   author="miniscruff"
   title="Changie overview"
 >}}
@@ -30,3 +31,5 @@ File an issue before creating a pull request, unless it is something simple like
 ## Want to Contribute?
 If you want to contribute through code or documentation, the [Contributing guide](https://github.com/miniscruff/changie/blob/main/CONTRIBUTING.md) is the place to start.
 If you need additional help create an issue or post on discussions.
+
+src="/recordings/{{ with .Get "key" }}{{ . }}{{ end }}.cast"
