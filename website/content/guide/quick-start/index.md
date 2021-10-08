@@ -3,6 +3,7 @@ title: "Quick Start"
 date: 2021-01-30T23:38:40-08:00
 draft: false
 weight: 2
+asciinema: true
 summary: Quick guide on how to get started with changie.
 ---
 
@@ -38,3 +39,10 @@ After you have batched a new version you can merge it into the parent changelog 
 ```shell
 changie merge
 ```
+
+{{< asciinema
+  key="quick-start"
+  rows="10"
+  preload="1"
+  author="miniscruff"
+>}}

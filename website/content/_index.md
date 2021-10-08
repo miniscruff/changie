@@ -1,10 +1,20 @@
 ---
-title: 'Changie Docs'
+title: 'Changie'
 date: 2021-01-30T23:19:51-08:00
+asciinema: true
 ---
 
 Automated changelog tool for preparing releases with lots of customization options.
 Changie aims to be a universal tool for any project language or style but limiting itself to changelogs and version management.
+
+{{< asciinema
+  key="overview"
+  preload="1"
+  cols="79"
+  rows="37"
+  author="miniscruff"
+  title="Changie overview"
+>}}
 
 ## Features
 * File based changelog management keeps your commit history and release notes separate.
@@ -21,3 +31,5 @@ File an issue before creating a pull request, unless it is something simple like
 ## Want to Contribute?
 If you want to contribute through code or documentation, the [Contributing guide](https://github.com/miniscruff/changie/blob/main/CONTRIBUTING.md) is the place to start.
 If you need additional help create an issue or post on discussions.
+
+src="/recordings/{{ with .Get "key" }}{{ . }}{{ end }}.cast"
