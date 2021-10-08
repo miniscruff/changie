@@ -10,8 +10,8 @@ Changie aims to be a universal tool for any project language or style but limiti
 {{< asciinema
   key="overview"
   preload="1"
-  cols="86"
-  rows="25"
+  cols="79"
+  rows="37"
   author="miniscruff"
   title="Changie overview"
 >}}
