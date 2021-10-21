@@ -12,7 +12,7 @@ and install with `dpkg -i` and `rpm -i` respectively.
 
 ## Windows Scoop
 On windows you can use [scoop](https://scoop.sh/) by first adding the repo and then installing.
-```
+```sh
 scoop bucket add repo https://github.com/miniscruff/changie
 scoop install changie
 ```
@@ -22,7 +22,7 @@ scoop install changie
 On macOS, you can use [Homebrew](https://brew.sh/) to install by first tapping
 the repository.
 
-```
+```sh
 brew tap miniscruff/changie https://github.com/miniscruff/changie
 brew install changie
 ```
@@ -30,8 +30,20 @@ brew install changie
 ## ArchLinux
 An [AUR package](https://aur.archlinux.org/packages/changie/) is available.
 
-```
+```sh
 trizen -S changie
+```
+
+## Docker
+Docker images are uploaded to [GitHub Packages](https://github.com/miniscruff/changie/pkgs/container/changie).
+
+```sh
+# Replace latest with any changie command
+docker run \
+    --mount type=bind,source=$PWD,target=/src \
+    -w /src \
+    ghcr.io/miniscruff/changie \
+    latest
 ```
 
 ## Manual
