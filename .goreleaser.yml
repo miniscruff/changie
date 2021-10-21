@@ -47,6 +47,21 @@ scoop:
   homepage: https://changie.dev
   description: Automated changelog tool for preparing releases with lots of customization options.
   license: MIT
+dockers:
+  - goos: linux
+    goarch: amd64
+    image_templates:
+      - "ghcr.io/miniscruff/changie:v{{ .Major }}"
+      - "ghcr.io/miniscruff/changie:v{{ .Major }}.{{ .Minor }}"
+      - "ghcr.io/miniscruff/changie:v{{ .Major }}.{{ .Minor }}.{{ .Patch }}"
+      - "ghcr.io/miniscruff/changie:latest"
+    build_flag_templates:
+    - "--pull"
+    - "--label=org.opencontainers.image.created={{.Date}}"
+    - "--label=org.opencontainers.image.title={{.ProjectName}}"
+    - "--label=org.opencontainers.image.revision={{.FullCommit}}"
+    - "--label=org.opencontainers.image.version={{.Version}}"
+    - "--platform=linux/amd64"
 checksum:
   name_template: 'checksums.txt'
 snapshot:
