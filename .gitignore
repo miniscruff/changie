@@ -15,3 +15,6 @@ coverage.txt
 # hugo builds
 website/public
 website/resources
+
+# goreleaser builds
+dist/

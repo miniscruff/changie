@@ -7,16 +7,23 @@ on:
 
 jobs:
   release:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     steps:
 
     - name: Checkout
       uses: actions/checkout@v2.3.5
 
     - name: Set up Go
-      uses: actions/setup-go@v2
+      uses: actions/setup-go@v2.1.4
       with:
-        go-version: 1.15
+        go-version: 1.17
+
+    - name: Login to GitHub Container Registry
+      uses: docker/login-action@v1.10
+      with:
+        registry: ghcr.io
+        username: ${{ github.repository_owner }}
+        password: ${{ secrets.GITHUB_TOKEN }}
 
     - name: Add env vars
       run: |

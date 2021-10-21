@@ -15,7 +15,7 @@ on:
 jobs:
   analyze:
     name: Analyze
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
 
     strategy:
       fail-fast: false
@@ -28,9 +28,9 @@ jobs:
 
     # Initializes the CodeQL tools for scanning.
     - name: Initialize CodeQL
-      uses: github/codeql-action/init@v1
+      uses: github/codeql-action/init@v1.0.19
       with:
         languages: ${{ matrix.language }}
 
     - name: Perform CodeQL Analysis
-      uses: github/codeql-action/analyze@v1
+      uses: github/codeql-action/analyze@v1.0.19

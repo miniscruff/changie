@@ -15,10 +15,10 @@ on:
 
 jobs:
   check-changelog:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     steps:
       - name: "Check for changelog entry"
-        uses: brettcannon/check-for-changed-files@v1
+        uses: brettcannon/check-for-changed-files@v1.1.0
         with:
           file-pattern: "changes/unreleased/*.yaml"
           skip-label: "skip changelog"
