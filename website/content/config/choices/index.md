@@ -14,6 +14,19 @@ You can add more metadata to change files by including custom choices.
 These choices add key value pairs to the change format, see [changeFormat](/config/shared-formatting/#changeformat)
 for more details.
 
+Example with GitHub name and issue number:
+
+```yaml
+custom:
+- key: Issue
+  type: int
+  minInt: 1
+- key: Author
+  label: GitHub Name
+  type: string
+  minLength: 3
+```
+
 ## Choice
 type: `struct`
 

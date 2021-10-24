@@ -18,6 +18,29 @@ When batching changes into a version, changes are sorted by:
 1. Kind, if enabled, sorted by index in kinds config
 1. Time sorted newest first
 
+Example with components:
+
+```yaml
+versionFormat: '## {{.Version}} - {{.Time.Format "2006-01-02"}}'
+componentFormat: '### {{.Component}}'
+kindFormat: '#### {{.Kind}}'
+changeFormat: '* {{.Body}}'
+body:
+  minLength: 3
+  maxLength: 80
+components:
+  - API
+  - CLI
+  - Frontend
+kinds:
+  - label: Added
+  - label: Changed
+  - label: Deprecated
+  - label: Removed
+  - label: Fixed
+  - label: Security
+```
+
 ### body
 type: [BodyConfig](/config/shared-formatting/#body-config) | default: `empty` | optional
 
