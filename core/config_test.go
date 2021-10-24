@@ -33,7 +33,7 @@ changeFormat: ""
 
 		mockWf := func(filepath string, bytes []byte, perm os.FileMode) error {
 			writeCalled = true
-			Expect(filepath).To(Equal(ConfigPath))
+			Expect(filepath).To(Equal(ConfigPaths[0]))
 			Expect(string(bytes)).To(Equal(configYaml))
 			return nil
 		}
@@ -96,7 +96,7 @@ custom:
 
 		mockWf := func(filepath string, bytes []byte, perm os.FileMode) error {
 			writeCalled = true
-			Expect(filepath).To(Equal(ConfigPath))
+			Expect(filepath).To(Equal(ConfigPaths[0]))
 			Expect(string(bytes)).To(Equal(configYaml))
 			return nil
 		}
@@ -106,10 +106,12 @@ custom:
 		Expect(writeCalled).To(Equal(true))
 	})
 
-	It("should load change from path", func() {
+	It("should load config from path", func() {
 		mockRf := func(filepath string) ([]byte, error) {
-			Expect(filepath).To(Equal(ConfigPath))
-			return []byte("changesDir: C\nheaderPath: header.rst\n"), nil
+			if filepath == ConfigPaths[0] {
+				return []byte("changesDir: C\nheaderPath: header.rst\n"), nil
+			}
+			return nil, os.ErrNotExist
 		}
 
 		config, err := LoadConfig(mockRf)
@@ -118,11 +120,40 @@ custom:
 		Expect(config.HeaderPath).To(Equal("header.rst"))
 	})
 
+	It("should load config from alternate path", func() {
+		mockRf := func(filepath string) ([]byte, error) {
+			if filepath == ConfigPaths[1] {
+				return []byte("changesDir: C\nheaderPath: header.rst\n"), nil
+			}
+			return nil, os.ErrNotExist
+		}
+
+		config, err := LoadConfig(mockRf)
+		Expect(err).To(BeNil())
+		Expect(config.ChangesDir).To(Equal("C"))
+		Expect(config.HeaderPath).To(Equal("header.rst"))
+	})
+
+	It("should load config from custom path", func() {
+		mockRf := func(filepath string) ([]byte, error) {
+			if filepath == "./custom/changie.yaml" {
+				return []byte("changesDir: C\nheaderPath: header.rst\n"), nil
+			}
+			return nil, os.ErrNotExist
+		}
+
+		os.Setenv("CHANGIE_CONFIG_PATH", "./custom/changie.yaml")
+		config, err := LoadConfig(mockRf)
+		Expect(err).To(BeNil())
+		Expect(config.ChangesDir).To(Equal("C"))
+		Expect(config.HeaderPath).To(Equal("header.rst"))
+		os.Setenv("CHANGIE_CONFIG_PATH", "")
+	})
+
 	It("should return error from bad read", func() {
 		mockErr := errors.New("bad file")
 
 		mockRf := func(filepath string) ([]byte, error) {
-			Expect(filepath).To(Equal(ConfigPath))
 			return []byte(""), mockErr
 		}
 
@@ -132,7 +163,6 @@ custom:
 
 	It("should return error from bad file", func() {
 		mockRf := func(filepath string) ([]byte, error) {
-			Expect(filepath).To(Equal(ConfigPath))
 			return []byte("not a yaml file---"), nil
 		}
 
