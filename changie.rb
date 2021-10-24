@@ -5,29 +5,44 @@
 class Changie < Formula
   desc "Automated changelog tool for preparing releases with lots of customization options."
   homepage "https://changie.dev"
-  version "1.0.0"
+  version "1.1.0"
   license "MIT"
-  bottle :unneeded
 
   on_macos do
     if Hardware::CPU.intel?
-      url "https://github.com/miniscruff/changie/releases/download/v1.0.0/changie_1.0.0_darwin_amd64.tar.gz"
-      sha256 "93c4894e6f85941d66947e5dd01b6aeb88bf8714aa939113b74375fb0447b876"
+      url "https://github.com/miniscruff/changie/releases/download/v1.1.0/changie_1.1.0_darwin_amd64.tar.gz"
+      sha256 "d1212790f07914111f99786ea5c1292837f4ec84b2ca8118c0831b55fb5f1b85"
+
+      def install
+        bin.install "changie"
+      end
+    end
+    if Hardware::CPU.arm?
+      url "https://github.com/miniscruff/changie/releases/download/v1.1.0/changie_1.1.0_darwin_arm64.tar.gz"
+      sha256 "8d0b4c1c7f33e4031dee9f39106493aabb5ec76de425e8bfa299b94420ac23a5"
+
+      def install
+        bin.install "changie"
+      end
     end
   end
 
   on_linux do
     if Hardware::CPU.intel?
-      url "https://github.com/miniscruff/changie/releases/download/v1.0.0/changie_1.0.0_linux_amd64.tar.gz"
-      sha256 "b9dbfa9ac193334111e56c768eef77ea4d56b00ce4b855d309165d141232c21d"
+      url "https://github.com/miniscruff/changie/releases/download/v1.1.0/changie_1.1.0_linux_amd64.tar.gz"
+      sha256 "ba25ce13e00c937537999bb4de5a7acf561f94fa5afb4fd6c5d8ae370b4a6e4b"
+
+      def install
+        bin.install "changie"
+      end
     end
     if Hardware::CPU.arm? && Hardware::CPU.is_64_bit?
-      url "https://github.com/miniscruff/changie/releases/download/v1.0.0/changie_1.0.0_linux_arm64.tar.gz"
-      sha256 "a81e5bde495cdf8f80b034438a3a43d0a95f8895148da8fca91eafe79b2930d8"
-    end
-  end
+      url "https://github.com/miniscruff/changie/releases/download/v1.1.0/changie_1.1.0_linux_arm64.tar.gz"
+      sha256 "cae5d61d1cdad57a561d86c2613faef133b578f42514ad52ee54294781f04845"
 
-  def install
-    bin.install "changie"
+      def install
+        bin.install "changie"
+      end
+    end
   end
 end
