@@ -10,6 +10,22 @@ Configuration can be split per kind of change to allow more flexibility.
 Most configurations are optional and will default to the
 [shared formatting](/config/shared-formatting) values when omitted.
 
+Example of a two line breaking change:
+
+```yaml
+kinds:
+  - label: Breaking
+    header: "## :warning: Breaking"
+    skipGlobalChoices: true
+    changeFormat: >-
+      * {{.Reason}}
+      {{.Body}}
+    additionalChoices:
+    - key: Reason
+      label: Reason for breaking change
+      type: string
+```
+
 ### label
 type: `string` | default: `""` | required
 

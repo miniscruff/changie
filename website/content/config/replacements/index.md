@@ -11,6 +11,15 @@ type: `[]Replacement` | default: `empty` | optional
 
 List of replacements.
 
+Example for NodeJS package.json
+
+```yaml
+replacements:
+  - path: package.json
+    find: '  "version": ".*",'
+    replace: '  "version": "{{.VersionNoPrefix}}",'
+```
+
 ## Replacement
 type: `struct`
 

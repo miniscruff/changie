@@ -31,5 +31,3 @@ File an issue before creating a pull request, unless it is something simple like
 ## Want to Contribute?
 If you want to contribute through code or documentation, the [Contributing guide](https://github.com/miniscruff/changie/blob/main/CONTRIBUTING.md) is the place to start.
 If you need additional help create an issue or post on discussions.
-
-src="/recordings/{{ with .Get "key" }}{{ . }}{{ end }}.cast"
