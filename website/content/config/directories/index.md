@@ -8,6 +8,17 @@ summary: Configure paths and files to fit your project.
 
 Directories and files can have there paths adjusted from the config.
 
+### CHANGIE_CONFIG_PATH
+By default Changie will try and load `.changie.yaml` or `.changie.yml` before running
+commands.
+If you want to change this path set the environment variable `CHANGIE_CONFIG_PATH`
+to the desired file.
+
+```sh
+export CHANGIE_CONFIG_PATH=./tools/changie.yaml
+changie latest
+```
+
 ### changesDir
 type: `string` | default: `""` | required
 

@@ -49,7 +49,7 @@ var _ = Describe("next", func() {
 	})
 
 	It("fails if bad config file", func() {
-		err := afs.Remove(core.ConfigPath)
+		err := afs.Remove(core.ConfigPaths[0])
 		Expect(err).To(BeNil())
 
 		_, err = nextPipeline(afs, "major")

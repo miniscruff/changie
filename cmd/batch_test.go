@@ -198,7 +198,7 @@ this is a new version that adds cool features
 
 	It("returns error on bad config", func() {
 		configData := []byte("not a proper config")
-		err := afs.WriteFile(core.ConfigPath, configData, os.ModePerm)
+		err := afs.WriteFile(core.ConfigPaths[0], configData, os.ModePerm)
 		Expect(err).To(BeNil())
 
 		Expect(batchPipeline(afs, "v1.0.0")).NotTo(Succeed())

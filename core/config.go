@@ -10,9 +10,12 @@ import (
 	"github.com/miniscruff/changie/shared"
 )
 
-const (
-	ConfigPath string = ".changie.yaml"
-)
+const configEnvVar = "CHANGIE_CONFIG_PATH"
+
+var ConfigPaths []string = []string{
+	".changie.yaml",
+	".changie.yml",
+}
 
 // GetVersions will return, in semver sorted order, all released versions
 type GetVersions func(shared.ReadDirer, Config) ([]*semver.Version, error)
@@ -70,14 +73,29 @@ type Config struct {
 // Save will save the config as a yaml file to the default path
 func (config Config) Save(wf shared.WriteFiler) error {
 	bs, _ := yaml.Marshal(&config)
-	return wf(ConfigPath, bs, os.ModePerm)
+	return wf(ConfigPaths[0], bs, os.ModePerm)
 }
 
 // LoadConfig will load the config from the default path
 func LoadConfig(rf shared.ReadFiler) (Config, error) {
-	var c Config
+	var (
+		c   Config
+		bs  []byte
+		err error
+	)
 
-	bs, err := rf(ConfigPath)
+	customPath := os.Getenv(configEnvVar)
+	if customPath != "" {
+		bs, err = rf(customPath)
+	} else {
+		for _, path := range ConfigPaths {
+			bs, err = rf(path)
+			if err == nil {
+				break
+			}
+		}
+	}
+
 	if err != nil {
 		return c, err
 	}
