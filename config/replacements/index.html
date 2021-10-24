@@ -15,6 +15,11 @@
 <span>Guide</span>
 </a>
 </li>
+<li class=menu-item-integrations>
+<a href=/integrations/>
+<span>Integrations</span>
+</a>
+</li>
 <li class=menu-item-cli>
 <a href=/cli/>
 <span>CLI</span>
@@ -46,6 +51,11 @@
 <li class=menu-item-guide>
 <a href=/guide/>
 <span>Guide</span>
+</a>
+</li>
+<li class=menu-item-integrations>
+<a href=/integrations/>
+<span>Integrations</span>
 </a>
 </li>
 <li class=menu-item-cli>
@@ -104,7 +114,12 @@
 <h3 id=replacements>replacements</h3>
 <p>type: <code>[]Replacement</code> | default: <code>empty</code> | optional</p>
 <p>List of replacements.</p>
-<h2 id=replacement>Replacement</h2>
+<p>Example for NodeJS package.json</p>
+<div class=highlight><pre tabindex=0 class=chroma><code class=language-yaml data-lang=yaml><span class=nt>replacements</span><span class=p>:</span><span class=w>
+</span><span class=w>  </span>- <span class=nt>path</span><span class=p>:</span><span class=w> </span><span class=l>package.json</span><span class=w>
+</span><span class=w>    </span><span class=nt>find</span><span class=p>:</span><span class=w> </span><span class=s1>&#39;  &#34;version&#34;: &#34;.*&#34;,&#39;</span><span class=w>
+</span><span class=w>    </span><span class=nt>replace</span><span class=p>:</span><span class=w> </span><span class=s1>&#39;  &#34;version&#34;: &#34;{{.VersionNoPrefix}}&#34;,&#39;</span><span class=w>
+</span></code></pre></div><h2 id=replacement>Replacement</h2>
 <p>type: <code>struct</code></p>
 <p>When working in projects that include the version directly in the source code
 replacements can be used to replace those values.

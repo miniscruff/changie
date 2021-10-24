@@ -15,6 +15,11 @@
 <span>Guide</span>
 </a>
 </li>
+<li class=menu-item-integrations>
+<a href=/integrations/>
+<span>Integrations</span>
+</a>
+</li>
 <li class=menu-item-cli>
 <a href=/cli/>
 <span>CLI</span>
@@ -46,6 +51,11 @@
 <li class=menu-item-guide>
 <a href=/guide/>
 <span>Guide</span>
+</a>
+</li>
+<li class=menu-item-integrations>
+<a href=/integrations/>
+<span>Integrations</span>
 </a>
 </li>
 <li class=menu-item-cli>
@@ -102,7 +112,14 @@
 <h1 class=title>Directories and Files</h1>
 <div class="content anchor-link-enabled">
 <p>Directories and files can have there paths adjusted from the config.</p>
-<h3 id=changesdir>changesDir</h3>
+<h3 id=changie_config_path>CHANGIE_CONFIG_PATH</h3>
+<p>By default Changie will try and load <code>.changie.yaml</code> or <code>.changie.yml</code> before running
+commands.
+If you want to change this path set the environment variable <code>CHANGIE_CONFIG_PATH</code>
+to the desired file.</p>
+<div class=highlight><pre tabindex=0 class=chroma><code class=language-sh data-lang=sh><span class=nb>export</span> <span class=nv>CHANGIE_CONFIG_PATH</span><span class=o>=</span>./tools/changie.yaml
+changie latest
+</code></pre></div><h3 id=changesdir>changesDir</h3>
 <p>type: <code>string</code> | default: <code>""</code> | required</p>
 <p>Directory for change files, header file and unreleased files.
 Relative to project root.</p>

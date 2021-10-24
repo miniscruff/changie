@@ -15,6 +15,11 @@
 <span>Guide</span>
 </a>
 </li>
+<li class=menu-item-integrations>
+<a href=/integrations/>
+<span>Integrations</span>
+</a>
+</li>
 <li class=menu-item-cli>
 <a href=/cli/>
 <span>CLI</span>
@@ -46,6 +51,11 @@
 <li class=menu-item-guide>
 <a href=/guide/>
 <span>Guide</span>
+</a>
+</li>
+<li class=menu-item-integrations>
+<a href=/integrations/>
+<span>Integrations</span>
 </a>
 </li>
 <li class=menu-item-cli>
@@ -107,7 +117,16 @@
 You can add more metadata to change files by including custom choices.
 These choices add key value pairs to the change format, see <a href=/config/shared-formatting/#changeformat>changeFormat</a>
 for more details.</p>
-<h2 id=choice>Choice</h2>
+<p>Example with GitHub name and issue number:</p>
+<div class=highlight><pre tabindex=0 class=chroma><code class=language-yaml data-lang=yaml><span class=nt>custom</span><span class=p>:</span><span class=w>
+</span><span class=w></span>- <span class=nt>key</span><span class=p>:</span><span class=w> </span><span class=l>Issue</span><span class=w>
+</span><span class=w>  </span><span class=nt>type</span><span class=p>:</span><span class=w> </span><span class=l>int</span><span class=w>
+</span><span class=w>  </span><span class=nt>minInt</span><span class=p>:</span><span class=w> </span><span class=m>1</span><span class=w>
+</span><span class=w></span>- <span class=nt>key</span><span class=p>:</span><span class=w> </span><span class=l>Author</span><span class=w>
+</span><span class=w>  </span><span class=nt>label</span><span class=p>:</span><span class=w> </span><span class=l>GitHub Name</span><span class=w>
+</span><span class=w>  </span><span class=nt>type</span><span class=p>:</span><span class=w> </span><span class=l>string</span><span class=w>
+</span><span class=w>  </span><span class=nt>minLength</span><span class=p>:</span><span class=w> </span><span class=m>3</span><span class=w>
+</span></code></pre></div><h2 id=choice>Choice</h2>
 <p>type: <code>struct</code></p>
 <p>Choice defines a custom choice that is asked when using <code>changie new</code>.
 The result is an additional custom value in the change file for including in the change line.</p>

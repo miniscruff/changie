@@ -15,6 +15,11 @@
 <span>Guide</span>
 </a>
 </li>
+<li class=menu-item-integrations>
+<a href=/integrations/>
+<span>Integrations</span>
+</a>
+</li>
 <li class=menu-item-cli>
 <a href=/cli/>
 <span>CLI</span>
@@ -46,6 +51,11 @@
 <li class=menu-item-guide>
 <a href=/guide/>
 <span>Guide</span>
+</a>
+</li>
+<li class=menu-item-integrations>
+<a href=/integrations/>
+<span>Integrations</span>
 </a>
 </li>
 <li class=menu-item-cli>
@@ -106,13 +116,24 @@
 and install with <code>dpkg -i</code> and <code>rpm -i</code> respectively.</p>
 <h2 id=windows-scoop>Windows Scoop</h2>
 <p>On windows you can use <a href=https://scoop.sh/>scoop</a> by first adding the repo and then installing.</p>
-<div class=highlight><pre tabindex=0 class=chroma><code class=language-fallback data-lang=fallback>scoop bucket add repo https://github.com/miniscruff/changie
+<div class=highlight><pre tabindex=0 class=chroma><code class=language-sh data-lang=sh>scoop bucket add repo https://github.com/miniscruff/changie
 scoop install changie
 </code></pre></div><h2 id=macos-with-homebrew>macOS with Homebrew</h2>
 <p>On macOS, you can use <a href=https://brew.sh/>Homebrew</a> to install by first tapping
 the repository.</p>
-<div class=highlight><pre tabindex=0 class=chroma><code class=language-fallback data-lang=fallback>brew tap miniscruff/changie https://github.com/miniscruff/changie
+<div class=highlight><pre tabindex=0 class=chroma><code class=language-sh data-lang=sh>brew tap miniscruff/changie https://github.com/miniscruff/changie
 brew install changie
+</code></pre></div><h2 id=archlinux>ArchLinux</h2>
+<p>An <a href=https://aur.archlinux.org/packages/changie/>AUR package</a> is available.</p>
+<div class=highlight><pre tabindex=0 class=chroma><code class=language-sh data-lang=sh>trizen -S changie
+</code></pre></div><h2 id=docker>Docker</h2>
+<p>Docker images are uploaded to <a href=https://github.com/miniscruff/changie/pkgs/container/changie>GitHub Packages</a>.</p>
+<div class=highlight><pre tabindex=0 class=chroma><code class=language-sh data-lang=sh><span class=c1># Replace latest with any changie command</span>
+docker run <span class=se>\
+</span><span class=se></span>    --mount <span class=nv>type</span><span class=o>=</span>bind,source<span class=o>=</span><span class=nv>$PWD</span>,target<span class=o>=</span>/src <span class=se>\
+</span><span class=se></span>    -w /src <span class=se>\
+</span><span class=se></span>    ghcr.io/miniscruff/changie <span class=se>\
+</span><span class=se></span>    latest
 </code></pre></div><h2 id=manual>Manual</h2>
 <ul>
 <li>Download from <a href=https://github.com/miniscruff/changie/releases>here</a>.</li>

@@ -15,6 +15,11 @@
 <span>Guide</span>
 </a>
 </li>
+<li class=menu-item-integrations>
+<a href=/integrations/>
+<span>Integrations</span>
+</a>
+</li>
 <li class=menu-item-cli>
 <a href=/cli/>
 <span>CLI</span>
@@ -46,6 +51,11 @@
 <li class=menu-item-guide>
 <a href=/guide/>
 <span>Guide</span>
+</a>
+</li>
+<li class=menu-item-integrations>
+<a href=/integrations/>
+<span>Integrations</span>
 </a>
 </li>
 <li class=menu-item-cli>
@@ -114,7 +124,26 @@ you added any change files in order to use the custom values in your format.</p>
 <li>Kind, if enabled, sorted by index in kinds config</li>
 <li>Time sorted newest first</li>
 </ol>
-<h3 id=body>body</h3>
+<p>Example with components:</p>
+<div class=highlight><pre tabindex=0 class=chroma><code class=language-yaml data-lang=yaml><span class=nt>versionFormat</span><span class=p>:</span><span class=w> </span><span class=s1>&#39;## {{.Version}} - {{.Time.Format &#34;2006-01-02&#34;}}&#39;</span><span class=w>
+</span><span class=w></span><span class=nt>componentFormat</span><span class=p>:</span><span class=w> </span><span class=s1>&#39;### {{.Component}}&#39;</span><span class=w>
+</span><span class=w></span><span class=nt>kindFormat</span><span class=p>:</span><span class=w> </span><span class=s1>&#39;#### {{.Kind}}&#39;</span><span class=w>
+</span><span class=w></span><span class=nt>changeFormat</span><span class=p>:</span><span class=w> </span><span class=s1>&#39;* {{.Body}}&#39;</span><span class=w>
+</span><span class=w></span><span class=nt>body</span><span class=p>:</span><span class=w>
+</span><span class=w>  </span><span class=nt>minLength</span><span class=p>:</span><span class=w> </span><span class=m>3</span><span class=w>
+</span><span class=w>  </span><span class=nt>maxLength</span><span class=p>:</span><span class=w> </span><span class=m>80</span><span class=w>
+</span><span class=w></span><span class=nt>components</span><span class=p>:</span><span class=w>
+</span><span class=w>  </span>- <span class=l>API</span><span class=w>
+</span><span class=w>  </span>- <span class=l>CLI</span><span class=w>
+</span><span class=w>  </span>- <span class=l>Frontend</span><span class=w>
+</span><span class=w></span><span class=nt>kinds</span><span class=p>:</span><span class=w>
+</span><span class=w>  </span>- <span class=nt>label</span><span class=p>:</span><span class=w> </span><span class=l>Added</span><span class=w>
+</span><span class=w>  </span>- <span class=nt>label</span><span class=p>:</span><span class=w> </span><span class=l>Changed</span><span class=w>
+</span><span class=w>  </span>- <span class=nt>label</span><span class=p>:</span><span class=w> </span><span class=l>Deprecated</span><span class=w>
+</span><span class=w>  </span>- <span class=nt>label</span><span class=p>:</span><span class=w> </span><span class=l>Removed</span><span class=w>
+</span><span class=w>  </span>- <span class=nt>label</span><span class=p>:</span><span class=w> </span><span class=l>Fixed</span><span class=w>
+</span><span class=w>  </span>- <span class=nt>label</span><span class=p>:</span><span class=w> </span><span class=l>Security</span><span class=w>
+</span></code></pre></div><h3 id=body>body</h3>
 <p>type: <a href=/config/shared-formatting/#body-config>BodyConfig</a> | default: <code>empty</code> | optional</p>
 <p>Customize the requirements of the body prompt.</p>
 <h3 id=components>components</h3>
