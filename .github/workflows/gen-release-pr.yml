@@ -31,3 +31,4 @@ jobs:
       with:
         title: Release ${{ env.RELEASE_VERSION }}
         branch: release/${{ env.RELEASE_VERSION }}
+        commit-message: Release ${{ env.RELEASE_VERSION }}
