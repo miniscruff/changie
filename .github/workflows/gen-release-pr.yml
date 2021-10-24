@@ -24,6 +24,10 @@ jobs:
       run: |
         go run main.go batch ${{ github.event.inputs.next-version }}
         go run main.go merge
+        echo RELEASE_VERSION=$(go run main.go latest) >> $GITHUB_ENV
 
     - name: Create Pull Request
       uses: peter-evans/create-pull-request@v3.10.1
+      with:
+        title: Release ${{ env.RELEASE_VERSION }}
+        branch: release/${{ env.RELEASE_VERSION }}
