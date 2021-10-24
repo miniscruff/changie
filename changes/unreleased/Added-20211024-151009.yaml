@@ -1,5 +1,0 @@
-kind: Added
-body: Try and load .changie.yml if .changie.yaml fails
-time: 2021-10-24T15:10:09.2424848-07:00
-custom:
-  Issue: "166"
