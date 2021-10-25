@@ -4,7 +4,7 @@ go 1.17
 
 require (
 	github.com/Masterminds/semver/v3 v3.1.1
-	github.com/icholy/replace v0.4.0
+	github.com/icholy/replace v0.5.0
 	github.com/manifoldco/promptui v0.8.0
 	github.com/onsi/ginkgo v1.16.5
 	github.com/onsi/gomega v1.16.0
