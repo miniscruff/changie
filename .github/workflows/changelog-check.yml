@@ -20,6 +20,8 @@ jobs:
       - name: "Check for changelog entry"
         uses: brettcannon/check-for-changed-files@v1.1.0
         with:
-          file-pattern: "changes/unreleased/*.yaml"
+          file-pattern: |
+            changes/unreleased/*.yaml
+            CHANGELOG.md
           skip-label: "skip changelog"
           failure-message: "Missing a changelog file in ${file-pattern}; please add one or apply the ${skip-label} label to the pull request"
