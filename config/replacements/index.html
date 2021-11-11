@@ -131,6 +131,13 @@ file path of the file.</p>
 <h3 id=find>find</h3>
 <p>type: <code>string</code> | default: <code>""</code> | required</p>
 <p>Regular expression to search for in the file.</p>
+<h3 id=flags>flags</h3>
+<p>type: <code>string</code> | default: <code>m</code> | optional</p>
+<p>Optional regular expression mode flags.
+Defaults to the <code>m</code> flag for multiline such that <code>^</code> and <code>$</code> will match the start
+and end of each line and not just the start and end of the string.</p>
+<p>For more details on regular expression flags in Go view the
+<a href=https://pkg.go.dev/regexp/syntax>regexp/syntax</a>.</p>
 <h3 id=replace>replace</h3>
 <p>type: <code>string</code> | default: <code>""</code> | required</p>
 <p>Template string to replace the line with.</p>
