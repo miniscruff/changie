@@ -38,6 +38,16 @@ type: `string` | default: `""` | required
 
 Regular expression to search for in the file.
 
+### flags
+type: `string` | default: `m` | optional
+
+Optional regular expression mode flags.
+Defaults to the `m` flag for multiline such that `^` and `$` will match the start
+and end of each line and not just the start and end of the string.
+
+For more details on regular expression flags in Go view the
+[regexp/syntax](https://pkg.go.dev/regexp/syntax).
+
 ### replace
 type: `string` | default: `""` | required
 

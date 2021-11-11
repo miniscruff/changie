@@ -2,6 +2,7 @@ package core
 
 import (
 	"bytes"
+	"fmt"
 	"regexp"
 	"text/template"
 
@@ -17,9 +18,10 @@ type ReplaceData struct {
 }
 
 type Replacement struct {
-	Path    string
-	Find    string
-	Replace string
+	Path    string `yaml:"path"`
+	Find    string `yaml:"find"`
+	Replace string `yaml:"replace"`
+	Flags   string `yaml:"flags,omitempty"`
 }
 
 func (r Replacement) Execute(
@@ -42,8 +44,13 @@ func (r Replacement) Execute(
 		return err
 	}
 
-	transformer := replace.Regexp(regexp.MustCompile(r.Find), buf.Bytes())
+	flags := r.Flags
+	if flags == "" {
+		flags = "m"
+	}
 
+	regexString := fmt.Sprintf("(?%s)%s", flags, r.Find)
+	transformer := replace.Regexp(regexp.MustCompile(regexString), buf.Bytes())
 	newData, _, _ := transform.Bytes(transformer, fileData)
 
 	err = writeFile(r.Path, newData, 0644)
