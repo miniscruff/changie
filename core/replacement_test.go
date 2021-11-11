@@ -69,6 +69,65 @@ ignore me`
 		Expect("file.txt").To(HaveContents(afs, endData))
 	})
 
+	It("can find and replace with template at start of line", func() {
+		startData := `# yaml file
+version: 0.0.1
+level1:
+	level2:
+		version: 0.0.1
+`
+		endData := `# yaml file
+version: 1.2.3
+level1:
+	level2:
+		version: 0.0.1
+`
+
+		err := afs.WriteFile("file.txt", []byte(startData), os.ModeTemporary)
+		Expect(err).To(BeNil())
+
+		rep := Replacement{
+			Path:    "file.txt",
+			Find:    "^version: .*",
+			Replace: "version: {{.VersionNoPrefix}}",
+		}
+		err = rep.Execute(afs.ReadFile, afs.WriteFile, ReplaceData{
+			VersionNoPrefix: "1.2.3",
+		})
+		Expect(err).To(BeNil())
+		Expect("file.txt").To(HaveContents(afs, endData))
+	})
+
+	It("can find and replace with case insensitive flag", func() {
+		startData := `# yaml file
+Version: 0.0.1
+level1:
+	level2:
+		version: 0.0.1
+`
+		endData := `# yaml file
+version: 1.2.3
+level1:
+	level2:
+		version: 0.0.1
+`
+
+		err := afs.WriteFile("file.txt", []byte(startData), os.ModeTemporary)
+		Expect(err).To(BeNil())
+
+		rep := Replacement{
+			Path:    "file.txt",
+			Find:    "^version: .*",
+			Replace: "version: {{.VersionNoPrefix}}",
+			Flags:   "im",
+		}
+		err = rep.Execute(afs.ReadFile, afs.WriteFile, ReplaceData{
+			VersionNoPrefix: "1.2.3",
+		})
+		Expect(err).To(BeNil())
+		Expect("file.txt").To(HaveContents(afs, endData))
+	})
+
 	It("returns error on bad file read", func() {
 		rep := Replacement{
 			Path: "does not exist",
