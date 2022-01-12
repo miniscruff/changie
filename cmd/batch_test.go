@@ -60,8 +60,9 @@ var _ = Describe("Batch", func() {
 		newVerPath = filepath.Join("news", "v0.2.0.md")
 		fileCreateIndex = 0
 
-		// reset our shared header path
+		// reset our shared values
 		versionHeaderPath = ""
+		keepFragments = false
 	})
 
 	// this mimics the change.SaveUnreleased but prevents clobbering in same
@@ -124,6 +125,22 @@ var _ = Describe("Batch", func() {
 		infos, err := afs.ReadDir(futurePath)
 		Expect(err).To(BeNil())
 		Expect(len(infos)).To(Equal(0))
+	})
+
+	It("can batch version keeping change files", func() {
+		keepFragments = true
+		Expect(testConfig.Save(afs.WriteFile)).To(Succeed())
+
+		writeChangeFile(core.Change{Kind: "added", Body: "A"})
+		writeChangeFile(core.Change{Kind: "added", Body: "B"})
+		writeChangeFile(core.Change{Kind: "removed", Body: "C"})
+
+		err := batchPipeline(afs, "v0.2.0")
+		Expect(err).To(BeNil())
+
+		infos, err := afs.ReadDir(futurePath)
+		Expect(err).To(BeNil())
+		Expect(len(infos)).To(Equal(3))
 	})
 
 	It("can batch version with header", func() {
