@@ -21,6 +21,7 @@ type batchData struct {
 
 var (
 	versionHeaderPath = ""
+	keepFragments     = false
 )
 
 var batchCmd = &cobra.Command{
@@ -45,6 +46,12 @@ Changes are sorted in the following order:
 
 func init() {
 	batchCmd.Flags().StringVar(&versionHeaderPath, "headerPath", "", "Path to version header file")
+	batchCmd.Flags().BoolVarP(
+		&keepFragments,
+		"keep", "k",
+		false,
+		"Keep change fragments instead of deleting them",
+	)
 	rootCmd.AddCommand(batchCmd)
 }
 
@@ -100,9 +107,11 @@ func batchPipeline(afs afero.Afero, version string) error {
 		return err
 	}
 
-	err = deleteUnreleased(afs, config, headerFilePath)
-	if err != nil {
-		return err
+	if !keepFragments {
+		err = deleteUnreleased(afs, config, headerFilePath)
+		if err != nil {
+			return err
+		}
 	}
 
 	return nil
