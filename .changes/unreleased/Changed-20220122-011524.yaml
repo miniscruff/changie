@@ -1,6 +1,5 @@
 kind: Changed
-body: '#205 Change the default directory name to .changes when the init command is
-  run and also change the .changie.yml config to use the new directory.'
+body: 'Default directory name to .changes for `init` command'
 time: 2022-01-22T01:15:24.0936176+05:30
 custom:
   Issue: "204"
