@@ -1,0 +1,5 @@
+kind: Changed
+body: 'Default directory name to .changes for `init` command'
+time: 2022-01-22T01:15:24.0936176+05:30
+custom:
+  Issue: "204"
