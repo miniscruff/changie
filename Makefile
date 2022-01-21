@@ -22,3 +22,12 @@ docs-serve:
 
 docs-build: gen-cli-docs
 	hugo -s website --minify --gc
+
+docs-release: gen-cli-docs
+	awk 'NR > 1' CHANGELOG.md >> website/content/guide/changelog/index.md
+	hugo --minify -s website -b https://changie.dev/
+
+preview-changelog:
+	go run main.go batch $$(go run main.go next minor)-preview
+	go run main.go merge
+	awk 'NR > 1' CHANGELOG.md >> website/content/guide/changelog/index.md

@@ -28,7 +28,7 @@ jobs:
     - name: Add env vars
       run: |
         echo GORELEASER_CURRENT_TAG=$(go run main.go latest) >> $GITHUB_ENV
-        echo RELEASE_NOTES_PATH=changes/$(go run main.go latest).md >> $GITHUB_ENV
+        echo RELEASE_NOTES_PATH=.changes/$(go run main.go latest).md >> $GITHUB_ENV
 
     - name: Run GoReleaser
       uses: goreleaser/goreleaser-action@v2.8.1
@@ -45,10 +45,7 @@ jobs:
         extended: true
 
     - name: Build docs
-      run: |
-        awk 'NR > 1' CHANGELOG.md >> website/content/guide/changelog/index.md
-        go run main.go gen
-        hugo --minify -s website -b https://changie.dev/
+      run: make docs-release
 
     - name: Deploy docs
       uses: peaceiris/actions-gh-pages@v3.8.0
