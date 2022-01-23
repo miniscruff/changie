@@ -1,8 +1,10 @@
 package cmd
 
 import (
+	"io"
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
 
 	"github.com/Masterminds/semver/v3"
@@ -19,9 +21,21 @@ type batchData struct {
 	Header  string
 }
 
+// batchConfig organizes all the configuration for our batch pipeline
+type batchConfig struct {
+	afs               afero.Afero
+	versionHeaderPath string
+	version           string
+	keepFragments     bool
+	dryRun            bool
+}
+
 var (
-	versionHeaderPath = ""
-	keepFragments     = false
+	// prefix cobra flags with underscore
+	// use batchConfig instead
+	_versionHeaderPath = ""
+	_keepFragments     = false
+	_batchDryRun       = false
 )
 
 var batchCmd = &cobra.Command{
@@ -45,12 +59,18 @@ Changes are sorted in the following order:
 }
 
 func init() {
-	batchCmd.Flags().StringVar(&versionHeaderPath, "headerPath", "", "Path to version header file")
+	batchCmd.Flags().StringVar(&_versionHeaderPath, "headerPath", "", "Path to version header file")
 	batchCmd.Flags().BoolVarP(
-		&keepFragments,
+		&_keepFragments,
 		"keep", "k",
 		false,
 		"Keep change fragments instead of deleting them",
+	)
+	batchCmd.Flags().BoolVarP(
+		&_batchDryRun,
+		"dry-run", "d",
+		false,
+		"Print batched changes instead of writing to disk, does not delete fragments",
 	)
 	rootCmd.AddCommand(batchCmd)
 }
@@ -59,62 +79,96 @@ func runBatch(cmd *cobra.Command, args []string) error {
 	fs := afero.NewOsFs()
 	afs := afero.Afero{Fs: fs}
 
-	return batchPipeline(afs, args[0])
+	out, err := batchPipeline(batchConfig{
+		afs:               afs,
+		version:           args[0],
+		versionHeaderPath: _versionHeaderPath,
+		keepFragments:     _keepFragments,
+		dryRun:            _batchDryRun,
+	})
+
+	if err != nil {
+		return err
+	}
+
+	if out != "" {
+		_, err = cmd.OutOrStdout().Write([]byte(out))
+	}
+
+	return err
 }
 
-func batchPipeline(afs afero.Afero, version string) error {
-	config, err := core.LoadConfig(afs.ReadFile)
+func batchPipeline(batchConfig batchConfig) (string, error) {
+	config, err := core.LoadConfig(batchConfig.afs.ReadFile)
 	if err != nil {
-		return err
+		return "", err
 	}
 
-	ver, err := core.GetNextVersion(afs.ReadDir, config, version)
+	ver, err := core.GetNextVersion(batchConfig.afs.ReadDir, config, batchConfig.version)
 	if err != nil {
-		return err
+		return "", err
 	}
 
-	allChanges, err := getChanges(afs, config)
+	allChanges, err := getChanges(batchConfig.afs, config)
 	if err != nil {
-		return err
+		return "", err
 	}
 
 	headerFilePath := ""
 	headerContents := ""
 
-	if versionHeaderPath != "" {
-		headerFilePath = versionHeaderPath
+	if batchConfig.versionHeaderPath != "" {
+		headerFilePath = batchConfig.versionHeaderPath
 	} else if config.VersionHeaderPath != "" {
 		headerFilePath = config.VersionHeaderPath
 	}
 
 	if headerFilePath != "" {
 		fullPath := filepath.Join(config.ChangesDir, config.UnreleasedDir, headerFilePath)
-		headerBytes, readErr := afs.ReadFile(fullPath)
+		headerBytes, readErr := batchConfig.afs.ReadFile(fullPath)
 
 		if readErr != nil && !os.IsNotExist(readErr) {
-			return readErr
+			return "", readErr
 		}
 
 		headerContents = string(headerBytes)
 	}
 
-	err = batchNewVersion(afs.Fs, config, batchData{
+	var builder strings.Builder
+	err = batchNewVersion(&builder, config, batchData{
 		Version: ver,
 		Changes: allChanges,
 		Header:  headerContents,
 	})
+
 	if err != nil {
-		return err
+		return "", err
 	}
 
-	if !keepFragments {
-		err = deleteUnreleased(afs, config, headerFilePath)
+	// return our builder in dry run
+	if batchConfig.dryRun {
+		return builder.String(), nil
+	}
+
+	if !batchConfig.keepFragments {
+		err = deleteUnreleased(batchConfig.afs, config, headerFilePath)
 		if err != nil {
-			return err
+			return "", err
 		}
 	}
 
-	return nil
+	// write to file
+	versionPath := filepath.Join(config.ChangesDir, ver.Original()+"."+config.VersionExt)
+	versionFile, err := batchConfig.afs.Fs.Create(versionPath)
+
+	if err != nil {
+		return "", err
+	}
+	defer versionFile.Close()
+
+	_, err = versionFile.Write([]byte(builder.String()))
+
+	return "", err
 }
 
 func getChanges(afs afero.Afero, config core.Config) ([]core.Change, error) {
@@ -168,17 +222,10 @@ func changeFormatFromKind(config core.Config, label string) string {
 	return config.ChangeFormat
 }
 
-func batchNewVersion(fs afero.Fs, config core.Config, data batchData) error {
+func batchNewVersion(writer io.Writer, config core.Config, data batchData) error {
 	templateCache := core.NewTemplateCache()
-	versionPath := filepath.Join(config.ChangesDir, data.Version.Original()+"."+config.VersionExt)
 
-	versionFile, err := fs.Create(versionPath)
-	if err != nil {
-		return err
-	}
-	defer versionFile.Close()
-
-	err = templateCache.Execute(config.VersionFormat, versionFile, map[string]interface{}{
+	err := templateCache.Execute(config.VersionFormat, writer, map[string]interface{}{
 		"Version": data.Version.Original(),
 		"Time":    time.Now(),
 	})
@@ -189,8 +236,8 @@ func batchNewVersion(fs afero.Fs, config core.Config, data batchData) error {
 	if data.Header != "" {
 		// write string is not err checked as we already write to the same
 		// file in the templates
-		_, _ = versionFile.WriteString("\n")
-		_, _ = versionFile.WriteString(data.Header)
+		_, _ = writer.Write([]byte("\n"))
+		_, _ = writer.Write([]byte(data.Header))
 	}
 
 	lastComponent := ""
@@ -200,9 +247,9 @@ func batchNewVersion(fs afero.Fs, config core.Config, data batchData) error {
 		if config.ComponentFormat != "" && lastComponent != change.Component {
 			lastComponent = change.Component
 			lastKind = ""
-			_, _ = versionFile.WriteString("\n")
+			_, _ = writer.Write([]byte("\n"))
 
-			err = templateCache.Execute(config.ComponentFormat, versionFile, map[string]string{
+			err = templateCache.Execute(config.ComponentFormat, writer, map[string]string{
 				"Component": change.Component,
 			})
 			if err != nil {
@@ -214,9 +261,9 @@ func batchNewVersion(fs afero.Fs, config core.Config, data batchData) error {
 			lastKind = change.Kind
 			kindHeader := headerForKind(config, change.Kind)
 
-			_, _ = versionFile.WriteString("\n")
+			_, _ = writer.Write([]byte("\n"))
 
-			err = templateCache.Execute(kindHeader, versionFile, map[string]string{
+			err = templateCache.Execute(kindHeader, writer, map[string]string{
 				"Kind": change.Kind,
 			})
 			if err != nil {
@@ -224,9 +271,9 @@ func batchNewVersion(fs afero.Fs, config core.Config, data batchData) error {
 			}
 		}
 
-		_, _ = versionFile.WriteString("\n")
+		_, _ = writer.Write([]byte("\n"))
 		changeFormat := changeFormatFromKind(config, lastKind)
-		err = templateCache.Execute(changeFormat, versionFile, change)
+		err = templateCache.Execute(changeFormat, writer, change)
 
 		if err != nil {
 			return err

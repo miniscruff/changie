@@ -3,7 +3,6 @@ package cmd
 import (
 	"fmt"
 	"io"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"time"
@@ -31,7 +30,7 @@ var _ = Describe("end to end", func() {
 		startDir, err = os.Getwd()
 		Expect(err).To(BeNil())
 
-		tempDir, err = ioutil.TempDir("", "e2e-test")
+		tempDir, err = os.MkdirTemp("", "e2e-test-"+CurrentGinkgoTestDescription().TestText)
 		Expect(err).To(BeNil())
 
 		err = os.Chdir(tempDir)
@@ -60,13 +59,16 @@ var _ = Describe("end to end", func() {
 		err := os.Chdir(startDir)
 		Expect(err).To(BeNil())
 
-		err = os.RemoveAll(tempDir)
-		Expect(err).To(BeNil())
+		// err = os.RemoveAll(tempDir)
+		// Expect(err).To(BeNil())
 	})
 
 	testInit := func() {
 		rootCmd.SetArgs([]string{"init"})
 		Expect(Execute("")).To(Succeed())
+
+		_, err := os.ReadFile(".changie.yaml")
+		Expect(err).To(BeNil())
 	}
 
 	delayWrite := func(writer io.Writer, data []byte) {
@@ -79,10 +81,10 @@ var _ = Describe("end to end", func() {
 		rootCmd.SetArgs(args)
 		Expect(Execute("")).To(Succeed())
 
-		versionOut := make([]byte, 10)
-		_, err := stdoutReader.Read(versionOut)
+		out := make([]byte, 1000)
+		_, err := stdoutReader.Read(out)
 		Expect(err).To(BeNil())
-		Expect(string(versionOut)).To(ContainSubstring(expect))
+		Expect(string(out)).To(ContainSubstring(expect))
 	}
 
 	testNew := func(body string) {
@@ -98,6 +100,25 @@ var _ = Describe("end to end", func() {
 	testBatch := func() {
 		rootCmd.SetArgs([]string{"batch", "v0.1.0"})
 		Expect(Execute("")).To(Succeed())
+
+		date := time.Now().Format("2006-01-02")
+		changeContents := fmt.Sprintf(`## v0.1.0 - %s
+### Changed
+* newer
+* older`, date)
+		changeFile, err := os.ReadFile(".changes/v0.1.0.md")
+		Expect(err).To(BeNil())
+		Expect(string(changeFile)).To(Equal(changeContents))
+	}
+
+	testBatchDry := func() {
+		date := time.Now().Format("2006-01-02")
+		batchContents := fmt.Sprintf(`## v0.1.0 - %s
+### Changed
+* newer
+* older`, date)
+		testEcho([]string{"batch", "v0.1.0", "--dry-run"}, batchContents)
+		Expect(batchCmd.Flags().Set("dry-run", "false")).To(Succeed())
 	}
 
 	testMerge := func() {
@@ -111,8 +132,9 @@ var _ = Describe("end to end", func() {
 ### Changed
 * newer
 * older`, defaultHeader, date)
-		changeFile, err := ioutil.ReadFile("CHANGELOG.md")
+		changeFile, err := os.ReadFile("CHANGELOG.md")
 		Expect(err).To(BeNil())
+		fmt.Println(string(changeFile))
 		Expect(string(changeFile)).To(Equal(changeContents))
 	}
 
@@ -135,11 +157,18 @@ var _ = Describe("end to end", func() {
 		testNew("older")
 		time.Sleep(2 * time.Second) // let time pass for the next change
 		testNew("newer")
+		testBatchDry()
 		testBatch()
 		testEcho([]string{"latest"}, "0.1.0")
 		testEcho([]string{"next", "major"}, "1.0.0")
 		testMerge()
 		testGen()
+	})
+
+	It("should fail to batch on bad version", func() {
+		rootCmd.SetArgs([]string{"batch", "not-a-semantic-version-$$$"})
+		err := Execute("")
+		Expect(err).NotTo(BeNil())
 	})
 
 	It("should fail to find latest if you do not init", func() {
