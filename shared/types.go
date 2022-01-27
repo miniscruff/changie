@@ -19,11 +19,11 @@ type OpenFiler func(filename string) (afero.File, error)
 // CreateFiler is a func type for os.CreateFile
 type CreateFiler func(filename string) (afero.File, error)
 
-// WriteFiler is a func type for ioutil.WriteFile
+// WriteFiler is a func type for os.WriteFile
 type WriteFiler func(filename string, data []byte, perm os.FileMode) error
 
-// ReadFiler is a func type for ioutil.ReadFile
+// ReadFiler is a func type for os.ReadFile
 type ReadFiler func(filename string) ([]byte, error)
 
-// ReadDirer is a func type for ioutil.ReadDir
+// ReadDirer is a func type for os.ReadDir
 type ReadDirer func(dirname string) ([]os.FileInfo, error)

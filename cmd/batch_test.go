@@ -629,46 +629,6 @@ Can also have newlines.
 		Expect(err).NotTo(BeNil())
 	})
 
-	/*
-		templateTests := []struct {
-			key    string
-			prefix string
-		}{
-			{key: "version", prefix: "## "},
-			{key: "component", prefix: "\n## "},
-			{key: "kind", prefix: "\n### "},
-			{key: "change", prefix: "* "},
-		}
-
-		for _, test := range templateTests {
-			prefix := test.prefix
-			It(fmt.Sprintf("returns error when failing to execute %s template", test.key), func() {
-				var writer strings.Builder
-				vFile.MockWrite = func(data []byte) (int, error) {
-					if strings.HasPrefix(string(data), prefix) {
-						return len(data), mockError
-					}
-					return writer.Write(data)
-				}
-
-				changes := []core.Change{
-					{Component: "A", Kind: "added", Body: "w"},
-					{Component: "A", Kind: "added", Body: "x"},
-					{Component: "A", Kind: "removed", Body: "y"},
-					{Component: "B", Kind: "removed", Body: "z"},
-				}
-
-				testConfig.ComponentFormat = "\n## {{.Component}}"
-				testConfig.Components = []string{"A", "B"}
-				err := batchNewVersion(&writer, testConfig, batchData{
-					Version: semver.MustParse("v0.1.0"),
-					Changes: changes,
-				})
-				Expect(err).To(Equal(mockError))
-			})
-		}
-	*/
-
 	It("delete unreleased removes unreleased files including header", func() {
 		err := afs.MkdirAll(futurePath, 0644)
 		Expect(err).To(BeNil())
