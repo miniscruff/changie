@@ -3,6 +3,7 @@ package cmd
 import (
 	"io"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/spf13/afero"
@@ -10,6 +11,17 @@ import (
 
 	"github.com/miniscruff/changie/core"
 	"github.com/miniscruff/changie/shared"
+)
+
+type newConfig struct {
+	afs         afero.Afero
+	timeNow     shared.TimeNow
+	stdinReader io.ReadCloser
+	dryRun      bool
+}
+
+var (
+	_newDryRun = false
 )
 
 // newCmd represents the new command
@@ -23,6 +35,12 @@ Each version is merged together for the overall project changelog.`,
 }
 
 func init() {
+	newCmd.Flags().BoolVarP(
+		&_newDryRun,
+		"dry-run", "d",
+		false,
+		"Print new fragment instead of writing to disk",
+	)
 	rootCmd.AddCommand(newCmd)
 }
 
@@ -30,23 +48,53 @@ func runNew(cmd *cobra.Command, args []string) error {
 	fs := afero.NewOsFs()
 	afs := afero.Afero{Fs: fs}
 
-	return newPipeline(afs, time.Now, os.Stdin)
-}
+	out, err := newPipeline(newConfig{
+		afs:         afs,
+		timeNow:     time.Now,
+		stdinReader: os.Stdin,
+		dryRun:      _newDryRun,
+	})
 
-func newPipeline(afs afero.Afero, tn shared.TimeNow, stdinReader io.ReadCloser) error {
-	config, err := core.LoadConfig(afs.ReadFile)
 	if err != nil {
 		return err
+	}
+
+	if out != "" {
+		_, err = cmd.OutOrStdout().Write([]byte(out))
+	}
+
+	return err
+}
+
+func newPipeline(newConfig newConfig) (string, error) {
+	var builder strings.Builder
+
+	config, err := core.LoadConfig(newConfig.afs.ReadFile)
+	if err != nil {
+		return "", err
 	}
 
 	var change core.Change
 
-	err = core.AskPrompts(&change, config, stdinReader)
+	err = core.AskPrompts(&change, config, newConfig.stdinReader)
 	if err != nil {
-		return err
+		return "", err
 	}
 
-	change.Time = tn()
+	change.Time = newConfig.timeNow()
+	_ = change.Write(&builder)
 
-	return change.SaveUnreleased(afs.WriteFile, config)
+	if newConfig.dryRun {
+		return builder.String(), nil
+	}
+
+	newFile, err := newConfig.afs.Fs.Create(change.OutputPath(config))
+	if err != nil {
+		return "", err
+	}
+	defer newFile.Close()
+
+	_, err = newFile.Write([]byte(builder.String()))
+
+	return "", err
 }

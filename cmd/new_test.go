@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -60,7 +61,12 @@ var _ = Describe("New", func() {
 			DelayWrite(stdinWriter, []byte{13})
 		}()
 
-		err = newPipeline(afs, mockTime, stdinReader)
+		out, err := newPipeline(newConfig{
+			afs:         afs,
+			timeNow:     mockTime,
+			stdinReader: stdinReader,
+		})
+		Expect(out).To(BeEmpty())
 		Expect(err).To(BeNil())
 
 		futurePath := filepath.Join(testConfig.ChangesDir, testConfig.UnreleasedDir)
@@ -93,7 +99,12 @@ var _ = Describe("New", func() {
 			DelayWrite(stdinWriter, []byte{13})
 		}()
 
-		err = newPipeline(afs, mockTime, stdinReader)
+		out, err := newPipeline(newConfig{
+			afs:         afs,
+			timeNow:     mockTime,
+			stdinReader: stdinReader,
+		})
+		Expect(out).To(BeEmpty())
 		Expect(err).To(BeNil())
 
 		futurePath := filepath.Join(testConfig.ChangesDir, testConfig.UnreleasedDir)
@@ -108,6 +119,71 @@ var _ = Describe("New", func() {
 		)
 		changePath := filepath.Join(futurePath, fileInfos[0].Name())
 		Expect(changePath).To(HaveContents(afs, changeContent))
+	})
+
+	It("returns error on bad write", func() {
+		testConfig.Kinds = []core.KindConfig{}
+		Expect(testConfig.Save(afs.WriteFile)).To(Succeed())
+
+		stdinReader, stdinWriter, err := os.Pipe()
+		Expect(err).To(BeNil())
+
+		defer stdinReader.Close()
+		defer stdinWriter.Close()
+
+		go func() {
+			DelayWrite(stdinWriter, []byte("body stuff"))
+			DelayWrite(stdinWriter, []byte{13})
+		}()
+
+		mockError := errors.New("dummy mock error")
+		fs.MockCreate = func(name string) (afero.File, error) {
+			return nil, mockError
+		}
+
+		out, err := newPipeline(newConfig{
+			afs:         afs,
+			timeNow:     mockTime,
+			stdinReader: stdinReader,
+		})
+		Expect(out).To(BeEmpty())
+		Expect(err).To(Equal(mockError))
+	})
+
+	It("returns the change as an output in dry run", func() {
+		testConfig.Kinds = []core.KindConfig{}
+		err := testConfig.Save(afs.WriteFile)
+		Expect(err).To(BeNil())
+
+		stdinReader, stdinWriter, err := os.Pipe()
+		Expect(err).To(BeNil())
+
+		defer stdinReader.Close()
+		defer stdinWriter.Close()
+
+		go func() {
+			DelayWrite(stdinWriter, []byte("body stuff"))
+			DelayWrite(stdinWriter, []byte{13})
+		}()
+
+		changeContent := fmt.Sprintf(
+			"body: body stuff\ntime: %s\n",
+			mockTime().Format(time.RFC3339Nano),
+		)
+
+		out, err := newPipeline(newConfig{
+			afs:         afs,
+			timeNow:     mockTime,
+			stdinReader: stdinReader,
+			dryRun:      true,
+		})
+		Expect(out).To(Equal(changeContent))
+		Expect(err).To(BeNil())
+
+		futurePath := filepath.Join(testConfig.ChangesDir, testConfig.UnreleasedDir)
+		fileInfos, err := afs.ReadDir(futurePath)
+		Expect(err).NotTo(BeNil())
+		Expect(fileInfos).To(HaveLen(0))
 	})
 
 	It("returns error on bad body", func() {
@@ -126,12 +202,47 @@ var _ = Describe("New", func() {
 			DelayWrite(stdinWriter, []byte{3})
 		}()
 
-		err = newPipeline(afs, mockTime, stdinReader)
+		out, err := newPipeline(newConfig{
+			afs:         afs,
+			timeNow:     mockTime,
+			stdinReader: stdinReader,
+		})
+		Expect(out).To(BeEmpty())
+		Expect(err).NotTo(BeNil())
+	})
+
+	It("returns error on bad write", func() {
+		err := testConfig.Save(afs.WriteFile)
+		Expect(err).To(BeNil())
+
+		stdinReader, stdinWriter, err := os.Pipe()
+		Expect(err).To(BeNil())
+
+		defer stdinReader.Close()
+		defer stdinWriter.Close()
+
+		go func() {
+			DelayWrite(stdinWriter, []byte{13})
+			DelayWrite(stdinWriter, []byte("ctrl-c here"))
+			DelayWrite(stdinWriter, []byte{3})
+		}()
+
+		out, err := newPipeline(newConfig{
+			afs:         afs,
+			timeNow:     mockTime,
+			stdinReader: stdinReader,
+		})
+		Expect(out).To(BeEmpty())
 		Expect(err).NotTo(BeNil())
 	})
 
 	It("returns error on bad config", func() {
-		err := newPipeline(afs, mockTime, os.Stdin)
+		out, err := newPipeline(newConfig{
+			afs:         afs,
+			timeNow:     mockTime,
+			stdinReader: os.Stdin,
+		})
+		Expect(out).To(BeEmpty())
 		Expect(err).NotTo(BeNil())
 	})
 })

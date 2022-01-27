@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"strings"
 	"time"
 
 	. "github.com/onsi/ginkgo"
@@ -23,11 +24,7 @@ var _ = Describe("Change", func() {
 		time.Date(2016, 5, 24, 3, 30, 10, 5, time.Local),
 	}
 
-	It("should save an unreleased file", func() {
-		config := Config{
-			ChangesDir:    "Changes",
-			UnreleasedDir: "Unrel",
-		}
+	It("should write a change", func() {
 		change := Change{
 			Body: "some body message",
 			Time: mockTime(),
@@ -38,49 +35,41 @@ var _ = Describe("Change", func() {
 			mockTime().Format(time.RFC3339Nano),
 		)
 
-		writeCalled := false
+		var builder strings.Builder
+		err := change.Write(&builder)
 
-		mockWf := func(filepath string, bytes []byte, perm os.FileMode) error {
-			writeCalled = true
-			Expect(filepath).To(Equal("Changes/Unrel/20160524-033010.yaml"))
-			Expect(string(bytes)).To(Equal(changesYaml))
-			return nil
-		}
-
-		err := change.SaveUnreleased(mockWf, config)
+		Expect(builder.String()).To(Equal(changesYaml))
 		Expect(err).To(BeNil())
-		Expect(writeCalled).To(Equal(true))
 	})
 
-	It("should save an unreleased file with optionals", func() {
+	It("should generate a basic output path", func() {
+		change := Change{
+			Time: mockTime(),
+		}
+
 		config := Config{
 			ChangesDir:    "Changes",
 			UnreleasedDir: "Unrel",
 		}
+
+		Expect(change.OutputPath(config)).
+			To(Equal("Changes/Unrel/20160524-033010.yaml"))
+	})
+
+	It("should generate a basic complex output path", func() {
 		change := Change{
 			Component: "comp",
-			Kind:      "kind",
-			Body:      "some body message",
+			Kind:      "kiiii",
 			Time:      mockTime(),
 		}
 
-		changesYaml := fmt.Sprintf(
-			"component: comp\nkind: kind\nbody: some body message\ntime: %s\n",
-			mockTime().Format(time.RFC3339Nano),
-		)
-
-		writeCalled := false
-
-		mockWf := func(filepath string, bytes []byte, perm os.FileMode) error {
-			writeCalled = true
-			Expect(filepath).To(Equal("Changes/Unrel/comp-kind-20160524-033010.yaml"))
-			Expect(string(bytes)).To(Equal(changesYaml))
-			return nil
+		config := Config{
+			ChangesDir:    "Changes",
+			UnreleasedDir: "Unrel",
 		}
 
-		err := change.SaveUnreleased(mockWf, config)
-		Expect(err).To(BeNil())
-		Expect(writeCalled).To(Equal(true))
+		Expect(change.OutputPath(config)).
+			To(Equal("Changes/Unrel/comp-kiiii-20160524-033010.yaml"))
 	})
 
 	It("should load change from path", func() {

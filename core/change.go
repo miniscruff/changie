@@ -3,7 +3,6 @@ package core
 import (
 	"fmt"
 	"io"
-	"os"
 	"sort"
 	"strings"
 	"time"
@@ -86,9 +85,9 @@ type Change struct {
 	Custom    map[string]string `yaml:",omitempty"`
 }
 
-// SaveUnreleased will save an unreleased change to the unreleased directory
-func (change Change) SaveUnreleased(wf shared.WriteFiler, config Config) error {
-	bs, _ := yaml.Marshal(&change)
+// OutputPath will return the filepath where the change fragment should
+// be written
+func (change Change) OutputPath(config Config) string {
 	nameParts := make([]string, 0)
 
 	if change.Component != "" {
@@ -101,14 +100,20 @@ func (change Change) SaveUnreleased(wf shared.WriteFiler, config Config) error {
 
 	nameParts = append(nameParts, change.Time.Format(timeFormat))
 
-	filePath := fmt.Sprintf(
+	return fmt.Sprintf(
 		"%s/%s/%s.yaml",
 		config.ChangesDir,
 		config.UnreleasedDir,
 		strings.Join(nameParts, "-"),
 	)
+}
 
-	return wf(filePath, bs, os.ModePerm)
+// SaveUnreleased will save an unreleased change to the unreleased directory
+func (change Change) Write(writer io.Writer) error {
+	bs, _ := yaml.Marshal(&change)
+	_, err := writer.Write(bs)
+
+	return err
 }
 
 func kindFromLabel(config Config, label string) *KindConfig {
