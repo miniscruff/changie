@@ -7,7 +7,7 @@ require (
 	github.com/icholy/replace v0.5.0
 	github.com/manifoldco/promptui v0.9.0
 	github.com/onsi/ginkgo v1.16.5
-	github.com/onsi/gomega v1.18.0
+	github.com/onsi/gomega v1.18.1
 	github.com/spf13/afero v1.8.0
 	github.com/spf13/cobra v1.3.0
 	golang.org/x/text v0.3.7
