@@ -164,7 +164,7 @@ func (m *MockFile) Name() string {
 }
 
 func (m *MockFile) Readdir(count int) ([]os.FileInfo, error) {
-	panic("not implemented")
+	return m.MemFile.Readdir(count)
 }
 
 func (m *MockFile) Readdirnames(n int) ([]string, error) {
@@ -172,7 +172,7 @@ func (m *MockFile) Readdirnames(n int) ([]string, error) {
 }
 
 func (m *MockFile) Stat() (os.FileInfo, error) {
-	panic("not implemented")
+	return m.MemFile.Stat()
 }
 
 func (m *MockFile) Sync() error {

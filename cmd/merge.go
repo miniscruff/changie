@@ -1,7 +1,9 @@
 package cmd
 
 import (
+	"io"
 	"path/filepath"
+	"strings"
 
 	"github.com/spf13/afero"
 	"github.com/spf13/cobra"
@@ -9,6 +11,8 @@ import (
 	"github.com/miniscruff/changie/core"
 	"github.com/miniscruff/changie/shared"
 )
+
+var _mergeDryRun = false
 
 var mergeCmd = &cobra.Command{
 	Use:   "merge",
@@ -20,6 +24,12 @@ Note that a newline is added between each version file.`,
 }
 
 func init() {
+	mergeCmd.Flags().BoolVarP(
+		&_mergeDryRun,
+		"dry-run", "d",
+		false,
+		"Print merged changelog instead of writing to disk, will not run replacements",
+	)
 	rootCmd.AddCommand(mergeCmd)
 }
 
@@ -27,47 +37,67 @@ func runMerge(cmd *cobra.Command, args []string) error {
 	fs := afero.NewOsFs()
 	afs := afero.Afero{Fs: fs}
 
-	return mergePipeline(afs, afs.Create)
-}
-
-func mergePipeline(afs afero.Afero, creator shared.CreateFiler) error {
-	config, err := core.LoadConfig(afs.ReadFile)
+	out, err := mergePipeline(afs, afs.Create, _mergeDryRun)
 	if err != nil {
 		return err
+	}
+
+	if out != "" {
+		_, err = cmd.OutOrStdout().Write([]byte(out))
+	}
+
+	return err
+}
+
+func mergePipeline(afs afero.Afero, creator shared.CreateFiler, dryRun bool) (string, error) {
+	var builder strings.Builder
+
+	config, err := core.LoadConfig(afs.ReadFile)
+	if err != nil {
+		return "", err
+	}
+
+	allVersions, err := core.GetAllVersions(afs.ReadDir, config)
+	if err != nil {
+		return "", err
+	}
+
+	headerFile, err := afs.Open(filepath.Join(config.ChangesDir, config.HeaderPath))
+	if err != nil {
+		return "", err
+	}
+
+	defer headerFile.Close()
+
+	_, _ = io.Copy(&builder, headerFile)
+
+	for _, version := range allVersions {
+		_, _ = builder.WriteString("\n\n")
+		versionPath := filepath.Join(config.ChangesDir, version.Original()+"."+config.VersionExt)
+
+		err = core.AppendFile(afs.Open, &builder, versionPath)
+		if err != nil {
+			return "", err
+		}
+	}
+
+	if dryRun {
+		return builder.String(), nil
 	}
 
 	changeFile, err := creator(config.ChangelogPath)
 	if err != nil {
-		return err
+		return "", err
 	}
 	defer changeFile.Close()
 
-	allVersions, err := core.GetAllVersions(afs.ReadDir, config)
+	_, err = changeFile.Write([]byte(builder.String()))
 	if err != nil {
-		return err
-	}
-
-	err = core.AppendFile(afs.Open, changeFile, filepath.Join(config.ChangesDir, config.HeaderPath))
-	if err != nil {
-		return err
+		return "", err
 	}
 
 	if len(allVersions) == 0 {
-		return nil
-	}
-
-	for _, version := range allVersions {
-		_, err = changeFile.WriteString("\n\n")
-		if err != nil {
-			return err
-		}
-
-		versionPath := filepath.Join(config.ChangesDir, version.Original()+"."+config.VersionExt)
-
-		err = core.AppendFile(afs.Open, changeFile, versionPath)
-		if err != nil {
-			return err
-		}
+		return "", nil
 	}
 
 	replaceData := core.ReplaceData{
@@ -78,9 +108,9 @@ func mergePipeline(afs afero.Afero, creator shared.CreateFiler) error {
 	for _, rep := range config.Replacements {
 		err = rep.Execute(afs.ReadFile, afs.WriteFile, replaceData)
 		if err != nil {
-			return err
+			return "", err
 		}
 	}
 
-	return nil
+	return "", nil
 }
