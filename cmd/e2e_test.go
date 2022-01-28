@@ -149,8 +149,20 @@ time: %s`, date)
 * older`, defaultHeader, date)
 		changeFile, err := os.ReadFile("CHANGELOG.md")
 		Expect(err).To(BeNil())
-		fmt.Println(string(changeFile))
 		Expect(string(changeFile)).To(Equal(changeContents))
+	}
+
+	testMergeDry := func() {
+		date := time.Now().Format("2006-01-02")
+		changeContents := fmt.Sprintf(`%s
+
+## v0.1.0 - %s
+### Changed
+* newer
+* older`, defaultHeader, date)
+
+		testEcho([]string{"merge", "--dry-run"}, changeContents)
+		Expect(mergeCmd.Flags().Set("dry-run", "false")).To(Succeed())
 	}
 
 	testGen := func() {
@@ -177,6 +189,7 @@ time: %s`, date)
 		testBatch()
 		testEcho([]string{"latest"}, "0.1.0")
 		testEcho([]string{"next", "major"}, "1.0.0")
+		testMergeDry()
 		testMerge()
 		testGen()
 	})
@@ -189,6 +202,12 @@ time: %s`, date)
 
 	It("should fail on new with no config", func() {
 		rootCmd.SetArgs([]string{"new"})
+		err := Execute("")
+		Expect(err).NotTo(BeNil())
+	})
+
+	It("should fail on merge with no config", func() {
+		rootCmd.SetArgs([]string{"merge"})
 		err := Execute("")
 		Expect(err).NotTo(BeNil())
 	})
