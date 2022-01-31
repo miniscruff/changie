@@ -27,7 +27,7 @@ jobs:
         echo RELEASE_VERSION=$(go run main.go latest) >> $GITHUB_ENV
 
     - name: Create Pull Request
-      uses: peter-evans/create-pull-request@v3.12.0
+      uses: peter-evans/create-pull-request@v3.12.1
       with:
         title: Release ${{ env.RELEASE_VERSION }}
         branch: release/${{ env.RELEASE_VERSION }}
