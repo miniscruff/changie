@@ -11,6 +11,8 @@ import (
 )
 
 const configEnvVar = "CHANGIE_CONFIG_PATH"
+const DefaultFileMode os.FileMode = 0644
+const DefaultDirMode os.FileMode = 0755
 
 var ConfigPaths []string = []string{
 	".changie.yaml",
@@ -94,7 +96,7 @@ func (c Config) ChangeFormatForKind(label string) string {
 // Save will save the config as a yaml file to the default path
 func (c Config) Save(wf shared.WriteFiler) error {
 	bs, _ := yaml.Marshal(&c)
-	return wf(ConfigPaths[0], bs, os.ModePerm)
+	return wf(ConfigPaths[0], bs, DefaultFileMode)
 }
 
 // LoadConfig will load the config from the default path

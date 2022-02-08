@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+	"github.com/miniscruff/changie/core"
 	"io"
 	"os"
 	"path/filepath"
@@ -168,7 +169,7 @@ time: %s`, date)
 
 	testGen := func() {
 		docsPath := filepath.Join(tempDir, "website", "content", "cli")
-		Expect(os.MkdirAll(docsPath, os.ModePerm)).To(Succeed())
+		Expect(os.MkdirAll(docsPath, core.DefaultDirMode)).To(Succeed())
 		rootCmd.SetArgs([]string{"gen"})
 		Expect(Execute("")).To(Succeed())
 

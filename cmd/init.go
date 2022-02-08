@@ -1,13 +1,12 @@
 package cmd
 
 import (
-	"os"
+	"github.com/miniscruff/changie/core"
 	"path/filepath"
 
 	"github.com/spf13/afero"
 	"github.com/spf13/cobra"
 
-	"github.com/miniscruff/changie/core"
 	"github.com/miniscruff/changie/shared"
 )
 
@@ -83,22 +82,22 @@ func initPipeline(mkdir shared.MkdirAller, wf shared.WriteFiler, config core.Con
 		return err
 	}
 
-	err = mkdir(unreleasedPath, 0755)
+	err = mkdir(unreleasedPath, core.DefaultDirMode)
 	if err != nil {
 		return err
 	}
 
-	err = wf(keepPath, []byte{}, os.ModePerm)
+	err = wf(keepPath, []byte{}, core.DefaultFileMode)
 	if err != nil {
 		return err
 	}
 
-	err = wf(headerPath, []byte(defaultHeader), os.ModePerm)
+	err = wf(headerPath, []byte(defaultHeader), core.DefaultFileMode)
 	if err != nil {
 		return err
 	}
 
-	err = wf(config.ChangelogPath, []byte(defaultChangelog), os.ModePerm)
+	err = wf(config.ChangelogPath, []byte(defaultChangelog), core.DefaultFileMode)
 	if err != nil {
 		return err
 	}
