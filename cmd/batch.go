@@ -16,9 +16,10 @@ import (
 
 // batchData organizes all the prerequisite data we need to batch a version
 type batchData struct {
-	Version *semver.Version
-	Changes []core.Change
-	Header  string
+	PreviousVersion *semver.Version
+	Version         *semver.Version
+	Changes         []core.Change
+	Header          string
 }
 
 // batchConfig organizes all the configuration for our batch pipeline
@@ -103,6 +104,10 @@ func batchPipeline(batchConfig batchConfig) (string, error) {
 	if err != nil {
 		return "", err
 	}
+	previousVer, err := core.GetLatestVersion(batchConfig.afs.ReadDir, config)
+	if err != nil {
+		return "", err
+	}
 
 	ver, err := core.GetNextVersion(batchConfig.afs.ReadDir, config, batchConfig.version)
 	if err != nil {
@@ -136,9 +141,10 @@ func batchPipeline(batchConfig batchConfig) (string, error) {
 
 	var builder strings.Builder
 	err = batchNewVersion(&builder, config, batchData{
-		Version: ver,
-		Changes: allChanges,
-		Header:  headerContents,
+		PreviousVersion: previousVer,
+		Version:         ver,
+		Changes:         allChanges,
+		Header:          headerContents,
 	})
 
 	if err != nil {
@@ -226,8 +232,9 @@ func batchNewVersion(writer io.Writer, config core.Config, data batchData) error
 	templateCache := core.NewTemplateCache()
 
 	err := templateCache.Execute(config.VersionFormat, writer, map[string]interface{}{
-		"Version": data.Version.Original(),
-		"Time":    time.Now(),
+		"PreviousVersion": data.PreviousVersion.Original(),
+		"Version":         data.Version.Original(),
+		"Time":            time.Now(),
 	})
 	if err != nil {
 		return err

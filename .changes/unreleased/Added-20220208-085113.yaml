@@ -1,0 +1,5 @@
+kind: Added
+body: add ability to reference previous version in versionFormat template
+time: 2022-02-08T08:51:13.391739-06:00
+custom:
+  Issue: "225"

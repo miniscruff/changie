@@ -427,8 +427,9 @@ this is a new version that adds cool features
 		}
 
 		err := batchNewVersion(&writer, testConfig, batchData{
-			Version: semver.MustParse("v0.1.0"),
-			Changes: changes,
+			PreviousVersion: semver.MustParse("v0.0.1"),
+			Version:         semver.MustParse("v0.1.0"),
+			Changes:         changes,
 		})
 		Expect(err).To(BeNil())
 
@@ -456,8 +457,9 @@ this is a new version that adds cool features
 		testConfig.KindFormat = ""
 		testConfig.ChangeFormat = "* {{.Body}} ({{.Kind}})"
 		err := batchNewVersion(&writer, testConfig, batchData{
-			Version: semver.MustParse("v0.2.0"),
-			Changes: changes,
+			PreviousVersion: semver.MustParse("v0.0.1"),
+			Version:         semver.MustParse("v0.2.0"),
+			Changes:         changes,
 		})
 		Expect(err).To(BeNil())
 
@@ -483,8 +485,9 @@ this is a new version that adds cool features
 		testConfig.KindFormat = "### {{.Kind}}"
 		testConfig.ChangeFormat = "* {{.Body}}"
 		err := batchNewVersion(&writer, testConfig, batchData{
-			Version: semver.MustParse("v0.1.0"),
-			Changes: changes,
+			PreviousVersion: semver.MustParse("v0.0.1"),
+			Version:         semver.MustParse("v0.1.0"),
+			Changes:         changes,
 		})
 		Expect(err).To(BeNil())
 
@@ -514,9 +517,10 @@ this is a new version that adds cool features
 
 		testConfig.VersionFormat = testConfig.VersionFormat + "\n"
 		err := batchNewVersion(&writer, testConfig, batchData{
-			Version: semver.MustParse("v0.1.0"),
-			Changes: changes,
-			Header:  "Some header we want included in our new version.\nCan also have newlines.",
+			PreviousVersion: semver.MustParse("v0.0.1"),
+			Version:         semver.MustParse("v0.1.0"),
+			Changes:         changes,
+			Header:          "Some header we want included in our new version.\nCan also have newlines.",
 		})
 		Expect(err).To(BeNil())
 
@@ -545,8 +549,9 @@ Can also have newlines.
 			{Label: "added", Header: "\n:rocket: Added"},
 		}
 		err := batchNewVersion(&writer, testConfig, batchData{
-			Version: semver.MustParse("v0.2.0"),
-			Changes: changes,
+			PreviousVersion: semver.MustParse("v0.0.1"),
+			Version:         semver.MustParse("v0.2.0"),
+			Changes:         changes,
 		})
 		Expect(err).To(BeNil())
 
@@ -567,12 +572,36 @@ Can also have newlines.
 			{Label: "added", ChangeFormat: "* added -> {{.Body}}"},
 		}
 		err := batchNewVersion(&writer, testConfig, batchData{
-			Version: semver.MustParse("v0.1.0"),
-			Changes: changes,
+			PreviousVersion: semver.MustParse("v0.0.1"),
+			Version:         semver.MustParse("v0.1.0"),
+			Changes:         changes,
 		})
 		Expect(err).To(BeNil())
 
 		expected := `## v0.1.0
+
+### added
+* added -> x`
+		Expect(writer.String()).To(Equal(expected))
+	})
+
+	It("can create new version file with previous version compare changes link", func() {
+		var writer strings.Builder
+		changes := []core.Change{
+			{Body: "x", Kind: "added"},
+		}
+		testConfig.VersionFormat = "## [{{.Version}}](https://github.com/miniscruff/changie/compare/{{.PreviousVersion}}...{{.Version}})"
+		testConfig.Kinds = []core.KindConfig{
+			{Label: "added", ChangeFormat: "* added -> {{.Body}}"},
+		}
+		err := batchNewVersion(&writer, testConfig, batchData{
+			PreviousVersion: semver.MustParse("v0.1.0"),
+			Version:         semver.MustParse("v0.2.0"),
+			Changes:         changes,
+		})
+		Expect(err).To(BeNil())
+
+		expected := `## [v0.2.0](https://github.com/miniscruff/changie/compare/v0.1.0...v0.2.0)
 
 ### added
 * added -> x`
@@ -584,8 +613,9 @@ Can also have newlines.
 		testConfig.VersionFormat = "{{juuunk...}}"
 
 		err := batchNewVersion(&writer, testConfig, batchData{
-			Version: semver.MustParse("v0.1.0"),
-			Changes: []core.Change{},
+			PreviousVersion: semver.MustParse("v0.0.1"),
+			Version:         semver.MustParse("v0.1.0"),
+			Changes:         []core.Change{},
 		})
 		Expect(err).NotTo(BeNil())
 	})
@@ -595,7 +625,8 @@ Can also have newlines.
 		testConfig.KindFormat = "{{randoooom../././}}"
 
 		err := batchNewVersion(&writer, testConfig, batchData{
-			Version: semver.MustParse("v0.1.0"),
+			PreviousVersion: semver.MustParse("v0.0.1"),
+			Version:         semver.MustParse("v0.1.0"),
 			Changes: []core.Change{
 				{Body: "x", Kind: "added"},
 			},
@@ -608,7 +639,8 @@ Can also have newlines.
 		testConfig.ComponentFormat = "{{deja vu}}"
 
 		err := batchNewVersion(&writer, testConfig, batchData{
-			Version: semver.MustParse("v0.1.0"),
+			PreviousVersion: semver.MustParse("v0.0.1"),
+			Version:         semver.MustParse("v0.1.0"),
 			Changes: []core.Change{
 				{Component: "x", Kind: "added"},
 			},
@@ -621,7 +653,8 @@ Can also have newlines.
 		testConfig.ChangeFormat = "{{not.valid.syntax....}}"
 
 		err := batchNewVersion(&writer, testConfig, batchData{
-			Version: semver.MustParse("v0.1.0"),
+			PreviousVersion: semver.MustParse("v0.0.1"),
+			Version:         semver.MustParse("v0.1.0"),
 			Changes: []core.Change{
 				{Body: "x", Kind: "added"},
 			},
