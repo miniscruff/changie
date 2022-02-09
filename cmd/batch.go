@@ -4,38 +4,18 @@ import (
 	"io"
 	"os"
 	"path/filepath"
-	"strings"
 	"time"
 
-	"github.com/Masterminds/semver/v3"
 	"github.com/spf13/afero"
 	"github.com/spf13/cobra"
 
 	"github.com/miniscruff/changie/core"
 )
 
-// batchData organizes all the prerequisite data we need to batch a version
-type batchData struct {
-	Version *semver.Version
-	Changes []core.Change
-	Header  string
-}
-
-// batchConfig organizes all the configuration for our batch pipeline
-type batchConfig struct {
-	afs               afero.Afero
-	versionHeaderPath string
-	version           string
-	keepFragments     bool
-	dryRun            bool
-}
-
 var (
-	// prefix cobra flags with underscore
-	// use batchConfig instead
-	_versionHeaderPath = ""
-	_keepFragments     = false
-	_batchDryRun       = false
+	versionHeaderPathFlag = ""
+	keepFragmentsFlag     = false
+	batchDryRunFlag       = false
 )
 
 var batchCmd = &cobra.Command{
@@ -59,15 +39,19 @@ Changes are sorted in the following order:
 }
 
 func init() {
-	batchCmd.Flags().StringVar(&_versionHeaderPath, "headerPath", "", "Path to version header file")
+	batchCmd.Flags().StringVar(
+		&versionHeaderPathFlag,
+		"headerPath", "",
+		"Path to version header file in unreleased directory",
+	)
 	batchCmd.Flags().BoolVarP(
-		&_keepFragments,
+		&keepFragmentsFlag,
 		"keep", "k",
 		false,
 		"Keep change fragments instead of deleting them",
 	)
 	batchCmd.Flags().BoolVarP(
-		&_batchDryRun,
+		&batchDryRunFlag,
 		"dry-run", "d",
 		false,
 		"Print batched changes instead of writing to disk, does not delete fragments",
@@ -75,100 +59,95 @@ func init() {
 	rootCmd.AddCommand(batchCmd)
 }
 
+/*
+	3. Write header template
+	5. Write footer file
+	6. Write footer template
+*/
+
 func runBatch(cmd *cobra.Command, args []string) error {
 	fs := afero.NewOsFs()
 	afs := afero.Afero{Fs: fs}
 
-	out, err := batchPipeline(batchConfig{
-		afs:               afs,
-		version:           args[0],
-		versionHeaderPath: _versionHeaderPath,
-		keepFragments:     _keepFragments,
-		dryRun:            _batchDryRun,
-	})
+	return batchPipeline(afs, args[0])
+}
 
+func batchPipeline(afs afero.Afero, version string) error {
+	templateCache := core.NewTemplateCache()
+
+	config, err := core.LoadConfig(afs.ReadFile)
 	if err != nil {
 		return err
 	}
 
-	if out != "" {
-		_, err = cmd.OutOrStdout().Write([]byte(out))
-	}
-
-	return err
-}
-
-func batchPipeline(batchConfig batchConfig) (string, error) {
-	config, err := core.LoadConfig(batchConfig.afs.ReadFile)
+	previousVersion, err := core.GetLatestVersion(afs.ReadDir, config)
 	if err != nil {
-		return "", err
+		return err
 	}
 
-	ver, err := core.GetNextVersion(batchConfig.afs.ReadDir, config, batchConfig.version)
+	ver, err := core.GetNextVersion(afs.ReadDir, config, version)
 	if err != nil {
-		return "", err
+		return err
 	}
 
-	allChanges, err := getChanges(batchConfig.afs, config)
+	allChanges, err := getChanges(afs, config)
 	if err != nil {
-		return "", err
+		return err
 	}
 
-	headerFilePath := ""
-	headerContents := ""
+	var writer io.Writer
+	if batchDryRunFlag {
+		writer = os.Stdout
+	} else {
+		versionPath := filepath.Join(config.ChangesDir, ver.Original()+"."+config.VersionExt)
+		versionFile, err := afs.Fs.Create(versionPath)
 
-	if batchConfig.versionHeaderPath != "" {
-		headerFilePath = batchConfig.versionHeaderPath
-	} else if config.VersionHeaderPath != "" {
-		headerFilePath = config.VersionHeaderPath
-	}
-
-	if headerFilePath != "" {
-		fullPath := filepath.Join(config.ChangesDir, config.UnreleasedDir, headerFilePath)
-		headerBytes, readErr := batchConfig.afs.ReadFile(fullPath)
-
-		if readErr != nil && !os.IsNotExist(readErr) {
-			return "", readErr
-		}
-
-		headerContents = string(headerBytes)
-	}
-
-	var builder strings.Builder
-	err = batchNewVersion(&builder, config, batchData{
-		Version: ver,
-		Changes: allChanges,
-		Header:  headerContents,
-	})
-
-	if err != nil {
-		return "", err
-	}
-
-	// return our builder in dry run
-	if batchConfig.dryRun {
-		return builder.String(), nil
-	}
-
-	if !batchConfig.keepFragments {
-		err = deleteUnreleased(batchConfig.afs, config, headerFilePath)
 		if err != nil {
-			return "", err
+			return err
+		}
+		defer versionFile.Close()
+		writer = versionFile
+	}
+
+	// start writing our version
+	err = templateCache.Execute(config.VersionFormat, writer, map[string]interface{}{
+		"Version":         ver.Original(),
+		"PreviousVersion": previousVersion.Original(),
+		"Time":            time.Now(),
+	})
+	if err != nil {
+		return err
+	}
+
+	err = writeUnreleasedFile(writer, afs, config, versionHeaderPathFlag)
+	if err != nil {
+		return err
+	}
+
+	err = writeUnreleasedFile(writer, afs, config, config.VersionHeaderPath)
+	if err != nil {
+		return err
+	}
+
+	err = writeChanges(writer, config, templateCache, allChanges)
+	if err != nil {
+		return err
+	}
+
+	if !batchDryRunFlag && !keepFragmentsFlag {
+		err = deleteUnreleased(
+			afs,
+			config,
+			versionHeaderPathFlag,
+			config.VersionHeaderPath,
+			// footer paths
+		)
+		if err != nil {
+			return err
 		}
 	}
 
-	// write to file
-	versionPath := filepath.Join(config.ChangesDir, ver.Original()+"."+config.VersionExt)
-	versionFile, err := batchConfig.afs.Fs.Create(versionPath)
-
-	if err != nil {
-		return "", err
-	}
-	defer versionFile.Close()
-
-	_, err = versionFile.Write([]byte(builder.String()))
-
-	return "", err
+	return nil
 }
 
 func getChanges(afs afero.Afero, config core.Config) ([]core.Change, error) {
@@ -187,7 +166,7 @@ func getChanges(afs afero.Afero, config core.Config) ([]core.Change, error) {
 			continue
 		}
 
-		path := filepath.Join(config.ChangesDir, config.UnreleasedDir, file.Name())
+		path := filepath.Join(unreleasedPath, file.Name())
 
 		c, err := core.LoadChange(path, afs.ReadFile)
 		if err != nil {
@@ -200,6 +179,69 @@ func getChanges(afs afero.Afero, config core.Config) ([]core.Change, error) {
 	core.SortByConfig(config).Sort(changes)
 
 	return changes, nil
+}
+
+func writeUnreleasedFile(writer io.Writer, afs afero.Afero, config core.Config, relativePath string) error {
+	if relativePath == "" {
+		return nil
+	}
+
+	fullPath := filepath.Join(config.ChangesDir, config.UnreleasedDir, relativePath)
+	headerBytes, readErr := afs.ReadFile(fullPath)
+	if readErr != nil && !os.IsNotExist(readErr) {
+		return readErr
+	}
+
+	if os.IsNotExist(readErr) {
+		return nil
+	}
+
+	_, err := writer.Write(headerBytes)
+	return err
+}
+
+func writeChanges(writer io.Writer, config core.Config, templateCache *core.TemplateCache, changes []core.Change) error {
+	lastComponent := ""
+	lastKind := ""
+
+	for _, change := range changes {
+		if config.ComponentFormat != "" && lastComponent != change.Component {
+			lastComponent = change.Component
+			lastKind = ""
+			_, _ = writer.Write([]byte("\n"))
+
+			err := templateCache.Execute(config.ComponentFormat, writer, map[string]string{
+				"Component": change.Component,
+			})
+			if err != nil {
+				return err
+			}
+		}
+
+		if config.KindFormat != "" && lastKind != change.Kind {
+			lastKind = change.Kind
+			kindHeader := headerForKind(config, change.Kind)
+
+			_, _ = writer.Write([]byte("\n"))
+
+			err := templateCache.Execute(kindHeader, writer, map[string]string{
+				"Kind": change.Kind,
+			})
+			if err != nil {
+				return err
+			}
+		}
+
+		_, _ = writer.Write([]byte("\n"))
+		changeFormat := changeFormatFromKind(config, lastKind)
+
+		err := templateCache.Execute(changeFormat, writer, change)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 func headerForKind(config core.Config, label string) string {
@@ -222,77 +264,34 @@ func changeFormatFromKind(config core.Config, label string) string {
 	return config.ChangeFormat
 }
 
-func batchNewVersion(writer io.Writer, config core.Config, data batchData) error {
-	templateCache := core.NewTemplateCache()
+func deleteUnreleased(afs afero.Afero, config core.Config, otherFiles ...string) error {
+	var filesToDelete []string
+	unreleasedPath := filepath.Join(config.ChangesDir, config.UnreleasedDir)
 
-	err := templateCache.Execute(config.VersionFormat, writer, map[string]interface{}{
-		"Version": data.Version.Original(),
-		"Time":    time.Now(),
-	})
-	if err != nil {
-		return err
-	}
-
-	if data.Header != "" {
-		// write string is not err checked as we already write to the same
-		// file in the templates
-		_, _ = writer.Write([]byte("\n"))
-		_, _ = writer.Write([]byte(data.Header))
-	}
-
-	lastComponent := ""
-	lastKind := ""
-
-	for _, change := range data.Changes {
-		if config.ComponentFormat != "" && lastComponent != change.Component {
-			lastComponent = change.Component
-			lastKind = ""
-			_, _ = writer.Write([]byte("\n"))
-
-			err = templateCache.Execute(config.ComponentFormat, writer, map[string]string{
-				"Component": change.Component,
-			})
-			if err != nil {
-				return err
-			}
+	for _, p := range otherFiles {
+		if p == "" {
+			continue
 		}
+		fullPath := filepath.Join(unreleasedPath, p)
 
-		if config.KindFormat != "" && lastKind != change.Kind {
-			lastKind = change.Kind
-			kindHeader := headerForKind(config, change.Kind)
-
-			_, _ = writer.Write([]byte("\n"))
-
-			err = templateCache.Execute(kindHeader, writer, map[string]string{
-				"Kind": change.Kind,
-			})
-			if err != nil {
-				return err
-			}
-		}
-
-		_, _ = writer.Write([]byte("\n"))
-		changeFormat := changeFormatFromKind(config, lastKind)
-		err = templateCache.Execute(changeFormat, writer, change)
-
-		if err != nil {
-			return err
+		// make sure the file exists first
+		_, err := afs.Stat(fullPath)
+		if err == nil {
+			filesToDelete = append(filesToDelete, filepath.Join(unreleasedPath, p))
 		}
 	}
 
-	return nil
-}
-
-func deleteUnreleased(afs afero.Afero, config core.Config, headerPath string) error {
-	fileInfos, _ := afs.ReadDir(filepath.Join(config.ChangesDir, config.UnreleasedDir))
+	fileInfos, _ := afs.ReadDir(unreleasedPath)
 	for _, file := range fileInfos {
-		if filepath.Ext(file.Name()) != ".yaml" && file.Name() != headerPath {
+		if filepath.Ext(file.Name()) != ".yaml" {
 			continue
 		}
 
-		path := filepath.Join(config.ChangesDir, config.UnreleasedDir, file.Name())
+		filesToDelete = append(filesToDelete, filepath.Join(unreleasedPath, file.Name()))
+	}
 
-		err := afs.Remove(path)
+	for _, f := range filesToDelete {
+		err := afs.Remove(f)
 		if err != nil {
 			return err
 		}

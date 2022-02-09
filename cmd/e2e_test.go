@@ -1,5 +1,6 @@
 package cmd
 
+/*
 import (
 	"fmt"
 	"io"
@@ -194,12 +195,6 @@ time: %s`, date)
 		testGen()
 	})
 
-	It("should fail to batch on bad version", func() {
-		rootCmd.SetArgs([]string{"batch", "not-a-semantic-version-$$$"})
-		err := Execute("")
-		Expect(err).NotTo(BeNil())
-	})
-
 	It("should fail on new with no config", func() {
 		rootCmd.SetArgs([]string{"new"})
 		err := Execute("")
@@ -232,3 +227,4 @@ time: %s`, date)
 		Expect(err).NotTo(BeNil())
 	})
 })
+*/
