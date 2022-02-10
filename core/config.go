@@ -70,9 +70,29 @@ type Config struct {
 	Replacements  []Replacement `yaml:"replacements,omitempty"`
 }
 
+func (c Config) KindHeader(label string) string {
+	for _, kindConfig := range c.Kinds {
+		if kindConfig.Header != "" && kindConfig.Label == label {
+			return kindConfig.Header
+		}
+	}
+
+	return c.KindFormat
+}
+
+func (c Config) ChangeFormatForKind(label string) string {
+	for _, kindConfig := range c.Kinds {
+		if kindConfig.ChangeFormat != "" && kindConfig.Label == label {
+			return kindConfig.ChangeFormat
+		}
+	}
+
+	return c.ChangeFormat
+}
+
 // Save will save the config as a yaml file to the default path
-func (config Config) Save(wf shared.WriteFiler) error {
-	bs, _ := yaml.Marshal(&config)
+func (c Config) Save(wf shared.WriteFiler) error {
+	bs, _ := yaml.Marshal(&c)
 	return wf(ConfigPaths[0], bs, os.ModePerm)
 }
 

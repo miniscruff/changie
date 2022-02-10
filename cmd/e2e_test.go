@@ -1,6 +1,5 @@
 package cmd
 
-/*
 import (
 	"fmt"
 	"io"
@@ -49,6 +48,7 @@ var _ = Describe("end to end", func() {
 		oldStdout = os.Stdout
 		os.Stdout = stdoutWriter
 
+		batchDryRunOut = stdoutWriter
 		rootCmd.SetOut(stdoutWriter)
 		rootCmd.SetIn(stdinReader)
 	})
@@ -227,4 +227,3 @@ time: %s`, date)
 		Expect(err).NotTo(BeNil())
 	})
 })
-*/

@@ -12,10 +12,28 @@ import (
 	"github.com/miniscruff/changie/core"
 )
 
+type BatchPipeliner interface {
+	// afs afero.Afero should be part of struct
+	GetChanges(config core.Config) ([]core.Change, error)
+	WriteUnreleasedFile(writer io.Writer, config core.Config, relativePath string) error
+	WriteChanges(
+		writer io.Writer,
+		config core.Config,
+		templateCache *core.TemplateCache,
+		changes []core.Change,
+	) error
+	DeleteUnreleased(config core.Config, otherFiles ...string) error
+}
+
+type standardBatchPipeline struct {
+	afs afero.Afero
+}
+
 var (
-	versionHeaderPathFlag = ""
-	keepFragmentsFlag     = false
-	batchDryRunFlag       = false
+	versionHeaderPathFlag           = ""
+	keepFragmentsFlag               = false
+	batchDryRunFlag                 = false
+	batchDryRunOut        io.Writer = os.Stdout
 )
 
 var batchCmd = &cobra.Command{
@@ -69,10 +87,10 @@ func runBatch(cmd *cobra.Command, args []string) error {
 	fs := afero.NewOsFs()
 	afs := afero.Afero{Fs: fs}
 
-	return batchPipeline(afs, args[0])
+	return batchPipeline(&standardBatchPipeline{afs: afs}, afs, args[0])
 }
 
-func batchPipeline(afs afero.Afero, version string) error {
+func batchPipeline(batcher BatchPipeliner, afs afero.Afero, version string) error {
 	templateCache := core.NewTemplateCache()
 
 	config, err := core.LoadConfig(afs.ReadFile)
@@ -90,21 +108,22 @@ func batchPipeline(afs afero.Afero, version string) error {
 		return err
 	}
 
-	allChanges, err := getChanges(afs, config)
+	allChanges, err := batcher.GetChanges(config)
 	if err != nil {
 		return err
 	}
 
 	var writer io.Writer
 	if batchDryRunFlag {
-		writer = os.Stdout
+		writer = batchDryRunOut
 	} else {
 		versionPath := filepath.Join(config.ChangesDir, ver.Original()+"."+config.VersionExt)
-		versionFile, err := afs.Fs.Create(versionPath)
 
-		if err != nil {
-			return err
+		versionFile, createErr := afs.Fs.Create(versionPath)
+		if createErr != nil {
+			return createErr
 		}
+
 		defer versionFile.Close()
 		writer = versionFile
 	}
@@ -119,24 +138,23 @@ func batchPipeline(afs afero.Afero, version string) error {
 		return err
 	}
 
-	err = writeUnreleasedFile(writer, afs, config, versionHeaderPathFlag)
+	err = batcher.WriteUnreleasedFile(writer, config, versionHeaderPathFlag)
 	if err != nil {
 		return err
 	}
 
-	err = writeUnreleasedFile(writer, afs, config, config.VersionHeaderPath)
+	err = batcher.WriteUnreleasedFile(writer, config, config.VersionHeaderPath)
 	if err != nil {
 		return err
 	}
 
-	err = writeChanges(writer, config, templateCache, allChanges)
+	err = batcher.WriteChanges(writer, config, templateCache, allChanges)
 	if err != nil {
 		return err
 	}
 
 	if !batchDryRunFlag && !keepFragmentsFlag {
-		err = deleteUnreleased(
-			afs,
+		err = batcher.DeleteUnreleased(
 			config,
 			versionHeaderPathFlag,
 			config.VersionHeaderPath,
@@ -150,13 +168,13 @@ func batchPipeline(afs afero.Afero, version string) error {
 	return nil
 }
 
-func getChanges(afs afero.Afero, config core.Config) ([]core.Change, error) {
+func (b *standardBatchPipeline) GetChanges(config core.Config) ([]core.Change, error) {
 	var changes []core.Change
 
 	unreleasedPath := filepath.Join(config.ChangesDir, config.UnreleasedDir)
 
 	// read all markdown files from changes/unreleased
-	fileInfos, err := afs.ReadDir(unreleasedPath)
+	fileInfos, err := b.afs.ReadDir(unreleasedPath)
 	if err != nil {
 		return []core.Change{}, err
 	}
@@ -168,7 +186,7 @@ func getChanges(afs afero.Afero, config core.Config) ([]core.Change, error) {
 
 		path := filepath.Join(unreleasedPath, file.Name())
 
-		c, err := core.LoadChange(path, afs.ReadFile)
+		c, err := core.LoadChange(path, b.afs.ReadFile)
 		if err != nil {
 			return changes, err
 		}
@@ -181,13 +199,18 @@ func getChanges(afs afero.Afero, config core.Config) ([]core.Change, error) {
 	return changes, nil
 }
 
-func writeUnreleasedFile(writer io.Writer, afs afero.Afero, config core.Config, relativePath string) error {
+func (b *standardBatchPipeline) WriteUnreleasedFile(
+	writer io.Writer,
+	config core.Config,
+	relativePath string,
+) error {
 	if relativePath == "" {
 		return nil
 	}
 
 	fullPath := filepath.Join(config.ChangesDir, config.UnreleasedDir, relativePath)
-	headerBytes, readErr := afs.ReadFile(fullPath)
+
+	headerBytes, readErr := b.afs.ReadFile(fullPath)
 	if readErr != nil && !os.IsNotExist(readErr) {
 		return readErr
 	}
@@ -196,11 +219,22 @@ func writeUnreleasedFile(writer io.Writer, afs afero.Afero, config core.Config, 
 		return nil
 	}
 
-	_, err := writer.Write(headerBytes)
-	return err
+	_, err := writer.Write([]byte("\n"))
+	if err != nil {
+		return err
+	}
+
+	_, _ = writer.Write(headerBytes)
+
+	return nil
 }
 
-func writeChanges(writer io.Writer, config core.Config, templateCache *core.TemplateCache, changes []core.Change) error {
+func (b *standardBatchPipeline) WriteChanges(
+	writer io.Writer,
+	config core.Config,
+	templateCache *core.TemplateCache,
+	changes []core.Change,
+) error {
 	lastComponent := ""
 	lastKind := ""
 
@@ -220,7 +254,7 @@ func writeChanges(writer io.Writer, config core.Config, templateCache *core.Temp
 
 		if config.KindFormat != "" && lastKind != change.Kind {
 			lastKind = change.Kind
-			kindHeader := headerForKind(config, change.Kind)
+			kindHeader := config.KindHeader(change.Kind)
 
 			_, _ = writer.Write([]byte("\n"))
 
@@ -233,7 +267,7 @@ func writeChanges(writer io.Writer, config core.Config, templateCache *core.Temp
 		}
 
 		_, _ = writer.Write([]byte("\n"))
-		changeFormat := changeFormatFromKind(config, lastKind)
+		changeFormat := config.ChangeFormatForKind(lastKind)
 
 		err := templateCache.Execute(changeFormat, writer, change)
 		if err != nil {
@@ -244,44 +278,26 @@ func writeChanges(writer io.Writer, config core.Config, templateCache *core.Temp
 	return nil
 }
 
-func headerForKind(config core.Config, label string) string {
-	for _, kindConfig := range config.Kinds {
-		if kindConfig.Header != "" && kindConfig.Label == label {
-			return kindConfig.Header
-		}
-	}
-
-	return config.KindFormat
-}
-
-func changeFormatFromKind(config core.Config, label string) string {
-	for _, kindConfig := range config.Kinds {
-		if kindConfig.ChangeFormat != "" && kindConfig.Label == label {
-			return kindConfig.ChangeFormat
-		}
-	}
-
-	return config.ChangeFormat
-}
-
-func deleteUnreleased(afs afero.Afero, config core.Config, otherFiles ...string) error {
+func (b *standardBatchPipeline) DeleteUnreleased(config core.Config, otherFiles ...string) error {
 	var filesToDelete []string
+
 	unreleasedPath := filepath.Join(config.ChangesDir, config.UnreleasedDir)
 
 	for _, p := range otherFiles {
 		if p == "" {
 			continue
 		}
+
 		fullPath := filepath.Join(unreleasedPath, p)
 
 		// make sure the file exists first
-		_, err := afs.Stat(fullPath)
+		_, err := b.afs.Stat(fullPath)
 		if err == nil {
 			filesToDelete = append(filesToDelete, filepath.Join(unreleasedPath, p))
 		}
 	}
 
-	fileInfos, _ := afs.ReadDir(unreleasedPath)
+	fileInfos, _ := b.afs.ReadDir(unreleasedPath)
 	for _, file := range fileInfos {
 		if filepath.Ext(file.Name()) != ".yaml" {
 			continue
@@ -291,7 +307,7 @@ func deleteUnreleased(afs afero.Afero, config core.Config, otherFiles ...string)
 	}
 
 	for _, f := range filesToDelete {
-		err := afs.Remove(f)
+		err := b.afs.Remove(f)
 		if err != nil {
 			return err
 		}
