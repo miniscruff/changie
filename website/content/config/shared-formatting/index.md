@@ -77,6 +77,7 @@ Template used to generate version headers in version files and changelog.
 | Field | Type | Description |
 | --- | --- | --- |
 | **Version** | `string` | Semantic version of the changes |
+| **PreviousVersion** | `string` | Semantic version of the previous release |
 | **Time** | `time.Time` | Time of generated version |
 
 ### componentFormat

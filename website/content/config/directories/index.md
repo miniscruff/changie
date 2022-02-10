@@ -45,13 +45,26 @@ type: `string` | default: `""` | optional
 
 When batching change fragments into a single version file you can include a version header
 paragraph by creating a file at the path specified.
-This file must be placed in your unreleased directory and should not be a `.yaml` file.
+This file must be placed in your unreleased directory and must not be a `.yaml` file.
 This is empty by default and is considered optional and will be skipped if the file is not found.
 
 Filepath for your version header file.
 Relative to `unreleasedDir`.
 It is also possible to use the `--headerPath` parameter when using the `batch` command.
-CLI parameter has priority.
+It is possible to use both a CLI parameter and config file.
+
+### versionFooterPath
+type: `string` | default: `""` | optional
+
+When batching change fragments into a single version file you can include a version footer
+paragraph by creating a file at the path specified.
+This file must be placed in your unreleased directory and must not be a `.yaml` file.
+This is empty by default and is considered optional and will be skipped if the file is not found.
+
+Filepath for your version header file.
+Relative to `unreleasedDir`.
+It is also possible to use the `--footerPath` parameter when using the `batch` command.
+It is possible to use both a CLI parameter and config file.
 
 ### changelogPath
 type: `string` | default: `""` | required
