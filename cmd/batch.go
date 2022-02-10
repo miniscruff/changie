@@ -31,6 +31,8 @@ type standardBatchPipeline struct {
 }
 
 var (
+	// deprecated but still supported until 2.0
+	oldHeaderPathFlag               = ""
 	versionHeaderPathFlag           = ""
 	versionFooterPathFlag           = ""
 	keepFragmentsFlag               = false
@@ -61,13 +63,18 @@ Changes are sorted in the following order:
 func init() {
 	batchCmd.Flags().StringVar(
 		&versionHeaderPathFlag,
-		"headerPath", "",
+		"header-path", "",
 		"Path to version header file in unreleased directory",
 	)
 	batchCmd.Flags().StringVar(
 		&versionFooterPathFlag,
-		"footerPath", "",
+		"footer-path", "",
 		"Path to version footer file in unreleased directory",
+	)
+	batchCmd.Flags().StringVar(
+		&oldHeaderPathFlag,
+		"headerPath", "",
+		"Deprecated use --header-path instead",
 	)
 	batchCmd.Flags().BoolVarP(
 		&keepFragmentsFlag,
@@ -151,14 +158,11 @@ func batchPipeline(batcher BatchPipeliner, afs afero.Afero, version string) erro
 		return err
 	}
 
-	err = batcher.WriteUnreleasedFile(writer, config, versionHeaderPathFlag)
-	if err != nil {
-		return err
-	}
-
-	err = batcher.WriteUnreleasedFile(writer, config, config.VersionHeaderPath)
-	if err != nil {
-		return err
+	for _, unrelFile := range []string{versionHeaderPathFlag, oldHeaderPathFlag, config.VersionHeaderPath} {
+		err = batcher.WriteUnreleasedFile(writer, config, unrelFile)
+		if err != nil {
+			return err
+		}
 	}
 
 	err = batcher.WriteChanges(writer, config, templateCache, allChanges)
@@ -166,14 +170,11 @@ func batchPipeline(batcher BatchPipeliner, afs afero.Afero, version string) erro
 		return err
 	}
 
-	err = batcher.WriteUnreleasedFile(writer, config, versionFooterPathFlag)
-	if err != nil {
-		return err
-	}
-
-	err = batcher.WriteUnreleasedFile(writer, config, config.VersionFooterPath)
-	if err != nil {
-		return err
+	for _, unrelFile := range []string{versionFooterPathFlag, config.VersionFooterPath} {
+		err = batcher.WriteUnreleasedFile(writer, config, unrelFile)
+		if err != nil {
+			return err
+		}
 	}
 
 	if !batchDryRunFlag && !keepFragmentsFlag {

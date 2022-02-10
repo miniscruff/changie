@@ -50,7 +50,7 @@ This is empty by default and is considered optional and will be skipped if the f
 
 Filepath for your version header file.
 Relative to `unreleasedDir`.
-It is also possible to use the `--headerPath` parameter when using the `batch` command.
+It is also possible to use the `--header-path` parameter when using the `batch` command.
 It is possible to use both a CLI parameter and config file.
 
 ### versionFooterPath
@@ -63,7 +63,7 @@ This is empty by default and is considered optional and will be skipped if the f
 
 Filepath for your version header file.
 Relative to `unreleasedDir`.
-It is also possible to use the `--footerPath` parameter when using the `batch` command.
+It is also possible to use the `--footer-path` parameter when using the `batch` command.
 It is possible to use both a CLI parameter and config file.
 
 ### changelogPath
