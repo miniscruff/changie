@@ -158,7 +158,11 @@ func batchPipeline(batcher BatchPipeliner, afs afero.Afero, version string) erro
 		return err
 	}
 
-	for _, unrelFile := range []string{versionHeaderPathFlag, oldHeaderPathFlag, config.VersionHeaderPath} {
+	for _, unrelFile := range []string{
+		versionHeaderPathFlag,
+		oldHeaderPathFlag,
+		config.VersionHeaderPath,
+	} {
 		err = batcher.WriteUnreleasedFile(writer, config, unrelFile)
 		if err != nil {
 			return err
