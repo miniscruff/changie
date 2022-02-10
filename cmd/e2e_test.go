@@ -48,6 +48,7 @@ var _ = Describe("end to end", func() {
 		oldStdout = os.Stdout
 		os.Stdout = stdoutWriter
 
+		batchDryRunOut = stdoutWriter
 		rootCmd.SetOut(stdoutWriter)
 		rootCmd.SetIn(stdinReader)
 	})
@@ -192,12 +193,6 @@ time: %s`, date)
 		testMergeDry()
 		testMerge()
 		testGen()
-	})
-
-	It("should fail to batch on bad version", func() {
-		rootCmd.SetArgs([]string{"batch", "not-a-semantic-version-$$$"})
-		err := Execute("")
-		Expect(err).NotTo(BeNil())
 	})
 
 	It("should fail on new with no config", func() {

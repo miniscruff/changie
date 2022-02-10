@@ -77,7 +77,7 @@ func (m *MockFS) Rename(oldname string, newname string) error {
 }
 
 func (m *MockFS) Stat(name string) (os.FileInfo, error) {
-	panic("not implemented")
+	return m.MemFS.Stat(name)
 }
 
 func (m *MockFS) Name() string {

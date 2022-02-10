@@ -1,0 +1,5 @@
+kind: Added
+body: Previous version field to version header template data
+time: 2022-02-09T21:54:33.2824195-08:00
+custom:
+  Issue: "225"

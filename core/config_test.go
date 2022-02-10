@@ -23,6 +23,7 @@ var _ = Describe("Config", func() {
 unreleasedDir: Unrel
 headerPath: header.tpl.md
 versionHeaderPath: header.md
+versionFooterPath: ""
 changelogPath: CHANGELOG.md
 versionExt: ""
 versionFormat: ""
@@ -72,6 +73,7 @@ changeFormat: ""
 unreleasedDir: Unrel
 headerPath: header.tpl.md
 versionHeaderPath: ""
+versionFooterPath: ""
 changelogPath: CHANGELOG.md
 versionExt: ""
 versionFormat: vers
@@ -168,6 +170,52 @@ custom:
 
 		_, err := LoadConfig(mockRf)
 		Expect(err).NotTo(BeNil())
+	})
+
+	It("can get header from kind label", func() {
+		config := Config{
+			Kinds: []KindConfig{
+				{Label: "A", Header: "unused"},
+				{Label: "unused", Header: ""},
+				{Label: "C", Header: "KF"},
+			},
+		}
+		format := config.KindHeader("C")
+		Expect(format).To(Equal("KF"))
+	})
+
+	It("can get default header for kind", func() {
+		config := Config{
+			Kinds: []KindConfig{
+				{Label: "ignored"},
+			},
+			KindFormat: "KF",
+		}
+		format := config.KindHeader("unused label")
+		Expect(format).To(Equal("KF"))
+	})
+
+	It("can get the change format from kind label", func() {
+		config := Config{
+			Kinds: []KindConfig{
+				{Label: "A", ChangeFormat: "unused"},
+				{Label: "unused", ChangeFormat: ""},
+				{Label: "C", ChangeFormat: "CF"},
+			},
+		}
+		format := config.ChangeFormatForKind("C")
+		Expect(format).To(Equal("CF"))
+	})
+
+	It("can get default change format if no custom ones exist", func() {
+		config := Config{
+			Kinds: []KindConfig{
+				{Label: "unused", ChangeFormat: "ignored"},
+			},
+			ChangeFormat: "CF",
+		}
+		format := config.ChangeFormatForKind("C")
+		Expect(format).To(Equal("CF"))
 	})
 })
 
