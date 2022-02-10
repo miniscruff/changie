@@ -124,6 +124,7 @@ var _ = Describe("Batch", func() {
 	AfterEach(func() {
 		// reset all our flag vars
 		versionHeaderPathFlag = ""
+		versionFooterPathFlag = ""
 		keepFragmentsFlag = false
 		batchDryRunFlag = false
 		batchDryRunOut = stdout
@@ -236,6 +237,8 @@ var _ = Describe("Batch", func() {
 	It("can batch version with header and footer files", func() {
 		versionHeaderPathFlag = "h1.md"
 		testConfig.VersionHeaderPath = "h2.md"
+		versionFooterPathFlag = "f1.md"
+		testConfig.VersionFooterPath = "f2.md"
 		Expect(testConfig.Save(afs.WriteFile)).To(Succeed())
 
 		writeChangeFile(core.Change{Kind: "added", Body: "A"})
@@ -243,6 +246,8 @@ var _ = Describe("Batch", func() {
 		writeChangeFile(core.Change{Kind: "removed", Body: "C"})
 		writeFutureFile("first header\n", "h1.md")
 		writeFutureFile("second header\n", "h2.md")
+		writeFutureFile("first footer\n", "f1.md")
+		writeFutureFile("second footer\n", "f2.md")
 
 		err := batchPipeline(standard, afs, "v0.2.0")
 		Expect(err).To(BeNil())
@@ -256,7 +261,11 @@ second header
 * A
 * B
 ### removed
-* C`
+* C
+first footer
+
+second footer
+`
 
 		Expect(newVerPath).To(HaveContents(afs, verContents))
 
@@ -365,6 +374,48 @@ second header
 			relativePath string,
 		) error {
 			if strings.HasSuffix(relativePath, testConfig.VersionHeaderPath) {
+				return mockError
+			}
+			return mockPipeline.standard.WriteUnreleasedFile(writer, config, relativePath)
+		}
+
+		err := batchPipeline(mockPipeline, afs, "v0.1.1")
+		Expect(err).To(Equal(mockError))
+	})
+
+	It("returns error on bad version footer write", func() {
+		versionFooterPathFlag = "f1.md"
+
+		Expect(testConfig.Save(afs.WriteFile)).To(Succeed())
+		writeChangeFile(core.Change{Kind: "added", Body: "A"})
+
+		mockPipeline.MockWriteUnreleasedFile = func(
+			writer io.Writer,
+			config core.Config,
+			relativePath string,
+		) error {
+			if strings.HasSuffix(relativePath, versionFooterPathFlag) {
+				return mockError
+			}
+			return mockPipeline.standard.WriteUnreleasedFile(writer, config, relativePath)
+		}
+
+		err := batchPipeline(mockPipeline, afs, "v0.1.1")
+		Expect(err).To(Equal(mockError))
+	})
+
+	It("returns error on bad version header write", func() {
+		testConfig.VersionFooterPath = "f2.md"
+
+		Expect(testConfig.Save(afs.WriteFile)).To(Succeed())
+		writeChangeFile(core.Change{Kind: "added", Body: "A"})
+
+		mockPipeline.MockWriteUnreleasedFile = func(
+			writer io.Writer,
+			config core.Config,
+			relativePath string,
+		) error {
+			if strings.HasSuffix(relativePath, testConfig.VersionFooterPath) {
 				return mockError
 			}
 			return mockPipeline.standard.WriteUnreleasedFile(writer, config, relativePath)

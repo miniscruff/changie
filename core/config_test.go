@@ -23,6 +23,7 @@ var _ = Describe("Config", func() {
 unreleasedDir: Unrel
 headerPath: header.tpl.md
 versionHeaderPath: header.md
+versionFooterPath: ""
 changelogPath: CHANGELOG.md
 versionExt: ""
 versionFormat: ""
@@ -72,6 +73,7 @@ changeFormat: ""
 unreleasedDir: Unrel
 headerPath: header.tpl.md
 versionHeaderPath: ""
+versionFooterPath: ""
 changelogPath: CHANGELOG.md
 versionExt: ""
 versionFormat: vers

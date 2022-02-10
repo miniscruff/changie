@@ -31,6 +31,7 @@ type standardBatchPipeline struct {
 
 var (
 	versionHeaderPathFlag           = ""
+	versionFooterPathFlag           = ""
 	keepFragmentsFlag               = false
 	batchDryRunFlag                 = false
 	batchDryRunOut        io.Writer = os.Stdout
@@ -62,6 +63,11 @@ func init() {
 		"headerPath", "",
 		"Path to version header file in unreleased directory",
 	)
+	batchCmd.Flags().StringVar(
+		&versionFooterPathFlag,
+		"footerPath", "",
+		"Path to version footer file in unreleased directory",
+	)
 	batchCmd.Flags().BoolVarP(
 		&keepFragmentsFlag,
 		"keep", "k",
@@ -76,12 +82,6 @@ func init() {
 	)
 	rootCmd.AddCommand(batchCmd)
 }
-
-/*
-	3. Write header template
-	5. Write footer file
-	6. Write footer template
-*/
 
 func runBatch(cmd *cobra.Command, args []string) error {
 	fs := afero.NewOsFs()
@@ -153,12 +153,23 @@ func batchPipeline(batcher BatchPipeliner, afs afero.Afero, version string) erro
 		return err
 	}
 
+	err = batcher.WriteUnreleasedFile(writer, config, versionFooterPathFlag)
+	if err != nil {
+		return err
+	}
+
+	err = batcher.WriteUnreleasedFile(writer, config, config.VersionFooterPath)
+	if err != nil {
+		return err
+	}
+
 	if !batchDryRunFlag && !keepFragmentsFlag {
 		err = batcher.DeleteUnreleased(
 			config,
 			versionHeaderPathFlag,
 			config.VersionHeaderPath,
-			// footer paths
+			versionFooterPathFlag,
+			config.VersionFooterPath,
 		)
 		if err != nil {
 			return err
@@ -219,6 +230,7 @@ func (b *standardBatchPipeline) WriteUnreleasedFile(
 		return nil
 	}
 
+	// pre-write a newline to create a gap
 	_, err := writer.Write([]byte("\n"))
 	if err != nil {
 		return err
