@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 	"time"
 
+	"github.com/Masterminds/semver/v3"
 	"github.com/spf13/afero"
 	"github.com/spf13/cobra"
 
@@ -90,25 +91,37 @@ func runBatch(cmd *cobra.Command, args []string) error {
 	return batchPipeline(&standardBatchPipeline{afs: afs}, afs, args[0])
 }
 
+func preloadBatch(afs afero.Afero, version string, batcher BatchPipeliner) (
+	config core.Config,
+	previousVersion *semver.Version,
+	currentVersion *semver.Version,
+	allChanges []core.Change,
+	err error,
+) {
+	config, err = core.LoadConfig(afs.ReadFile)
+	if err != nil {
+		return
+	}
+
+	previousVersion, err = core.GetLatestVersion(afs.ReadDir, config)
+	if err != nil {
+		return
+	}
+
+	currentVersion, err = core.GetNextVersion(afs.ReadDir, config, version)
+	if err != nil {
+		return
+	}
+
+	allChanges, err = batcher.GetChanges(config)
+
+	return
+}
+
 func batchPipeline(batcher BatchPipeliner, afs afero.Afero, version string) error {
 	templateCache := core.NewTemplateCache()
 
-	config, err := core.LoadConfig(afs.ReadFile)
-	if err != nil {
-		return err
-	}
-
-	previousVersion, err := core.GetLatestVersion(afs.ReadDir, config)
-	if err != nil {
-		return err
-	}
-
-	ver, err := core.GetNextVersion(afs.ReadDir, config, version)
-	if err != nil {
-		return err
-	}
-
-	allChanges, err := batcher.GetChanges(config)
+	config, previousVersion, ver, allChanges, err := preloadBatch(afs, version, batcher)
 	if err != nil {
 		return err
 	}
