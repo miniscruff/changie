@@ -13,21 +13,25 @@ import (
 	"github.com/miniscruff/changie/core"
 )
 
+type batchData struct {
+	Time            time.Time
+	Version         *semver.Version
+	PreviousVersion *semver.Version
+	Changes         []core.Change
+}
+
 type BatchPipeliner interface {
 	// afs afero.Afero should be part of struct
 	GetChanges(config core.Config) ([]core.Change, error)
-	WriteUnreleasedFile(writer io.Writer, config core.Config, relativePath string) error
-	WriteChanges(
-		writer io.Writer,
-		config core.Config,
-		templateCache *core.TemplateCache,
-		changes []core.Change,
-	) error
+	WriteTemplate(writer io.Writer, template string, templateData *batchData) error
+	WriteFile(writer io.Writer, config core.Config, relativePath string, templateData *batchData) error
+	WriteChanges(writer io.Writer, config core.Config, changes []core.Change) error
 	DeleteUnreleased(config core.Config, otherFiles ...string) error
 }
 
 type standardBatchPipeline struct {
-	afs afero.Afero
+	afs           afero.Afero
+	templateCache *core.TemplateCache
 }
 
 var (
@@ -95,40 +99,40 @@ func runBatch(cmd *cobra.Command, args []string) error {
 	fs := afero.NewOsFs()
 	afs := afero.Afero{Fs: fs}
 
-	return batchPipeline(&standardBatchPipeline{afs: afs}, afs, args[0])
+	return batchPipeline(&standardBatchPipeline{afs: afs, templateCache: core.NewTemplateCache()}, afs, args[0])
 }
 
-func preloadBatch(afs afero.Afero, version string, batcher BatchPipeliner) (
-	config core.Config,
-	previousVersion *semver.Version,
-	currentVersion *semver.Version,
-	allChanges []core.Change,
-	err error,
-) {
-	config, err = core.LoadConfig(afs.ReadFile)
+func getBatchData(config core.Config, afs afero.Afero, version string, batcher BatchPipeliner) (*batchData, error) {
+	previousVersion, err := core.GetLatestVersion(afs.ReadDir, config)
 	if err != nil {
-		return
+		return nil, err
 	}
 
-	previousVersion, err = core.GetLatestVersion(afs.ReadDir, config)
+	currentVersion, err := core.GetNextVersion(afs.ReadDir, config, version)
 	if err != nil {
-		return
+		return nil, err
 	}
 
-	currentVersion, err = core.GetNextVersion(afs.ReadDir, config, version)
+	allChanges, err := batcher.GetChanges(config)
 	if err != nil {
-		return
+		return nil, err
 	}
 
-	allChanges, err = batcher.GetChanges(config)
-
-	return
+	return &batchData{
+		Time:            time.Now(),
+		Version:         currentVersion,
+		PreviousVersion: previousVersion,
+		Changes:         allChanges,
+	}, nil
 }
 
 func batchPipeline(batcher BatchPipeliner, afs afero.Afero, version string) error {
-	templateCache := core.NewTemplateCache()
+	config, err := core.LoadConfig(afs.ReadFile)
+	if err != nil {
+		return err
+	}
 
-	config, previousVersion, ver, allChanges, err := preloadBatch(afs, version, batcher)
+	data, err := getBatchData(config, afs, version, batcher)
 	if err != nil {
 		return err
 	}
@@ -137,7 +141,7 @@ func batchPipeline(batcher BatchPipeliner, afs afero.Afero, version string) erro
 	if batchDryRunFlag {
 		writer = batchDryRunOut
 	} else {
-		versionPath := filepath.Join(config.ChangesDir, ver.Original()+"."+config.VersionExt)
+		versionPath := filepath.Join(config.ChangesDir, data.Version.Original()+"."+config.VersionExt)
 
 		versionFile, createErr := afs.Fs.Create(versionPath)
 		if createErr != nil {
@@ -149,11 +153,7 @@ func batchPipeline(batcher BatchPipeliner, afs afero.Afero, version string) erro
 	}
 
 	// start writing our version
-	err = templateCache.Execute(config.VersionFormat, writer, map[string]interface{}{
-		"Version":         ver.Original(),
-		"PreviousVersion": previousVersion.Original(),
-		"Time":            time.Now(),
-	})
+	err = batcher.WriteTemplate(writer, config.VersionFormat, data)
 	if err != nil {
 		return err
 	}
@@ -163,19 +163,19 @@ func batchPipeline(batcher BatchPipeliner, afs afero.Afero, version string) erro
 		oldHeaderPathFlag,
 		config.VersionHeaderPath,
 	} {
-		err = batcher.WriteUnreleasedFile(writer, config, unrelFile)
+		err = batcher.WriteFile(writer, config, unrelFile, data)
 		if err != nil {
 			return err
 		}
 	}
 
-	err = batcher.WriteChanges(writer, config, templateCache, allChanges)
+	err = batcher.WriteChanges(writer, config, data.Changes)
 	if err != nil {
 		return err
 	}
 
 	for _, unrelFile := range []string{versionFooterPathFlag, config.VersionFooterPath} {
-		err = batcher.WriteUnreleasedFile(writer, config, unrelFile)
+		err = batcher.WriteFile(writer, config, unrelFile, data)
 		if err != nil {
 			return err
 		}
@@ -228,10 +228,15 @@ func (b *standardBatchPipeline) GetChanges(config core.Config) ([]core.Change, e
 	return changes, nil
 }
 
-func (b *standardBatchPipeline) WriteUnreleasedFile(
+func (b *standardBatchPipeline) WriteTemplate(writer io.Writer, template string, templateData *batchData) error {
+	return b.templateCache.Execute(template, writer, templateData)
+}
+
+func (b *standardBatchPipeline) WriteFile(
 	writer io.Writer,
 	config core.Config,
 	relativePath string,
+	templateData *batchData,
 ) error {
 	if relativePath == "" {
 		return nil
@@ -239,7 +244,7 @@ func (b *standardBatchPipeline) WriteUnreleasedFile(
 
 	fullPath := filepath.Join(config.ChangesDir, config.UnreleasedDir, relativePath)
 
-	headerBytes, readErr := b.afs.ReadFile(fullPath)
+	fileBytes, readErr := b.afs.ReadFile(fullPath)
 	if readErr != nil && !os.IsNotExist(readErr) {
 		return readErr
 	}
@@ -254,15 +259,12 @@ func (b *standardBatchPipeline) WriteUnreleasedFile(
 		return err
 	}
 
-	_, _ = writer.Write(headerBytes)
-
-	return nil
+	return b.WriteTemplate(writer, string(fileBytes), templateData)
 }
 
 func (b *standardBatchPipeline) WriteChanges(
 	writer io.Writer,
 	config core.Config,
-	templateCache *core.TemplateCache,
 	changes []core.Change,
 ) error {
 	lastComponent := ""
@@ -274,7 +276,7 @@ func (b *standardBatchPipeline) WriteChanges(
 			lastKind = ""
 			_, _ = writer.Write([]byte("\n"))
 
-			err := templateCache.Execute(config.ComponentFormat, writer, map[string]string{
+			err := b.templateCache.Execute(config.ComponentFormat, writer, map[string]string{
 				"Component": change.Component,
 			})
 			if err != nil {
@@ -288,7 +290,7 @@ func (b *standardBatchPipeline) WriteChanges(
 
 			_, _ = writer.Write([]byte("\n"))
 
-			err := templateCache.Execute(kindHeader, writer, map[string]string{
+			err := b.templateCache.Execute(kindHeader, writer, map[string]string{
 				"Kind": change.Kind,
 			})
 			if err != nil {
@@ -299,7 +301,7 @@ func (b *standardBatchPipeline) WriteChanges(
 		_, _ = writer.Write([]byte("\n"))
 		changeFormat := config.ChangeFormatForKind(lastKind)
 
-		err := templateCache.Execute(changeFormat, writer, change)
+		err := b.templateCache.Execute(changeFormat, writer, change)
 		if err != nil {
 			return err
 		}
