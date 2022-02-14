@@ -24,7 +24,7 @@ type BatchPipeliner interface {
 	// afs afero.Afero should be part of struct
 	GetChanges(config core.Config) ([]core.Change, error)
 	WriteTemplate(writer io.Writer, template string, templateData interface{}) error
-	WriteFile(writer io.Writer, config core.Config, relativePath string, templateData *batchData) error
+	WriteFile(writer io.Writer, config core.Config, relativePath string, templateData interface{}) error
 	WriteChanges(writer io.Writer, config core.Config, changes []core.Change) error
 	DeleteUnreleased(config core.Config, otherFiles ...string) error
 }
@@ -158,15 +158,20 @@ func batchPipeline(batcher BatchPipeliner, afs afero.Afero, version string) erro
 		return err
 	}
 
-	for _, unrelFile := range []string{
+	for _, relativePath := range []string{
 		versionHeaderPathFlag,
 		oldHeaderPathFlag,
 		config.VersionHeaderPath,
 	} {
-		err = batcher.WriteFile(writer, config, unrelFile, data)
+		err = batcher.WriteFile(writer, config, relativePath, data)
 		if err != nil {
 			return err
 		}
+	}
+
+	err = batcher.WriteTemplate(writer, config.HeaderFormat, data)
+	if err != nil {
+		return err
 	}
 
 	err = batcher.WriteChanges(writer, config, data.Changes)
@@ -174,8 +179,13 @@ func batchPipeline(batcher BatchPipeliner, afs afero.Afero, version string) erro
 		return err
 	}
 
-	for _, unrelFile := range []string{versionFooterPathFlag, config.VersionFooterPath} {
-		err = batcher.WriteFile(writer, config, unrelFile, data)
+	err = batcher.WriteTemplate(writer, config.FooterFormat, data)
+	if err != nil {
+		return err
+	}
+
+	for _, relativePath := range []string{versionFooterPathFlag, config.VersionFooterPath} {
+		err = batcher.WriteFile(writer, config, relativePath, data)
 		if err != nil {
 			return err
 		}
@@ -236,7 +246,7 @@ func (b *standardBatchPipeline) WriteFile(
 	writer io.Writer,
 	config core.Config,
 	relativePath string,
-	templateData *batchData,
+	templateData interface{},
 ) error {
 	if relativePath == "" {
 		return nil
