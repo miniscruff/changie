@@ -23,7 +23,7 @@ type batchData struct {
 type BatchPipeliner interface {
 	// afs afero.Afero should be part of struct
 	GetChanges(config core.Config) ([]core.Change, error)
-	WriteTemplate(writer io.Writer, template string, templateData *batchData) error
+	WriteTemplate(writer io.Writer, template string, templateData interface{}) error
 	WriteFile(writer io.Writer, config core.Config, relativePath string, templateData *batchData) error
 	WriteChanges(writer io.Writer, config core.Config, changes []core.Change) error
 	DeleteUnreleased(config core.Config, otherFiles ...string) error
@@ -228,7 +228,7 @@ func (b *standardBatchPipeline) GetChanges(config core.Config) ([]core.Change, e
 	return changes, nil
 }
 
-func (b *standardBatchPipeline) WriteTemplate(writer io.Writer, template string, templateData *batchData) error {
+func (b *standardBatchPipeline) WriteTemplate(writer io.Writer, template string, templateData interface{}) error {
 	return b.templateCache.Execute(template, writer, templateData)
 }
 
@@ -276,7 +276,7 @@ func (b *standardBatchPipeline) WriteChanges(
 			lastKind = ""
 			_, _ = writer.Write([]byte("\n"))
 
-			err := b.templateCache.Execute(config.ComponentFormat, writer, map[string]string{
+			err := b.WriteTemplate(writer, config.ComponentFormat, map[string]string{
 				"Component": change.Component,
 			})
 			if err != nil {
@@ -290,7 +290,7 @@ func (b *standardBatchPipeline) WriteChanges(
 
 			_, _ = writer.Write([]byte("\n"))
 
-			err := b.templateCache.Execute(kindHeader, writer, map[string]string{
+			err := b.WriteTemplate(writer, kindHeader, map[string]string{
 				"Kind": change.Kind,
 			})
 			if err != nil {
@@ -301,7 +301,7 @@ func (b *standardBatchPipeline) WriteChanges(
 		_, _ = writer.Write([]byte("\n"))
 		changeFormat := config.ChangeFormatForKind(lastKind)
 
-		err := b.templateCache.Execute(changeFormat, writer, change)
+		err := b.WriteTemplate(writer, changeFormat, change)
 		if err != nil {
 			return err
 		}
