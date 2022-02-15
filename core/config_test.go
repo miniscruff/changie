@@ -28,6 +28,8 @@ changelogPath: CHANGELOG.md
 versionExt: ""
 versionFormat: ""
 changeFormat: ""
+headerFormat: ""
+footerFormat: ""
 `
 
 		writeCalled := false
@@ -54,6 +56,8 @@ changeFormat: ""
 			ComponentFormat: "comp",
 			KindFormat:      "kind",
 			ChangeFormat:    "chng",
+			HeaderFormat:    "",
+			FooterFormat:    "",
 			Components:      []string{"A", "D", "G"},
 			Kinds: []KindConfig{
 				{Label: "B"},
@@ -80,6 +84,8 @@ versionFormat: vers
 componentFormat: comp
 kindFormat: kind
 changeFormat: chng
+headerFormat: ""
+footerFormat: ""
 components:
 - A
 - D

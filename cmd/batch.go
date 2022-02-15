@@ -6,7 +6,6 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/Masterminds/semver/v3"
 	"github.com/spf13/afero"
 	"github.com/spf13/cobra"
 
@@ -15,8 +14,8 @@ import (
 
 type batchData struct {
 	Time            time.Time
-	Version         *semver.Version
-	PreviousVersion *semver.Version
+	Version         string
+	PreviousVersion string
 	Changes         []core.Change
 }
 
@@ -120,8 +119,8 @@ func getBatchData(config core.Config, afs afero.Afero, version string, batcher B
 
 	return &batchData{
 		Time:            time.Now(),
-		Version:         currentVersion,
-		PreviousVersion: previousVersion,
+		Version:         currentVersion.Original(),
+		PreviousVersion: previousVersion.Original(),
 		Changes:         allChanges,
 	}, nil
 }
@@ -141,7 +140,7 @@ func batchPipeline(batcher BatchPipeliner, afs afero.Afero, version string) erro
 	if batchDryRunFlag {
 		writer = batchDryRunOut
 	} else {
-		versionPath := filepath.Join(config.ChangesDir, data.Version.Original()+"."+config.VersionExt)
+		versionPath := filepath.Join(config.ChangesDir, data.Version+"."+config.VersionExt)
 
 		versionFile, createErr := afs.Fs.Create(versionPath)
 		if createErr != nil {
