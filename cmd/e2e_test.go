@@ -2,11 +2,12 @@ package cmd
 
 import (
 	"fmt"
-	"github.com/miniscruff/changie/core"
 	"io"
 	"os"
 	"path/filepath"
 	"time"
+
+	"github.com/miniscruff/changie/core"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
