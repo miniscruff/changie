@@ -217,6 +217,25 @@ var _ = Describe("Batch", func() {
 		Expect(len(infos)).To(Equal(3))
 	})
 
+	It("can batch using a sprig template function", func() {
+		var builder strings.Builder
+		testConfig.VersionFormat = "{{ \"hello!\" | upper | repeat 5 }}"
+		batchDryRunOut = &builder
+		batchDryRunFlag = true
+		Expect(testConfig.Save(afs.WriteFile)).To(Succeed())
+
+		writeChangeFile(core.Change{Kind: "added", Body: "A"})
+
+		err := batchPipeline(standard, afs, "v0.2.0")
+		Expect(err).To(BeNil())
+
+		verContents := `HELLO!HELLO!HELLO!HELLO!HELLO!
+### added
+* A`
+
+		Expect(builder.String()).To(Equal(verContents))
+	})
+
 	It("can batch version keeping change files", func() {
 		// testBatchConfig.keepFragments = true
 		keepFragmentsFlag = true
