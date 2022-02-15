@@ -11,8 +11,8 @@ import (
 )
 
 const configEnvVar = "CHANGIE_CONFIG_PATH"
-const DefaultFileMode os.FileMode = 0644
-const DefaultDirMode os.FileMode = 0755
+const CreateFileMode os.FileMode = 0644
+const CreateDirMode os.FileMode = 0755
 
 var ConfigPaths []string = []string{
 	".changie.yaml",
