@@ -1,0 +1,5 @@
+kind: Added
+body: Allow for use of sprig functions in templates
+time: 2022-02-13T20:01:22.635458-06:00
+custom:
+  Issue: "229"

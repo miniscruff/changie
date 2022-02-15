@@ -3,6 +3,8 @@ package core
 import (
 	"io"
 	"text/template"
+
+	"github.com/Masterminds/sprig"
 )
 
 type TemplateCache struct {
@@ -21,7 +23,7 @@ func (tc *TemplateCache) Load(text string) (*template.Template, error) {
 		return cachedTemplate, nil
 	}
 
-	templ, err := template.New(text).Parse(text)
+	templ, err := template.New(text).Funcs(sprig.TxtFuncMap()).Parse(text)
 	tc.cache[text] = templ
 
 	return templ, err
