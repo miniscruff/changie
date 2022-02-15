@@ -1,5 +1,5 @@
 kind: Changed
-body: changie creates files without exec bit (+x)
+body: Create files without exec bit (+x)
 time: 2022-02-15T18:02:45.881462+03:00
 custom:
   Issue: "235"
