@@ -1,12 +1,12 @@
 package cmd
 
 import (
-	"github.com/miniscruff/changie/core"
 	"path/filepath"
 
 	"github.com/spf13/afero"
 	"github.com/spf13/cobra"
 
+	"github.com/miniscruff/changie/core"
 	"github.com/miniscruff/changie/shared"
 )
 
