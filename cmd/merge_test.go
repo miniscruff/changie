@@ -56,15 +56,15 @@ var _ = Describe("Merge", func() {
 		twoPath := filepath.Join("news", "v0.2.0.md")
 
 		oneChanges := []byte("first version")
-		err := afs.WriteFile(onePath, oneChanges, core.DefaultFileMode)
+		err := afs.WriteFile(onePath, oneChanges, core.CreateFileMode)
 		Expect(err).To(BeNil())
 
 		twoChanges := []byte("second version")
-		err = afs.WriteFile(twoPath, twoChanges, core.DefaultFileMode)
+		err = afs.WriteFile(twoPath, twoChanges, core.CreateFileMode)
 		Expect(err).To(BeNil())
 
 		headerContents := []byte("a simple header\n")
-		err = afs.WriteFile(filepath.Join("news", "header.rst"), headerContents, core.DefaultFileMode)
+		err = afs.WriteFile(filepath.Join("news", "header.rst"), headerContents, core.CreateFileMode)
 		Expect(err).To(BeNil())
 
 		_, err = afs.Create(filepath.Join("news", "ignored.txt"))
@@ -78,7 +78,7 @@ var _ = Describe("Merge", func() {
   "key": "value",
   "version": "0.2.0",
 }`
-		err = afs.WriteFile("replace.json", []byte(jsonContents), core.DefaultFileMode)
+		err = afs.WriteFile("replace.json", []byte(jsonContents), core.CreateFileMode)
 		Expect(err).To(BeNil())
 
 		out, err := mergePipeline(afs, afs.Create, false)
@@ -102,15 +102,15 @@ first version`
 		twoPath := filepath.Join("news", "v0.2.0.md")
 
 		oneChanges := []byte("first version")
-		err := afs.WriteFile(onePath, oneChanges, core.DefaultFileMode)
+		err := afs.WriteFile(onePath, oneChanges, core.CreateFileMode)
 		Expect(err).To(BeNil())
 
 		twoChanges := []byte("second version")
-		err = afs.WriteFile(twoPath, twoChanges, core.DefaultFileMode)
+		err = afs.WriteFile(twoPath, twoChanges, core.CreateFileMode)
 		Expect(err).To(BeNil())
 
 		headerContents := []byte("a simple header\n")
-		err = afs.WriteFile(filepath.Join("news", "header.rst"), headerContents, core.DefaultFileMode)
+		err = afs.WriteFile(filepath.Join("news", "header.rst"), headerContents, core.CreateFileMode)
 		Expect(err).To(BeNil())
 
 		_, err = afs.Create(filepath.Join("news", "ignored.txt"))
@@ -132,7 +132,7 @@ first version`
 		saveAndCheckConfig()
 
 		headerContents := []byte("a simple header\n")
-		err := afs.WriteFile(filepath.Join("news", "header.rst"), headerContents, core.DefaultFileMode)
+		err := afs.WriteFile(filepath.Join("news", "header.rst"), headerContents, core.CreateFileMode)
 		Expect(err).To(BeNil())
 
 		out, err := mergePipeline(afs, afs.Create, false)
@@ -196,7 +196,7 @@ first version`
 		// need at least one change to exist
 		onePath := filepath.Join("news", "v0.1.0.md")
 		oneChanges := []byte("first version")
-		err := afs.WriteFile(onePath, oneChanges, core.DefaultFileMode)
+		err := afs.WriteFile(onePath, oneChanges, core.CreateFileMode)
 		Expect(err).To(BeNil())
 
 		out, err := mergePipeline(afs, afs.Create, false)
@@ -222,13 +222,13 @@ first version`
 
 		// we need a header and at least one version
 		headerContents := []byte("a simple header\n")
-		err := afs.WriteFile(filepath.Join("news", "header.rst"), headerContents, core.DefaultFileMode)
+		err := afs.WriteFile(filepath.Join("news", "header.rst"), headerContents, core.CreateFileMode)
 		Expect(err).To(BeNil())
 
 		onePath := filepath.Join("news", "v0.1.0.md")
 
 		oneChanges := []byte("first version")
-		err = afs.WriteFile(onePath, oneChanges, core.DefaultFileMode)
+		err = afs.WriteFile(onePath, oneChanges, core.CreateFileMode)
 		Expect(err).To(BeNil())
 
 		out, err := mergePipeline(afs, mockCreate, false)
@@ -241,12 +241,12 @@ first version`
 		badError := errors.New("bad write string")
 
 		headerContents := []byte("a simple header\n")
-		err := afs.WriteFile(filepath.Join("news", "header.rst"), headerContents, core.DefaultFileMode)
+		err := afs.WriteFile(filepath.Join("news", "header.rst"), headerContents, core.CreateFileMode)
 		Expect(err).To(BeNil())
 
 		onePath := filepath.Join("news", "v0.1.0.md")
 		oneChanges := []byte("first version")
-		err = afs.WriteFile(onePath, oneChanges, core.DefaultFileMode)
+		err = afs.WriteFile(onePath, oneChanges, core.CreateFileMode)
 		Expect(err).To(BeNil())
 
 		// create a version file, then fail to open it the second time
@@ -268,13 +268,13 @@ first version`
 		saveAndCheckConfig()
 
 		headerContents := []byte("a simple header\n")
-		err := afs.WriteFile(filepath.Join("news", "header.rst"), headerContents, core.DefaultFileMode)
+		err := afs.WriteFile(filepath.Join("news", "header.rst"), headerContents, core.CreateFileMode)
 		Expect(err).To(BeNil())
 
 		onePath := filepath.Join("news", "v0.1.0.md")
 
 		oneChanges := []byte("first version")
-		err = afs.WriteFile(onePath, oneChanges, core.DefaultFileMode)
+		err = afs.WriteFile(onePath, oneChanges, core.CreateFileMode)
 		Expect(err).To(BeNil())
 
 		out, err := mergePipeline(afs, afs.Create, false)

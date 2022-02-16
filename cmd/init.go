@@ -82,22 +82,22 @@ func initPipeline(mkdir shared.MkdirAller, wf shared.WriteFiler, config core.Con
 		return err
 	}
 
-	err = mkdir(unreleasedPath, core.DefaultDirMode)
+	err = mkdir(unreleasedPath, core.CreateDirMode)
 	if err != nil {
 		return err
 	}
 
-	err = wf(keepPath, []byte{}, core.DefaultFileMode)
+	err = wf(keepPath, []byte{}, core.CreateFileMode)
 	if err != nil {
 		return err
 	}
 
-	err = wf(headerPath, []byte(defaultHeader), core.DefaultFileMode)
+	err = wf(headerPath, []byte(defaultHeader), core.CreateFileMode)
 	if err != nil {
 		return err
 	}
 
-	err = wf(config.ChangelogPath, []byte(defaultChangelog), core.DefaultFileMode)
+	err = wf(config.ChangelogPath, []byte(defaultChangelog), core.CreateFileMode)
 	if err != nil {
 		return err
 	}

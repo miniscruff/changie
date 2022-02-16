@@ -96,7 +96,7 @@ func (c Config) ChangeFormatForKind(label string) string {
 // Save will save the config as a yaml file to the default path
 func (c Config) Save(wf shared.WriteFiler) error {
 	bs, _ := yaml.Marshal(&c)
-	return wf(ConfigPaths[0], bs, DefaultFileMode)
+	return wf(ConfigPaths[0], bs, CreateFileMode)
 }
 
 // LoadConfig will load the config from the default path
