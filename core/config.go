@@ -65,6 +65,8 @@ type Config struct {
 	ComponentFormat string `yaml:"componentFormat,omitempty"`
 	KindFormat      string `yaml:"kindFormat,omitempty"`
 	ChangeFormat    string `yaml:"changeFormat"`
+	HeaderFormat    string `yaml:"headerFormat"`
+	FooterFormat    string `yaml:"footerFormat"`
 	// custom
 	Body          BodyConfig    `yaml:"body,omitempty"`
 	Components    []string      `yaml:"components,omitempty"`
