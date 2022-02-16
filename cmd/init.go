@@ -1,7 +1,6 @@
 package cmd
 
 import (
-	"os"
 	"path/filepath"
 
 	"github.com/spf13/afero"
@@ -83,22 +82,22 @@ func initPipeline(mkdir shared.MkdirAller, wf shared.WriteFiler, config core.Con
 		return err
 	}
 
-	err = mkdir(unreleasedPath, 0755)
+	err = mkdir(unreleasedPath, core.CreateDirMode)
 	if err != nil {
 		return err
 	}
 
-	err = wf(keepPath, []byte{}, os.ModePerm)
+	err = wf(keepPath, []byte{}, core.CreateFileMode)
 	if err != nil {
 		return err
 	}
 
-	err = wf(headerPath, []byte(defaultHeader), os.ModePerm)
+	err = wf(headerPath, []byte(defaultHeader), core.CreateFileMode)
 	if err != nil {
 		return err
 	}
 
-	err = wf(config.ChangelogPath, []byte(defaultChangelog), os.ModePerm)
+	err = wf(config.ChangelogPath, []byte(defaultChangelog), core.CreateFileMode)
 	if err != nil {
 		return err
 	}

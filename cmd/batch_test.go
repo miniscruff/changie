@@ -155,13 +155,13 @@ var _ = Describe("Batch", func() {
 			strings.Join(nameParts, "-"),
 		)
 
-		Expect(afs.WriteFile(filePath, bs, os.ModePerm)).To(Succeed())
+		Expect(afs.WriteFile(filePath, bs, core.CreateFileMode)).To(Succeed())
 	}
 
 	writeFutureFile := func(header, configPath string) {
 		headerData := []byte(header)
 		headerPath := filepath.Join(futurePath, configPath)
-		Expect(afs.WriteFile(headerPath, headerData, os.ModePerm)).To(Succeed())
+		Expect(afs.WriteFile(headerPath, headerData, core.CreateFileMode)).To(Succeed())
 	}
 
 	It("can batch version", func() {
@@ -327,7 +327,7 @@ second footer
 
 	It("returns error on bad config", func() {
 		configData := []byte("not a proper config")
-		err := afs.WriteFile(core.ConfigPaths[0], configData, os.ModePerm)
+		err := afs.WriteFile(core.ConfigPaths[0], configData, core.CreateFileMode)
 		Expect(err).To(BeNil())
 
 		err = batchPipeline(standard, afs, "v0.1.0")
@@ -342,7 +342,7 @@ second footer
 		}
 
 		aVer := []byte("not a valid change")
-		err := afs.WriteFile(filepath.Join(futurePath, "a.yaml"), aVer, os.ModePerm)
+		err := afs.WriteFile(filepath.Join(futurePath, "a.yaml"), aVer, core.CreateFileMode)
 		Expect(err).To(BeNil())
 
 		err = batchPipeline(mockPipeline, afs, "v0.1.1")
@@ -480,7 +480,7 @@ second footer
 		writeChangeFile(core.Change{Kind: "added", Body: "second", Time: orderedTimes[1]})
 
 		ignoredPath := filepath.Join(futurePath, "ignored.txt")
-		Expect(afs.WriteFile(ignoredPath, []byte("ignored"), os.ModePerm)).To(Succeed())
+		Expect(afs.WriteFile(ignoredPath, []byte("ignored"), core.CreateFileMode)).To(Succeed())
 
 		changes, err := standard.GetChanges(testConfig)
 		Expect(err).To(BeNil())
@@ -510,7 +510,7 @@ second footer
 		})
 
 		ignoredPath := filepath.Join(futurePath, "ignored.txt")
-		Expect(afs.WriteFile(ignoredPath, []byte("ignored"), os.ModePerm)).To(Succeed())
+		Expect(afs.WriteFile(ignoredPath, []byte("ignored"), core.CreateFileMode)).To(Succeed())
 
 		testConfig.Components = []string{"linker", "compiler"}
 		changes, err := standard.GetChanges(testConfig)
@@ -532,7 +532,7 @@ second footer
 
 	It("returns err if bad changes file", func() {
 		badYaml := []byte("not a valid yaml:::::file---___")
-		err := afs.WriteFile(filepath.Join(futurePath, "a.yaml"), badYaml, os.ModePerm)
+		err := afs.WriteFile(filepath.Join(futurePath, "a.yaml"), badYaml, core.CreateFileMode)
 		Expect(err).To(BeNil())
 
 		_, err = standard.GetChanges(testConfig)

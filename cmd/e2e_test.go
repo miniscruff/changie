@@ -7,6 +7,8 @@ import (
 	"path/filepath"
 	"time"
 
+	"github.com/miniscruff/changie/core"
+
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )
@@ -168,7 +170,7 @@ time: %s`, date)
 
 	testGen := func() {
 		docsPath := filepath.Join(tempDir, "website", "content", "cli")
-		Expect(os.MkdirAll(docsPath, os.ModePerm)).To(Succeed())
+		Expect(os.MkdirAll(docsPath, core.CreateDirMode)).To(Succeed())
 		rootCmd.SetArgs([]string{"gen"})
 		Expect(Execute("")).To(Succeed())
 

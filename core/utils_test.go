@@ -24,7 +24,7 @@ var _ = Describe("Utils", func() {
 		_, err = rootFile.WriteString("root")
 		Expect(err).To(BeNil())
 
-		err = afs.WriteFile("append.txt", []byte(" append"), os.ModePerm)
+		err = afs.WriteFile("append.txt", []byte(" append"), CreateFileMode)
 		Expect(err).To(BeNil())
 
 		err = AppendFile(afs.Open, rootFile, "append.txt")
