@@ -6,7 +6,9 @@ weight: 3
 summary: Customize how version and changelog files are generated.
 ---
 
-Changie utilizes [go template](https://golang.org/pkg/text/template/) for formatting version, kind, change and replacement lines.
+Changie utilizes [go template](https://golang.org/pkg/text/template/) and
+[sprig](https://masterminds.github.io/sprig/) functions for formatting version, kind,
+change and replacement lines.
 Additional fields can be added to change lines by adding [custom choices](/config/choices).
 You can also customize certain formatting options per kind using the [kind formatting](/config/kind-formatting).
 

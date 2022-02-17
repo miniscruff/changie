@@ -216,7 +216,10 @@ var _ = Describe("Batch", func() {
 	It("can batch complicated version", func() {
 		testConfig.HeaderFormat = "{{ bodies .Changes | len }} changes this release"
 		testConfig.ChangeFormat = "* {{.Body}} by {{.Custom.Author}}"
-		testConfig.FooterFormat = `{{ customs .Changes "Author" | uniq | len }} unique authors`
+		testConfig.FooterFormat = `### contributors
+{{- range (customs .Changes "Author" | uniq) }}
+* [{{.}}](https://github.com/{{.}})
+{{- end}}`
 		Expect(testConfig.Save(afs.WriteFile)).To(Succeed())
 
 		writeChangeFile(core.Change{
@@ -242,7 +245,9 @@ var _ = Describe("Batch", func() {
 ### added
 * D by miniscruff
 * E by otherAuthor
-2 unique authors`
+### contributors
+* [miniscruff](https://github.com/miniscruff)
+* [otherAuthor](https://github.com/otherAuthor)`
 
 		Expect(newVerPath).To(HaveContents(afs, verContents))
 

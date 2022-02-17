@@ -62,11 +62,11 @@ func funcMap() map[string]interface{} {
 	return funcs
 }
 
-func countString(item string, items []string) (int, error) {
+func countString(value string, items []string) (int, error) {
 	count := 0
 
 	for _, i := range items {
-		if i == item {
+		if i == value {
 			count++
 		}
 	}
