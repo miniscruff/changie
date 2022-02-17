@@ -555,8 +555,8 @@ second footer
 
 		changes, err := standard.GetChanges(testConfig)
 		Expect(err).To(BeNil())
-		Expect(changes[0].Body).To(Equal("first"))
-		Expect(changes[1].Body).To(Equal("second"))
+		Expect(changes[0].Body).To(Equal("second"))
+		Expect(changes[1].Body).To(Equal("first"))
 		Expect(changes[2].Body).To(Equal("third"))
 	})
 
@@ -586,8 +586,8 @@ second footer
 		testConfig.Components = []string{"linker", "compiler"}
 		changes, err := standard.GetChanges(testConfig)
 		Expect(err).To(BeNil())
-		Expect(changes[0].Body).To(Equal("B"))
-		Expect(changes[1].Body).To(Equal("C"))
+		Expect(changes[0].Body).To(Equal("C"))
+		Expect(changes[1].Body).To(Equal("B"))
 		Expect(changes[2].Body).To(Equal("A"))
 	})
 

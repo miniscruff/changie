@@ -72,8 +72,8 @@ func (s *ChangesConfigSorter) Less(i, j int) bool {
 		}
 	}
 
-	// Finish sort by newest first
-	return a.Time.After(b.Time)
+	// Finish sort by oldest first
+	return b.Time.After(a.Time)
 }
 
 // Change represents an atomic change to a project

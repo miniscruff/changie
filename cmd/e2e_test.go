@@ -122,8 +122,8 @@ time: %s`, date)
 		date := time.Now().Format("2006-01-02")
 		changeContents := fmt.Sprintf(`## v0.1.0 - %s
 ### Changed
-* newer
-* older`, date)
+* older
+* newer`, date)
 		changeFile, err := os.ReadFile(".changes/v0.1.0.md")
 		Expect(err).To(BeNil())
 		Expect(string(changeFile)).To(Equal(changeContents))
@@ -133,8 +133,8 @@ time: %s`, date)
 		date := time.Now().Format("2006-01-02")
 		batchContents := fmt.Sprintf(`## v0.1.0 - %s
 ### Changed
-* newer
-* older`, date)
+* older
+* newer`, date)
 		testEcho([]string{"batch", "v0.1.0", "--dry-run"}, batchContents)
 		Expect(batchCmd.Flags().Set("dry-run", "false")).To(Succeed())
 	}
@@ -148,8 +148,8 @@ time: %s`, date)
 
 ## v0.1.0 - %s
 ### Changed
-* newer
-* older`, defaultHeader, date)
+* older
+* newer`, defaultHeader, date)
 		changeFile, err := os.ReadFile("CHANGELOG.md")
 		Expect(err).To(BeNil())
 		Expect(string(changeFile)).To(Equal(changeContents))
@@ -161,8 +161,8 @@ time: %s`, date)
 
 ## v0.1.0 - %s
 ### Changed
-* newer
-* older`, defaultHeader, date)
+* older
+* newer`, defaultHeader, date)
 
 		testEcho([]string{"merge", "--dry-run"}, changeContents)
 		Expect(mergeCmd.Flags().Set("dry-run", "false")).To(Succeed())
