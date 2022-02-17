@@ -49,6 +49,7 @@ All version header and footers, whether from file or by format string, include t
 for custom values.
 
 **Arguments**
+
 | Field | Type | Description |
 | --- | --- | --- |
 | **Time** | _time.Time_ | Current time |
