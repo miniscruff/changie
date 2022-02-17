@@ -1,5 +1,0 @@
-kind: Added
-body: Header and footer files can use go templates and sprig functions
-time: 2022-02-16T15:16:44.7003689-08:00
-custom:
-  Issue: "240"
