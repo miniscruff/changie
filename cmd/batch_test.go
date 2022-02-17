@@ -19,12 +19,22 @@ import (
 )
 
 type MockBatchPipeline struct {
-	MockGetChanges          func(config core.Config) ([]core.Change, error)
-	MockWriteUnreleasedFile func(writer io.Writer, config core.Config, relativePath string) error
-	MockWriteChanges        func(
+	MockGetChanges    func(config core.Config) ([]core.Change, error)
+	MockWriteTemplate func(
+		writer io.Writer,
+		template string,
+		pregap bool,
+		templateData interface{},
+	) error
+	MockWriteFile func(
 		writer io.Writer,
 		config core.Config,
-		templateCache *core.TemplateCache,
+		relativePath string,
+		templateData interface{},
+	) error
+	MockWriteChanges func(
+		writer io.Writer,
+		config core.Config,
 		changes []core.Change,
 	) error
 	MockDeleteUnreleased func(config core.Config, otherFiles ...string) error
@@ -39,29 +49,42 @@ func (m *MockBatchPipeline) GetChanges(config core.Config) ([]core.Change, error
 	return m.standard.GetChanges(config)
 }
 
-func (m *MockBatchPipeline) WriteUnreleasedFile(
+func (m *MockBatchPipeline) WriteTemplate(
+	writer io.Writer,
+	template string,
+	pregap bool,
+	templateData interface{},
+) error {
+	if m.MockWriteTemplate != nil {
+		return m.MockWriteTemplate(writer, template, pregap, templateData)
+	}
+
+	return m.standard.WriteTemplate(writer, template, pregap, templateData)
+}
+
+func (m *MockBatchPipeline) WriteFile(
 	writer io.Writer,
 	config core.Config,
 	relativePath string,
+	templateData interface{},
 ) error {
-	if m.MockWriteUnreleasedFile != nil {
-		return m.MockWriteUnreleasedFile(writer, config, relativePath)
+	if m.MockWriteFile != nil {
+		return m.MockWriteFile(writer, config, relativePath, templateData)
 	}
 
-	return m.standard.WriteUnreleasedFile(writer, config, relativePath)
+	return m.standard.WriteFile(writer, config, relativePath, templateData)
 }
 
 func (m *MockBatchPipeline) WriteChanges(
 	writer io.Writer,
 	config core.Config,
-	templateCache *core.TemplateCache,
 	changes []core.Change,
 ) error {
 	if m.MockWriteChanges != nil {
-		return m.MockWriteChanges(writer, config, templateCache, changes)
+		return m.MockWriteChanges(writer, config, changes)
 	}
 
-	return m.standard.WriteChanges(writer, config, templateCache, changes)
+	return m.standard.WriteChanges(writer, config, changes)
 }
 
 func (m *MockBatchPipeline) DeleteUnreleased(config core.Config, otherFiles ...string) error {
@@ -96,7 +119,7 @@ var _ = Describe("Batch", func() {
 	BeforeEach(func() {
 		fs = NewMockFS()
 		afs = afero.Afero{Fs: fs}
-		standard = &standardBatchPipeline{afs: afs}
+		standard = &standardBatchPipeline{afs: afs, templateCache: core.NewTemplateCache()}
 		mockPipeline = &MockBatchPipeline{standard: standard}
 		stdout = os.Stdout
 		mockError = errors.New("dummy mock error")
@@ -155,13 +178,13 @@ var _ = Describe("Batch", func() {
 			strings.Join(nameParts, "-"),
 		)
 
-		Expect(afs.WriteFile(filePath, bs, core.CreateFileMode)).To(Succeed())
+		Expect(afs.WriteFile(filePath, bs, os.ModePerm)).To(Succeed())
 	}
 
 	writeFutureFile := func(header, configPath string) {
 		headerData := []byte(header)
 		headerPath := filepath.Join(futurePath, configPath)
-		Expect(afs.WriteFile(headerPath, headerData, core.CreateFileMode)).To(Succeed())
+		Expect(afs.WriteFile(headerPath, headerData, os.ModePerm)).To(Succeed())
 	}
 
 	It("can batch version", func() {
@@ -190,25 +213,67 @@ var _ = Describe("Batch", func() {
 		Expect(len(infos)).To(Equal(0))
 	})
 
+	It("can batch complicated version", func() {
+		testConfig.HeaderFormat = "{{ bodies .Changes | len }} changes this release"
+		testConfig.ChangeFormat = "* {{.Body}} by {{.Custom.Author}}"
+		testConfig.FooterFormat = `### contributors
+{{- range (customs .Changes "Author" | uniq) }}
+* [{{.}}](https://github.com/{{.}})
+{{- end}}`
+		Expect(testConfig.Save(afs.WriteFile)).To(Succeed())
+
+		writeChangeFile(core.Change{
+			Kind: "added",
+			Body: "D",
+			Custom: map[string]string{
+				"Author": "miniscruff",
+			},
+		})
+		writeChangeFile(core.Change{
+			Kind: "added",
+			Body: "E",
+			Custom: map[string]string{
+				"Author": "otherAuthor",
+			},
+		})
+
+		err := batchPipeline(standard, afs, "v0.2.0")
+		Expect(err).To(BeNil())
+
+		verContents := `## v0.2.0
+2 changes this release
+### added
+* D by miniscruff
+* E by otherAuthor
+### contributors
+* [miniscruff](https://github.com/miniscruff)
+* [otherAuthor](https://github.com/otherAuthor)`
+
+		Expect(newVerPath).To(HaveContents(afs, verContents))
+
+		_, err = afs.ReadDir(futurePath)
+		Expect(err).To(BeNil())
+	})
+
 	It("can batch a dry run version", func() {
 		var builder strings.Builder
 		batchDryRunOut = &builder
 		batchDryRunFlag = true
 		Expect(testConfig.Save(afs.WriteFile)).To(Succeed())
 
-		writeChangeFile(core.Change{Kind: "added", Body: "A"})
-		writeChangeFile(core.Change{Kind: "added", Body: "B"})
-		writeChangeFile(core.Change{Kind: "removed", Body: "C"})
+		writeChangeFile(core.Change{Kind: "added", Body: "D"})
+		writeChangeFile(core.Change{Kind: "added", Body: "E"})
+		writeChangeFile(core.Change{Kind: "removed", Body: "F"})
 
 		err := batchPipeline(standard, afs, "v0.2.0")
 		Expect(err).To(BeNil())
 
 		verContents := `## v0.2.0
 ### added
-* A
-* B
+* D
+* E
 ### removed
-* C`
+* F`
 
 		Expect(builder.String()).To(Equal(verContents))
 
@@ -217,27 +282,7 @@ var _ = Describe("Batch", func() {
 		Expect(len(infos)).To(Equal(3))
 	})
 
-	It("can batch using a sprig template function", func() {
-		var builder strings.Builder
-		testConfig.VersionFormat = "{{ \"hello!\" | upper | repeat 5 }}"
-		batchDryRunOut = &builder
-		batchDryRunFlag = true
-		Expect(testConfig.Save(afs.WriteFile)).To(Succeed())
-
-		writeChangeFile(core.Change{Kind: "added", Body: "A"})
-
-		err := batchPipeline(standard, afs, "v0.2.0")
-		Expect(err).To(BeNil())
-
-		verContents := `HELLO!HELLO!HELLO!HELLO!HELLO!
-### added
-* A`
-
-		Expect(builder.String()).To(Equal(verContents))
-	})
-
 	It("can batch version keeping change files", func() {
-		// testBatchConfig.keepFragments = true
 		keepFragmentsFlag = true
 		Expect(testConfig.Save(afs.WriteFile)).To(Succeed())
 
@@ -253,11 +298,13 @@ var _ = Describe("Batch", func() {
 		Expect(len(infos)).To(Equal(3))
 	})
 
-	It("can batch version with header and footer files", func() {
+	It("can batch version with headers and footers", func() {
 		versionHeaderPathFlag = "h1.md"
 		testConfig.VersionHeaderPath = "h2.md"
 		versionFooterPathFlag = "f1.md"
 		testConfig.VersionFooterPath = "f2.md"
+		testConfig.HeaderFormat = "header format"
+		testConfig.FooterFormat = "footer format"
 		Expect(testConfig.Save(afs.WriteFile)).To(Succeed())
 
 		writeChangeFile(core.Change{Kind: "added", Body: "A"})
@@ -276,11 +323,13 @@ first header
 
 second header
 
+header format
 ### added
 * A
 * B
 ### removed
 * C
+footer format
 first footer
 
 second footer
@@ -327,7 +376,7 @@ second footer
 
 	It("returns error on bad config", func() {
 		configData := []byte("not a proper config")
-		err := afs.WriteFile(core.ConfigPaths[0], configData, core.CreateFileMode)
+		err := afs.WriteFile(core.ConfigPaths[0], configData, os.ModePerm)
 		Expect(err).To(BeNil())
 
 		err = batchPipeline(standard, afs, "v0.1.0")
@@ -342,7 +391,7 @@ second footer
 		}
 
 		aVer := []byte("not a valid change")
-		err := afs.WriteFile(filepath.Join(futurePath, "a.yaml"), aVer, core.CreateFileMode)
+		err := afs.WriteFile(filepath.Join(futurePath, "a.yaml"), aVer, os.ModePerm)
 		Expect(err).To(BeNil())
 
 		err = batchPipeline(mockPipeline, afs, "v0.1.1")
@@ -365,16 +414,16 @@ second footer
 		Expect(testConfig.Save(afs.WriteFile)).To(Succeed())
 		writeChangeFile(core.Change{Kind: "added", Body: "A"})
 
-		mockPipeline.MockWriteUnreleasedFile = func(
+		mockPipeline.MockWriteFile = func(
 			writer io.Writer,
 			config core.Config,
 			relativePath string,
+			templateData interface{},
 		) error {
-			fmt.Println(relativePath)
 			if strings.HasSuffix(relativePath, versionHeaderPathFlag) {
 				return mockError
 			}
-			return mockPipeline.standard.WriteUnreleasedFile(writer, config, relativePath)
+			return mockPipeline.standard.WriteFile(writer, config, relativePath, templateData)
 		}
 
 		err := batchPipeline(mockPipeline, afs, "v0.1.1")
@@ -387,15 +436,16 @@ second footer
 		Expect(testConfig.Save(afs.WriteFile)).To(Succeed())
 		writeChangeFile(core.Change{Kind: "added", Body: "A"})
 
-		mockPipeline.MockWriteUnreleasedFile = func(
+		mockPipeline.MockWriteFile = func(
 			writer io.Writer,
 			config core.Config,
 			relativePath string,
+			templateData interface{},
 		) error {
 			if strings.HasSuffix(relativePath, testConfig.VersionHeaderPath) {
 				return mockError
 			}
-			return mockPipeline.standard.WriteUnreleasedFile(writer, config, relativePath)
+			return mockPipeline.standard.WriteFile(writer, config, relativePath, templateData)
 		}
 
 		err := batchPipeline(mockPipeline, afs, "v0.1.1")
@@ -408,15 +458,16 @@ second footer
 		Expect(testConfig.Save(afs.WriteFile)).To(Succeed())
 		writeChangeFile(core.Change{Kind: "added", Body: "A"})
 
-		mockPipeline.MockWriteUnreleasedFile = func(
+		mockPipeline.MockWriteFile = func(
 			writer io.Writer,
 			config core.Config,
 			relativePath string,
+			templateData interface{},
 		) error {
 			if strings.HasSuffix(relativePath, versionFooterPathFlag) {
 				return mockError
 			}
-			return mockPipeline.standard.WriteUnreleasedFile(writer, config, relativePath)
+			return mockPipeline.standard.WriteFile(writer, config, relativePath, templateData)
 		}
 
 		err := batchPipeline(mockPipeline, afs, "v0.1.1")
@@ -429,19 +480,40 @@ second footer
 		Expect(testConfig.Save(afs.WriteFile)).To(Succeed())
 		writeChangeFile(core.Change{Kind: "added", Body: "A"})
 
-		mockPipeline.MockWriteUnreleasedFile = func(
+		mockPipeline.MockWriteFile = func(
 			writer io.Writer,
 			config core.Config,
 			relativePath string,
+			templateData interface{},
 		) error {
 			if strings.HasSuffix(relativePath, testConfig.VersionFooterPath) {
 				return mockError
 			}
-			return mockPipeline.standard.WriteUnreleasedFile(writer, config, relativePath)
+			return mockPipeline.standard.WriteFile(writer, config, relativePath, templateData)
 		}
 
 		err := batchPipeline(mockPipeline, afs, "v0.1.1")
 		Expect(err).To(Equal(mockError))
+	})
+
+	It("returns error on bad header format", func() {
+		testConfig.HeaderFormat = "bad format {{...{{"
+
+		Expect(testConfig.Save(afs.WriteFile)).To(Succeed())
+		writeChangeFile(core.Change{Kind: "added", Body: "A"})
+
+		err := batchPipeline(mockPipeline, afs, "v0.1.1")
+		Expect(err).NotTo(BeNil())
+	})
+
+	It("returns error on bad footer format", func() {
+		testConfig.FooterFormat = "bad format {{...{{"
+
+		Expect(testConfig.Save(afs.WriteFile)).To(Succeed())
+		writeChangeFile(core.Change{Kind: "added", Body: "A"})
+
+		err := batchPipeline(mockPipeline, afs, "v0.1.1")
+		Expect(err).NotTo(BeNil())
 	})
 
 	It("returns error on bad delete", func() {
@@ -464,7 +536,6 @@ second footer
 		mockPipeline.MockWriteChanges = func(
 			writer io.Writer,
 			cfg core.Config,
-			tc *core.TemplateCache,
 			changes []core.Change,
 		) error {
 			return mockError
@@ -480,7 +551,7 @@ second footer
 		writeChangeFile(core.Change{Kind: "added", Body: "second", Time: orderedTimes[1]})
 
 		ignoredPath := filepath.Join(futurePath, "ignored.txt")
-		Expect(afs.WriteFile(ignoredPath, []byte("ignored"), core.CreateFileMode)).To(Succeed())
+		Expect(afs.WriteFile(ignoredPath, []byte("ignored"), os.ModePerm)).To(Succeed())
 
 		changes, err := standard.GetChanges(testConfig)
 		Expect(err).To(BeNil())
@@ -510,7 +581,7 @@ second footer
 		})
 
 		ignoredPath := filepath.Join(futurePath, "ignored.txt")
-		Expect(afs.WriteFile(ignoredPath, []byte("ignored"), core.CreateFileMode)).To(Succeed())
+		Expect(afs.WriteFile(ignoredPath, []byte("ignored"), os.ModePerm)).To(Succeed())
 
 		testConfig.Components = []string{"linker", "compiler"}
 		changes, err := standard.GetChanges(testConfig)
@@ -532,7 +603,7 @@ second footer
 
 	It("returns err if bad changes file", func() {
 		badYaml := []byte("not a valid yaml:::::file---___")
-		err := afs.WriteFile(filepath.Join(futurePath, "a.yaml"), badYaml, core.CreateFileMode)
+		err := afs.WriteFile(filepath.Join(futurePath, "a.yaml"), badYaml, os.ModePerm)
 		Expect(err).To(BeNil())
 
 		_, err = standard.GetChanges(testConfig)
@@ -545,7 +616,7 @@ second footer
 		err := afs.WriteFile(filepath.Join(futurePath, "a.md"), text, os.ModePerm)
 		Expect(err).To(BeNil())
 
-		err = standard.WriteUnreleasedFile(&builder, testConfig, "a.md")
+		err = standard.WriteFile(&builder, testConfig, "a.md", nil)
 		Expect(builder.String()).To(Equal("\nsome text"))
 		Expect(err).To(BeNil())
 	})
@@ -556,7 +627,7 @@ second footer
 		err := afs.WriteFile(filepath.Join(futurePath, "a.md"), text, os.ModePerm)
 		Expect(err).To(BeNil())
 
-		err = standard.WriteUnreleasedFile(&builder, testConfig, "")
+		err = standard.WriteFile(&builder, testConfig, "", nil)
 		Expect(builder.String()).To(Equal(""))
 		Expect(err).To(BeNil())
 	})
@@ -572,7 +643,7 @@ second footer
 			return badFile, mockError
 		}
 
-		err := standard.WriteUnreleasedFile(&builder, testConfig, "a.md")
+		err := standard.WriteFile(&builder, testConfig, "a.md", nil)
 		Expect(builder.String()).To(Equal(""))
 		Expect(err).To(Equal(mockError))
 	})
@@ -587,14 +658,14 @@ second footer
 		err := afs.WriteFile(filepath.Join(futurePath, "a.md"), text, os.ModePerm)
 		Expect(err).To(BeNil())
 
-		err = standard.WriteUnreleasedFile(badFile, testConfig, "a.md")
+		err = standard.WriteFile(badFile, testConfig, "a.md", nil)
 		Expect(err).To(Equal(mockError))
 	})
 
 	It("skips writing if files does not exist", func() {
 		var builder strings.Builder
 
-		err := standard.WriteUnreleasedFile(&builder, testConfig, "a.md")
+		err := standard.WriteFile(&builder, testConfig, "a.md", nil)
 		Expect(builder.String()).To(Equal(""))
 		Expect(err).To(BeNil())
 	})
@@ -609,7 +680,7 @@ second footer
 			{Kind: "removed", Body: "z"},
 		}
 
-		err := standard.WriteChanges(&writer, testConfig, core.NewTemplateCache(), changes)
+		err := standard.WriteChanges(&writer, testConfig, changes)
 		Expect(err).To(BeNil())
 
 		expected := `
@@ -633,7 +704,7 @@ second footer
 
 		testConfig.KindFormat = ""
 		testConfig.ChangeFormat = "* {{.Body}} ({{.Kind}})"
-		err := standard.WriteChanges(&writer, testConfig, core.NewTemplateCache(), changes)
+		err := standard.WriteChanges(&writer, testConfig, changes)
 		Expect(err).To(BeNil())
 
 		expected := `
@@ -657,7 +728,7 @@ second footer
 		testConfig.ComponentFormat = "## {{.Component}}"
 		testConfig.KindFormat = "### {{.Kind}}"
 		testConfig.ChangeFormat = "* {{.Body}}"
-		err := standard.WriteChanges(&writer, testConfig, core.NewTemplateCache(), changes)
+		err := standard.WriteChanges(&writer, testConfig, changes)
 		Expect(err).To(BeNil())
 
 		expected := `
@@ -680,7 +751,7 @@ second footer
 			{Body: "x", Kind: "added"},
 		}
 
-		err := standard.WriteChanges(&writer, testConfig, core.NewTemplateCache(), changes)
+		err := standard.WriteChanges(&writer, testConfig, changes)
 		Expect(err).NotTo(BeNil())
 	})
 
@@ -691,7 +762,7 @@ second footer
 			{Component: "x", Kind: "added"},
 		}
 
-		err := standard.WriteChanges(&writer, testConfig, core.NewTemplateCache(), changes)
+		err := standard.WriteChanges(&writer, testConfig, changes)
 		Expect(err).NotTo(BeNil())
 	})
 
@@ -702,7 +773,7 @@ second footer
 			{Body: "x", Kind: "added"},
 		}
 
-		err := standard.WriteChanges(&writer, testConfig, core.NewTemplateCache(), changes)
+		err := standard.WriteChanges(&writer, testConfig, changes)
 		Expect(err).NotTo(BeNil())
 	})
 

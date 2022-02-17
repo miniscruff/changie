@@ -1,0 +1,5 @@
+kind: Added
+body: Template functions for working with changes for header and footer files or templates
+time: 2022-02-16T17:21:31.5012032-08:00
+custom:
+  Issue: "240"
