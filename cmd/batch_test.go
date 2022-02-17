@@ -213,50 +213,68 @@ var _ = Describe("Batch", func() {
 		Expect(len(infos)).To(Equal(0))
 	})
 
+	It("can batch complicated version", func() {
+		testConfig.HeaderFormat = "{{ bodies .Changes | len }} changes this release"
+		testConfig.ChangeFormat = "* {{.Body}} by {{.Custom.Author}}"
+		testConfig.FooterFormat = `{{ customs .Changes "Author" | uniq | len }} unique authors`
+		Expect(testConfig.Save(afs.WriteFile)).To(Succeed())
+
+		writeChangeFile(core.Change{
+			Kind: "added",
+			Body: "D",
+			Custom: map[string]string{
+				"Author": "miniscruff",
+			},
+		})
+		writeChangeFile(core.Change{
+			Kind: "added",
+			Body: "E",
+			Custom: map[string]string{
+				"Author": "otherAuthor",
+			},
+		})
+
+		err := batchPipeline(standard, afs, "v0.2.0")
+		Expect(err).To(BeNil())
+
+		verContents := `## v0.2.0
+2 changes this release
+### added
+* D by miniscruff
+* E by otherAuthor
+2 unique authors`
+
+		Expect(newVerPath).To(HaveContents(afs, verContents))
+
+		_, err = afs.ReadDir(futurePath)
+		Expect(err).To(BeNil())
+	})
+
 	It("can batch a dry run version", func() {
 		var builder strings.Builder
 		batchDryRunOut = &builder
 		batchDryRunFlag = true
 		Expect(testConfig.Save(afs.WriteFile)).To(Succeed())
 
-		writeChangeFile(core.Change{Kind: "added", Body: "A"})
-		writeChangeFile(core.Change{Kind: "added", Body: "B"})
-		writeChangeFile(core.Change{Kind: "removed", Body: "C"})
+		writeChangeFile(core.Change{Kind: "added", Body: "D"})
+		writeChangeFile(core.Change{Kind: "added", Body: "E"})
+		writeChangeFile(core.Change{Kind: "removed", Body: "F"})
 
 		err := batchPipeline(standard, afs, "v0.2.0")
 		Expect(err).To(BeNil())
 
 		verContents := `## v0.2.0
 ### added
-* A
-* B
+* D
+* E
 ### removed
-* C`
+* F`
 
 		Expect(builder.String()).To(Equal(verContents))
 
 		infos, err := afs.ReadDir(futurePath)
 		Expect(err).To(BeNil())
 		Expect(len(infos)).To(Equal(3))
-	})
-
-	It("can batch using a sprig template function", func() {
-		var builder strings.Builder
-		testConfig.VersionFormat = "{{ \"hello!\" | upper | repeat 5 }}"
-		batchDryRunOut = &builder
-		batchDryRunFlag = true
-		Expect(testConfig.Save(afs.WriteFile)).To(Succeed())
-
-		writeChangeFile(core.Change{Kind: "added", Body: "A"})
-
-		err := batchPipeline(standard, afs, "v0.2.0")
-		Expect(err).To(BeNil())
-
-		verContents := `HELLO!HELLO!HELLO!HELLO!HELLO!
-### added
-* A`
-
-		Expect(builder.String()).To(Equal(verContents))
 	})
 
 	It("can batch version keeping change files", func() {
@@ -397,7 +415,6 @@ second footer
 			relativePath string,
 			templateData interface{},
 		) error {
-			fmt.Println(relativePath)
 			if strings.HasSuffix(relativePath, versionHeaderPathFlag) {
 				return mockError
 			}

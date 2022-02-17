@@ -12,13 +12,6 @@ import (
 	"github.com/miniscruff/changie/core"
 )
 
-type batchData struct {
-	Time            time.Time
-	Version         string
-	PreviousVersion string
-	Changes         []core.Change
-}
-
 type BatchPipeliner interface {
 	// afs afero.Afero should be part of struct
 	GetChanges(config core.Config) ([]core.Change, error)
@@ -75,14 +68,17 @@ func init() {
 		"Path to version header file in unreleased directory",
 	)
 	batchCmd.Flags().StringVar(
+		&oldHeaderPathFlag,
+		"headerPath", "",
+		"Path to version header file in unreleased directory",
+	)
+
+	_ = batchCmd.Flags().MarkDeprecated("headerPath", "use --header-path instead")
+
+	batchCmd.Flags().StringVar(
 		&versionFooterPathFlag,
 		"footer-path", "",
 		"Path to version footer file in unreleased directory",
-	)
-	batchCmd.Flags().StringVar(
-		&oldHeaderPathFlag,
-		"headerPath", "",
-		"Deprecated use --header-path instead",
 	)
 	batchCmd.Flags().BoolVarP(
 		&keepFragmentsFlag,
@@ -118,7 +114,7 @@ func getBatchData(
 	afs afero.Afero,
 	version string,
 	batcher BatchPipeliner,
-) (*batchData, error) {
+) (*core.BatchData, error) {
 	previousVersion, err := core.GetLatestVersion(afs.ReadDir, config)
 	if err != nil {
 		return nil, err
@@ -134,7 +130,7 @@ func getBatchData(
 		return nil, err
 	}
 
-	return &batchData{
+	return &core.BatchData{
 		Time:            time.Now(),
 		Version:         currentVersion.Original(),
 		PreviousVersion: previousVersion.Original(),
@@ -311,7 +307,7 @@ func (b *standardBatchPipeline) WriteChanges(
 			lastKind = ""
 
 			err := b.WriteTemplate(writer, config.ComponentFormat, true, map[string]string{
-				"Component": change.Component,
+				"Component": lastComponent,
 			})
 			if err != nil {
 				return err
@@ -323,7 +319,7 @@ func (b *standardBatchPipeline) WriteChanges(
 			kindHeader := config.KindHeader(change.Kind)
 
 			err := b.WriteTemplate(writer, kindHeader, true, map[string]string{
-				"Kind": change.Kind,
+				"Kind": lastKind,
 			})
 			if err != nil {
 				return err
