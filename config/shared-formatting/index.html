@@ -92,6 +92,9 @@
 <li>
 <a href=https://changie.dev/config/directories/>Directories and Files</a>
 </li>
+<li>
+<a href=https://changie.dev/config/header-footer/>Version header and footers</a>
+</li>
 <li class=active>
 <a href=https://changie.dev/config/shared-formatting/>Shared Formatting</a>
 </li>
@@ -111,7 +114,9 @@
 <div class="col-12 col-md-9">
 <h1 class=title>Shared Formatting</h1>
 <div class="content anchor-link-enabled">
-<p>Changie utilizes <a href=https://golang.org/pkg/text/template/>go template</a> for formatting version, kind, change and replacement lines.
+<p>Changie utilizes <a href=https://golang.org/pkg/text/template/>go template</a> and
+<a href=https://masterminds.github.io/sprig/>sprig</a> functions for formatting version, kind,
+change and replacement lines.
 Additional fields can be added to change lines by adding <a href=/config/choices>custom choices</a>.
 You can also customize certain formatting options per kind using the <a href=/config/kind-formatting>kind formatting</a>.</p>
 <blockquote>
@@ -122,7 +127,7 @@ you added any change files in order to use the custom values in your format.</p>
 <ol>
 <li>Component, if enabled, sorted by index in components config</li>
 <li>Kind, if enabled, sorted by index in kinds config</li>
-<li>Time sorted newest first</li>
+<li>Time sorted oldest first</li>
 </ol>
 <p>Example with components:</p>
 <div class=highlight><pre tabindex=0 class=chroma><code class=language-yaml data-lang=yaml><span class=nt>versionFormat</span><span class=p>:</span><span class=w> </span><span class=s1>&#39;## {{.Version}} - {{.Time.Format &#34;2006-01-02&#34;}}&#39;</span><span class=w>
@@ -178,6 +183,11 @@ See <a href=/config/kind-formatting>kind formatting</a> for how to further custo
 <td><strong>Version</strong></td>
 <td><code>string</code></td>
 <td>Semantic version of the changes</td>
+</tr>
+<tr>
+<td><strong>PreviousVersion</strong></td>
+<td><code>string</code></td>
+<td>Semantic version of the previous release</td>
 </tr>
 <tr>
 <td><strong>Time</strong></td>

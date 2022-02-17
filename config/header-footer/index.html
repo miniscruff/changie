@@ -1,0 +1,259 @@
+<!doctype html><html lang=en>
+<head>
+<meta charset=utf-8>
+<meta http-equiv=x-ua-compatible content="ie=edge">
+<title>Version header and footers - Changie</title>
+<meta name=viewport content="width=device-width,initial-scale=1">
+<link rel=icon href=https://changie.dev/favicon.png>
+<link rel=stylesheet href=/css/style.min.3c1a2026df4402d20378fbbf40615e9865c7425f35dbe4c2d607f2a200506ed0.css>
+</head>
+<body class="page page-default-single">
+<div id=main-menu-mobile class=main-menu-mobile>
+<ul>
+<li class=menu-item-guide>
+<a href=/guide/>
+<span>Guide</span>
+</a>
+</li>
+<li class=menu-item-integrations>
+<a href=/integrations/>
+<span>Integrations</span>
+</a>
+</li>
+<li class=menu-item-cli>
+<a href=/cli/>
+<span>CLI</span>
+</a>
+</li>
+<li class=menu-item-config>
+<a href=/config/>
+<span>Config</span>
+</a>
+</li>
+<li class=menu-item-github>
+<a href=https://github.com/miniscruff/changie>
+<span>Github</span>
+</a>
+</li>
+</ul>
+</div>
+<div class=wrapper>
+<div class=header>
+<div class=container>
+<div class=logo>
+<a href=https://changie.dev/><img alt=Logo src=/images/logo.svg></a>
+</div>
+<div class=logo-mobile>
+<a href=https://changie.dev/><img alt=Logo src=/images/logo.svg></a>
+</div>
+<div id=main-menu class=main-menu>
+<ul>
+<li class=menu-item-guide>
+<a href=/guide/>
+<span>Guide</span>
+</a>
+</li>
+<li class=menu-item-integrations>
+<a href=/integrations/>
+<span>Integrations</span>
+</a>
+</li>
+<li class=menu-item-cli>
+<a href=/cli/>
+<span>CLI</span>
+</a>
+</li>
+<li class=menu-item-config>
+<a href=/config/>
+<span>Config</span>
+</a>
+</li>
+<li class=menu-item-github>
+<a href=https://github.com/miniscruff/changie>
+<span>Github</span>
+</a>
+</li>
+</ul>
+</div>
+<button id=toggle-main-menu-mobile class="hamburger hamburger--slider" type=button>
+<span class=hamburger-box>
+<span class=hamburger-inner></span>
+</span>
+</button>
+</div>
+</div>
+<div class="container pt-2 pt-md-6 pb-3 pb-md-6">
+<div class=row>
+<div class="col-12 col-md-3 mb-3">
+<div class=sidebar>
+<div class=docs-menu>
+<h4>Config</h4>
+<ul>
+<li>
+<a href=https://changie.dev/config/directories/>Directories and Files</a>
+</li>
+<li class=active>
+<a href=https://changie.dev/config/header-footer/>Version header and footers</a>
+</li>
+<li>
+<a href=https://changie.dev/config/shared-formatting/>Shared Formatting</a>
+</li>
+<li>
+<a href=https://changie.dev/config/kind-formatting/>Kind Formatting</a>
+</li>
+<li>
+<a href=https://changie.dev/config/choices/>Choices</a>
+</li>
+<li>
+<a href=https://changie.dev/config/replacements/>Replacements</a>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="col-12 col-md-9">
+<h1 class=title>Version header and footers</h1>
+<div class="content anchor-link-enabled">
+<p>Changie utilizes <a href=https://golang.org/pkg/text/template/>go template</a> and
+<a href=https://masterminds.github.io/sprig/>sprig</a> functions for formatting.
+In addition to that, a few <a href=#template-functions>template functions</a> are available when working with changes.</p>
+<p>When batching changes into a version, the headers and footers are placed as such:</p>
+<ol>
+<li>Header file</li>
+<li>Header template</li>
+<li>All changes</li>
+<li>Footer template</li>
+<li>Footer file</li>
+</ol>
+<p>All elements are optional and will be added together if all are provided.</p>
+<h2 id=configuration>Configuration</h2>
+<h3 id=versionheaderpath>versionHeaderPath</h3>
+<p>type: <code>string</code> | default: <code>""</code> | optional</p>
+<p>Filepath for your version header file relative to <code>unreleasedDir</code>.
+It is also possible to use the <code>--header-path</code> parameter when using the <a href=/cli/changie_batch>batch command</a>.</p>
+<h3 id=versionfooterpath>versionFooterPath</h3>
+<p>type: <code>string</code> | default: <code>""</code> | optional</p>
+<p>Filepath for your version header file relative to <code>unreleasedDir</code>.
+It is also possible to use the <code>--footer-path</code> parameter when using the <a href=/cli/changie_batch>batch command</a>.</p>
+<h3 id=versionheaderformat>versionHeaderFormat</h3>
+<p>type: <code>string</code> | default: <code>""</code> | optional</p>
+<p>Format string to use directly in the version header.</p>
+<h3 id=versionfooterformat>versionFooterFormat</h3>
+<p>type: <code>string</code> | default: <code>""</code> | optional</p>
+<p>Format string to use directly in the version footer.</p>
+<h2 id=format-data>Format Data</h2>
+<p>All version header and footers, whether from file or by format string, include the same data object you can use
+for custom values.</p>
+<p><strong>Arguments</strong></p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Time</strong></td>
+<td><em>time.Time</em></td>
+<td>Current time</td>
+</tr>
+<tr>
+<td><strong>Version</strong></td>
+<td><em>string</em></td>
+<td>Version releasing now</td>
+</tr>
+<tr>
+<td><strong>PreviousVersion</strong></td>
+<td><em>string</em></td>
+<td>Previously released version</td>
+</tr>
+<tr>
+<td><strong>Changes</strong></td>
+<td><em>[]Change</em></td>
+<td><a href=/config/shared-formatting#changeformat>Change Type</a></td>
+</tr>
+</tbody>
+</table>
+<h2 id=template-functions>Template Functions</h2>
+<p>Below are all the custom template functions available for headers and footers.</p>
+<p>For functions that return a slice you can use the <a href=https://pkg.go.dev/text/template#hdr-Actions>range</a>
+action to loop through the values.</p>
+<h3 id=count>count</h3>
+<p>returns: <code>int</code> | requires: value and items</p>
+<p>Get the number of occurances of value in items.
+Value is a <code>string</code>, items is a <code>[]string</code>.
+Can be used in a few functions below.</p>
+<p>Example: <code>Owner made {{customs .Changes "Author" | count "owner"}} changes</code></p>
+<h3 id=components>components</h3>
+<p>returns: <code>[]string</code> | requires: changes</p>
+<p>Get all the components for our changes.</p>
+<p>Example: <code>{{components .Changes | uniq | len}} components updated</code></p>
+<h3 id=kinds>kinds</h3>
+<p>returns: <code>[]string</code> | requires: changes</p>
+<p>Get all the kinds for our changes.</p>
+<p>Example: <code>{{kinds .Changes | count "Fixed"}} fixed issues this release</code></p>
+<h3 id=bodies>bodies</h3>
+<p>returns: <code>[]string</code> | requires: changes</p>
+<p>Get all the bodies for our changes.</p>
+<p>Example: <code>newest change {{bodies .Changes | first}}</code></p>
+<h3 id=times>times</h3>
+<p>returns: <code>[]time.Time</code> | requires: changes</p>
+<p>Get all the timestamps for the changes.</p>
+<p>Example: <code>oldest change {{times .Changes | last}}</code></p>
+<h3 id=customs>customs</h3>
+<p>returns: <code>[]string</code> | requires: changes and key</p>
+<p>Get all values with a key in the changes.
+Will return an error if that key is missing from any change.</p>
+<p>Example: <code>{{range (customs .Changes "Issue")}}* {{.}}{{end}}</code></p>
+<h2 id=examples>Examples</h2>
+<h3 id=contributors-footer>Contributors Footer</h3>
+<p>Display all unique contributors from a custom choice.</p>
+<div class=highlight><pre tabindex=0 class=chroma><code class=language-yaml data-lang=yaml><span class=c># config yaml</span><span class=w>
+</span><span class=w></span><span class=nt>custom</span><span class=p>:</span><span class=w>
+</span><span class=w></span>- <span class=nt>key</span><span class=p>:</span><span class=w> </span><span class=l>Author</span><span class=w>
+</span><span class=w>  </span><span class=nt>type</span><span class=p>:</span><span class=w> </span><span class=l>string</span><span class=w>
+</span><span class=w>  </span><span class=nt>minLength</span><span class=p>:</span><span class=w> </span><span class=m>3</span><span class=w>
+</span><span class=w></span><span class=nt>versionFooterFormat</span><span class=p>:</span><span class=w> </span><span class=p>|</span><span class=sd>
+</span><span class=sd>  ### Contributors
+</span><span class=sd>  {{- range (customs .Changes &#34;Author&#34; | uniq) }}
+</span><span class=sd>  * [{{.}}](https://github.com/{{.}})
+</span><span class=sd>  {{- end}}`</span><span class=w>  
+</span></code></pre></div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<footer class="mx-auto text-center border-top">
+<div class=pt-1>
+<span pr-1>
+Help make the documentation better by
+</span>
+<span pr-1>
+<a href=https://github.com/miniscruff/changie/edit/main/website/content/config/header-footer/index.md>
+editing this page
+</a>
+</span>
+<span pr-1> or by </span>
+<span pr-1>
+<a href="https://github.com/miniscruff/changie/issues/new?title=Documentation+issue+in+config%2Fheader-footer%2Findex.md">
+reporting an issue.
+</a>
+</span>
+</div>
+<div class=p-1>
+<span pr-1>
+<a href=https://github.com/zerostaticthemes/hugo-whisper-theme>Base Theme</a>
+</span>
+<span pr-1> by </span>
+<span pr-1>
+<a href=https://www.zerostatic.io>zerostatic</a>
+</span>
+</div>
+</footer>
+<script type=text/javascript src=/js/scripts.min.eaf147370baecdd07c022597db631f99cab1c9cd6479de586f30327a568d6a0f.js></script>
+</body>
+</html>

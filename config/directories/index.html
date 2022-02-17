@@ -93,6 +93,9 @@
 <a href=https://changie.dev/config/directories/>Directories and Files</a>
 </li>
 <li>
+<a href=https://changie.dev/config/header-footer/>Version header and footers</a>
+</li>
+<li>
 <a href=https://changie.dev/config/shared-formatting/>Shared Formatting</a>
 </li>
 <li>
@@ -133,16 +136,6 @@ Relative to <code>changesDir</code>.</p>
 A default header is created when initializing that follows &ldquo;Keep a Changelog&rdquo;.</p>
 <p>Filepath for your changelog header file.
 Relative to <code>changesDir</code>.</p>
-<h3 id=versionheaderpath>versionHeaderPath</h3>
-<p>type: <code>string</code> | default: <code>""</code> | optional</p>
-<p>When batching change fragments into a single version file you can include a version header
-paragraph by creating a file at the path specified.
-This file must be placed in your unreleased directory and should not be a <code>.yaml</code> file.
-This is empty by default and is considered optional and will be skipped if the file is not found.</p>
-<p>Filepath for your version header file.
-Relative to <code>unreleasedDir</code>.
-It is also possible to use the <code>--headerPath</code> parameter when using the <code>batch</code> command.
-CLI parameter has priority.</p>
 <h3 id=changelogpath>changelogPath</h3>
 <p>type: <code>string</code> | default: <code>""</code> | required</p>
 <p>Filepath for the generated changelog file.
