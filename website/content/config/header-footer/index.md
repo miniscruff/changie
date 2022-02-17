@@ -3,12 +3,12 @@ title: "Version header and footers"
 date: 2021-01-31T14:13:35-08:00
 draft: false
 weight: 2
-summary: Headers and footers to version change files
+summary: Headers and footers to version change files.
 ---
 
 Changie utilizes [go template](https://golang.org/pkg/text/template/) and
 [sprig](https://masterminds.github.io/sprig/) functions for formatting.
-In addition to that a few [template functions](#template-functions) are available when working with changes.
+In addition to that, a few [template functions](#template-functions) are available when working with changes.
 
 When batching changes into a version, the headers and footers are placed as such:
 
@@ -55,7 +55,7 @@ for custom values.
 | **Time** | _time.Time_ | Current time |
 | **Version** | _string_ | Version releasing now |
 | **PreviousVersion** | _string_ | Previously released version |
-| **Changes** | _[]Change_ | [change format](/config/shared-formatting#changeformat) |
+| **Changes** | _[]Change_ | [Change Type](/config/shared-formatting#changeformat) |
 
 ## Template Functions
 Below are all the custom template functions available for headers and footers.
@@ -120,7 +120,7 @@ custom:
   type: string
   minLength: 3
 versionFooterFormat: |
-  ### Components
+  ### Contributors
   {{- range (customs .Changes "Author" | uniq) }}
   * [{{.}}](https://github.com/{{.}})
   {{- end}}`
