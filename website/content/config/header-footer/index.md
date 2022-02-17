@@ -8,9 +8,10 @@ summary: Headers and footers to version change files
 
 Changie utilizes [go template](https://golang.org/pkg/text/template/) and
 [sprig](https://masterminds.github.io/sprig/) functions for formatting.
-In addition to that a few template functions are available when working with changes.
+In addition to that a few [template functions](#template-functions) are available when working with changes.
 
 When batching changes into a version, the headers and footers are placed as such:
+
 1. Header file
 1. Header template
 1. All changes
@@ -24,28 +25,36 @@ All elements are optional and will be added together if all are provided.
 ### versionHeaderPath
 type: `string` | default: `""` | optional
 
-When batching change fragments into a single version file you can include a version header
-paragraph by creating a file at the path specified.
-This file must be placed in your unreleased directory and must not be a `.yaml` file.
-This is empty by default and is considered optional and will be skipped if the file is not found.
-
-Filepath for your version header file.
-Relative to `unreleasedDir`.
+Filepath for your version header file relative to `unreleasedDir`.
 It is also possible to use the `--header-path` parameter when using the [batch command](/cli/changie_batch).
-It is possible to use both a CLI parameter and config file.
 
 ### versionFooterPath
 type: `string` | default: `""` | optional
 
-When batching change fragments into a single version file you can include a version footer
-paragraph by creating a file at the path specified.
-This file must be placed in your unreleased directory and must not be a `.yaml` file.
-This is empty by default and is considered optional and will be skipped if the file is not found.
-
-Filepath for your version header file.
-Relative to `unreleasedDir`.
+Filepath for your version header file relative to `unreleasedDir`.
 It is also possible to use the `--footer-path` parameter when using the [batch command](/cli/changie_batch).
-It is possible to use both a CLI parameter and config file.
+
+### versionHeaderFormat
+type: `string` | default: `""` | optional
+
+Format string to use directly in the version header.
+
+### versionFooterFormat
+type: `string` | default: `""` | optional
+
+Format string to use directly in the version footer.
+
+## Format Data
+All version header and footers, whether from file or by format string, include the same data object you can use
+for custom values.
+
+**Arguments**
+| Field | Type | Description |
+| --- | --- | --- |
+| **Time** | _time.Time_ | Current time |
+| **Version** | _string_ | Version releasing now |
+| **PreviousVersion** | _string_ | Previously released version |
+| **Changes** | _[]Change_ | [change format](/config/shared-formatting#changeformat) |
 
 ## Template Functions
 Below are all the custom template functions available for headers and footers.
