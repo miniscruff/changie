@@ -18,7 +18,7 @@ You can also customize certain formatting options per kind using the [kind forma
 When batching changes into a version, changes are sorted by:
 1. Component, if enabled, sorted by index in components config
 1. Kind, if enabled, sorted by index in kinds config
-1. Time sorted newest first
+1. Time sorted oldest first
 
 Example with components:
 
