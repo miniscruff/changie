@@ -1,5 +1,5 @@
 kind: Added
-body: Header and footer config options for batch command
+body: Header and footer templates config options for batch command
 time: 2022-02-16T15:15:11.5629468-08:00
 custom:
   Issue: "230"
