@@ -135,10 +135,10 @@ It is also possible to use the <code>--header-path</code> parameter when using t
 <p>type: <code>string</code> | default: <code>""</code> | optional</p>
 <p>Filepath for your version header file relative to <code>unreleasedDir</code>.
 It is also possible to use the <code>--footer-path</code> parameter when using the <a href=/cli/changie_batch>batch command</a>.</p>
-<h3 id=versionheaderformat>versionHeaderFormat</h3>
+<h3 id=headerformat>headerFormat</h3>
 <p>type: <code>string</code> | default: <code>""</code> | optional</p>
 <p>Format string to use directly in the version header.</p>
-<h3 id=versionfooterformat>versionFooterFormat</h3>
+<h3 id=footerformat>footerFormat</h3>
 <p>type: <code>string</code> | default: <code>""</code> | optional</p>
 <p>Format string to use directly in the version footer.</p>
 <h2 id=format-data>Format Data</h2>
@@ -215,7 +215,7 @@ Will return an error if that key is missing from any change.</p>
 </span><span class=w></span>- <span class=nt>key</span><span class=p>:</span><span class=w> </span><span class=l>Author</span><span class=w>
 </span><span class=w>  </span><span class=nt>type</span><span class=p>:</span><span class=w> </span><span class=l>string</span><span class=w>
 </span><span class=w>  </span><span class=nt>minLength</span><span class=p>:</span><span class=w> </span><span class=m>3</span><span class=w>
-</span><span class=w></span><span class=nt>versionFooterFormat</span><span class=p>:</span><span class=w> </span><span class=p>|</span><span class=sd>
+</span><span class=w></span><span class=nt>footerFormat</span><span class=p>:</span><span class=w> </span><span class=p>|</span><span class=sd>
 </span><span class=sd>  ### Contributors
 </span><span class=sd>  {{- range (customs .Changes &#34;Author&#34; | uniq) }}
 </span><span class=sd>  * [{{.}}](https://github.com/{{.}})
