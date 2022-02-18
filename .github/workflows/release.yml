@@ -3,7 +3,7 @@ name: release
 on:
   push:
     branches: [ main ]
-    # paths: [ CHANGELOG.md ]
+    paths: [ CHANGELOG.md ]
 
 jobs:
   release:
@@ -30,13 +30,13 @@ jobs:
         echo GORELEASER_CURRENT_TAG=$(go run main.go latest) >> $GITHUB_ENV
         echo RELEASE_NOTES_PATH=.changes/$(go run main.go latest).md >> $GITHUB_ENV
 
-        # - name: Run GoReleaser
-        # uses: goreleaser/goreleaser-action@v2.8.1
-        # with:
-        # version: latest
-        # args: --rm-dist --release-notes=${{ env.RELEASE_NOTES_PATH }} --skip-validate --debug
-        # env:
-        # GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    - name: Run GoReleaser
+      uses: goreleaser/goreleaser-action@v2.8.1
+      with:
+        version: latest
+        args: --rm-dist --release-notes=${{ env.RELEASE_NOTES_PATH }} --skip-validate --debug
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
     - name: Setup Hugo
       uses: peaceiris/actions-hugo@v2.5.0
