@@ -34,12 +34,12 @@ type: `string` | default: `""` | optional
 Filepath for your version header file relative to `unreleasedDir`.
 It is also possible to use the `--footer-path` parameter when using the [batch command](/cli/changie_batch).
 
-### versionHeaderFormat
+### headerFormat
 type: `string` | default: `""` | optional
 
 Format string to use directly in the version header.
 
-### versionFooterFormat
+### footerFormat
 type: `string` | default: `""` | optional
 
 Format string to use directly in the version footer.
@@ -119,7 +119,7 @@ custom:
 - key: Author
   type: string
   minLength: 3
-versionFooterFormat: |
+footerFormat: |
   ### Contributors
   {{- range (customs .Changes "Author" | uniq) }}
   * [{{.}}](https://github.com/{{.}})
