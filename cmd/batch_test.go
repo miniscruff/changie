@@ -19,7 +19,7 @@ import (
 )
 
 type MockBatchPipeline struct {
-	MockGetChanges    func(config core.Config) ([]core.Change, error)
+	MockGetChanges    func(config core.Config, searchPaths []string) ([]core.Change, error)
 	MockWriteTemplate func(
 		writer io.Writer,
 		template string,
@@ -41,12 +41,12 @@ type MockBatchPipeline struct {
 	standard            *standardBatchPipeline
 }
 
-func (m *MockBatchPipeline) GetChanges(config core.Config) ([]core.Change, error) {
+func (m *MockBatchPipeline) GetChanges(config core.Config, searchPaths []string) ([]core.Change, error) {
 	if m.MockGetChanges != nil {
-		return m.MockGetChanges(config)
+		return m.MockGetChanges(config, searchPaths)
 	}
 
-	return m.standard.GetChanges(config)
+	return m.standard.GetChanges(config, searchPaths)
 }
 
 func (m *MockBatchPipeline) WriteTemplate(
@@ -396,7 +396,7 @@ second footer
 	It("returns error on bad changes", func() {
 		Expect(testConfig.Save(afs.WriteFile)).To(Succeed())
 
-		mockPipeline.MockGetChanges = func(cfg core.Config) ([]core.Change, error) {
+		mockPipeline.MockGetChanges = func(cfg core.Config, search []string) ([]core.Change, error) {
 			return nil, mockError
 		}
 
@@ -567,42 +567,11 @@ second footer
 		ignoredPath := filepath.Join(futurePath, "ignored.txt")
 		Expect(afs.WriteFile(ignoredPath, []byte("ignored"), os.ModePerm)).To(Succeed())
 
-		changes, err := standard.GetChanges(testConfig)
+		changes, err := standard.GetChanges(testConfig, nil)
 		Expect(err).To(BeNil())
 		Expect(changes[0].Body).To(Equal("second"))
 		Expect(changes[1].Body).To(Equal("first"))
 		Expect(changes[2].Body).To(Equal("third"))
-	})
-
-	It("can get all changes with components", func() {
-		writeChangeFile(core.Change{
-			Component: "compiler",
-			Kind:      "removed",
-			Body:      "A",
-			Time:      orderedTimes[2],
-		})
-		writeChangeFile(core.Change{
-			Component: "linker",
-			Kind:      "added",
-			Body:      "B",
-			Time:      orderedTimes[0],
-		})
-		writeChangeFile(core.Change{
-			Component: "linker",
-			Kind:      "added",
-			Body:      "C",
-			Time:      orderedTimes[1],
-		})
-
-		ignoredPath := filepath.Join(futurePath, "ignored.txt")
-		Expect(afs.WriteFile(ignoredPath, []byte("ignored"), os.ModePerm)).To(Succeed())
-
-		testConfig.Components = []string{"linker", "compiler"}
-		changes, err := standard.GetChanges(testConfig)
-		Expect(err).To(BeNil())
-		Expect(changes[0].Body).To(Equal("C"))
-		Expect(changes[1].Body).To(Equal("B"))
-		Expect(changes[2].Body).To(Equal("A"))
 	})
 
 	It("returns err if unable to read directory", func() {
@@ -611,7 +580,7 @@ second footer
 			return f, mockError
 		}
 
-		_, err := standard.GetChanges(testConfig)
+		_, err := standard.GetChanges(testConfig, nil)
 		Expect(err).To(Equal(mockError))
 	})
 
@@ -620,7 +589,7 @@ second footer
 		err := afs.WriteFile(filepath.Join(futurePath, "a.yaml"), badYaml, os.ModePerm)
 		Expect(err).To(BeNil())
 
-		_, err = standard.GetChanges(testConfig)
+		_, err = standard.GetChanges(testConfig, nil)
 		Expect(err).NotTo(BeNil())
 	})
 
