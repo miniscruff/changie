@@ -23,7 +23,7 @@ type BatchPipeliner interface {
 		templateData interface{},
 	) error
 	WriteChanges(writer io.Writer, config core.Config, changes []core.Change) error
-	DeleteUnreleased(config core.Config, otherFiles ...string) error
+	ClearUnreleased(config core.Config, moveDir string, otherFiles ...string) error
 }
 
 type standardBatchPipeline struct {
@@ -38,6 +38,7 @@ var (
 	versionHeaderPathFlag          = ""
 	versionFooterPathFlag          = ""
 	keepFragmentsFlag              = false
+	moveDirFlag                    = ""
 	batchDryRunFlag                = false
 	batchPrereleaseFlag   []string = nil
 	batchMetaFlag         []string = nil
@@ -81,6 +82,12 @@ func init() {
 		&versionFooterPathFlag,
 		"footer-path", "",
 		"Path to version footer file in unreleased directory",
+	)
+
+	batchCmd.Flags().StringVar(
+		&moveDirFlag,
+		"move-dir", "",
+		"Path to move unreleased changes",
 	)
 	batchCmd.Flags().BoolVarP(
 		&keepFragmentsFlag,
@@ -223,8 +230,9 @@ func batchPipeline(batcher BatchPipeliner, afs afero.Afero, version string) erro
 	}
 
 	if !batchDryRunFlag && !keepFragmentsFlag {
-		err = batcher.DeleteUnreleased(
+		err = batcher.ClearUnreleased(
 			config,
+			moveDirFlag,
 			versionHeaderPathFlag,
 			config.VersionHeaderPath,
 			versionFooterPathFlag,
@@ -357,8 +365,20 @@ func (b *standardBatchPipeline) WriteChanges(
 	return nil
 }
 
-func (b *standardBatchPipeline) DeleteUnreleased(config core.Config, otherFiles ...string) error {
-	var filesToDelete []string
+func (b *standardBatchPipeline) ClearUnreleased(
+	config core.Config,
+	moveDir string,
+	otherFiles ...string,
+) error {
+	var filesToMove []string
+	var err error
+
+	if moveDir != "" {
+		err = b.afs.MkdirAll(filepath.Join(config.ChangesDir, moveDir), core.CreateDirMode)
+		if err != nil {
+			return err
+		}
+	}
 
 	unreleasedPath := filepath.Join(config.ChangesDir, config.UnreleasedDir)
 
@@ -372,7 +392,7 @@ func (b *standardBatchPipeline) DeleteUnreleased(config core.Config, otherFiles 
 		// make sure the file exists first
 		_, err := b.afs.Stat(fullPath)
 		if err == nil {
-			filesToDelete = append(filesToDelete, filepath.Join(unreleasedPath, p))
+			filesToMove = append(filesToMove, p)
 		}
 	}
 
@@ -382,13 +402,24 @@ func (b *standardBatchPipeline) DeleteUnreleased(config core.Config, otherFiles 
 			continue
 		}
 
-		filesToDelete = append(filesToDelete, filepath.Join(unreleasedPath, file.Name()))
+		filesToMove = append(filesToMove, file.Name())
 	}
 
-	for _, f := range filesToDelete {
-		err := b.afs.Remove(f)
-		if err != nil {
-			return err
+	for _, f := range filesToMove {
+		if moveDir != "" {
+			err = b.afs.Rename(
+				filepath.Join(unreleasedPath, f),
+				filepath.Join(config.ChangesDir, moveDir, f),
+			)
+			if err != nil {
+				return err
+			}
+		} else {
+			fullPath := filepath.Join(unreleasedPath, f)
+			err = b.afs.Remove(fullPath)
+			if err != nil {
+				return err
+			}
 		}
 	}
 

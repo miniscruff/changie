@@ -37,8 +37,8 @@ type MockBatchPipeline struct {
 		config core.Config,
 		changes []core.Change,
 	) error
-	MockDeleteUnreleased func(config core.Config, otherFiles ...string) error
-	standard             *standardBatchPipeline
+	MockClearUnreleased func(config core.Config, moveDir string, otherFiles ...string) error
+	standard            *standardBatchPipeline
 }
 
 func (m *MockBatchPipeline) GetChanges(config core.Config) ([]core.Change, error) {
@@ -87,12 +87,12 @@ func (m *MockBatchPipeline) WriteChanges(
 	return m.standard.WriteChanges(writer, config, changes)
 }
 
-func (m *MockBatchPipeline) DeleteUnreleased(config core.Config, otherFiles ...string) error {
-	if m.MockDeleteUnreleased != nil {
-		return m.MockDeleteUnreleased(config, otherFiles...)
+func (m *MockBatchPipeline) ClearUnreleased(config core.Config, moveDir string, otherFiles ...string) error {
+	if m.MockClearUnreleased != nil {
+		return m.MockClearUnreleased(config, moveDir, otherFiles...)
 	}
 
-	return m.standard.DeleteUnreleased(config, otherFiles...)
+	return m.standard.ClearUnreleased(config, moveDir, otherFiles...)
 }
 
 var _ = Describe("Batch", func() {
@@ -149,6 +149,7 @@ var _ = Describe("Batch", func() {
 		batchDryRunOut = stdout
 		versionHeaderPathFlag = ""
 		versionFooterPathFlag = ""
+		moveDirFlag = ""
 		keepFragmentsFlag = false
 		batchDryRunFlag = false
 		batchPrereleaseFlag = nil
@@ -526,7 +527,7 @@ second footer
 
 		writeChangeFile(core.Change{Kind: "added", Body: "C"})
 
-		mockPipeline.MockDeleteUnreleased = func(config core.Config, otherFiles ...string) error {
+		mockPipeline.MockClearUnreleased = func(config core.Config, moveDir string, otherFiles ...string) error {
 			return mockError
 		}
 
@@ -782,7 +783,7 @@ second footer
 		Expect(err).NotTo(BeNil())
 	})
 
-	It("delete unreleased removes unreleased files including header", func() {
+	It("clear unreleased removes unreleased files including header", func() {
 		err := afs.MkdirAll(futurePath, 0644)
 		Expect(err).To(BeNil())
 
@@ -794,7 +795,7 @@ second footer
 			Expect(f.Close()).To(Succeed())
 		}
 
-		err = standard.DeleteUnreleased(testConfig, "header.md", "", "does-not-exist.md")
+		err = standard.ClearUnreleased(testConfig, "", "header.md", "", "does-not-exist.md")
 		Expect(err).To(BeNil())
 
 		infos, err := afs.ReadDir(futurePath)
@@ -802,7 +803,30 @@ second footer
 		Expect(len(infos)).To(Equal(1))
 	})
 
-	It("delete unreleased fails if remove fails", func() {
+	It("clear unreleased moves unreleased files including header if specified", func() {
+		moveDirFlag = "beta"
+
+		err := afs.MkdirAll(futurePath, 0644)
+		Expect(err).To(BeNil())
+
+		for _, name := range []string{"a.yaml", "b.yaml", "c.yaml", ".gitkeep", "header.md"} {
+			var f afero.File
+			f, err = afs.Create(filepath.Join(futurePath, name))
+			Expect(err).To(BeNil())
+
+			Expect(f.Close()).To(Succeed())
+		}
+
+		err = standard.ClearUnreleased(testConfig, moveDirFlag, "header.md", "", "does-not-exist.md")
+		Expect(err).To(BeNil())
+
+		// should of moved the unreleased and header file to beta
+		infos, err := afs.ReadDir(filepath.Join("news", "beta"))
+		Expect(err).To(BeNil())
+		Expect(len(infos)).To(Equal(4))
+	})
+
+	It("clear unreleased fails if remove fails", func() {
 		var err error
 
 		for _, name := range []string{"a.yaml"} {
@@ -818,7 +842,47 @@ second footer
 			return mockError
 		}
 
-		err = standard.DeleteUnreleased(testConfig)
+		err = standard.ClearUnreleased(testConfig, "")
+		Expect(err).To(Equal(mockError))
+	})
+
+	It("clear unreleased fails if move fails", func() {
+		var err error
+
+		for _, name := range []string{"a.yaml"} {
+			var f afero.File
+			f, err = afs.Create(filepath.Join(futurePath, name))
+			Expect(err).To(BeNil())
+
+			err = f.Close()
+			Expect(err).To(BeNil())
+		}
+
+		fs.MockRename = func(before, after string) error {
+			return mockError
+		}
+
+		err = standard.ClearUnreleased(testConfig, "beta")
+		Expect(err).To(Equal(mockError))
+	})
+
+	It("clear unreleased fails if unable to make move dir", func() {
+		var err error
+
+		for _, name := range []string{"a.yaml"} {
+			var f afero.File
+			f, err = afs.Create(filepath.Join(futurePath, name))
+			Expect(err).To(BeNil())
+
+			err = f.Close()
+			Expect(err).To(BeNil())
+		}
+
+		fs.MockMkdirAll = func(p string, mode os.FileMode) error {
+			return mockError
+		}
+
+		err = standard.ClearUnreleased(testConfig, "beta")
 		Expect(err).To(Equal(mockError))
 	})
 })
