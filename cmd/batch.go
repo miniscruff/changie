@@ -14,7 +14,7 @@ import (
 
 type BatchPipeliner interface {
 	// afs afero.Afero should be part of struct
-	GetChanges(config core.Config) ([]core.Change, error)
+	GetChanges(config core.Config, searchPaths []string) ([]core.Change, error)
 	WriteTemplate(writer io.Writer, template string, pregap bool, templateData interface{}) error
 	WriteFile(
 		writer io.Writer,
@@ -23,7 +23,12 @@ type BatchPipeliner interface {
 		templateData interface{},
 	) error
 	WriteChanges(writer io.Writer, config core.Config, changes []core.Change) error
-	ClearUnreleased(config core.Config, moveDir string, otherFiles ...string) error
+	ClearUnreleased(
+		config core.Config,
+		moveDir string,
+		searchPaths []string,
+		otherFiles ...string,
+	) error
 }
 
 type standardBatchPipeline struct {
@@ -39,6 +44,7 @@ var (
 	versionFooterPathFlag          = ""
 	keepFragmentsFlag              = false
 	moveDirFlag                    = ""
+	batchIncludeDirs      []string = nil
 	batchDryRunFlag                = false
 	batchPrereleaseFlag   []string = nil
 	batchMetaFlag         []string = nil
@@ -59,7 +65,7 @@ add more line breaks include them in your format configurations.
 Changes are sorted in the following order:
 * Components if enabled, in order specified by config.components
 * Kinds if enabled, in order specified by config.kinds
-* Timestamp newest first`,
+* Timestamp oldest first`,
 	Args: cobra.ExactArgs(1),
 	RunE: runBatch,
 }
@@ -88,6 +94,12 @@ func init() {
 		&moveDirFlag,
 		"move-dir", "",
 		"Path to move unreleased changes",
+	)
+	batchCmd.Flags().StringSliceVarP(
+		&batchIncludeDirs,
+		"include", "i",
+		nil,
+		"Include extra directories to search for change files, relative to change directory",
 	)
 	batchCmd.Flags().BoolVarP(
 		&keepFragmentsFlag,
@@ -134,6 +146,7 @@ func getBatchData(
 	config core.Config,
 	afs afero.Afero,
 	version string,
+	changePaths []string,
 	batcher BatchPipeliner,
 ) (*core.BatchData, error) {
 	previousVersion, err := core.GetLatestVersion(afs.ReadDir, config)
@@ -152,7 +165,7 @@ func getBatchData(
 		return nil, err
 	}
 
-	allChanges, err := batcher.GetChanges(config)
+	allChanges, err := batcher.GetChanges(config, changePaths)
 	if err != nil {
 		return nil, err
 	}
@@ -171,7 +184,7 @@ func batchPipeline(batcher BatchPipeliner, afs afero.Afero, version string) erro
 		return err
 	}
 
-	data, err := getBatchData(config, afs, version, batcher)
+	data, err := getBatchData(config, afs, version, batchIncludeDirs, batcher)
 	if err != nil {
 		return err
 	}
@@ -233,6 +246,7 @@ func batchPipeline(batcher BatchPipeliner, afs afero.Afero, version string) erro
 		err = batcher.ClearUnreleased(
 			config,
 			moveDirFlag,
+			[]string{},
 			versionHeaderPathFlag,
 			config.VersionHeaderPath,
 			versionFooterPathFlag,
@@ -246,25 +260,19 @@ func batchPipeline(batcher BatchPipeliner, afs afero.Afero, version string) erro
 	return nil
 }
 
-func (b *standardBatchPipeline) GetChanges(config core.Config) ([]core.Change, error) {
+func (b *standardBatchPipeline) GetChanges(
+	config core.Config,
+	searchPaths []string,
+) ([]core.Change, error) {
 	var changes []core.Change
 
-	unreleasedPath := filepath.Join(config.ChangesDir, config.UnreleasedDir)
-
-	// read all markdown files from changes/unreleased
-	fileInfos, err := b.afs.ReadDir(unreleasedPath)
+	changeFiles, err := core.FindChangeFiles(config, b.afs.ReadDir, searchPaths)
 	if err != nil {
-		return []core.Change{}, err
+		return changes, err
 	}
 
-	for _, file := range fileInfos {
-		if filepath.Ext(file.Name()) != ".yaml" {
-			continue
-		}
-
-		path := filepath.Join(unreleasedPath, file.Name())
-
-		c, err := core.LoadChange(path, b.afs.ReadFile)
+	for _, cf := range changeFiles {
+		c, err := core.LoadChange(cf, b.afs.ReadFile)
 		if err != nil {
 			return changes, err
 		}
@@ -368,6 +376,7 @@ func (b *standardBatchPipeline) WriteChanges(
 func (b *standardBatchPipeline) ClearUnreleased(
 	config core.Config,
 	moveDir string,
+	includeDirs []string,
 	otherFiles ...string,
 ) error {
 	var (
@@ -382,43 +391,38 @@ func (b *standardBatchPipeline) ClearUnreleased(
 		}
 	}
 
-	unreleasedPath := filepath.Join(config.ChangesDir, config.UnreleasedDir)
-
 	for _, p := range otherFiles {
 		if p == "" {
 			continue
 		}
 
-		fullPath := filepath.Join(unreleasedPath, p)
+		fullPath := filepath.Join(config.ChangesDir, config.UnreleasedDir, p)
 
 		// make sure the file exists first
 		_, err = b.afs.Stat(fullPath)
 		if err == nil {
-			filesToMove = append(filesToMove, p)
+			filesToMove = append(filesToMove, fullPath)
 		}
 	}
 
-	fileInfos, _ := b.afs.ReadDir(unreleasedPath)
-	for _, file := range fileInfos {
-		if filepath.Ext(file.Name()) != ".yaml" {
-			continue
-		}
-
-		filesToMove = append(filesToMove, file.Name())
+	filePaths, err := core.FindChangeFiles(config, b.afs.ReadDir, includeDirs)
+	if err != nil {
+		return err
 	}
+
+	filesToMove = append(filesToMove, filePaths...)
 
 	for _, f := range filesToMove {
 		if moveDir != "" {
 			err = b.afs.Rename(
-				filepath.Join(unreleasedPath, f),
-				filepath.Join(config.ChangesDir, moveDir, f),
+				f,
+				filepath.Join(config.ChangesDir, moveDir, filepath.Base(f)),
 			)
 			if err != nil {
 				return err
 			}
 		} else {
-			fullPath := filepath.Join(unreleasedPath, f)
-			err = b.afs.Remove(fullPath)
+			err = b.afs.Remove(f)
 			if err != nil {
 				return err
 			}

@@ -1,0 +1,5 @@
+kind: Added
+body: Option to include additional directories of change files when batching versions
+time: 2022-02-21T14:42:15.6617366-08:00
+custom:
+  Issue: "249"

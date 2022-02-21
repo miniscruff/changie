@@ -114,3 +114,35 @@ func GetNextVersion(
 
 	return &ver, nil
 }
+
+func FindChangeFiles(
+	config Config,
+	readDir shared.ReadDirer,
+	searchPaths []string,
+) ([]string, error) {
+	var yamlFiles []string
+
+	// add the unreleased path to any search paths included
+	searchPaths = append(searchPaths, config.UnreleasedDir)
+
+	// read all yaml files from our search paths
+	for _, searchPath := range searchPaths {
+		rootPath := filepath.Join(config.ChangesDir, searchPath)
+		fileInfos, err := readDir(rootPath)
+
+		if err != nil {
+			return yamlFiles, err
+		}
+
+		for _, file := range fileInfos {
+			if filepath.Ext(file.Name()) != ".yaml" {
+				continue
+			}
+
+			path := filepath.Join(rootPath, file.Name())
+			yamlFiles = append(yamlFiles, path)
+		}
+	}
+
+	return yamlFiles, nil
+}

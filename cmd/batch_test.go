@@ -19,7 +19,7 @@ import (
 )
 
 type MockBatchPipeline struct {
-	MockGetChanges    func(config core.Config) ([]core.Change, error)
+	MockGetChanges    func(config core.Config, searchPaths []string) ([]core.Change, error)
 	MockWriteTemplate func(
 		writer io.Writer,
 		template string,
@@ -37,16 +37,24 @@ type MockBatchPipeline struct {
 		config core.Config,
 		changes []core.Change,
 	) error
-	MockClearUnreleased func(config core.Config, moveDir string, otherFiles ...string) error
-	standard            *standardBatchPipeline
+	MockClearUnreleased func(
+		config core.Config,
+		moveDir string,
+		includeDirs []string,
+		otherFiles ...string,
+	) error
+	standard *standardBatchPipeline
 }
 
-func (m *MockBatchPipeline) GetChanges(config core.Config) ([]core.Change, error) {
+func (m *MockBatchPipeline) GetChanges(
+	config core.Config,
+	searchPaths []string,
+) ([]core.Change, error) {
 	if m.MockGetChanges != nil {
-		return m.MockGetChanges(config)
+		return m.MockGetChanges(config, searchPaths)
 	}
 
-	return m.standard.GetChanges(config)
+	return m.standard.GetChanges(config, searchPaths)
 }
 
 func (m *MockBatchPipeline) WriteTemplate(
@@ -90,13 +98,14 @@ func (m *MockBatchPipeline) WriteChanges(
 func (m *MockBatchPipeline) ClearUnreleased(
 	config core.Config,
 	moveDir string,
+	includeDirs []string,
 	otherFiles ...string,
 ) error {
 	if m.MockClearUnreleased != nil {
-		return m.MockClearUnreleased(config, moveDir, otherFiles...)
+		return m.MockClearUnreleased(config, moveDir, includeDirs, otherFiles...)
 	}
 
-	return m.standard.ClearUnreleased(config, moveDir, otherFiles...)
+	return m.standard.ClearUnreleased(config, moveDir, includeDirs, otherFiles...)
 }
 
 var _ = Describe("Batch", func() {
@@ -396,7 +405,7 @@ second footer
 	It("returns error on bad changes", func() {
 		Expect(testConfig.Save(afs.WriteFile)).To(Succeed())
 
-		mockPipeline.MockGetChanges = func(cfg core.Config) ([]core.Change, error) {
+		mockPipeline.MockGetChanges = func(cfg core.Config, search []string) ([]core.Change, error) {
 			return nil, mockError
 		}
 
@@ -534,6 +543,7 @@ second footer
 		mockPipeline.MockClearUnreleased = func(
 			config core.Config,
 			moveDir string,
+			includeDirs []string,
 			otherFiles ...string,
 		) error {
 			return mockError
@@ -567,42 +577,11 @@ second footer
 		ignoredPath := filepath.Join(futurePath, "ignored.txt")
 		Expect(afs.WriteFile(ignoredPath, []byte("ignored"), os.ModePerm)).To(Succeed())
 
-		changes, err := standard.GetChanges(testConfig)
+		changes, err := standard.GetChanges(testConfig, nil)
 		Expect(err).To(BeNil())
 		Expect(changes[0].Body).To(Equal("second"))
 		Expect(changes[1].Body).To(Equal("first"))
 		Expect(changes[2].Body).To(Equal("third"))
-	})
-
-	It("can get all changes with components", func() {
-		writeChangeFile(core.Change{
-			Component: "compiler",
-			Kind:      "removed",
-			Body:      "A",
-			Time:      orderedTimes[2],
-		})
-		writeChangeFile(core.Change{
-			Component: "linker",
-			Kind:      "added",
-			Body:      "B",
-			Time:      orderedTimes[0],
-		})
-		writeChangeFile(core.Change{
-			Component: "linker",
-			Kind:      "added",
-			Body:      "C",
-			Time:      orderedTimes[1],
-		})
-
-		ignoredPath := filepath.Join(futurePath, "ignored.txt")
-		Expect(afs.WriteFile(ignoredPath, []byte("ignored"), os.ModePerm)).To(Succeed())
-
-		testConfig.Components = []string{"linker", "compiler"}
-		changes, err := standard.GetChanges(testConfig)
-		Expect(err).To(BeNil())
-		Expect(changes[0].Body).To(Equal("C"))
-		Expect(changes[1].Body).To(Equal("B"))
-		Expect(changes[2].Body).To(Equal("A"))
 	})
 
 	It("returns err if unable to read directory", func() {
@@ -611,7 +590,7 @@ second footer
 			return f, mockError
 		}
 
-		_, err := standard.GetChanges(testConfig)
+		_, err := standard.GetChanges(testConfig, nil)
 		Expect(err).To(Equal(mockError))
 	})
 
@@ -620,7 +599,7 @@ second footer
 		err := afs.WriteFile(filepath.Join(futurePath, "a.yaml"), badYaml, os.ModePerm)
 		Expect(err).To(BeNil())
 
-		_, err = standard.GetChanges(testConfig)
+		_, err = standard.GetChanges(testConfig, nil)
 		Expect(err).NotTo(BeNil())
 	})
 
@@ -792,23 +771,35 @@ second footer
 	})
 
 	It("clear unreleased removes unreleased files including header", func() {
-		err := afs.MkdirAll(futurePath, 0644)
-		Expect(err).To(BeNil())
+		var err error
 
-		for _, name := range []string{"a.yaml", "b.yaml", "c.yaml", ".gitkeep", "header.md"} {
-			var f afero.File
-			f, err = afs.Create(filepath.Join(futurePath, name))
-			Expect(err).To(BeNil())
+		alphaPath := filepath.Join("news", "alpha")
 
-			Expect(f.Close()).To(Succeed())
-		}
+		Expect(afs.MkdirAll(futurePath, core.CreateDirMode)).To(Succeed())
+		Expect(afs.MkdirAll(alphaPath, core.CreateDirMode)).To(Succeed())
 
-		err = standard.ClearUnreleased(testConfig, "", "header.md", "", "does-not-exist.md")
+		_, _ = afs.Create(filepath.Join(futurePath, "a.yaml"))
+		_, _ = afs.Create(filepath.Join(futurePath, ".gitkeep"))
+		_, _ = afs.Create(filepath.Join(futurePath, "header.md"))
+		_, _ = afs.Create(filepath.Join(alphaPath, "b.yaml"))
+
+		err = standard.ClearUnreleased(
+			testConfig,
+			"",
+			[]string{"alpha"},
+			"header.md",
+			"",
+			"does-not-exist.md",
+		)
 		Expect(err).To(BeNil())
 
 		infos, err := afs.ReadDir(futurePath)
 		Expect(err).To(BeNil())
 		Expect(len(infos)).To(Equal(1))
+
+		infos, err = afs.ReadDir(alphaPath)
+		Expect(err).To(BeNil())
+		Expect(len(infos)).To(Equal(0))
 	})
 
 	It("clear unreleased moves unreleased files including header if specified", func() {
@@ -825,7 +816,7 @@ second footer
 			Expect(f.Close()).To(Succeed())
 		}
 
-		err = standard.ClearUnreleased(testConfig, moveDirFlag, "header.md", "", "does-not-exist.md")
+		err = standard.ClearUnreleased(testConfig, moveDirFlag, nil, "header.md", "", "does-not-exist.md")
 		Expect(err).To(BeNil())
 
 		// should of moved the unreleased and header file to beta
@@ -850,7 +841,7 @@ second footer
 			return mockError
 		}
 
-		err = standard.ClearUnreleased(testConfig, "")
+		err = standard.ClearUnreleased(testConfig, "", nil)
 		Expect(err).To(Equal(mockError))
 	})
 
@@ -870,7 +861,7 @@ second footer
 			return mockError
 		}
 
-		err = standard.ClearUnreleased(testConfig, "beta")
+		err = standard.ClearUnreleased(testConfig, "beta", nil)
 		Expect(err).To(Equal(mockError))
 	})
 
@@ -890,7 +881,12 @@ second footer
 			return mockError
 		}
 
-		err = standard.ClearUnreleased(testConfig, "beta")
+		err = standard.ClearUnreleased(testConfig, "beta", nil)
 		Expect(err).To(Equal(mockError))
+	})
+
+	It("clear unreleased fails if unable to find files", func() {
+		err := standard.ClearUnreleased(testConfig, "beta", []string{"../../bad"})
+		Expect(err).NotTo(BeNil())
 	})
 })

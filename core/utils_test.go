@@ -238,4 +238,50 @@ var _ = Describe("Utils", func() {
 		_, err := GetNextVersion(mockRead, config, "patch", nil, []string{"&*(&*(&"})
 		Expect(err).NotTo(BeNil())
 	})
+
+	It("can find change files", func() {
+		memFs := afero.NewMemMapFs()
+		afs := afero.Afero{Fs: memFs}
+
+		config := Config{
+			ChangesDir:    ".chng",
+			UnreleasedDir: "unrel",
+		}
+
+		_, _ = memFs.Create(".chng/unrel/a.yaml")
+		_, _ = memFs.Create(".chng/unrel/b.yaml")
+		_, _ = memFs.Create(".chng/alpha/c.yaml")
+		_, _ = memFs.Create(".chng/alpha/d.yaml")
+		_, _ = memFs.Create(".chng/beta/e.yaml")
+		_, _ = memFs.Create(".chng/beta/f.yaml")
+		_, _ = memFs.Create(".chng/beta/ignored.md")
+		_, _ = memFs.Create(".chng/ignored/g.yaml")
+		_, _ = memFs.Create(".chng/h.md") // ignored
+
+		files, err := FindChangeFiles(config, afs.ReadDir, []string{"alpha", "beta"})
+		Expect(err).To(BeNil())
+		Expect(files).To(Equal([]string{
+			filepath.Join(".chng", "alpha", "c.yaml"),
+			filepath.Join(".chng", "alpha", "d.yaml"),
+			filepath.Join(".chng", "beta", "e.yaml"),
+			filepath.Join(".chng", "beta", "f.yaml"),
+			filepath.Join(".chng", "unrel", "a.yaml"),
+			filepath.Join(".chng", "unrel", "b.yaml"),
+		}))
+	})
+
+	It("change files fails if dir is not accessible", func() {
+		memFs := afero.NewMemMapFs()
+		afs := afero.Afero{Fs: memFs}
+
+		config := Config{
+			ChangesDir:    ".chng",
+			UnreleasedDir: "unrel",
+		}
+
+		_, _ = memFs.Create(".chng/unrel/a.yaml")
+
+		_, err := FindChangeFiles(config, afs.ReadDir, []string{"../../invalid"})
+		Expect(err).NotTo(BeNil())
+	})
 })
