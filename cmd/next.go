@@ -1,13 +1,20 @@
 package cmd
 
 import (
-	"fmt"
+	"io"
+	"os"
 	"strings"
 
 	"github.com/spf13/afero"
 	"github.com/spf13/cobra"
 
 	"github.com/miniscruff/changie/core"
+)
+
+var (
+	nextOut            io.Writer = os.Stdout
+	nextPrereleaseFlag []string  = nil
+	nextMetaFlag       []string  = nil
 )
 
 var nextCmd = &cobra.Command{
@@ -21,33 +28,47 @@ Echo the next release version number to be used by CI tools or other commands li
 }
 
 func init() {
+	nextCmd.Flags().StringSliceVarP(
+		&nextPrereleaseFlag,
+		"prerelease", "p",
+		nil,
+		"Prerelease values to append to version",
+	)
+	nextCmd.Flags().StringSliceVarP(
+		&nextMetaFlag,
+		"metadata", "m",
+		nil,
+		"Metadata values to append to version",
+	)
+
 	rootCmd.AddCommand(nextCmd)
 }
 
 func runNext(cmd *cobra.Command, args []string) error {
 	fs := afero.NewOsFs()
 	afs := afero.Afero{Fs: fs}
+	nextOut = cmd.OutOrStdout()
 
-	result, err := nextPipeline(afs, strings.ToLower(args[0]))
+	return nextPipeline(
+		afs,
+		nextOut,
+		strings.ToLower(args[0]),
+		nextPrereleaseFlag,
+		nextMetaFlag,
+	)
+}
+
+func nextPipeline(afs afero.Afero, writer io.Writer, part string, prerelease, meta []string) error {
+	config, err := core.LoadConfig(afs.ReadFile)
 	if err != nil {
 		return err
 	}
 
-	_, err = cmd.OutOrStdout().Write([]byte(result))
-
-	return err
-}
-
-func nextPipeline(afs afero.Afero, part string) (string, error) {
-	config, err := core.LoadConfig(afs.ReadFile)
+	next, err := core.GetNextVersion(afs.ReadDir, config, part, prerelease, meta)
 	if err != nil {
-		return "", err
+		return err
 	}
 
-	next, err := core.GetNextVersion(afs.ReadDir, config, part)
-	if err != nil {
-		return "", err
-	}
-
-	return fmt.Sprintln(next.Original()), nil
+	writer.Write([]byte(next.Original()))
+	return nil
 }

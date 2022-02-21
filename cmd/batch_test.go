@@ -146,11 +146,13 @@ var _ = Describe("Batch", func() {
 
 	AfterEach(func() {
 		// reset all our flag vars
+		batchDryRunOut = stdout
 		versionHeaderPathFlag = ""
 		versionFooterPathFlag = ""
 		keepFragmentsFlag = false
 		batchDryRunFlag = false
-		batchDryRunOut = stdout
+		batchPrereleaseFlag = nil
+		batchMetaFlag = nil
 	})
 
 	// this mimics the change.SaveUnreleased but prevents clobbering in same
@@ -214,6 +216,8 @@ var _ = Describe("Batch", func() {
 	})
 
 	It("can batch complicated version", func() {
+		batchPrereleaseFlag = []string{"b1"}
+		batchMetaFlag = []string{"hash"}
 		testConfig.HeaderFormat = "{{ bodies .Changes | len }} changes this release"
 		testConfig.ChangeFormat = "* {{.Body}} by {{.Custom.Author}}"
 		testConfig.FooterFormat = `### contributors
@@ -240,7 +244,7 @@ var _ = Describe("Batch", func() {
 		err := batchPipeline(standard, afs, "v0.2.0")
 		Expect(err).To(BeNil())
 
-		verContents := `## v0.2.0
+		verContents := `## v0.2.0-b1+hash
 2 changes this release
 ### added
 * D by miniscruff
@@ -249,7 +253,8 @@ var _ = Describe("Batch", func() {
 * [miniscruff](https://github.com/miniscruff)
 * [otherAuthor](https://github.com/otherAuthor)`
 
-		Expect(newVerPath).To(HaveContents(afs, verContents))
+		complicatedVerPath := filepath.Join("news", "v0.2.0-b1+hash.md")
+		Expect(complicatedVerPath).To(HaveContents(afs, verContents))
 
 		_, err = afs.ReadDir(futurePath)
 		Expect(err).To(BeNil())

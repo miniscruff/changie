@@ -32,13 +32,15 @@ type standardBatchPipeline struct {
 }
 
 var (
+	batchDryRunOut io.Writer = os.Stdout
 	// deprecated but still supported until 2.0
-	oldHeaderPathFlag               = ""
-	versionHeaderPathFlag           = ""
-	versionFooterPathFlag           = ""
-	keepFragmentsFlag               = false
-	batchDryRunFlag                 = false
-	batchDryRunOut        io.Writer = os.Stdout
+	oldHeaderPathFlag              = ""
+	versionHeaderPathFlag          = ""
+	versionFooterPathFlag          = ""
+	keepFragmentsFlag              = false
+	batchDryRunFlag                = false
+	batchPrereleaseFlag   []string = nil
+	batchMetaFlag         []string = nil
 )
 
 var batchCmd = &cobra.Command{
@@ -92,6 +94,18 @@ func init() {
 		false,
 		"Print batched changes instead of writing to disk, does not delete fragments",
 	)
+	batchCmd.Flags().StringSliceVarP(
+		&batchPrereleaseFlag,
+		"prerelease", "p",
+		nil,
+		"Prerelease values to append to version",
+	)
+	batchCmd.Flags().StringSliceVarP(
+		&batchMetaFlag,
+		"metadata", "m",
+		nil,
+		"Metadata values to append to version",
+	)
 	rootCmd.AddCommand(batchCmd)
 }
 
@@ -120,7 +134,13 @@ func getBatchData(
 		return nil, err
 	}
 
-	currentVersion, err := core.GetNextVersion(afs.ReadDir, config, version)
+	currentVersion, err := core.GetNextVersion(
+		afs.ReadDir,
+		config,
+		version,
+		batchPrereleaseFlag,
+		batchMetaFlag,
+	)
 	if err != nil {
 		return nil, err
 	}
