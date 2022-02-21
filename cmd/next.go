@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"io"
-	"os"
 	"strings"
 
 	"github.com/spf13/afero"
@@ -12,9 +11,8 @@ import (
 )
 
 var (
-	nextOut            io.Writer = os.Stdout
-	nextPrereleaseFlag []string  = nil
-	nextMetaFlag       []string  = nil
+	nextPrereleaseFlag []string = nil
+	nextMetaFlag       []string = nil
 )
 
 var nextCmd = &cobra.Command{
@@ -47,11 +45,10 @@ func init() {
 func runNext(cmd *cobra.Command, args []string) error {
 	fs := afero.NewOsFs()
 	afs := afero.Afero{Fs: fs}
-	nextOut = cmd.OutOrStdout()
 
 	return nextPipeline(
 		afs,
-		nextOut,
+		cmd.OutOrStdout(),
 		strings.ToLower(args[0]),
 		nextPrereleaseFlag,
 		nextMetaFlag,
