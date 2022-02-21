@@ -254,7 +254,10 @@ func batchPipeline(batcher BatchPipeliner, afs afero.Afero, version string) erro
 	return nil
 }
 
-func (b *standardBatchPipeline) GetChanges(config core.Config, searchPaths []string) ([]core.Change, error) {
+func (b *standardBatchPipeline) GetChanges(
+	config core.Config,
+	searchPaths []string,
+) ([]core.Change, error) {
 	var changes []core.Change
 
 	changeFiles, err := core.FindChangeFiles(config, b.afs.ReadDir, searchPaths)

@@ -41,7 +41,10 @@ type MockBatchPipeline struct {
 	standard            *standardBatchPipeline
 }
 
-func (m *MockBatchPipeline) GetChanges(config core.Config, searchPaths []string) ([]core.Change, error) {
+func (m *MockBatchPipeline) GetChanges(
+	config core.Config,
+	searchPaths []string,
+) ([]core.Change, error) {
 	if m.MockGetChanges != nil {
 		return m.MockGetChanges(config, searchPaths)
 	}
