@@ -783,7 +783,14 @@ second footer
 		_, _ = afs.Create(filepath.Join(futurePath, "header.md"))
 		_, _ = afs.Create(filepath.Join(alphaPath, "b.yaml"))
 
-		err = standard.ClearUnreleased(testConfig, "", []string{"alpha"}, "header.md", "", "does-not-exist.md")
+		err = standard.ClearUnreleased(
+			testConfig,
+			"",
+			[]string{"alpha"},
+			"header.md",
+			"",
+			"does-not-exist.md",
+		)
 		Expect(err).To(BeNil())
 
 		infos, err := afs.ReadDir(futurePath)

@@ -409,6 +409,7 @@ func (b *standardBatchPipeline) ClearUnreleased(
 	if err != nil {
 		return err
 	}
+
 	filesToMove = append(filesToMove, filePaths...)
 
 	for _, f := range filesToMove {
