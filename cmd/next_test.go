@@ -1,10 +1,11 @@
 package cmd
 
 import (
+	"strings"
+
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/spf13/afero"
-	"strings"
 
 	"github.com/miniscruff/changie/core"
 )

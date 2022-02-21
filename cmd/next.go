@@ -69,6 +69,7 @@ func nextPipeline(afs afero.Afero, writer io.Writer, part string, prerelease, me
 		return err
 	}
 
-	writer.Write([]byte(next.Original()))
-	return nil
+	_, err = writer.Write([]byte(next.Original()))
+
+	return err
 }

@@ -82,7 +82,6 @@ func GetNextVersion(
 	// if part or version is a valid version, then return it
 	next, err = semver.NewVersion(partOrVersion)
 	if err != nil {
-
 		// otherwise use a bump type command
 		next, err = GetLatestVersion(readDir, config)
 		if err != nil {
