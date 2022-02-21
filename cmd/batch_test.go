@@ -37,8 +37,13 @@ type MockBatchPipeline struct {
 		config core.Config,
 		changes []core.Change,
 	) error
-	MockClearUnreleased func(config core.Config, moveDir string, otherFiles ...string) error
-	standard            *standardBatchPipeline
+	MockClearUnreleased func(
+		config core.Config,
+		moveDir string,
+		includeDirs []string,
+		otherFiles ...string,
+	) error
+	standard *standardBatchPipeline
 }
 
 func (m *MockBatchPipeline) GetChanges(
@@ -93,13 +98,14 @@ func (m *MockBatchPipeline) WriteChanges(
 func (m *MockBatchPipeline) ClearUnreleased(
 	config core.Config,
 	moveDir string,
+	includeDirs []string,
 	otherFiles ...string,
 ) error {
 	if m.MockClearUnreleased != nil {
-		return m.MockClearUnreleased(config, moveDir, otherFiles...)
+		return m.MockClearUnreleased(config, moveDir, includeDirs, otherFiles...)
 	}
 
-	return m.standard.ClearUnreleased(config, moveDir, otherFiles...)
+	return m.standard.ClearUnreleased(config, moveDir, includeDirs, otherFiles...)
 }
 
 var _ = Describe("Batch", func() {
@@ -537,6 +543,7 @@ second footer
 		mockPipeline.MockClearUnreleased = func(
 			config core.Config,
 			moveDir string,
+			includeDirs []string,
 			otherFiles ...string,
 		) error {
 			return mockError
@@ -764,23 +771,28 @@ second footer
 	})
 
 	It("clear unreleased removes unreleased files including header", func() {
-		err := afs.MkdirAll(futurePath, 0644)
-		Expect(err).To(BeNil())
+		var err error
 
-		for _, name := range []string{"a.yaml", "b.yaml", "c.yaml", ".gitkeep", "header.md"} {
-			var f afero.File
-			f, err = afs.Create(filepath.Join(futurePath, name))
-			Expect(err).To(BeNil())
+		alphaPath := filepath.Join("news", "alpha")
 
-			Expect(f.Close()).To(Succeed())
-		}
+		Expect(afs.MkdirAll(futurePath, core.CreateDirMode)).To(Succeed())
+		Expect(afs.MkdirAll(alphaPath, core.CreateDirMode)).To(Succeed())
 
-		err = standard.ClearUnreleased(testConfig, "", "header.md", "", "does-not-exist.md")
+		_, _ = afs.Create(filepath.Join(futurePath, "a.yaml"))
+		_, _ = afs.Create(filepath.Join(futurePath, ".gitkeep"))
+		_, _ = afs.Create(filepath.Join(futurePath, "header.md"))
+		_, _ = afs.Create(filepath.Join(alphaPath, "b.yaml"))
+
+		err = standard.ClearUnreleased(testConfig, "", []string{"alpha"}, "header.md", "", "does-not-exist.md")
 		Expect(err).To(BeNil())
 
 		infos, err := afs.ReadDir(futurePath)
 		Expect(err).To(BeNil())
 		Expect(len(infos)).To(Equal(1))
+
+		infos, err = afs.ReadDir(alphaPath)
+		Expect(err).To(BeNil())
+		Expect(len(infos)).To(Equal(0))
 	})
 
 	It("clear unreleased moves unreleased files including header if specified", func() {
@@ -797,7 +809,7 @@ second footer
 			Expect(f.Close()).To(Succeed())
 		}
 
-		err = standard.ClearUnreleased(testConfig, moveDirFlag, "header.md", "", "does-not-exist.md")
+		err = standard.ClearUnreleased(testConfig, moveDirFlag, nil, "header.md", "", "does-not-exist.md")
 		Expect(err).To(BeNil())
 
 		// should of moved the unreleased and header file to beta
@@ -822,7 +834,7 @@ second footer
 			return mockError
 		}
 
-		err = standard.ClearUnreleased(testConfig, "")
+		err = standard.ClearUnreleased(testConfig, "", nil)
 		Expect(err).To(Equal(mockError))
 	})
 
@@ -842,7 +854,7 @@ second footer
 			return mockError
 		}
 
-		err = standard.ClearUnreleased(testConfig, "beta")
+		err = standard.ClearUnreleased(testConfig, "beta", nil)
 		Expect(err).To(Equal(mockError))
 	})
 
@@ -862,7 +874,12 @@ second footer
 			return mockError
 		}
 
-		err = standard.ClearUnreleased(testConfig, "beta")
+		err = standard.ClearUnreleased(testConfig, "beta", nil)
 		Expect(err).To(Equal(mockError))
+	})
+
+	It("clear unreleased fails if unable to find files", func() {
+		err := standard.ClearUnreleased(testConfig, "beta", []string{"../../bad"})
+		Expect(err).NotTo(BeNil())
 	})
 })

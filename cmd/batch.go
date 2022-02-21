@@ -23,7 +23,12 @@ type BatchPipeliner interface {
 		templateData interface{},
 	) error
 	WriteChanges(writer io.Writer, config core.Config, changes []core.Change) error
-	ClearUnreleased(config core.Config, moveDir string, otherFiles ...string) error
+	ClearUnreleased(
+		config core.Config,
+		moveDir string,
+		searchPaths []string,
+		otherFiles ...string,
+	) error
 }
 
 type standardBatchPipeline struct {
@@ -241,6 +246,7 @@ func batchPipeline(batcher BatchPipeliner, afs afero.Afero, version string) erro
 		err = batcher.ClearUnreleased(
 			config,
 			moveDirFlag,
+			[]string{},
 			versionHeaderPathFlag,
 			config.VersionHeaderPath,
 			versionFooterPathFlag,
@@ -370,6 +376,7 @@ func (b *standardBatchPipeline) WriteChanges(
 func (b *standardBatchPipeline) ClearUnreleased(
 	config core.Config,
 	moveDir string,
+	includeDirs []string,
 	otherFiles ...string,
 ) error {
 	var (
@@ -384,43 +391,37 @@ func (b *standardBatchPipeline) ClearUnreleased(
 		}
 	}
 
-	unreleasedPath := filepath.Join(config.ChangesDir, config.UnreleasedDir)
-
 	for _, p := range otherFiles {
 		if p == "" {
 			continue
 		}
 
-		fullPath := filepath.Join(unreleasedPath, p)
+		fullPath := filepath.Join(config.ChangesDir, config.UnreleasedDir, p)
 
 		// make sure the file exists first
 		_, err = b.afs.Stat(fullPath)
 		if err == nil {
-			filesToMove = append(filesToMove, p)
+			filesToMove = append(filesToMove, fullPath)
 		}
 	}
 
-	fileInfos, _ := b.afs.ReadDir(unreleasedPath)
-	for _, file := range fileInfos {
-		if filepath.Ext(file.Name()) != ".yaml" {
-			continue
-		}
-
-		filesToMove = append(filesToMove, file.Name())
+	filePaths, err := core.FindChangeFiles(config, b.afs.ReadDir, includeDirs)
+	if err != nil {
+		return err
 	}
+	filesToMove = append(filesToMove, filePaths...)
 
 	for _, f := range filesToMove {
 		if moveDir != "" {
 			err = b.afs.Rename(
-				filepath.Join(unreleasedPath, f),
-				filepath.Join(config.ChangesDir, moveDir, f),
+				f,
+				filepath.Join(config.ChangesDir, moveDir, filepath.Base(f)),
 			)
 			if err != nil {
 				return err
 			}
 		} else {
-			fullPath := filepath.Join(unreleasedPath, f)
-			err = b.afs.Remove(fullPath)
+			err = b.afs.Remove(f)
 			if err != nil {
 				return err
 			}
