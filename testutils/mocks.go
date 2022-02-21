@@ -14,6 +14,7 @@ type MockFS struct {
 	MockOpen     func(string) (afero.File, error)
 	MockOpenFile func(string, int, os.FileMode) (afero.File, error)
 	MockRemove   func(string) error
+	MockRename   func(string, string) error
 	MockChmod    func(string, os.FileMode) error
 	MemFS        afero.Fs
 }
@@ -72,8 +73,12 @@ func (m *MockFS) RemoveAll(path string) error {
 	panic("not implemented")
 }
 
-func (m *MockFS) Rename(oldname string, newname string) error {
-	panic("not implemented")
+func (m *MockFS) Rename(before, after string) error {
+	if m.MockRename != nil {
+		return m.MockRename(before, after)
+	}
+
+	return m.MemFS.Rename(before, after)
 }
 
 func (m *MockFS) Stat(name string) (os.FileInfo, error) {
