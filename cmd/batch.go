@@ -65,7 +65,7 @@ add more line breaks include them in your format configurations.
 Changes are sorted in the following order:
 * Components if enabled, in order specified by config.components
 * Kinds if enabled, in order specified by config.kinds
-* Timestamp newest first`,
+* Timestamp oldest first`,
 	Args: cobra.ExactArgs(1),
 	RunE: runBatch,
 }
