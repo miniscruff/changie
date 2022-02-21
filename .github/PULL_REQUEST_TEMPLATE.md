@@ -8,7 +8,6 @@ Closes #NNN
 **Check the following**
 - [ ] Keep 100% code coverage
 - [ ] Be properly formatted
-- [ ] Have no linting errors
 - [ ] Documentation changes are included
 - [ ] Include a change file if expected
 
