@@ -370,8 +370,10 @@ func (b *standardBatchPipeline) ClearUnreleased(
 	moveDir string,
 	otherFiles ...string,
 ) error {
-	var filesToMove []string
-	var err error
+	var (
+		filesToMove []string
+		err         error
+	)
 
 	if moveDir != "" {
 		err = b.afs.MkdirAll(filepath.Join(config.ChangesDir, moveDir), core.CreateDirMode)
@@ -390,7 +392,7 @@ func (b *standardBatchPipeline) ClearUnreleased(
 		fullPath := filepath.Join(unreleasedPath, p)
 
 		// make sure the file exists first
-		_, err := b.afs.Stat(fullPath)
+		_, err = b.afs.Stat(fullPath)
 		if err == nil {
 			filesToMove = append(filesToMove, p)
 		}

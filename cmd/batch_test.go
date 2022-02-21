@@ -87,7 +87,11 @@ func (m *MockBatchPipeline) WriteChanges(
 	return m.standard.WriteChanges(writer, config, changes)
 }
 
-func (m *MockBatchPipeline) ClearUnreleased(config core.Config, moveDir string, otherFiles ...string) error {
+func (m *MockBatchPipeline) ClearUnreleased(
+	config core.Config,
+	moveDir string,
+	otherFiles ...string,
+) error {
 	if m.MockClearUnreleased != nil {
 		return m.MockClearUnreleased(config, moveDir, otherFiles...)
 	}
@@ -527,7 +531,11 @@ second footer
 
 		writeChangeFile(core.Change{Kind: "added", Body: "C"})
 
-		mockPipeline.MockClearUnreleased = func(config core.Config, moveDir string, otherFiles ...string) error {
+		mockPipeline.MockClearUnreleased = func(
+			config core.Config,
+			moveDir string,
+			otherFiles ...string,
+		) error {
 			return mockError
 		}
 
