@@ -164,7 +164,7 @@ var _ = Describe("Utils", func() {
 			return []os.FileInfo{}, mockError
 		}
 
-		vers, err := GetNextVersion(mockRead, config, "major")
+		vers, err := GetNextVersion(mockRead, config, "major", nil, nil)
 		Expect(vers).To(BeNil())
 		Expect(err).To(Equal(mockError))
 	})
@@ -172,7 +172,7 @@ var _ = Describe("Utils", func() {
 	It("get next version returns error if invalid version", func() {
 		mockRead, config := createVersions("v0.2.0")
 
-		vers, err := GetNextVersion(mockRead, config, "a")
+		vers, err := GetNextVersion(mockRead, config, "a", []string{}, []string{})
 		Expect(vers).To(BeNil())
 		Expect(err).To(Equal(ErrBadVersionOrPart))
 	})
@@ -180,7 +180,7 @@ var _ = Describe("Utils", func() {
 	It("get next version works on brand new version", func() {
 		mockRead, config := createVersions("v0.2.0")
 
-		ver, err := GetNextVersion(mockRead, config, "v0.4.0")
+		ver, err := GetNextVersion(mockRead, config, "v0.4.0", nil, nil)
 		Expect(err).To(BeNil())
 		Expect(ver.Original()).To(Equal("v0.4.0"))
 	})
@@ -188,7 +188,7 @@ var _ = Describe("Utils", func() {
 	It("get next version works on major version", func() {
 		mockRead, config := createVersions("v0.2.0")
 
-		ver, err := GetNextVersion(mockRead, config, "major")
+		ver, err := GetNextVersion(mockRead, config, "major", nil, nil)
 		Expect(err).To(BeNil())
 		Expect(ver.Original()).To(Equal("v1.0.0"))
 	})
@@ -196,7 +196,7 @@ var _ = Describe("Utils", func() {
 	It("get next version works on minor version", func() {
 		mockRead, config := createVersions("v0.2.2")
 
-		ver, err := GetNextVersion(mockRead, config, "minor")
+		ver, err := GetNextVersion(mockRead, config, "minor", nil, nil)
 		Expect(err).To(BeNil())
 		Expect(ver.Original()).To(Equal("v0.3.0"))
 	})
@@ -204,8 +204,38 @@ var _ = Describe("Utils", func() {
 	It("get next version works on patch version", func() {
 		mockRead, config := createVersions("v0.2.5")
 
-		ver, err := GetNextVersion(mockRead, config, "patch")
+		ver, err := GetNextVersion(mockRead, config, "patch", nil, nil)
 		Expect(err).To(BeNil())
 		Expect(ver.Original()).To(Equal("v0.2.6"))
+	})
+
+	It("get next version with prerelease", func() {
+		mockRead, config := createVersions("v0.2.5")
+
+		ver, err := GetNextVersion(mockRead, config, "patch", []string{"b1", "amd64"}, nil)
+		Expect(err).To(BeNil())
+		Expect(ver.Original()).To(Equal("v0.2.6-b1.amd64"))
+	})
+
+	It("get next version with meta", func() {
+		mockRead, config := createVersions("v0.2.5")
+
+		ver, err := GetNextVersion(mockRead, config, "patch", nil, []string{"githash", "amd64"})
+		Expect(err).To(BeNil())
+		Expect(ver.Original()).To(Equal("v0.2.6+githash.amd64"))
+	})
+
+	It("get next version error with bad prerelease", func() {
+		mockRead, config := createVersions("v0.2.5")
+
+		_, err := GetNextVersion(mockRead, config, "patch", []string{"0005"}, nil)
+		Expect(err).NotTo(BeNil())
+	})
+
+	It("get next version error with bad meta", func() {
+		mockRead, config := createVersions("v0.2.5")
+
+		_, err := GetNextVersion(mockRead, config, "patch", nil, []string{"&*(&*(&"})
+		Expect(err).NotTo(BeNil())
 	})
 })

@@ -71,32 +71,46 @@ func GetLatestVersion(readDir shared.ReadDirer, config Config) (*semver.Version,
 }
 
 func GetNextVersion(
-	readDir shared.ReadDirer, config Config, partOrVersion string,
+	readDir shared.ReadDirer, config Config, partOrVersion string, prerelease, meta []string,
 ) (*semver.Version, error) {
+	var (
+		err  error
+		next *semver.Version
+		ver  semver.Version
+	)
+
 	// if part or version is a valid version, then return it
-	newVer, newErr := semver.NewVersion(partOrVersion)
-	if newErr == nil {
-		return newVer, nil
+	next, err = semver.NewVersion(partOrVersion)
+	if err != nil {
+		// otherwise use a bump type command
+		next, err = GetLatestVersion(readDir, config)
+		if err != nil {
+			return nil, err
+		}
+
+		switch partOrVersion {
+		case "major":
+			ver = next.IncMajor()
+		case "minor":
+			ver = next.IncMinor()
+		case "patch":
+			ver = next.IncPatch()
+		default:
+			return nil, ErrBadVersionOrPart
+		}
+
+		next = &ver
 	}
 
-	// otherwise use a bump type command
-	ver, err := GetLatestVersion(readDir, config)
+	ver, err = next.SetPrerelease(strings.Join(prerelease, "."))
 	if err != nil {
 		return nil, err
 	}
 
-	var next semver.Version
-
-	switch partOrVersion {
-	case "major":
-		next = ver.IncMajor()
-	case "minor":
-		next = ver.IncMinor()
-	case "patch":
-		next = ver.IncPatch()
-	default:
-		return nil, ErrBadVersionOrPart
+	ver, err = ver.SetMetadata(strings.Join(meta, "."))
+	if err != nil {
+		return nil, err
 	}
 
-	return &next, nil
+	return &ver, nil
 }
