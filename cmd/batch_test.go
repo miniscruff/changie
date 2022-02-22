@@ -164,6 +164,7 @@ var _ = Describe("Batch", func() {
 		versionFooterPathFlag = ""
 		moveDirFlag = ""
 		keepFragmentsFlag = false
+		removePrereleasesFlag = false
 		batchDryRunFlag = false
 		batchPrereleaseFlag = nil
 		batchMetaFlag = nil
@@ -301,6 +302,27 @@ var _ = Describe("Batch", func() {
 		Expect(len(infos)).To(Equal(3))
 	})
 
+	It("can batch version removing prereleases", func() {
+		removePrereleasesFlag = true
+		Expect(testConfig.Save(afs.WriteFile)).To(Succeed())
+
+		writeChangeFile(core.Change{Kind: "added", Body: "A"})
+		writeChangeFile(core.Change{Kind: "added", Body: "B"})
+		writeChangeFile(core.Change{Kind: "removed", Body: "C"})
+
+		_ = afs.WriteFile(filepath.Join("news", "v0.1.2-a1.md"), []byte{}, 0644)
+		_ = afs.WriteFile(filepath.Join("news", "v0.1.2-a2.md"), []byte{}, 0644)
+
+		err := batchPipeline(standard, afs, "v0.2.0")
+		Expect(err).To(BeNil())
+
+		infos, err := afs.ReadDir("news")
+		Expect(err).To(BeNil())
+		Expect(infos[0].Name()).To(Equal("future"))
+		Expect(infos[1].Name()).To(Equal("v0.2.0.md"))
+		Expect(len(infos)).To(Equal(2))
+	})
+
 	It("can batch version keeping change files", func() {
 		keepFragmentsFlag = true
 		Expect(testConfig.Save(afs.WriteFile)).To(Succeed())
@@ -368,6 +390,30 @@ second footer
 
 		err := batchPipeline(standard, afs, "---asdfasdf---")
 		Expect(err).To(Equal(core.ErrBadVersionOrPart))
+	})
+
+	It("returns error trying to get all versions with removing prereleases", func() {
+		removePrereleasesFlag = true
+		testConfig.VersionExt = "txt"
+		Expect(testConfig.Save(afs.WriteFile)).To(Succeed())
+
+		writeChangeFile(core.Change{Kind: "added", Body: "A"})
+		writeChangeFile(core.Change{Kind: "added", Body: "B"})
+		writeChangeFile(core.Change{Kind: "removed", Body: "C"})
+
+		prePath := filepath.Join("news", "v0.1.2-a1.txt")
+		Expect(afs.WriteFile(prePath, []byte{}, 0644)).To(Succeed())
+
+		fs.MockRemove = func(name string) error {
+			if name == prePath {
+				return mockError
+			}
+
+			return fs.MemFS.Remove(name)
+		}
+
+		err := batchPipeline(standard, afs, "v0.2.0")
+		Expect(err).NotTo(BeNil())
 	})
 
 	It("returns error on bad latest version", func() {

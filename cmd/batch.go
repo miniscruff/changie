@@ -43,6 +43,7 @@ var (
 	versionHeaderPathFlag          = ""
 	versionFooterPathFlag          = ""
 	keepFragmentsFlag              = false
+	removePrereleasesFlag          = false
 	moveDirFlag                    = ""
 	batchIncludeDirs      []string = nil
 	batchDryRunFlag                = false
@@ -106,6 +107,12 @@ func init() {
 		"keep", "k",
 		false,
 		"Keep change fragments instead of deleting them",
+	)
+	batchCmd.Flags().BoolVar(
+		&removePrereleasesFlag,
+		"remove-prereleases",
+		false,
+		"Remove existing prerelease versions",
 	)
 	batchCmd.Flags().BoolVarP(
 		&batchDryRunFlag,
@@ -178,6 +185,7 @@ func getBatchData(
 	}, nil
 }
 
+//nolint:funlen,gocyclo
 func batchPipeline(batcher BatchPipeliner, afs afero.Afero, version string) error {
 	config, err := core.LoadConfig(afs.ReadFile)
 	if err != nil {
@@ -254,6 +262,23 @@ func batchPipeline(batcher BatchPipeliner, afs afero.Afero, version string) erro
 		)
 		if err != nil {
 			return err
+		}
+	}
+
+	if !batchDryRunFlag && removePrereleasesFlag {
+		// only chance we fail is already checked above
+		allVers, _ := core.GetAllVersions(afs.ReadDir, config)
+
+		for _, v := range allVers {
+			if v.Prerelease() != "" {
+				err = afs.Remove(filepath.Join(
+					config.ChangesDir,
+					v.Original()+"."+config.VersionExt,
+				))
+				if err != nil {
+					return err
+				}
+			}
 		}
 	}
 
