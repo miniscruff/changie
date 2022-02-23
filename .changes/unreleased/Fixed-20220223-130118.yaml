@@ -1,5 +1,0 @@
-kind: Fixed
-body: Includes option properly deletes files included
-time: 2022-02-23T13:01:18.9238776-08:00
-custom:
-  Issue: "263"
