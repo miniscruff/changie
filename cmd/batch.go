@@ -254,7 +254,7 @@ func batchPipeline(batcher BatchPipeliner, afs afero.Afero, version string) erro
 		err = batcher.ClearUnreleased(
 			config,
 			moveDirFlag,
-			[]string{},
+			batchIncludeDirs,
 			versionHeaderPathFlag,
 			config.VersionHeaderPath,
 			versionFooterPathFlag,
@@ -448,6 +448,18 @@ func (b *standardBatchPipeline) ClearUnreleased(
 			}
 		} else {
 			err = b.afs.Remove(f)
+			if err != nil {
+				return err
+			}
+		}
+	}
+
+	for _, include := range includeDirs {
+		fullInclude := filepath.Join(config.ChangesDir, include)
+
+		files, _ := b.afs.ReadDir(fullInclude)
+		if len(files) == 0 {
+			err = b.afs.RemoveAll(fullInclude)
 			if err != nil {
 				return err
 			}

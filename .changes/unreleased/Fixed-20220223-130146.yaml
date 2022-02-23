@@ -1,0 +1,5 @@
+kind: Fixed
+body: Includes option deletes the directory if no files remain
+time: 2022-02-23T13:01:46.5582829-08:00
+custom:
+  Issue: "264"
