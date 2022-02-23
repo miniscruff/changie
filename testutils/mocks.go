@@ -9,14 +9,15 @@ import (
 
 // MockFS is a wrapper around an in memory FS with mockable overrides
 type MockFS struct {
-	MockCreate   func(string) (afero.File, error)
-	MockMkdirAll func(string, os.FileMode) error
-	MockOpen     func(string) (afero.File, error)
-	MockOpenFile func(string, int, os.FileMode) (afero.File, error)
-	MockRemove   func(string) error
-	MockRename   func(string, string) error
-	MockChmod    func(string, os.FileMode) error
-	MemFS        afero.Fs
+	MockCreate    func(string) (afero.File, error)
+	MockMkdirAll  func(string, os.FileMode) error
+	MockOpen      func(string) (afero.File, error)
+	MockOpenFile  func(string, int, os.FileMode) (afero.File, error)
+	MockRemove    func(string) error
+	MockRemoveAll func(string) error
+	MockRename    func(string, string) error
+	MockChmod     func(string, os.FileMode) error
+	MemFS         afero.Fs
 }
 
 func NewMockFS() *MockFS {
@@ -70,7 +71,11 @@ func (m *MockFS) Remove(name string) error {
 }
 
 func (m *MockFS) RemoveAll(path string) error {
-	panic("not implemented")
+	if m.MockRemoveAll != nil {
+		return m.MockRemoveAll(path)
+	}
+
+	return m.MemFS.RemoveAll(path)
 }
 
 func (m *MockFS) Rename(before, after string) error {

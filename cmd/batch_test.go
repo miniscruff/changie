@@ -165,6 +165,7 @@ var _ = Describe("Batch", func() {
 		moveDirFlag = ""
 		keepFragmentsFlag = false
 		removePrereleasesFlag = false
+		batchIncludeDirs = nil
 		batchDryRunFlag = false
 		batchPrereleaseFlag = nil
 		batchMetaFlag = nil
@@ -172,7 +173,15 @@ var _ = Describe("Batch", func() {
 
 	// this mimics the change.SaveUnreleased but prevents clobbering in same
 	// second saves
-	writeChangeFile := func(change core.Change) {
+	writeChangeFile := func(change core.Change) string {
+		// set a manual time if we didn't provide one, this keeps sorting
+		// consistent
+		if change.Time.Year() == 1 {
+			// add some days based on our file create index
+			// this makes it so newer changes are newer in time
+			change.Time = time.Now().AddDate(0, 0, fileCreateIndex)
+		}
+
 		bs, _ := yaml.Marshal(&change)
 		nameParts := make([]string, 0)
 
@@ -196,6 +205,7 @@ var _ = Describe("Batch", func() {
 		)
 
 		Expect(afs.WriteFile(filePath, bs, os.ModePerm)).To(Succeed())
+		return filePath
 	}
 
 	writeFutureFile := func(header, configPath string) {
@@ -231,6 +241,7 @@ var _ = Describe("Batch", func() {
 	})
 
 	It("can batch complicated version", func() {
+		batchIncludeDirs = []string{"beta"}
 		batchPrereleaseFlag = []string{"b1"}
 		batchMetaFlag = []string{"hash"}
 		testConfig.HeaderFormat = "{{ bodies .Changes | len }} changes this release"
@@ -248,13 +259,19 @@ var _ = Describe("Batch", func() {
 				"Author": "miniscruff",
 			},
 		})
-		writeChangeFile(core.Change{
+
+		changePath := writeChangeFile(core.Change{
 			Kind: "added",
 			Body: "E",
 			Custom: map[string]string{
 				"Author": "otherAuthor",
 			},
 		})
+
+		// move this change to a beta folder to be included
+		betaPath := filepath.Join(testConfig.ChangesDir, "beta")
+		Expect(afs.MkdirAll(betaPath, 0644)).To(Succeed())
+		Expect(afs.Rename(changePath, filepath.Join(betaPath, "change.yaml"))).To(Succeed())
 
 		err := batchPipeline(standard, afs, "v0.2.0")
 		Expect(err).To(BeNil())
@@ -273,6 +290,9 @@ var _ = Describe("Batch", func() {
 
 		_, err = afs.ReadDir(futurePath)
 		Expect(err).To(BeNil())
+
+		_, err = afs.Stat(betaPath)
+		Expect(errors.Is(err, os.ErrNotExist)).To(BeTrue())
 	})
 
 	It("can batch a dry run version", func() {
@@ -820,19 +840,23 @@ second footer
 		var err error
 
 		alphaPath := filepath.Join("news", "alpha")
+		betaPath := filepath.Join("news", "beta")
 
 		Expect(afs.MkdirAll(futurePath, core.CreateDirMode)).To(Succeed())
 		Expect(afs.MkdirAll(alphaPath, core.CreateDirMode)).To(Succeed())
+		Expect(afs.MkdirAll(betaPath, core.CreateDirMode)).To(Succeed())
 
 		_, _ = afs.Create(filepath.Join(futurePath, "a.yaml"))
 		_, _ = afs.Create(filepath.Join(futurePath, ".gitkeep"))
 		_, _ = afs.Create(filepath.Join(futurePath, "header.md"))
 		_, _ = afs.Create(filepath.Join(alphaPath, "b.yaml"))
+		_, _ = afs.Create(filepath.Join(alphaPath, ".gitkeep"))
+		_, _ = afs.Create(filepath.Join(betaPath, "c.yaml"))
 
 		err = standard.ClearUnreleased(
 			testConfig,
 			"",
-			[]string{"alpha"},
+			[]string{"alpha", "beta"},
 			"header.md",
 			"",
 			"does-not-exist.md",
@@ -845,7 +869,10 @@ second footer
 
 		infos, err = afs.ReadDir(alphaPath)
 		Expect(err).To(BeNil())
-		Expect(len(infos)).To(Equal(0))
+		Expect(len(infos)).To(Equal(1))
+
+		_, err = afs.Stat(betaPath)
+		Expect(errors.Is(err, os.ErrNotExist)).To(BeTrue())
 	})
 
 	It("clear unreleased moves unreleased files including header if specified", func() {
@@ -888,6 +915,32 @@ second footer
 		}
 
 		err = standard.ClearUnreleased(testConfig, "", nil)
+		Expect(err).To(Equal(mockError))
+	})
+
+	It("clear unreleased fails if remove all fails", func() {
+		var err error
+
+		alphaPath := filepath.Join("news", "alpha")
+
+		Expect(afs.MkdirAll(futurePath, core.CreateDirMode)).To(Succeed())
+		Expect(afs.MkdirAll(alphaPath, core.CreateDirMode)).To(Succeed())
+
+		_, _ = afs.Create(filepath.Join(futurePath, "a.yaml"))
+		_, _ = afs.Create(filepath.Join(alphaPath, "b.yaml"))
+
+		fs.MockRemoveAll = func(path string) error {
+			return mockError
+		}
+
+		err = standard.ClearUnreleased(
+			testConfig,
+			"",
+			[]string{"alpha"},
+			"header.md",
+			"",
+			"does-not-exist.md",
+		)
 		Expect(err).To(Equal(mockError))
 	})
 
