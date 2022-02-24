@@ -1,2 +1,2 @@
 # Ignore docs for github linguist
-website/* linguist-documentation
+website/** linguist-documentation
