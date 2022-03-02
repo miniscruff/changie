@@ -21,7 +21,7 @@ jobs:
         go-version: 1.17
 
     - name: Check out code
-      uses: actions/checkout@v2.4.0
+      uses: actions/checkout@v3
 
     - name: Setup Hugo
       uses: peaceiris/actions-hugo@v2.5.0
