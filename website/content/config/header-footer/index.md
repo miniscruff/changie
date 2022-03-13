@@ -123,5 +123,5 @@ footerFormat: |
   ### Contributors
   {{- range (customs .Changes "Author" | uniq) }}
   * [{{.}}](https://github.com/{{.}})
-  {{- end}}`
+  {{- end}}
 ```
