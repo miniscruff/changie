@@ -181,9 +181,9 @@ custom:
 	It("can get header from kind label", func() {
 		config := Config{
 			Kinds: []KindConfig{
-				{Label: "A", Header: "unused"},
-				{Label: "unused", Header: ""},
-				{Label: "C", Header: "KF"},
+				{Label: "A", Format: "unused"},
+				{Label: "unused", Format: ""},
+				{Label: "C", Format: "KF"},
 			},
 		}
 		format := config.KindHeader("C")

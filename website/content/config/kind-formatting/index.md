@@ -33,13 +33,13 @@ Label is the only required element for kinds.
 This value is shown to users as part of the Kind selection prompt.
 It is also the value saved in change files.
 
-### header
+### format
 type: `string` | default: `""` | optional
 
-Header allows you to override the header output.
+Format allows you to override the header output.
 Overrides the shared [kind format](/config/shared-formatting#kindformat) when specified.
 
-**Header Arguments**
+**Format Arguments**
 
 | Field | Type | Description |
 | --- | --- | --- |
