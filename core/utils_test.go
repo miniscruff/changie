@@ -284,4 +284,46 @@ var _ = Describe("Utils", func() {
 		_, err := FindChangeFiles(config, afs.ReadDir, []string{"../../invalid"})
 		Expect(err).NotTo(BeNil())
 	})
+
+	mockPrereleases := func() (Config, func(string) ([]os.FileInfo, error)) {
+		config := Config{
+			ChangesDir: "changes",
+			HeaderPath: "header.md",
+		}
+		fs := NewMockFS()
+		afs := afero.Afero{Fs: fs}
+
+		file1, err := afs.Create(filepath.Join("changes", "v0.2.5.md"))
+		Expect(err).To(BeNil())
+		file2, err := afs.Create(filepath.Join("changes", "v0.2.6-rc1.md"))
+		Expect(err).To(BeNil())
+		file3, err := afs.Create(filepath.Join("changes", "v0.2.7-rc1.md"))
+		Expect(err).To(BeNil())
+
+		mockRead := func(dirname string) ([]os.FileInfo, error) {
+			return []os.FileInfo{
+				file1.(*mem.File).Info(),
+				file2.(*mem.File).Info(),
+				file3.(*mem.File).Info(),
+			}, nil
+		}
+
+		return config, mockRead
+	}
+
+	It("get next version does not increment patch version when prerelease is present", func() {
+		config, mockRead := mockPrereleases()
+
+		ver, err := GetNextVersion(mockRead, config, "patch", nil, nil, WithForcePatch(false))
+		Expect(err).To(BeNil())
+		Expect(ver.Original()).To(Equal("v0.2.7"))
+	})
+
+	It("get next version does increment patch version when prerelease is present AND forced", func() {
+		config, mockRead := mockPrereleases()
+
+		ver, err := GetNextVersion(mockRead, config, "patch", nil, nil, WithForcePatch(true))
+		Expect(err).To(BeNil())
+		Expect(ver.Original()).To(Equal("v0.2.8"))
+	})
 })

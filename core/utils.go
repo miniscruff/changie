@@ -72,12 +72,14 @@ func GetLatestVersion(readDir shared.ReadDirer, config Config) (*semver.Version,
 
 func GetNextVersion(
 	readDir shared.ReadDirer, config Config, partOrVersion string, prerelease, meta []string,
+	opts ...Option,
 ) (*semver.Version, error) {
 	var (
 		err  error
 		next *semver.Version
 		ver  semver.Version
 	)
+	o := optionsFromDefault(opts...)
 
 	// if part or version is a valid version, then return it
 	next, err = semver.NewVersion(partOrVersion)
@@ -94,6 +96,22 @@ func GetNextVersion(
 		case "minor":
 			ver = next.IncMinor()
 		case "patch":
+			if o.forcePatch {
+				// force patch increment of the prerelease (by temporarily clearing the prerelease)
+				pre := next.Prerelease()
+				meta := next.Metadata()
+				ver, _ = next.SetPrerelease("")
+				ver, _ = ver.SetMetadata("")
+
+				ver = ver.IncPatch()
+
+				ver, _ = ver.SetPrerelease(pre)
+				ver, _ = ver.SetMetadata(meta)
+
+				break
+			}
+
+			// otherwise, applies default IncPatch semantics from the semver package
 			ver = next.IncPatch()
 		default:
 			return nil, ErrBadVersionOrPart
