@@ -51,7 +51,7 @@ var _ = Describe("next", func() {
 		_, err = afs.Create("chgs/head.tpl.md")
 		Expect(err).To(BeNil())
 
-		err = nextPipeline(afs, &builder, "patch", nil, nil)
+		err = nextPipeline(afs, &builder, "patch", nil, nil, false)
 		Expect(err).To(BeNil())
 		Expect(builder.String()).To(Equal("v0.1.1"))
 	})
@@ -66,7 +66,7 @@ var _ = Describe("next", func() {
 		_, err = afs.Create("chgs/head.tpl.md")
 		Expect(err).To(BeNil())
 
-		err = nextPipeline(afs, &builder, "patch", []string{"b1"}, []string{"hash"})
+		err = nextPipeline(afs, &builder, "patch", []string{"b1"}, []string{"hash"}, false)
 		Expect(err).To(BeNil())
 		Expect(builder.String()).To(Equal("v0.1.1-b1+hash"))
 	})
@@ -75,7 +75,7 @@ var _ = Describe("next", func() {
 		err := afs.Remove(core.ConfigPaths[0])
 		Expect(err).To(BeNil())
 
-		err = nextPipeline(afs, &builder, "major", nil, nil)
+		err = nextPipeline(afs, &builder, "major", nil, nil, false)
 		Expect(err).NotTo(BeNil())
 	})
 
@@ -87,13 +87,67 @@ var _ = Describe("next", func() {
 		_, err = afs.Create("chgs/head.tpl.md")
 		Expect(err).To(BeNil())
 
-		err = nextPipeline(afs, &builder, "notsupported", nil, nil)
+		err = nextPipeline(afs, &builder, "notsupported", nil, nil, false)
 		Expect(err).NotTo(BeNil())
 	})
 
 	It("fails if unable to get versions", func() {
 		// no files, means bad read for get versions
-		err := nextPipeline(afs, &builder, "major", nil, nil)
+		err := nextPipeline(afs, &builder, "major", nil, nil, false)
 		Expect(err).NotTo(BeNil())
+	})
+
+	It("retrieves next with prerelease, default mode", func() {
+		_, err := afs.Create("chgs/v0.0.1.md")
+		Expect(err).To(BeNil())
+		_, err = afs.Create("chgs/v0.1.0.md")
+		Expect(err).To(BeNil())
+		_, err = afs.Create("chgs/v1.1.1-staging.md")
+		Expect(err).To(BeNil())
+
+		err = nextPipeline(afs, &builder, "patch", []string{"staging"}, nil, false)
+		Expect(err).To(BeNil())
+		Expect(builder.String()).To(Equal("v1.1.1-staging"))
+	})
+
+	It("retrieves next patch with prerelease, force patch", func() {
+		_, err := afs.Create("chgs/v0.0.1.md")
+		Expect(err).To(BeNil())
+		_, err = afs.Create("chgs/v0.1.0.md")
+		Expect(err).To(BeNil())
+		_, err = afs.Create("chgs/v1.1.1-staging.md")
+		Expect(err).To(BeNil())
+
+		err = nextPipeline(afs, &builder, "patch", []string{"staging"}, nil, true)
+		Expect(err).To(BeNil())
+		Expect(builder.String()).To(Equal("v1.1.2-staging"))
+	})
+
+	It("retrieves next minor with prerelease, no force patch", func() {
+		// mode affects patch
+		_, err := afs.Create("chgs/v0.0.1.md")
+		Expect(err).To(BeNil())
+		_, err = afs.Create("chgs/v0.1.0.md")
+		Expect(err).To(BeNil())
+		_, err = afs.Create("chgs/v1.1.1-staging.md")
+		Expect(err).To(BeNil())
+
+		err = nextPipeline(afs, &builder, "minor", []string{"staging"}, nil, false)
+		Expect(err).To(BeNil())
+		Expect(builder.String()).To(Equal("v1.2.0-staging"))
+	})
+
+	It("retrieves next minor with prerelease, force patch has no effect", func() {
+		// mode doesn't affect minor
+		_, err := afs.Create("chgs/v0.0.1.md")
+		Expect(err).To(BeNil())
+		_, err = afs.Create("chgs/v0.1.0.md")
+		Expect(err).To(BeNil())
+		_, err = afs.Create("chgs/v1.1.1-staging.md")
+		Expect(err).To(BeNil())
+
+		err = nextPipeline(afs, &builder, "minor", []string{"staging"}, nil, true)
+		Expect(err).To(BeNil())
+		Expect(builder.String()).To(Equal("v1.2.0-staging"))
 	})
 })

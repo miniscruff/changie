@@ -13,6 +13,7 @@ import (
 var (
 	nextPrereleaseFlag []string = nil
 	nextMetaFlag       []string = nil
+	nextForcePatch     bool
 )
 
 var nextCmd = &cobra.Command{
@@ -38,6 +39,13 @@ func init() {
 		nil,
 		"Metadata values to append to version",
 	)
+	nextCmd.Flags().BoolVarP(
+		&nextForcePatch,
+		"force-patch", "f",
+		false,
+		`Forces the patch version to be bumped, `+
+			`even on a prerelease (may break strict compliance to semver).`,
+	)
 
 	rootCmd.AddCommand(nextCmd)
 }
@@ -52,16 +60,21 @@ func runNext(cmd *cobra.Command, args []string) error {
 		strings.ToLower(args[0]),
 		nextPrereleaseFlag,
 		nextMetaFlag,
+		nextForcePatch,
 	)
 }
 
-func nextPipeline(afs afero.Afero, writer io.Writer, part string, prerelease, meta []string) error {
+func nextPipeline(afs afero.Afero, writer io.Writer, part string, prerelease, meta []string,
+	forcePatch bool,
+) error {
 	config, err := core.LoadConfig(afs.ReadFile)
 	if err != nil {
 		return err
 	}
 
-	next, err := core.GetNextVersion(afs.ReadDir, config, part, prerelease, meta)
+	next, err := core.GetNextVersion(afs.ReadDir, config, part, prerelease, meta,
+		core.WithForcePatch(forcePatch),
+	)
 	if err != nil {
 		return err
 	}

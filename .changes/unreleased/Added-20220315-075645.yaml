@@ -1,0 +1,5 @@
+kind: Added
+body: Added option to changie next, allowing to force patch bump
+time: 2022-03-15T07:56:45.454442952+01:00
+custom:
+  Issue: "282"
