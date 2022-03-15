@@ -42,7 +42,7 @@ var _ = Describe("Latest", func() {
 		Expect(err).To(BeNil())
 
 		removePrefix = false
-		res, err := latestPipeline(afs)
+		res, err := latestPipeline(afs, false)
 		Expect(err).To(BeNil())
 		Expect(res).To(Equal("v0.1.0\n"))
 	})
@@ -56,7 +56,7 @@ var _ = Describe("Latest", func() {
 		Expect(err).To(BeNil())
 
 		removePrefix = true
-		res, err := latestPipeline(afs)
+		res, err := latestPipeline(afs, false)
 		Expect(err).To(BeNil())
 		Expect(res).To(Equal("0.1.0\n"))
 	})
@@ -65,13 +65,46 @@ var _ = Describe("Latest", func() {
 		err := afs.Remove(core.ConfigPaths[0])
 		Expect(err).To(BeNil())
 
-		_, err = latestPipeline(afs)
+		_, err = latestPipeline(afs, false)
 		Expect(err).NotTo(BeNil())
 	})
 
 	It("fails if unable to get versions", func() {
 		// no files, means bad read for get versions
-		_, err := latestPipeline(afs)
+		_, err := latestPipeline(afs, false)
 		Expect(err).NotTo(BeNil())
+	})
+
+	makePrereleases := func(afs afero.Afero) {
+		_, err := afs.Create("chgs/not-a-version.md")
+		Expect(err).To(BeNil())
+		_, err = afs.Create("chgs/v0.0.1.md")
+		Expect(err).To(BeNil())
+		_, err = afs.Create("chgs/v0.1.0.md")
+		Expect(err).To(BeNil())
+		_, err = afs.Create("chgs/v0.1.1-rc1.md")
+		Expect(err).To(BeNil())
+		_, err = afs.Create("chgs/v0.1.1-rc2.md")
+		Expect(err).To(BeNil())
+		_, err = afs.Create("chgs/v0.2.1-rc3.md")
+		Expect(err).To(BeNil())
+	}
+
+	It("echos latest version, prereleases not skipped", func() {
+		makePrereleases(afs)
+
+		removePrefix = true
+		res, err := latestPipeline(afs, false)
+		Expect(err).To(BeNil())
+		Expect(res).To(Equal("0.2.1-rc3\n"))
+	})
+
+	It("echos latest version, prereleases skipped", func() {
+		makePrereleases(afs)
+
+		removePrefix = true
+		res, err := latestPipeline(afs, true)
+		Expect(err).To(BeNil())
+		Expect(res).To(Equal("0.1.0\n"))
 	})
 })

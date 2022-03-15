@@ -157,6 +157,48 @@ var _ = Describe("Utils", func() {
 		Expect(err).To(Equal(mockError))
 	})
 
+	createPrereleases := func() (shared.ReadDirer, Config) {
+		config := Config{
+			ChangesDir: "changes",
+			HeaderPath: "header.md",
+		}
+		fs := NewMockFS()
+		afs := afero.Afero{Fs: fs}
+
+		file1, err := afs.Create(filepath.Join("changes", "v0.1.0.md"))
+		Expect(err).To(BeNil())
+		file2, err := afs.Create(filepath.Join("changes", "v0.1.1.md"))
+		Expect(err).To(BeNil())
+		file3, err := afs.Create(filepath.Join("changes", "v0.2.1-rc1.md"))
+		Expect(err).To(BeNil())
+
+		mockRead := func(dirname string) ([]os.FileInfo, error) {
+			return []os.FileInfo{
+				file1.(*mem.File).Info(),
+				file2.(*mem.File).Info(),
+				file3.(*mem.File).Info(),
+			}, nil
+		}
+
+		return mockRead, config
+	}
+
+	It("get latest version with prerelease", func() {
+		mockRead, config := createPrereleases()
+
+		vers, err := GetLatestVersion(mockRead, config, WithSkipPrereleases(false))
+		Expect(err).To(BeNil())
+		Expect(vers.Original()).To(Equal("v0.2.1-rc1"))
+	})
+
+	It("get latest version with prerelease skipped", func() {
+		mockRead, config := createPrereleases()
+
+		vers, err := GetLatestVersion(mockRead, config, WithSkipPrereleases(true))
+		Expect(err).To(BeNil())
+		Expect(vers.Original()).To(Equal("v0.1.1"))
+	})
+
 	It("get next version returns error if get next version errors", func() {
 		config := Config{}
 		mockError := errors.New("bad stuff")

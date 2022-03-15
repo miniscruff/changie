@@ -1,0 +1,5 @@
+kind: Added
+body: New --no-prereleases option to changie latest
+time: 2022-03-15T09:38:47.67597763+01:00
+custom:
+  Issue: "283"
