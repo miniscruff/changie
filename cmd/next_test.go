@@ -96,4 +96,9 @@ var _ = Describe("next", func() {
 		err := nextPipeline(afs, &builder, "major", nil, nil)
 		Expect(err).NotTo(BeNil())
 	})
+
+	It("fails if bump other than patch, minor, major", func() {
+		err := nextPipeline(afs, &builder, "v1.2.3", nil, nil)
+		Expect(err).NotTo(BeNil())
+	})
 })

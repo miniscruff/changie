@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"fmt"
 	"io"
 	"strings"
 
@@ -59,6 +60,10 @@ func nextPipeline(afs afero.Afero, writer io.Writer, part string, prerelease, me
 	config, err := core.LoadConfig(afs.ReadFile)
 	if err != nil {
 		return err
+	}
+
+	if part != "patch" && part != "minor" && part != "major" {
+		return fmt.Errorf("invalid argument. Expect patch, minor or major but got: %q", part)
 	}
 
 	next, err := core.GetNextVersion(afs.ReadDir, config, part, prerelease, meta)
