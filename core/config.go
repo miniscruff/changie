@@ -24,7 +24,7 @@ type GetVersions func(shared.ReadDirer, Config) ([]*semver.Version, error)
 
 type KindConfig struct {
 	Label             string   `yaml:"label"`
-	Header            string   `yaml:"format,omitempty"`
+	Format            string   `yaml:"format,omitempty"`
 	ChangeFormat      string   `yaml:"changeFormat,omitempty"`
 	SkipGlobalChoices bool     `yaml:"skipGlobalChoices,omitempty"`
 	SkipBody          bool     `yaml:"skipBody,omitempty"`
@@ -77,8 +77,8 @@ type Config struct {
 
 func (c Config) KindHeader(label string) string {
 	for _, kindConfig := range c.Kinds {
-		if kindConfig.Header != "" && kindConfig.Label == label {
-			return kindConfig.Header
+		if kindConfig.Format != "" && kindConfig.Label == label {
+			return kindConfig.Format
 		}
 	}
 
