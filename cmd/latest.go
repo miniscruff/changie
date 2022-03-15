@@ -18,7 +18,7 @@ var latestCmd = &cobra.Command{
 	RunE:  runLatest,
 }
 
-var removePrefix bool = false
+var removePrefix, latestSkipPrereleases bool = false, false
 
 func init() {
 	rootCmd.AddCommand(latestCmd)
@@ -30,13 +30,21 @@ func init() {
 		false,
 		"Remove 'v' prefix before echoing",
 	)
+
+	latestCmd.Flags().BoolVarP(
+		&latestSkipPrereleases,
+		"no-prereleases",
+		"",
+		false,
+		"Excludes prereleases to determine the latest version.",
+	)
 }
 
 func runLatest(cmd *cobra.Command, args []string) error {
 	fs := afero.NewOsFs()
 	afs := afero.Afero{Fs: fs}
 
-	result, err := latestPipeline(afs)
+	result, err := latestPipeline(afs, latestSkipPrereleases)
 	if err != nil {
 		return err
 	}
@@ -46,13 +54,15 @@ func runLatest(cmd *cobra.Command, args []string) error {
 	return err
 }
 
-func latestPipeline(afs afero.Afero) (string, error) {
+func latestPipeline(afs afero.Afero, skipPrereleases bool) (string, error) {
 	config, err := core.LoadConfig(afs.ReadFile)
 	if err != nil {
 		return "", err
 	}
 
-	ver, err := core.GetLatestVersion(afs.ReadDir, config)
+	ver, err := core.GetLatestVersion(afs.ReadDir, config,
+		core.WithSkipPrereleases(skipPrereleases),
+	)
 	if err != nil {
 		return "", err
 	}

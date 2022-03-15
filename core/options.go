@@ -5,7 +5,8 @@ type (
 	Option func(*coreOptions)
 
 	coreOptions struct {
-		forcePatch bool
+		forcePatch      bool
+		skipPrereleases bool
 	}
 )
 
@@ -23,5 +24,12 @@ func optionsFromDefault(opts ...Option) *coreOptions {
 func WithForcePatch(force bool) Option {
 	return func(o *coreOptions) {
 		o.forcePatch = force
+	}
+}
+
+// WithSkipPrereleases includes prereleases when determining the latest version.
+func WithSkipPrereleases(skipPrereleases bool) Option {
+	return func(o *coreOptions) {
+		o.skipPrereleases = skipPrereleases
 	}
 }
