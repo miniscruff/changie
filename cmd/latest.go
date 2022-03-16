@@ -18,7 +18,10 @@ var latestCmd = &cobra.Command{
 	RunE:  runLatest,
 }
 
-var removePrefix, latestSkipPrereleases bool = false, false
+var (
+	removePrefix          bool = false
+	latestSkipPrereleases bool = false
+)
 
 func init() {
 	rootCmd.AddCommand(latestCmd)

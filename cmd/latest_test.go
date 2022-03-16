@@ -75,23 +75,11 @@ var _ = Describe("Latest", func() {
 		Expect(err).NotTo(BeNil())
 	})
 
-	makePrereleases := func(afs afero.Afero) {
-		_, err := afs.Create("chgs/not-a-version.md")
-		Expect(err).To(BeNil())
-		_, err = afs.Create("chgs/v0.0.1.md")
-		Expect(err).To(BeNil())
-		_, err = afs.Create("chgs/v0.1.0.md")
-		Expect(err).To(BeNil())
-		_, err = afs.Create("chgs/v0.1.1-rc1.md")
-		Expect(err).To(BeNil())
-		_, err = afs.Create("chgs/v0.1.1-rc2.md")
+	It("echos latest version, prereleases not skipped", func() {
+		_, err := afs.Create("chgs/v0.1.0.md")
 		Expect(err).To(BeNil())
 		_, err = afs.Create("chgs/v0.2.1-rc3.md")
 		Expect(err).To(BeNil())
-	}
-
-	It("echos latest version, prereleases not skipped", func() {
-		makePrereleases(afs)
 
 		removePrefix = true
 		res, err := latestPipeline(afs, false)
@@ -100,7 +88,10 @@ var _ = Describe("Latest", func() {
 	})
 
 	It("echos latest version, prereleases skipped", func() {
-		makePrereleases(afs)
+		_, err := afs.Create("chgs/v0.1.0.md")
+		Expect(err).To(BeNil())
+		_, err = afs.Create("chgs/v0.2.1-rc3.md")
+		Expect(err).To(BeNil())
 
 		removePrefix = true
 		res, err := latestPipeline(afs, true)
