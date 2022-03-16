@@ -1,7 +1,6 @@
 package cmd
 
 import (
-	"fmt"
 	"io"
 	"strings"
 
@@ -22,8 +21,9 @@ var nextCmd = &cobra.Command{
 	Long: `Next increments version based on semantic versioning.
 Check latest version and increment part (major, minor, patch).
 Echo the next release version number to be used by CI tools or other commands like batch.`,
-	Args: cobra.ExactArgs(1),
-	RunE: runNext,
+	ValidArgs: []string{"major", "minor", "patch"},
+	Args:      cobra.ExactValidArgs(1),
+	RunE:      runNext,
 }
 
 func init() {
@@ -60,10 +60,6 @@ func nextPipeline(afs afero.Afero, writer io.Writer, part string, prerelease, me
 	config, err := core.LoadConfig(afs.ReadFile)
 	if err != nil {
 		return err
-	}
-
-	if part != "patch" && part != "minor" && part != "major" {
-		return fmt.Errorf("invalid argument. Expect patch, minor or major but got: %q", part)
 	}
 
 	next, err := core.GetNextVersion(afs.ReadDir, config, part, prerelease, meta)
