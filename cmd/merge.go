@@ -57,7 +57,7 @@ func mergePipeline(afs afero.Afero, creator shared.CreateFiler, dryRun bool) (st
 		return "", err
 	}
 
-	allVersions, err := core.GetAllVersions(afs.ReadDir, config)
+	allVersions, err := core.GetAllVersions(afs.ReadDir, config, false)
 	if err != nil {
 		return "", err
 	}

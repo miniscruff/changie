@@ -1,5 +1,5 @@
 kind: Fixed
-body: 'fix(cli): changie next enforces arg to be patch|minor|major'
+body: 'next command enforces argument to be major, minor or patch'
 time: 2022-03-15T10:50:32.368713311+01:00
 custom:
   Issue: "284"

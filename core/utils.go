@@ -28,7 +28,11 @@ func AppendFile(opener shared.OpenFiler, rootFile io.Writer, path string) error 
 	return nil
 }
 
-func GetAllVersions(readDir shared.ReadDirer, config Config) ([]*semver.Version, error) {
+func GetAllVersions(
+	readDir shared.ReadDirer,
+	config Config,
+	skipPrereleases bool,
+) ([]*semver.Version, error) {
 	allVersions := make([]*semver.Version, 0)
 
 	fileInfos, err := readDir(config.ChangesDir)
@@ -48,6 +52,10 @@ func GetAllVersions(readDir shared.ReadDirer, config Config) ([]*semver.Version,
 			continue
 		}
 
+		if skipPrereleases && v.Prerelease() != "" {
+			continue
+		}
+
 		allVersions = append(allVersions, v)
 	}
 
@@ -56,8 +64,12 @@ func GetAllVersions(readDir shared.ReadDirer, config Config) ([]*semver.Version,
 	return allVersions, nil
 }
 
-func GetLatestVersion(readDir shared.ReadDirer, config Config) (*semver.Version, error) {
-	allVersions, err := GetAllVersions(readDir, config)
+func GetLatestVersion(
+	readDir shared.ReadDirer,
+	config Config,
+	skipPrereleases bool,
+) (*semver.Version, error) {
+	allVersions, err := GetAllVersions(readDir, config, skipPrereleases)
 	if err != nil {
 		return nil, err
 	}
@@ -83,7 +95,7 @@ func GetNextVersion(
 	next, err = semver.NewVersion(partOrVersion)
 	if err != nil {
 		// otherwise use a bump type command
-		next, err = GetLatestVersion(readDir, config)
+		next, err = GetLatestVersion(readDir, config, false)
 		if err != nil {
 			return nil, err
 		}

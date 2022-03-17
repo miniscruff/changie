@@ -156,7 +156,7 @@ func getBatchData(
 	changePaths []string,
 	batcher BatchPipeliner,
 ) (*core.BatchData, error) {
-	previousVersion, err := core.GetLatestVersion(afs.ReadDir, config)
+	previousVersion, err := core.GetLatestVersion(afs.ReadDir, config, false)
 	if err != nil {
 		return nil, err
 	}
@@ -267,7 +267,7 @@ func batchPipeline(batcher BatchPipeliner, afs afero.Afero, version string) erro
 
 	if !batchDryRunFlag && removePrereleasesFlag {
 		// only chance we fail is already checked above
-		allVers, _ := core.GetAllVersions(afs.ReadDir, config)
+		allVers, _ := core.GetAllVersions(afs.ReadDir, config, false)
 
 		for _, v := range allVers {
 			if v.Prerelease() != "" {

@@ -77,7 +77,7 @@ var _ = Describe("Utils", func() {
 			}, nil
 		}
 
-		vers, err := GetAllVersions(mockRead, config)
+		vers, err := GetAllVersions(mockRead, config, false)
 		Expect(err).To(BeNil())
 		Expect(vers[0].Original()).To(Equal("v0.2.0"))
 		Expect(vers[1].Original()).To(Equal("v0.1.0"))
@@ -90,7 +90,7 @@ var _ = Describe("Utils", func() {
 			return []os.FileInfo{}, mockError
 		}
 
-		vers, err := GetAllVersions(mockRead, config)
+		vers, err := GetAllVersions(mockRead, config, false)
 		Expect(vers).To(BeEmpty())
 		Expect(err).To(Equal(mockError))
 	})
@@ -126,9 +126,25 @@ var _ = Describe("Utils", func() {
 	It("get latest version returns most recent version", func() {
 		mockRead, config := createVersions("v0.2.0")
 
-		ver, err := GetLatestVersion(mockRead, config)
+		ver, err := GetLatestVersion(mockRead, config, false)
 		Expect(err).To(BeNil())
 		Expect(ver.Original()).To(Equal("v0.2.0"))
+	})
+
+	It("get latest version with prerelease", func() {
+		mockRead, config := createVersions("v0.2.0-rc1")
+
+		vers, err := GetLatestVersion(mockRead, config, false)
+		Expect(err).To(BeNil())
+		Expect(vers.Original()).To(Equal("v0.2.0-rc1"))
+	})
+
+	It("get latest version with prerelease skipped", func() {
+		mockRead, config := createVersions("v0.2.0-rc1")
+
+		vers, err := GetLatestVersion(mockRead, config, true)
+		Expect(err).To(BeNil())
+		Expect(vers.Original()).To(Equal("v0.1.0"))
 	})
 
 	It("get latest version returns v0.0.0 if no versions exist", func() {
@@ -140,7 +156,7 @@ var _ = Describe("Utils", func() {
 			return []os.FileInfo{}, nil
 		}
 
-		ver, err := GetLatestVersion(mockRead, config)
+		ver, err := GetLatestVersion(mockRead, config, false)
 		Expect(err).To(BeNil())
 		Expect(ver.Original()).To(Equal("v0.0.0"))
 	})
@@ -152,7 +168,7 @@ var _ = Describe("Utils", func() {
 			return []os.FileInfo{}, mockError
 		}
 
-		vers, err := GetLatestVersion(mockRead, config)
+		vers, err := GetLatestVersion(mockRead, config, false)
 		Expect(vers).To(BeNil())
 		Expect(err).To(Equal(mockError))
 	})
