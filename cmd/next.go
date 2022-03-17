@@ -21,8 +21,9 @@ var nextCmd = &cobra.Command{
 	Long: `Next increments version based on semantic versioning.
 Check latest version and increment part (major, minor, patch).
 Echo the next release version number to be used by CI tools or other commands like batch.`,
-	Args: cobra.ExactArgs(1),
-	RunE: runNext,
+	ValidArgs: []string{"major", "minor", "patch"},
+	Args:      cobra.ExactValidArgs(1),
+	RunE:      runNext,
 }
 
 func init() {

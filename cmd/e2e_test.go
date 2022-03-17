@@ -228,4 +228,12 @@ time: %s`, date)
 		err := Execute("")
 		Expect(err).NotTo(BeNil())
 	})
+
+	It("should fail to echo next with version argument", func() {
+		testInit()
+
+		rootCmd.SetArgs([]string{"next", "v1.2.3"})
+		err := Execute("")
+		Expect(err).NotTo(BeNil())
+	})
 })
