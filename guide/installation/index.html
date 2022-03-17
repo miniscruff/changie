@@ -1,181 +1,21 @@
-<!doctype html><html lang=en>
-<head>
-<meta charset=utf-8>
-<meta http-equiv=x-ua-compatible content="ie=edge">
-<title>Installation - Changie</title>
-<meta name=viewport content="width=device-width,initial-scale=1">
-<link rel=icon href=https://changie.dev/favicon.png>
-<link rel=stylesheet href=/css/style.min.3c1a2026df4402d20378fbbf40615e9865c7425f35dbe4c2d607f2a200506ed0.css>
-</head>
-<body class="page page-default-single">
-<div id=main-menu-mobile class=main-menu-mobile>
-<ul>
-<li class=menu-item-guide>
-<a href=/guide/>
-<span>Guide</span>
-</a>
-</li>
-<li class=menu-item-integrations>
-<a href=/integrations/>
-<span>Integrations</span>
-</a>
-</li>
-<li class=menu-item-cli>
-<a href=/cli/>
-<span>CLI</span>
-</a>
-</li>
-<li class=menu-item-config>
-<a href=/config/>
-<span>Config</span>
-</a>
-</li>
-<li class=menu-item-github>
-<a href=https://github.com/miniscruff/changie>
-<span>Github</span>
-</a>
-</li>
-</ul>
-</div>
-<div class=wrapper>
-<div class=header>
-<div class=container>
-<div class=logo>
-<a href=https://changie.dev/><img alt=Logo src=/images/logo.svg></a>
-</div>
-<div class=logo-mobile>
-<a href=https://changie.dev/><img alt=Logo src=/images/logo.svg></a>
-</div>
-<div id=main-menu class=main-menu>
-<ul>
-<li class=menu-item-guide>
-<a href=/guide/>
-<span>Guide</span>
-</a>
-</li>
-<li class=menu-item-integrations>
-<a href=/integrations/>
-<span>Integrations</span>
-</a>
-</li>
-<li class=menu-item-cli>
-<a href=/cli/>
-<span>CLI</span>
-</a>
-</li>
-<li class=menu-item-config>
-<a href=/config/>
-<span>Config</span>
-</a>
-</li>
-<li class=menu-item-github>
-<a href=https://github.com/miniscruff/changie>
-<span>Github</span>
-</a>
-</li>
-</ul>
-</div>
-<button id=toggle-main-menu-mobile class="hamburger hamburger--slider" type=button>
-<span class=hamburger-box>
-<span class=hamburger-inner></span>
-</span>
-</button>
-</div>
-</div>
-<div class="container pt-2 pt-md-6 pb-3 pb-md-6">
-<div class=row>
-<div class="col-12 col-md-3 mb-3">
-<div class=sidebar>
-<div class=docs-menu>
-<h4>Guide</h4>
-<ul>
-<li class=active>
-<a href=https://changie.dev/guide/installation/>Installation</a>
-</li>
-<li>
-<a href=https://changie.dev/guide/quick-start/>Quick Start</a>
-</li>
-<li>
-<a href=https://changie.dev/guide/backup/>Backup</a>
-</li>
-<li>
-<a href=https://changie.dev/guide/upgrade/>Upgrade Guide</a>
-</li>
-<li>
-<a href=https://changie.dev/guide/changelog/>Changelog</a>
-</li>
-</ul>
-</div>
-</div>
-</div>
-<div class="col-12 col-md-9">
-<h1 class=title>Installation</h1>
-<div class="content anchor-link-enabled">
-<h2 id=debrpm>deb/rpm</h2>
-<p>Download a <code>.deb</code> or <code>.rpm</code> file from the <a href=https://github.com/miniscruff/changie/releases>releases page</a>
-and install with <code>dpkg -i</code> and <code>rpm -i</code> respectively.</p>
-<h2 id=windows-scoop>Windows Scoop</h2>
-<p>On windows you can use <a href=https://scoop.sh/>scoop</a> by first adding the repo and then installing.</p>
-<div class=highlight><pre tabindex=0 class=chroma><code class=language-sh data-lang=sh>scoop bucket add repo https://github.com/miniscruff/changie
-scoop install changie
-</code></pre></div><h2 id=macos-with-homebrew>macOS with Homebrew</h2>
-<p>On macOS, you can use <a href=https://brew.sh/>Homebrew</a> to install by first tapping
-the repository.</p>
-<div class=highlight><pre tabindex=0 class=chroma><code class=language-sh data-lang=sh>brew tap miniscruff/changie https://github.com/miniscruff/changie
-brew install changie
-</code></pre></div><h2 id=archlinux>ArchLinux</h2>
-<p>An <a href=https://aur.archlinux.org/packages/changie/>AUR package</a> is available.</p>
-<div class=highlight><pre tabindex=0 class=chroma><code class=language-sh data-lang=sh>trizen -S changie
-</code></pre></div><h2 id=docker>Docker</h2>
-<p>Docker images are uploaded to <a href=https://github.com/miniscruff/changie/pkgs/container/changie>GitHub Packages</a>.</p>
-<div class=highlight><pre tabindex=0 class=chroma><code class=language-sh data-lang=sh><span class=c1># Replace latest with any changie command</span>
-docker run <span class=se>\
-</span><span class=se></span>    --mount <span class=nv>type</span><span class=o>=</span>bind,source<span class=o>=</span><span class=nv>$PWD</span>,target<span class=o>=</span>/src <span class=se>\
-</span><span class=se></span>    -w /src <span class=se>\
-</span><span class=se></span>    ghcr.io/miniscruff/changie <span class=se>\
-</span><span class=se></span>    latest
-</code></pre></div><h2 id=manual>Manual</h2>
-<ul>
-<li>Download from <a href=https://github.com/miniscruff/changie/releases>here</a>.</li>
-<li>Add executable somewhere in your path depending on your platform.</li>
-</ul>
-<h2 id=from-source>From source</h2>
-<p>Go get can be used to download</p>
-<div class=highlight><pre tabindex=0 class=chroma><code class=language-fallback data-lang=fallback>go get -u github.com/miniscruff/changie
-</code></pre></div>
-</div>
-</div>
-</div>
-</div>
-</div>
-</div>
-<footer class="mx-auto text-center border-top">
-<div class=pt-1>
-<span pr-1>
-Help make the documentation better by
-</span>
-<span pr-1>
-<a href=https://github.com/miniscruff/changie/edit/main/website/content/guide/installation/index.md>
-editing this page
-</a>
-</span>
-<span pr-1> or by </span>
-<span pr-1>
-<a href="https://github.com/miniscruff/changie/issues/new?title=Documentation+issue+in+guide%2Finstallation%2Findex.md">
-reporting an issue.
-</a>
-</span>
-</div>
-<div class=p-1>
-<span pr-1>
-<a href=https://github.com/zerostaticthemes/hugo-whisper-theme>Base Theme</a>
-</span>
-<span pr-1> by </span>
-<span pr-1>
-<a href=https://www.zerostatic.io>zerostatic</a>
-</span>
-</div>
-</footer>
-<script type=text/javascript src=/js/scripts.min.eaf147370baecdd07c022597db631f99cab1c9cd6479de586f30327a568d6a0f.js></script>
-</body>
-</html>
+<!doctype html><html lang=en><head><meta charset=utf-8><meta http-equiv=x-ua-compatible content="ie=edge"><title>Installation - Changie</title><meta name=viewport content="width=device-width,initial-scale=1"><link rel=icon href=https://changie.dev/favicon.png><link rel=stylesheet href=/css/style.min.3c1a2026df4402d20378fbbf40615e9865c7425f35dbe4c2d607f2a200506ed0.css></head><body class="page page-default-single"><div id=main-menu-mobile class=main-menu-mobile><ul><li class=menu-item-guide><a href=/guide/><span>Guide</span></a></li><li class=menu-item-integrations><a href=/integrations/><span>Integrations</span></a></li><li class=menu-item-cli><a href=/cli/><span>CLI</span></a></li><li class=menu-item-config><a href=/config/><span>Config</span></a></li><li class=menu-item-github><a href=https://github.com/miniscruff/changie><span>Github</span></a></li></ul></div><div class=wrapper><div class=header><div class=container><div class=logo><a href=https://changie.dev/><img alt=Logo src=/images/logo.svg></a></div><div class=logo-mobile><a href=https://changie.dev/><img alt=Logo src=/images/logo.svg></a></div><div id=main-menu class=main-menu><ul><li class=menu-item-guide><a href=/guide/><span>Guide</span></a></li><li class=menu-item-integrations><a href=/integrations/><span>Integrations</span></a></li><li class=menu-item-cli><a href=/cli/><span>CLI</span></a></li><li class=menu-item-config><a href=/config/><span>Config</span></a></li><li class=menu-item-github><a href=https://github.com/miniscruff/changie><span>Github</span></a></li></ul></div><button id=toggle-main-menu-mobile class="hamburger hamburger--slider" type=button>
+<span class=hamburger-box><span class=hamburger-inner></span></span></button></div></div><div class="container pt-2 pt-md-6 pb-3 pb-md-6"><div class=row><div class="col-12 col-md-3 mb-3"><div class=sidebar><div class=docs-menu><h4>Guide</h4><ul><li class=active><a href=https://changie.dev/guide/installation/>Installation</a></li><li><a href=https://changie.dev/guide/quick-start/>Quick Start</a></li><li><a href=https://changie.dev/guide/backup/>Backup</a></li><li><a href=https://changie.dev/guide/upgrade/>Upgrade Guide</a></li><li><a href=https://changie.dev/guide/changelog/>Changelog</a></li></ul></div></div></div><div class="col-12 col-md-9"><h1 class=title>Installation</h1><div class="content anchor-link-enabled"><h2 id=debrpm>deb/rpm</h2><p>Download a <code>.deb</code> or <code>.rpm</code> file from the <a href=https://github.com/miniscruff/changie/releases>releases page</a>
+and install with <code>dpkg -i</code> and <code>rpm -i</code> respectively.</p><h2 id=windows-scoop>Windows Scoop</h2><p>On windows you can use <a href=https://scoop.sh/>scoop</a> by first adding the repo and then installing.</p><div class=highlight><pre tabindex=0 class=chroma><code class=language-sh data-lang=sh><span class=line><span class=cl>scoop bucket add repo https://github.com/miniscruff/changie
+</span></span><span class=line><span class=cl>scoop install changie
+</span></span></code></pre></div><h2 id=macos-with-homebrew>macOS with Homebrew</h2><p>On macOS, you can use <a href=https://brew.sh/>Homebrew</a> to install by first tapping
+the repository.</p><div class=highlight><pre tabindex=0 class=chroma><code class=language-sh data-lang=sh><span class=line><span class=cl>brew tap miniscruff/changie https://github.com/miniscruff/changie
+</span></span><span class=line><span class=cl>brew install changie
+</span></span></code></pre></div><h2 id=archlinux>ArchLinux</h2><p>An <a href=https://aur.archlinux.org/packages/changie/>AUR package</a> is available.</p><div class=highlight><pre tabindex=0 class=chroma><code class=language-sh data-lang=sh><span class=line><span class=cl>trizen -S changie
+</span></span></code></pre></div><h2 id=docker>Docker</h2><p>Docker images are uploaded to <a href=https://github.com/miniscruff/changie/pkgs/container/changie>GitHub Packages</a>.</p><div class=highlight><pre tabindex=0 class=chroma><code class=language-sh data-lang=sh><span class=line><span class=cl><span class=c1># Replace latest with any changie command</span>
+</span></span><span class=line><span class=cl>docker run <span class=se>\
+</span></span></span><span class=line><span class=cl><span class=se></span>    --mount <span class=nv>type</span><span class=o>=</span>bind,source<span class=o>=</span><span class=nv>$PWD</span>,target<span class=o>=</span>/src <span class=se>\
+</span></span></span><span class=line><span class=cl><span class=se></span>    -w /src <span class=se>\
+</span></span></span><span class=line><span class=cl><span class=se></span>    ghcr.io/miniscruff/changie <span class=se>\
+</span></span></span><span class=line><span class=cl><span class=se></span>    latest
+</span></span></code></pre></div><h2 id=manual>Manual</h2><ul><li>Download from <a href=https://github.com/miniscruff/changie/releases>here</a>.</li><li>Add executable somewhere in your path depending on your platform.</li></ul><h2 id=from-source>From source</h2><p>Go get can be used to download</p><div class=highlight><pre tabindex=0 class=chroma><code class=language-fallback data-lang=fallback><span class=line><span class=cl>go get -u github.com/miniscruff/changie
+</span></span></code></pre></div></div></div></div></div></div></div><footer class="mx-auto text-center border-top"><div class=pt-1><span pr-1>Help make the documentation better by</span>
+<span pr-1><a href=https://github.com/miniscruff/changie/edit/main/website/content/guide/installation/index.md>editing this page</a></span>
+<span pr-1>or by</span>
+<span pr-1><a href="https://github.com/miniscruff/changie/issues/new?title=Documentation+issue+in+guide%2Finstallation%2Findex.md">reporting an issue.</a></span></div><div class=p-1><span pr-1><a href=https://github.com/zerostaticthemes/hugo-whisper-theme>Base Theme</a></span>
+<span pr-1>by</span>
+<span pr-1><a href=https://www.zerostatic.io>zerostatic</a></span></div></footer><script type=text/javascript src=/js/scripts.min.bafc052229b4b40bf03c477d31c5cdd9352ece8afbadf35ab97ed14495098fc9.js></script></body></html>
