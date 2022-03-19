@@ -114,17 +114,23 @@ func GetNextVersion(
 		next = &ver
 	}
 
-	ver, err = next.SetPrerelease(strings.Join(prerelease, "."))
-	if err != nil {
-		return nil, err
+	if len(prerelease) > 0 {
+		ver, err = next.SetPrerelease(strings.Join(prerelease, "."))
+		if err != nil {
+			return nil, err
+		}
+		next = &ver
 	}
 
-	ver, err = ver.SetMetadata(strings.Join(meta, "."))
-	if err != nil {
-		return nil, err
+	if len(meta) > 0 {
+		ver, err = next.SetMetadata(strings.Join(meta, "."))
+		if err != nil {
+			return nil, err
+		}
+		next = &ver
 	}
 
-	return &ver, nil
+	return next, nil
 }
 
 func FindChangeFiles(

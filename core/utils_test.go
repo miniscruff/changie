@@ -201,6 +201,30 @@ var _ = Describe("Utils", func() {
 		Expect(ver.Original()).To(Equal("v0.4.0"))
 	})
 
+	It("get next version works on only major version", func() {
+		mockRead, config := createVersions("v0.2.0")
+
+		ver, err := GetNextVersion(mockRead, config, "v2", nil, nil)
+		Expect(err).To(BeNil())
+		Expect(ver.Original()).To(Equal("v2"))
+	})
+
+	It("get next version works on major and minor versions", func() {
+		mockRead, config := createVersions("v0.2.0")
+
+		ver, err := GetNextVersion(mockRead, config, "v1.2", nil, nil)
+		Expect(err).To(BeNil())
+		Expect(ver.Original()).To(Equal("v1.2"))
+	})
+
+	It("get next version with short semver and prerelease", func() {
+		mockRead, config := createVersions("v0.2.0")
+
+		ver, err := GetNextVersion(mockRead, config, "v1.5", []string{"rc2"}, nil)
+		Expect(err).To(BeNil())
+		Expect(ver.Original()).To(Equal("v1.5.0-rc2"))
+	})
+
 	It("get next version works on major version", func() {
 		mockRead, config := createVersions("v0.2.0")
 
