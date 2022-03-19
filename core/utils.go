@@ -119,6 +119,7 @@ func GetNextVersion(
 		if err != nil {
 			return nil, err
 		}
+
 		next = &ver
 	}
 
@@ -127,6 +128,7 @@ func GetNextVersion(
 		if err != nil {
 			return nil, err
 		}
+
 		next = &ver
 	}
 
