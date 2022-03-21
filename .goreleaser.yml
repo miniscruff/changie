@@ -1,4 +1,3 @@
-# This is an example goreleaser.yaml file with some sane defaults.
 # Make sure to check the documentation at http://goreleaser.com
 before:
   hooks:
@@ -22,12 +21,11 @@ archives:
 release:
   github:
   prerelease: auto
-  discussion_category_name: Releases
 nfpms:
   - homepage: https://changie.dev
     description: Automated changelog tool for preparing releases with lots of customization options.
     license: MIT
-    maintainer: Ronnie Smith <halfpint1170@gmail.com>
+    maintainer: Ronnie Smith <miniscruff@hey.com>
     formats:
     - deb
     - rpm
