@@ -32,6 +32,11 @@ Use the [discussions page](https://github.com/miniscruff/changie/discussions) fo
 Please open [GitHub issues](https://github.com/miniscruff/changie/issues) for bugs and feature requests.
 File an issue before creating a pull request, unless it is something simple like a typo.
 
+## Media
+* [Get help with Changie](https://dev.to/miniscruff/get-help-automating-your-releases-21ig)
+* [Headers, footers, bumping, latest, dry run](https://dev.to/miniscruff/changie-automated-changelog-generation-for-any-project-1b52)
+* [Prereleases and metadata](https://dev.to/miniscruff/changie-automated-changelog-generation-for-large-projects-41hm)
+
 ## Want to Contribute?
 If you want to contribute through code or documentation, the [Contributing guide](CONTRIBUTING.md) is the place to start.
 If you need additional help create an issue or post on discussions.
