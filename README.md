@@ -33,9 +33,11 @@ Please open [GitHub issues](https://github.com/miniscruff/changie/issues) for bu
 File an issue before creating a pull request, unless it is something simple like a typo.
 
 ## Media
+* [Introduction to Changelog Management](https://dev.to/miniscruff/changie-automated-changelog-tool-11ed)
 * [Get help with Changie](https://dev.to/miniscruff/get-help-automating-your-releases-21ig)
 * [Headers, footers, bumping, latest, dry run](https://dev.to/miniscruff/changie-automated-changelog-generation-for-any-project-1b52)
 * [Prereleases and metadata](https://dev.to/miniscruff/changie-automated-changelog-generation-for-large-projects-41hm)
+* [Choices and Replacements](https://dev.to/miniscruff/changie-choices-and-replacements-40p5)
 
 ## Want to Contribute?
 If you want to contribute through code or documentation, the [Contributing guide](CONTRIBUTING.md) is the place to start.
