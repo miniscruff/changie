@@ -53,7 +53,11 @@ func (b BodyConfig) CreatePrompt(stdinReader io.ReadCloser) Prompt {
 
 // Config handles configuration for a changie project
 type Config struct {
-	ChangesDir        string `yaml:"changesDir"`
+	// Directory for change files, header file and unreleased files.
+	// Relative to project root.
+	// example:
+	// changesDir: .changes
+	ChangesDir        string `yaml:"changesDir" required:"true"`
 	UnreleasedDir     string `yaml:"unreleasedDir"`
 	HeaderPath        string `yaml:"headerPath"`
 	VersionHeaderPath string `yaml:"versionHeaderPath"`
