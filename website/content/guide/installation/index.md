@@ -51,8 +51,8 @@ docker run \
 * Add executable somewhere in your path depending on your platform.
 
 ## From source
-Go get can be used to download
+Go install can be used to download changie from the main branch.
 
 ```
-go get -u github.com/miniscruff/changie
+go install github.com/miniscruff/changie@latest
 ```

@@ -19,12 +19,14 @@ const (
 )
 
 var (
-	ErrInvalidPromptType = errors.New("invalid prompt type")
+	errInvalidPromptType = errors.New("invalid prompt type")
 	errInvalidIntInput   = errors.New("invalid number")
 	errIntTooLow         = errors.New("input below minimum")
 	errIntTooHigh        = errors.New("input above maximum")
 	errInputTooLong      = errors.New("input length too long")
 	errInputTooShort     = errors.New("input length too short")
+	base10               = 10
+	bit64                = 64
 )
 
 type enumWrapper struct {
@@ -83,7 +85,7 @@ func (c Custom) createIntPrompt(stdinReader io.ReadCloser) (Prompt, error) {
 		Label: c.DisplayLabel(),
 		Stdin: stdinReader,
 		Validate: func(input string) error {
-			value, err := strconv.ParseInt(input, 10, 64)
+			value, err := strconv.ParseInt(input, base10, bit64)
 			if err != nil {
 				return errInvalidIntInput
 			}
@@ -118,5 +120,5 @@ func (c Custom) CreatePrompt(stdinReader io.ReadCloser) (Prompt, error) {
 		return c.createEnumPrompt(stdinReader)
 	}
 
-	return nil, ErrInvalidPromptType
+	return nil, errInvalidPromptType
 }

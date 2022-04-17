@@ -53,7 +53,7 @@ func (r Replacement) Execute(
 	transformer := replace.Regexp(regexp.MustCompile(regexString), buf.Bytes())
 	newData, _, _ := transform.Bytes(transformer, fileData)
 
-	err = writeFile(r.Path, newData, 0644)
+	err = writeFile(r.Path, newData, CreateFileMode)
 	if err != nil {
 		return err
 	}

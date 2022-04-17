@@ -8,11 +8,11 @@ summary: Using Changie for GoReleaser release notes
 Changie itself uses [GoReleaser](https://goreleaser.com) and can be integrated
 with a few steps.
 
-First disable GoReleaser from generating its own release notes by adding this to your config.
+First make sure GoReleaser will even generate any changelog by setting skip to false.
 
 ```yaml
 changelog:
-  skip: true
+  skip: false
 ```
 
 By default GoReleaser expects to release the current tag but we can let GitHub
