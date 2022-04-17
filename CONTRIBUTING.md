@@ -79,7 +79,6 @@ Be sure to commit the generated file to your branch as part of your pull request
 ### Prepare your pull request
 ```sh
 make lint
-make format
 ```
 
 ## Creating your pull request
@@ -95,6 +94,6 @@ Some tips to streamline this process:
 
 A maintainer should review your pull request in a timely manner.
 
-If your work is approved it will be squash and merged so feel free to use as many commits as you want.
+If your work is approved it will be "squash and merged" so feel free to use as many commits as you need.
 
 [discussion]: https://github.com/miniscruff/changie/discussions
