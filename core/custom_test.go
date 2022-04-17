@@ -24,7 +24,7 @@ var _ = Describe("Custom", func() {
 		_, err := Custom{
 			Type: "invalid type",
 		}.CreatePrompt(os.Stdin)
-		Expect(errors.Is(err, ErrInvalidPromptType)).To(BeTrue())
+		Expect(errors.Is(err, errInvalidPromptType)).To(BeTrue())
 	})
 
 	It("can create custom string prompt", func() {
