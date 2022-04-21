@@ -1,0 +1,18 @@
+<meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<meta name="robots" content="index, follow">
+<meta name="description" content="">
+
+<title>{{ .Site.Title }}</title>
+
+{{- /* Styles */}}
+{{- $theme_css := (resources.Get "css/theme.css") }}
+{{- $main_css := (resources.Get "css/main.css") }}
+{{- $reset_css := (resources.Get "css/reset.css") }}
+
+{{- $stylesheet := (slice $theme_css $reset_css $main_css) | resources.Concat "assets/css/stylesheet.css" | minify | fingerprint }}
+<link crossorigin="anonymous" href="{{ $stylesheet.RelPermalink }}" integrity="{{ $stylesheet.Data.Integrity }}" rel="preload stylesheet" as="style">
+
+{{- /* Favicons */}}
+<link rel="icon" href="{{ site.Params.assets.favicon | default "favicon.png" | absURL }}">
