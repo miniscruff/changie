@@ -1,0 +1,10 @@
+{{- range . }}
+<a class="social"
+  href="{{ trim .url " " }}"
+  target="_blank"
+  rel="noopener noreferrer me"
+  title="{{ .name | title }}"
+>
+  {{ partial "svg.html" . }}
+</a>
+{{- end }}

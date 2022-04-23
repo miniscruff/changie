@@ -4,3 +4,29 @@ languageCode = "en-us"
 # We disable taxonomies because we don't provide templates for them, and they
 # don't apply to our minimal use case.
 disableKinds = ["taxonomy", "taxonomyTerm"]
+
+[[Menu.main]]
+  identifier = "guide"
+  name = "Guide"
+  url = "/guide"
+  weight = 10
+
+[[Menu.main]]
+  identifier = "CLI"
+  name = "CLI"
+  url = "/cli"
+  weight = 20
+
+[[Menu.main]]
+  identifier = "Config"
+  name = "Config"
+  url = "/config"
+  weight = 30
+
+[[params.social]]
+  name = "GitHub"
+  url = "http://github.com/miniscruff/changie"
+
+[[params.social]]
+  name = "Twitter"
+  url = "https://twitter.com/miniScruffDev"

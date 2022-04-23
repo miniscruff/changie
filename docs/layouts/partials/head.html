@@ -7,12 +7,18 @@
 <title>{{ .Site.Title }}</title>
 
 {{- /* Styles */}}
-{{- $theme_css := (resources.Get "css/theme.css") }}
-{{- $main_css := (resources.Get "css/main.css") }}
-{{- $reset_css := (resources.Get "css/reset.css") }}
+{{- $theme_css := resources.Get "css/theme.css" }}
+{{- $main_css := resources.Get "css/main.css" }}
+{{- $reset_css := resources.Get "css/reset.css" }}
+{{- $asciinema_css := resources.Get "css/asciinema-player.css" }}
 
-{{- $stylesheet := (slice $theme_css $reset_css $main_css) | resources.Concat "assets/css/stylesheet.css" | minify | fingerprint }}
+{{- $stylesheet := (slice $asciinema_css $theme_css $reset_css $main_css) | resources.Concat "assets/css/stylesheet.css" | minify | fingerprint }}
 <link crossorigin="anonymous" href="{{ $stylesheet.RelPermalink }}" integrity="{{ $stylesheet.Data.Integrity }}" rel="preload stylesheet" as="style">
 
 {{- /* Favicons */}}
 <link rel="icon" href="{{ site.Params.assets.favicon | default "favicon.png" | absURL }}">
+
+{{- /* Scripts */}}
+{{- $asciijs := resources.Get "js/asciinema-player.js" }}
+{{- $scripts := (slice $asciijs) | resources.Concat "assets/js/scripts.js" | minify | fingerprint }}
+<script defer crossorigin="anonymous" src="{{ $scripts.RelPermalink }}" integrity="{{ $scripts.Data.Integrity }}"></script>

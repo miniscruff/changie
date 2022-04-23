@@ -6,7 +6,7 @@ main {
     padding: var(--gap);
 }
 
-.nav {
+nav {
     display: flex;
     flex-wrap: wrap;
     justify-content: space-between;
@@ -16,8 +16,18 @@ main {
     line-height: var(--header-height);
 }
 
-.nav a {
-    display: block;
+nav a,
+#theme-toggle {
+    border-color: transparent;
+    border-bottom-style: solid;
+    border-radius: 50%;
+    transition: all 0.25s ease-in-out;
+}
+
+nav a:hover,
+#theme-toggle:hover {
+    border-color: currentColor;
+    border-radius: var(--radius);
 }
 
 .logo,
@@ -28,6 +38,7 @@ main {
 
 .logo {
     flex-wrap: inherit;
+    gap: var(--gap);
 }
 
 .logo a {
@@ -35,22 +46,14 @@ main {
     font-weight: 700;
 }
 
-.logo a img {
-    display: inline;
-    vertical-align: middle;
-    pointer-events: none;
-    transform: translate(0, -10%);
-    border-radius: 6px;
-    margin-inline-end: 8px;
-}
-
 #theme-toggle svg {
     height: 18px;
 }
 
-button#theme-toggle {
+#theme-toggle {
     font-size: 26px;
     margin: auto 4px;
+    cursor: pointer;
 }
 
 body.dark #moon {
@@ -69,15 +72,30 @@ body:not(.dark) #sun {
     white-space: nowrap;
 }
 
-#menu li + li {
-    margin-inline-start: var(--gap);
-}
-
 #menu a {
     font-size: 16px;
+    padding: 8px 15px;
 }
 
 #menu .active {
     font-weight: 500;
     border-bottom: 2px solid currentColor;
+}
+
+.social svg {
+  width: 32px;
+  height: 21px;
+  translate: 0 3px;
+}
+
+@media screen and (max-width: 768px) {
+    /* theme-vars */
+    :root {
+        --gap: 14px;
+    }
+
+    /* footer */
+    .footer {
+        padding: calc((var(--footer-height) - var(--gap) - 10px) / 2) var(--gap);
+    }
 }
