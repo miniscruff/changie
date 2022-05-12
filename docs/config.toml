@@ -1,32 +1,76 @@
 title = "Changie"
+themesDir = "themes"
+theme = "hugo-whisper-theme"
 languageCode = "en-us"
 
-# We disable taxonomies because we don't provide templates for them, and they
-# don't apply to our minimal use case.
-disableKinds = ["taxonomy", "taxonomyTerm"]
+pygmentsCodeFences = true
+pygmentsCodefencesGuessSyntax = true
+pygmentsUseClasses = true
 
-[[Menu.main]]
-  identifier = "guide"
-  name = "Guide"
-  url = "/guide"
-  weight = 10
+# Controls how many words are printed in the content summary on the docs homepage.
+# See https://gohugo.io/content-management/summaries/
+summaryLength = 30
 
-[[Menu.main]]
-  identifier = "CLI"
-  name = "CLI"
-  url = "/cli"
-  weight = 20
+[[menu.main]]
+    name = "Guide"
+    url = "/guide/"
+    weight = 1
 
-[[Menu.main]]
-  identifier = "Config"
-  name = "Config"
-  url = "/config"
-  weight = 30
+[[menu.main]]
+    name = "Integrations"
+    url = "/integrations/"
+    weight = 2
 
-[[params.social]]
-  name = "GitHub"
-  url = "http://github.com/miniscruff/changie"
+[[menu.main]]
+    name = "CLI"
+    url = "/cli/"
+    weight = 3
 
-[[params.social]]
-  name = "Twitter"
-  url = "https://twitter.com/miniScruffDev"
+[[menu.main]]
+    name = "Config"
+    url = "/config/"
+    weight = 4
+
+[[menu.main]]
+    name = "Github"
+    url = "https://github.com/miniscruff/changie"
+    weight = 99
+
+[params]
+  homepage_intro = 'Changie is a file based changelog management tool.'
+  mainSections = [
+      "guide",
+      "integrations",
+      "cli",
+      "config",
+  ]
+  enable_anchor_link = true
+  issues_url = 'https://github.com/miniscruff/changie/issues/new'
+
+  [params.homepage_meta_tags]
+    meta_description = "Changie is a file based changelog management tool."
+    meta_og_title = "Changie Documentation"
+    meta_og_type = "website"
+    meta_og_url = "https://changie.dev"
+    meta_og_image = "https://changie.dev/og_image.png"
+    meta_og_description = "Changie is a file based changelog management tool."
+    meta_twitter_card = "summary"
+    meta_twitter_site = "@miniScruffDev"
+    meta_twitter_creator = "@miniScruffDev"
+
+  [params.logo]
+      mobile = "/images/logo.svg"
+      standard  = "/images/logo.svg"
+
+[markup]
+  [markup.highlight]
+    anchorLineNos = false
+    codeFences = true
+    guessSyntax = true
+    noClasses = true
+    style = "monokai"
+    tabWidth = 4
+  [markup.tableOfContents]
+    startLevel = 2
+    endLevel = 3
+    ordered = false

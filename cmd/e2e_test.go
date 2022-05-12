@@ -169,7 +169,7 @@ time: %s`, date)
 	}
 
 	testGen := func() {
-		docsPath := filepath.Join(tempDir, "website", "content", "cli")
+		docsPath := filepath.Join(tempDir, "docs", "content", "cli")
 		Expect(os.MkdirAll(docsPath, core.CreateDirMode)).To(Succeed())
 		rootCmd.SetArgs([]string{"gen"})
 		Expect(Execute("")).To(Succeed())

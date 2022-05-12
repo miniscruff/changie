@@ -13,8 +13,6 @@ coverage.txt
 *.out
 
 # hugo builds
-website/public
-website/resources
 docs/public
 docs/resources
 

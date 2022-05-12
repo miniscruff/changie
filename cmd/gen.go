@@ -11,6 +11,7 @@ import (
 	"path/filepath"
 	"strings"
 	"time"
+	"os"
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/cobra/doc"
@@ -46,7 +47,7 @@ var genCmd = &cobra.Command{
 			return err
 		}
 
-		return doc.GenMarkdownTreeCustom(rootCmd, "website/content/cli", filePrepender, linkHandler)
+		return doc.GenMarkdownTreeCustom(rootCmd, "docs/content/cli", filePrepender, linkHandler)
 	},
 	Hidden: true,
 }
@@ -85,11 +86,25 @@ func genConfigDocs() error {
 		corePackages[t.Name] = t
 	}
 
+	file, err := os.Create("docs/content/config/_index.md")
+	if err != nil {
+		return err
+	}
+
+	defer file.Close()
+
+	file.WriteString(fmt.Sprintf(`---
+title: "Configuration"
+date: %v
+layout: single
+singlePage: true
+---
+`, time.Now()))
+
 	// temp write to a string and print it for testing
 	typeQueue := make([]string, 0)
 	typeQueue = append(typeQueue, "Config")
 	completed := make(map[string]struct{}, 0)
-	var writer strings.Builder
 
 	for {
 		fmt.Printf("Queue: %v\n", typeQueue)
@@ -114,13 +129,11 @@ func genConfigDocs() error {
 		completed[typeName] = struct{}{}
 
 		fmt.Printf("Writing: %v\n", docType.Name)
-		err = writeType(&writer, docType, &typeQueue)
+		err = writeType(file, docType, &typeQueue)
 		if err != nil {
 			return err
 		}
 	}
-
-	fmt.Println(writer.String())
 
 	return nil
 }
@@ -185,18 +198,15 @@ func writeField(writer io.Writer, parentName string, field *ast.Field, queue *[]
 		props.Example = after
 	}
 
-	// writer.Write([]byte(fmt.Sprintf("")))
 	typePrefix := ""
 	if props.Slice {
 		typePrefix = "[]"
 	}
 
 	writer.Write([]byte(fmt.Sprintf(
-		"### %s%s {#%s-%s}\n",
+		"### %s%s\n",
 		typePrefix,
 		props.Name,
-		strings.ToLower(props.ParentType),
-		strings.ToLower(props.Name),
 	)))
 	writer.Write([]byte(fmt.Sprintf("type: `%s`\n", props.TypeName)))
 
@@ -213,10 +223,10 @@ func writeField(writer io.Writer, parentName string, field *ast.Field, queue *[]
 	writer.Write([]byte("\n"))
 
 	if props.Example != "" {
-		writer.Write([]byte(`{{< expand "Example" >}}`))
+		//writer.Write([]byte(`{{< expand "Example" >}}`))
 		writer.Write([]byte(props.Example))
 		writer.Write([]byte("\n"))
-		writer.Write([]byte("{{< /expand >}}"))
+		//writer.Write([]byte("{{< /expand >}}"))
 		writer.Write([]byte("\n"))
 	}
 

@@ -4,7 +4,7 @@ on:
   pull_request:
     branches: [ main ]
     paths:
-    - 'website/**'
+    - 'docs/**'
     - 'cmd/**'
     - 'CHANGELOG.md'
 
@@ -31,6 +31,6 @@ jobs:
 
     - name: Build docs
       run: |
-        awk 'NR > 1' CHANGELOG.md >> website/content/guide/changelog/index.md
+        awk 'NR > 1' CHANGELOG.md >> docs/content/guide/changelog/index.md
         go run main.go gen
-        hugo --minify -s website -b https://changie.dev/
+        hugo --minify -s docs -b https://changie.dev/
