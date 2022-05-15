@@ -1,6 +1,7 @@
 package core
 
 import (
+	"fmt"
 	"io"
 	"os"
 
@@ -13,6 +14,7 @@ import (
 const configEnvVar = "CHANGIE_CONFIG_PATH"
 const CreateFileMode os.FileMode = 0644
 const CreateDirMode os.FileMode = 0755
+const timeFormat string = "20060102-150405"
 
 var ConfigPaths []string = []string{
 	".changie.yaml",
@@ -61,12 +63,13 @@ type Config struct {
 	ChangelogPath     string `yaml:"changelogPath"`
 	VersionExt        string `yaml:"versionExt"`
 	// formats
-	VersionFormat   string `yaml:"versionFormat"`
-	ComponentFormat string `yaml:"componentFormat,omitempty"`
-	KindFormat      string `yaml:"kindFormat,omitempty"`
-	ChangeFormat    string `yaml:"changeFormat"`
-	HeaderFormat    string `yaml:"headerFormat"`
-	FooterFormat    string `yaml:"footerFormat"`
+	FragmentFileFormat string `yaml:"fragmentFileFormat,omitempty"`
+	VersionFormat      string `yaml:"versionFormat"`
+	ComponentFormat    string `yaml:"componentFormat,omitempty"`
+	KindFormat         string `yaml:"kindFormat,omitempty"`
+	ChangeFormat       string `yaml:"changeFormat"`
+	HeaderFormat       string `yaml:"headerFormat"`
+	FooterFormat       string `yaml:"footerFormat"`
 	// custom
 	Body          BodyConfig    `yaml:"body,omitempty"`
 	Components    []string      `yaml:"components,omitempty"`
@@ -128,6 +131,19 @@ func LoadConfig(rf shared.ReadFiler) (Config, error) {
 	err = yaml.Unmarshal(bs, &c)
 	if err != nil {
 		return c, err
+	}
+
+	// load backward incompatible configs
+	if c.FragmentFileFormat == "" {
+		if len(c.Components) > 0 {
+			c.FragmentFileFormat = "{{.Component}}-"
+		}
+
+		if len(c.Kinds) > 0 {
+			c.FragmentFileFormat += "{{.Kind}}-"
+		}
+
+		c.FragmentFileFormat += fmt.Sprintf("{{.Time.Format \"%v\"}}", timeFormat)
 	}
 
 	return c, nil

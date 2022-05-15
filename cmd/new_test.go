@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
 
 	. "github.com/onsi/ginkgo"
@@ -61,12 +62,12 @@ var _ = Describe("New", func() {
 			DelayWrite(stdinWriter, []byte{13})
 		}()
 
-		out, err := newPipeline(newConfig{
-			afs:         afs,
-			timeNow:     mockTime,
-			stdinReader: stdinReader,
+		err = newPipeline(newConfig{
+			afs:           afs,
+			timeNow:       mockTime,
+			stdinReader:   stdinReader,
+			templateCache: core.NewTemplateCache(),
 		})
-		Expect(out).To(BeEmpty())
 		Expect(err).To(BeNil())
 
 		futurePath := filepath.Join(testConfig.ChangesDir, testConfig.UnreleasedDir)
@@ -99,12 +100,12 @@ var _ = Describe("New", func() {
 			DelayWrite(stdinWriter, []byte{13})
 		}()
 
-		out, err := newPipeline(newConfig{
-			afs:         afs,
-			timeNow:     mockTime,
-			stdinReader: stdinReader,
+		err = newPipeline(newConfig{
+			afs:           afs,
+			timeNow:       mockTime,
+			stdinReader:   stdinReader,
+			templateCache: core.NewTemplateCache(),
 		})
-		Expect(out).To(BeEmpty())
 		Expect(err).To(BeNil())
 
 		futurePath := filepath.Join(testConfig.ChangesDir, testConfig.UnreleasedDir)
@@ -141,16 +142,41 @@ var _ = Describe("New", func() {
 			return nil, mockError
 		}
 
-		out, err := newPipeline(newConfig{
-			afs:         afs,
-			timeNow:     mockTime,
-			stdinReader: stdinReader,
+		err = newPipeline(newConfig{
+			afs:           afs,
+			timeNow:       mockTime,
+			stdinReader:   stdinReader,
+			templateCache: core.NewTemplateCache(),
 		})
-		Expect(out).To(BeEmpty())
 		Expect(err).To(Equal(mockError))
 	})
 
-	It("returns the change as an output in dry run", func() {
+	It("returns error on fragment template", func() {
+		testConfig.FragmentFileFormat = "{{...asdf}}"
+		Expect(testConfig.Save(afs.WriteFile)).To(Succeed())
+
+		stdinReader, stdinWriter, err := os.Pipe()
+		Expect(err).To(BeNil())
+
+		defer stdinReader.Close()
+		defer stdinWriter.Close()
+
+		go func() {
+			DelayWrite(stdinWriter, []byte{106, 13})
+			DelayWrite(stdinWriter, []byte("a message"))
+			DelayWrite(stdinWriter, []byte{13})
+		}()
+
+		err = newPipeline(newConfig{
+			afs:           afs,
+			timeNow:       mockTime,
+			stdinReader:   stdinReader,
+			templateCache: core.NewTemplateCache(),
+		})
+		Expect(err).NotTo(BeNil())
+	})
+
+	It("outputs to cmdOut in dry run", func() {
 		testConfig.Kinds = []core.KindConfig{}
 		err := testConfig.Save(afs.WriteFile)
 		Expect(err).To(BeNil())
@@ -166,18 +192,22 @@ var _ = Describe("New", func() {
 			DelayWrite(stdinWriter, []byte{13})
 		}()
 
+		var writer strings.Builder
+
 		changeContent := fmt.Sprintf(
 			"body: body stuff\ntime: %s\n",
 			mockTime().Format(time.RFC3339Nano),
 		)
 
-		out, err := newPipeline(newConfig{
-			afs:         afs,
-			timeNow:     mockTime,
-			stdinReader: stdinReader,
-			dryRun:      true,
+		err = newPipeline(newConfig{
+			afs:           afs,
+			timeNow:       mockTime,
+			stdinReader:   stdinReader,
+			templateCache: core.NewTemplateCache(),
+			cmdOut:        &writer,
+			dryRun:        true,
 		})
-		Expect(out).To(Equal(changeContent))
+		Expect(writer.String()).To(Equal(changeContent))
 		Expect(err).To(BeNil())
 
 		futurePath := filepath.Join(testConfig.ChangesDir, testConfig.UnreleasedDir)
@@ -202,12 +232,12 @@ var _ = Describe("New", func() {
 			DelayWrite(stdinWriter, []byte{3})
 		}()
 
-		out, err := newPipeline(newConfig{
-			afs:         afs,
-			timeNow:     mockTime,
-			stdinReader: stdinReader,
+		err = newPipeline(newConfig{
+			afs:           afs,
+			timeNow:       mockTime,
+			stdinReader:   stdinReader,
+			templateCache: core.NewTemplateCache(),
 		})
-		Expect(out).To(BeEmpty())
 		Expect(err).NotTo(BeNil())
 	})
 
@@ -227,22 +257,22 @@ var _ = Describe("New", func() {
 			DelayWrite(stdinWriter, []byte{3})
 		}()
 
-		out, err := newPipeline(newConfig{
-			afs:         afs,
-			timeNow:     mockTime,
-			stdinReader: stdinReader,
+		err = newPipeline(newConfig{
+			afs:           afs,
+			timeNow:       mockTime,
+			stdinReader:   stdinReader,
+			templateCache: core.NewTemplateCache(),
 		})
-		Expect(out).To(BeEmpty())
 		Expect(err).NotTo(BeNil())
 	})
 
 	It("returns error on bad config", func() {
-		out, err := newPipeline(newConfig{
-			afs:         afs,
-			timeNow:     mockTime,
-			stdinReader: os.Stdin,
+		err := newPipeline(newConfig{
+			afs:           afs,
+			timeNow:       mockTime,
+			stdinReader:   os.Stdin,
+			templateCache: core.NewTemplateCache(),
 		})
-		Expect(out).To(BeEmpty())
 		Expect(err).NotTo(BeNil())
 	})
 })

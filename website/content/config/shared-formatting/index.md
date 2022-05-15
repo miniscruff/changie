@@ -126,6 +126,24 @@ For example, if you had a custom value named `Issue` you can include that in you
 | **Time** | `time.Time` | Time of generated change |
 | **Custom** | `map[string]string` | Map of custom values if any exist |
 
+### fragmentFileFormat
+type: `string` | default: `"{{.Component}}-{{.Kind}}-{{.Time.Format "20060102-150405"}}`
+
+Customize the file name generated for new fragments.
+The default uses the component and kind only if configured for your project.
+The file is placed in the unreleased directory, so the full path is:
+`{{.ChangesDir}}/{{.UnreleasedDir}}/{{.FragmentFileFormat}}.yaml`.
+
+**Fragment File Arguments**
+
+| Field | Type | Description |
+| --- | --- | --- |
+| **Component** | `string` | What kind of component we are changing, only included if enabled |
+| **Kind** | `string` | What kind of change this is, only included if enabled |
+| **Body** | `string` | Body message of the change |
+| **Time** | `time.Time` | Time of generated change |
+| **Custom** | `map[string]string` | Map of custom values if any exist |
+
 ## Body Config
 type: `struct`
 

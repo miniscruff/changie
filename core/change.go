@@ -1,10 +1,8 @@
 package core
 
 import (
-	"fmt"
 	"io"
 	"sort"
-	"strings"
 	"time"
 
 	"github.com/manifoldco/promptui"
@@ -13,8 +11,6 @@ import (
 
 	"github.com/miniscruff/changie/shared"
 )
-
-const timeFormat string = "20060102-150405"
 
 type ChangesConfigSorter struct {
 	changes []Change
@@ -83,29 +79,6 @@ type Change struct {
 	Body      string
 	Time      time.Time
 	Custom    map[string]string `yaml:",omitempty"`
-}
-
-// OutputPath will return the filepath where the change fragment should
-// be written
-func (change Change) OutputPath(config Config) string {
-	nameParts := make([]string, 0)
-
-	if change.Component != "" {
-		nameParts = append(nameParts, change.Component)
-	}
-
-	if change.Kind != "" {
-		nameParts = append(nameParts, change.Kind)
-	}
-
-	nameParts = append(nameParts, change.Time.Format(timeFormat))
-
-	return fmt.Sprintf(
-		"%s/%s/%s.yaml",
-		config.ChangesDir,
-		config.UnreleasedDir,
-		strings.Join(nameParts, "-"),
-	)
 }
 
 // SaveUnreleased will save an unreleased change to the unreleased directory

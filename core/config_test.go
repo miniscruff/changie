@@ -2,6 +2,7 @@ package core
 
 import (
 	"errors"
+	"fmt"
 	"os"
 
 	"github.com/manifoldco/promptui"
@@ -117,7 +118,7 @@ custom:
 	It("should load config from path", func() {
 		mockRf := func(filepath string) ([]byte, error) {
 			if filepath == ConfigPaths[0] {
-				return []byte("changesDir: C\nheaderPath: header.rst\n"), nil
+				return []byte("changesDir: C\nfragmentFileFormat: \"{{.Custom.Issue}}\"\n"), nil
 			}
 			return nil, os.ErrNotExist
 		}
@@ -125,7 +126,64 @@ custom:
 		config, err := LoadConfig(mockRf)
 		Expect(err).To(BeNil())
 		Expect(config.ChangesDir).To(Equal("C"))
-		Expect(config.HeaderPath).To(Equal("header.rst"))
+		Expect(config.FragmentFileFormat).To(Equal("{{.Custom.Issue}}"))
+	})
+
+	It("should configure default fragment template with kinds and components", func() {
+		mockRf := func(filepath string) ([]byte, error) {
+			if filepath == ConfigPaths[0] {
+				return []byte(`kinds:
+- label: B
+- label: C
+- label: E
+components:
+- A
+- D
+- G
+`), nil
+			}
+			return nil, os.ErrNotExist
+		}
+
+		config, err := LoadConfig(mockRf)
+		Expect(err).To(BeNil())
+		Expect(config.FragmentFileFormat).To(Equal(
+			fmt.Sprintf("{{.Component}}-{{.Kind}}-{{.Time.Format \"%v\"}}", timeFormat),
+		))
+	})
+
+	It("should configure default fragment template with just kinds", func() {
+		mockRf := func(filepath string) ([]byte, error) {
+			if filepath == ConfigPaths[0] {
+				return []byte(`kinds:
+- label: B
+- label: C
+- label: E
+`), nil
+			}
+			return nil, os.ErrNotExist
+		}
+
+		config, err := LoadConfig(mockRf)
+		Expect(err).To(BeNil())
+		Expect(config.FragmentFileFormat).To(Equal(
+			fmt.Sprintf("{{.Kind}}-{{.Time.Format \"%v\"}}", timeFormat),
+		))
+	})
+
+	It("should configure default fragment template without kinds or components", func() {
+		mockRf := func(filepath string) ([]byte, error) {
+			if filepath == ConfigPaths[0] {
+				return []byte("unreleasedDir: unrel"), nil
+			}
+			return nil, os.ErrNotExist
+		}
+
+		config, err := LoadConfig(mockRf)
+		Expect(err).To(BeNil())
+		Expect(config.FragmentFileFormat).To(Equal(
+			fmt.Sprintf("{{.Time.Format \"%v\"}}", timeFormat),
+		))
 	})
 
 	It("should load config from alternate path", func() {
