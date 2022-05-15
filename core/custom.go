@@ -47,6 +47,7 @@ type Prompt interface {
 type Custom struct {
 	Key         string
 	Type        CustomType
+	Optional    bool     `yaml:"optional,omitempty"`
 	Label       string   `yaml:",omitempty"`
 	MinInt      *int64   `yaml:"minInt,omitempty"`
 	MaxInt      *int64   `yaml:"maxInt,omitempty"`
@@ -69,6 +70,10 @@ func (c Custom) createStringPrompt(stdinReader io.ReadCloser) (Prompt, error) {
 		Stdin: stdinReader,
 		Validate: func(input string) error {
 			length := int64(len(input))
+
+			if c.Optional && length == 0 {
+				return nil
+			}
 			if c.MinLength != nil && length < *c.MinLength {
 				return fmt.Errorf("%w: length of %v < %v", errInputTooShort, length, c.MinLength)
 			}
@@ -85,6 +90,10 @@ func (c Custom) createIntPrompt(stdinReader io.ReadCloser) (Prompt, error) {
 		Label: c.DisplayLabel(),
 		Stdin: stdinReader,
 		Validate: func(input string) error {
+			if c.Optional && input == "" {
+				return nil
+			}
+
 			value, err := strconv.ParseInt(input, base10, bit64)
 			if err != nil {
 				return errInvalidIntInput
