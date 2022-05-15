@@ -14,10 +14,12 @@ import (
 )
 
 type newConfig struct {
-	afs         afero.Afero
-	timeNow     shared.TimeNow
-	stdinReader io.ReadCloser
-	dryRun      bool
+	afs           afero.Afero
+	cmdOut        io.Writer
+	dryRun        bool
+	timeNow       shared.TimeNow
+	stdinReader   io.ReadCloser
+	templateCache *core.TemplateCache
 }
 
 var (
@@ -48,53 +50,55 @@ func runNew(cmd *cobra.Command, args []string) error {
 	fs := afero.NewOsFs()
 	afs := afero.Afero{Fs: fs}
 
-	out, err := newPipeline(newConfig{
-		afs:         afs,
-		timeNow:     time.Now,
-		stdinReader: os.Stdin,
-		dryRun:      _newDryRun,
+	return newPipeline(newConfig{
+		afs:           afs,
+		timeNow:       time.Now,
+		stdinReader:   os.Stdin,
+		templateCache: core.NewTemplateCache(),
+		cmdOut:        cmd.OutOrStdout(),
+		dryRun:        _newDryRun,
 	})
-
-	if err != nil {
-		return err
-	}
-
-	if out != "" {
-		_, err = cmd.OutOrStdout().Write([]byte(out))
-	}
-
-	return err
 }
 
-func newPipeline(newConfig newConfig) (string, error) {
-	var builder strings.Builder
-
+func newPipeline(newConfig newConfig) error {
 	config, err := core.LoadConfig(newConfig.afs.ReadFile)
 	if err != nil {
-		return "", err
+		return err
 	}
 
 	var change core.Change
 
 	err = core.AskPrompts(&change, config, newConfig.stdinReader)
 	if err != nil {
-		return "", err
+		return err
 	}
 
 	change.Time = newConfig.timeNow()
-	_ = change.Write(&builder)
+
+	var writer io.Writer
 
 	if newConfig.dryRun {
-		return builder.String(), nil
+		writer = newConfig.cmdOut
+	} else {
+		var outputPath strings.Builder
+
+		outputPath.WriteString(config.ChangesDir + "/" + config.UnreleasedDir + "/")
+
+		err = newConfig.templateCache.Execute(config.FragmentFileFormat, &outputPath, change)
+		if err != nil {
+			return err
+		}
+
+		outputPath.WriteString(".yaml")
+
+		newFile, err := newConfig.afs.Fs.Create(outputPath.String())
+		if err != nil {
+			return err
+		}
+		defer newFile.Close()
+
+		writer = newFile
 	}
 
-	newFile, err := newConfig.afs.Fs.Create(change.OutputPath(config))
-	if err != nil {
-		return "", err
-	}
-	defer newFile.Close()
-
-	_, err = newFile.Write([]byte(builder.String()))
-
-	return "", err
+	return change.Write(writer)
 }

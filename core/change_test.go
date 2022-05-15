@@ -42,36 +42,6 @@ var _ = Describe("Change", func() {
 		Expect(err).To(BeNil())
 	})
 
-	It("should generate a basic output path", func() {
-		change := Change{
-			Time: mockTime(),
-		}
-
-		config := Config{
-			ChangesDir:    "Changes",
-			UnreleasedDir: "Unrel",
-		}
-
-		Expect(change.OutputPath(config)).
-			To(Equal("Changes/Unrel/20160524-033010.yaml"))
-	})
-
-	It("should generate a basic complex output path", func() {
-		change := Change{
-			Component: "comp",
-			Kind:      "kiiii",
-			Time:      mockTime(),
-		}
-
-		config := Config{
-			ChangesDir:    "Changes",
-			UnreleasedDir: "Unrel",
-		}
-
-		Expect(change.OutputPath(config)).
-			To(Equal("Changes/Unrel/comp-kiiii-20160524-033010.yaml"))
-	})
-
 	It("should load change from path", func() {
 		mockRf := func(filepath string) ([]byte, error) {
 			Expect(filepath).To(Equal("some_file.yaml"))
