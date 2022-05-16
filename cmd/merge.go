@@ -100,9 +100,15 @@ func mergePipeline(afs afero.Afero, creator shared.CreateFiler, dryRun bool) (st
 		return "", nil
 	}
 
+	version := allVersions[0]
 	replaceData := core.ReplaceData{
-		Version:         allVersions[0].Original(),
-		VersionNoPrefix: allVersions[0].String(),
+		Version:         version.Original(),
+		VersionNoPrefix: version.String(),
+		Major:           int(version.Major()),
+		Minor:           int(version.Minor()),
+		Patch:           int(version.Patch()),
+		Prerelease:      version.Prerelease(),
+		Metadata:        version.Metadata(),
 	}
 
 	for _, rep := range config.Replacements {

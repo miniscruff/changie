@@ -80,6 +80,11 @@ Template used to generate version headers in version files and changelog.
 | --- | --- | --- |
 | **Version** | `string` | Semantic version of the changes |
 | **PreviousVersion** | `string` | Semantic version of the previous release |
+| **Major** | _int_ | Current version major value |
+| **Minor** | _int_ | Current version minor value |
+| **Patch** | _int_ | Current version patch value |
+| **Prerelease** | _string_ | Current version prerelease value |
+| **Metadata** | _string_ | Current version metadata value |
 | **Time** | `time.Time` | Time of generated version |
 
 ### componentFormat
