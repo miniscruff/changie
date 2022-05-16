@@ -9,11 +9,15 @@ import (
 	"github.com/Masterminds/sprig/v3"
 )
 
-// probably want to move this -miniscruff
 type BatchData struct {
 	Time            time.Time
 	Version         string
 	PreviousVersion string
+	Major           int
+	Minor           int
+	Patch           int
+	Prerelease      string
+	Metadata        string
 	Changes         []Change
 }
 

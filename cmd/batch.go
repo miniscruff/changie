@@ -181,6 +181,11 @@ func getBatchData(
 		Time:            time.Now(),
 		Version:         currentVersion.Original(),
 		PreviousVersion: previousVersion.Original(),
+		Major:           int(currentVersion.Major()),
+		Minor:           int(currentVersion.Minor()),
+		Patch:           int(currentVersion.Patch()),
+		Prerelease:      currentVersion.Prerelease(),
+		Metadata:        currentVersion.Metadata(),
 		Changes:         allChanges,
 	}, nil
 }

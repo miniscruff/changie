@@ -58,4 +58,9 @@ Template string to replace the line with.
 | Field | Type | Description |
 | --- | --- | --- |
 | **Version** | `string` | Semantic version of the release, includes `v` suffix if used |
+| **Major** | _int_ | Version major value |
+| **Minor** | _int_ | Version minor value |
+| **Patch** | _int_ | Version patch value |
+| **Prerelease** | _string_ | Version prerelease value |
+| **Metadata** | _string_ | Version metadata value |
 | **VersionNoPrefix** | `string` | Semantic version of the release without the suffix if used |

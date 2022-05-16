@@ -55,6 +55,11 @@ for custom values.
 | **Time** | _time.Time_ | Current time |
 | **Version** | _string_ | Version releasing now |
 | **PreviousVersion** | _string_ | Previously released version |
+| **Major** | _int_ | Current version major value |
+| **Minor** | _int_ | Current version minor value |
+| **Patch** | _int_ | Current version patch value |
+| **Prerelease** | _string_ | Current version prerelease value |
+| **Metadata** | _string_ | Current version metadata value |
 | **Changes** | _[]Change_ | [Change Type](/config/shared-formatting#changeformat) |
 
 ## Template Functions

@@ -1,0 +1,6 @@
+kind: Added
+body: Major, minor, patch, prerelease and metadata values for templates that include
+  the latest version
+time: 2022-05-15T17:25:41.3013781-07:00
+custom:
+  Issue: "297"

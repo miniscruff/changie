@@ -15,6 +15,11 @@ import (
 type ReplaceData struct {
 	Version         string
 	VersionNoPrefix string
+	Major           int
+	Minor           int
+	Patch           int
+	Prerelease      string
+	Metadata        string
 }
 
 type Replacement struct {
