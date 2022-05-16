@@ -1,0 +1,5 @@
+kind: Added
+body: Option to specify custom choices are optional
+time: 2022-05-15T16:40:41.980608-07:00
+custom:
+  Issue: "312"

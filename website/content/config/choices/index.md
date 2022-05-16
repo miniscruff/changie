@@ -61,6 +61,19 @@ Specifies the type of choice which changes the prompt.
 | `int` | Whole numbers | Min and max int values to limit value |
 | `enum` | Limited set of strings | enumOptions is used to specify possible values |
 
+### optional
+type: `bool` | default: `false`
+
+If true, an empty value will not fail validation.
+The optional check is handled before min so you can specify that the value is optional
+but if it is used it must have a minimum length or value depending on type.
+
+When building templates that allow for optional values you can compare the custom choice
+to an empty string to check for a value or empty.
+
+Example:
+`{{- if not (eq .Custom.TicketNumber "")}}PROJ-{{.Custom.TicketNumber}}{{- end}}{{.Body}}`
+
 ### minInt
 type: `int` | default: `nil` | optional
 

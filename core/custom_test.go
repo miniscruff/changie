@@ -54,6 +54,28 @@ var _ = Describe("Custom", func() {
 		underPrompt, ok := prompt.(*promptui.Prompt)
 		Expect(ok).To(BeTrue())
 		Expect(underPrompt.Validate("average")).To(BeNil())
+		Expect(errors.Is(underPrompt.Validate(""), errInputTooShort)).To(BeTrue())
+		Expect(errors.Is(underPrompt.Validate("a"), errInputTooShort)).To(BeTrue())
+		Expect(errors.Is(underPrompt.Validate(longInput), errInputTooLong)).To(BeTrue())
+	})
+
+	It("can create optional custom string prompt with min and max length", func() {
+		var min int64 = 3
+		var max int64 = 15
+		longInput := "longer string than is allowed by rule"
+		prompt, err := Custom{
+			Type:      CustomString,
+			Label:     "a label",
+			Optional:  true,
+			MinLength: &min,
+			MaxLength: &max,
+		}.CreatePrompt(os.Stdin)
+		Expect(err).To(BeNil())
+
+		underPrompt, ok := prompt.(*promptui.Prompt)
+		Expect(ok).To(BeTrue())
+		Expect(underPrompt.Validate("average")).To(BeNil())
+		Expect(underPrompt.Validate("")).To(BeNil())
 		Expect(errors.Is(underPrompt.Validate("a"), errInputTooShort)).To(BeTrue())
 		Expect(errors.Is(underPrompt.Validate(longInput), errInputTooLong)).To(BeTrue())
 	})
@@ -84,6 +106,28 @@ var _ = Describe("Custom", func() {
 		underPrompt, ok := prompt.(*promptui.Prompt)
 		Expect(ok).To(BeTrue())
 		Expect(underPrompt.Validate("7")).To(BeNil())
+		Expect(errors.Is(underPrompt.Validate(""), errInvalidIntInput)).To(BeTrue())
+		Expect(errors.Is(underPrompt.Validate("not an int"), errInvalidIntInput)).To(BeTrue())
+		Expect(errors.Is(underPrompt.Validate("12.5"), errInvalidIntInput)).To(BeTrue())
+		Expect(errors.Is(underPrompt.Validate("3"), errIntTooLow)).To(BeTrue())
+		Expect(errors.Is(underPrompt.Validate("25"), errIntTooHigh)).To(BeTrue())
+	})
+
+	It("can create custom optional int prompt", func() {
+		var min int64 = 5
+		var max int64 = 10
+		prompt, err := Custom{
+			Type:     CustomInt,
+			Optional: true,
+			MinInt:   &min,
+			MaxInt:   &max,
+		}.CreatePrompt(os.Stdin)
+		Expect(err).To(BeNil())
+
+		underPrompt, ok := prompt.(*promptui.Prompt)
+		Expect(ok).To(BeTrue())
+		Expect(underPrompt.Validate("7")).To(BeNil())
+		Expect(underPrompt.Validate("")).To(BeNil())
 		Expect(errors.Is(underPrompt.Validate("not an int"), errInvalidIntInput)).To(BeTrue())
 		Expect(errors.Is(underPrompt.Validate("12.5"), errInvalidIntInput)).To(BeTrue())
 		Expect(errors.Is(underPrompt.Validate("3"), errIntTooLow)).To(BeTrue())
