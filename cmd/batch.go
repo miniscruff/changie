@@ -4,6 +4,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
 
 	"github.com/spf13/afero"
@@ -15,7 +16,13 @@ import (
 type BatchPipeliner interface {
 	// afs afero.Afero should be part of struct
 	GetChanges(config core.Config, searchPaths []string) ([]core.Change, error)
-	WriteTemplate(writer io.Writer, template string, pregap bool, templateData interface{}) error
+	WriteTemplate(
+		writer io.Writer,
+		template string,
+		pregapLines int64,
+		postgapLines int64,
+		templateData interface{},
+	) error
 	WriteFile(
 		writer io.Writer,
 		config core.Config,
@@ -217,7 +224,13 @@ func batchPipeline(batcher BatchPipeliner, afs afero.Afero, version string) erro
 		writer = versionFile
 	}
 
-	err = batcher.WriteTemplate(writer, config.VersionFormat, false, data)
+	err = batcher.WriteTemplate(
+		writer,
+		config.VersionFormat,
+		config.NewLines.BeforeVersion,
+		config.NewLines.AfterVersion,
+		data,
+	)
 	if err != nil {
 		return err
 	}
@@ -233,7 +246,13 @@ func batchPipeline(batcher BatchPipeliner, afs afero.Afero, version string) erro
 		}
 	}
 
-	err = batcher.WriteTemplate(writer, config.HeaderFormat, true, data)
+	err = batcher.WriteTemplate(
+		writer,
+		config.HeaderFormat,
+		config.NewLines.BeforeHeaderFile,
+		config.NewLines.AfterHeaderFile,
+		data,
+	)
 	if err != nil {
 		return err
 	}
@@ -243,7 +262,13 @@ func batchPipeline(batcher BatchPipeliner, afs afero.Afero, version string) erro
 		return err
 	}
 
-	err = batcher.WriteTemplate(writer, config.FooterFormat, true, data)
+	err = batcher.WriteTemplate(
+		writer,
+		config.FooterFormat,
+		config.NewLines.BeforeFooterFile,
+		config.NewLines.AfterFooterFile,
+		data,
+	)
 	if err != nil {
 		return err
 	}
@@ -318,21 +343,33 @@ func (b *standardBatchPipeline) GetChanges(
 func (b *standardBatchPipeline) WriteTemplate(
 	writer io.Writer,
 	template string,
-	pregap bool,
+	pregapLines int64,
+	postgapLines int64,
 	templateData interface{},
 ) error {
 	if template == "" {
 		return nil
 	}
 
-	if pregap {
-		_, err := writer.Write([]byte("\n"))
+	if pregapLines > 0 {
+		_, err := writer.Write([]byte(strings.Repeat("\n", int(pregapLines))))
 		if err != nil {
 			return err
 		}
 	}
 
-	return b.templateCache.Execute(template, writer, templateData)
+	if err := b.templateCache.Execute(template, writer, templateData); err != nil {
+		return err
+	}
+
+	if postgapLines > 0 {
+		_, err := writer.Write([]byte(strings.Repeat("\n", int(postgapLines))))
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 func (b *standardBatchPipeline) WriteFile(
@@ -356,7 +393,7 @@ func (b *standardBatchPipeline) WriteFile(
 		return nil
 	}
 
-	return b.WriteTemplate(writer, string(fileBytes), true, templateData)
+	return b.WriteTemplate(writer, string(fileBytes), 1, 0, templateData)
 }
 
 func (b *standardBatchPipeline) WriteChanges(
@@ -372,9 +409,15 @@ func (b *standardBatchPipeline) WriteChanges(
 			lastComponent = change.Component
 			lastKind = ""
 
-			err := b.WriteTemplate(writer, config.ComponentFormat, true, map[string]string{
-				"Component": lastComponent,
-			})
+			err := b.WriteTemplate(
+				writer,
+				config.ComponentFormat,
+				config.NewLines.BeforeComponent,
+				config.NewLines.AfterComponent,
+				map[string]string{
+					"Component": lastComponent,
+				},
+			)
 			if err != nil {
 				return err
 			}
@@ -384,9 +427,15 @@ func (b *standardBatchPipeline) WriteChanges(
 			lastKind = change.Kind
 			kindHeader := config.KindHeader(change.Kind)
 
-			err := b.WriteTemplate(writer, kindHeader, true, map[string]string{
-				"Kind": lastKind,
-			})
+			err := b.WriteTemplate(
+				writer,
+				kindHeader,
+				config.NewLines.BeforeKindHeader,
+				config.NewLines.AfterKindHeader,
+				map[string]string{
+					"Kind": lastKind,
+				},
+			)
 			if err != nil {
 				return err
 			}
@@ -394,7 +443,13 @@ func (b *standardBatchPipeline) WriteChanges(
 
 		changeFormat := config.ChangeFormatForKind(lastKind)
 
-		err := b.WriteTemplate(writer, changeFormat, true, change)
+		err := b.WriteTemplate(
+			writer,
+			changeFormat,
+			config.NewLines.BeforeChanges,
+			config.NewLines.AfterChanges,
+			change,
+		)
 		if err != nil {
 			return err
 		}

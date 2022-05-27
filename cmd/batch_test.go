@@ -23,7 +23,7 @@ type MockBatchPipeline struct {
 	MockWriteTemplate func(
 		writer io.Writer,
 		template string,
-		pregap bool,
+		pregap int64,
 		templateData interface{},
 	) error
 	MockWriteFile func(
@@ -60,14 +60,15 @@ func (m *MockBatchPipeline) GetChanges(
 func (m *MockBatchPipeline) WriteTemplate(
 	writer io.Writer,
 	template string,
-	pregap bool,
+	pregap int64,
+	postgap int64,
 	templateData interface{},
 ) error {
 	if m.MockWriteTemplate != nil {
 		return m.MockWriteTemplate(writer, template, pregap, templateData)
 	}
 
-	return m.standard.WriteTemplate(writer, template, pregap, templateData)
+	return m.standard.WriteTemplate(writer, template, pregap, postgap, templateData)
 }
 
 func (m *MockBatchPipeline) WriteFile(
