@@ -23,15 +23,15 @@ type MockBatchPipeline struct {
 	MockWriteTemplate func(
 		writer io.Writer,
 		template string,
-		pregap int,
-		postgap int,
+		beforeNewlines int,
+		afterNewlines int,
 		templateData interface{},
 	) error
 	MockWriteFile func(
 		writer io.Writer,
 		config core.Config,
-		pregap int,
-		postgap int,
+		beforeNewlines int,
+		afterNewlines int,
 		relativePath string,
 		templateData interface{},
 	) error
@@ -63,30 +63,30 @@ func (m *MockBatchPipeline) GetChanges(
 func (m *MockBatchPipeline) WriteTemplate(
 	writer io.Writer,
 	template string,
-	pregap int,
-	postgap int,
+	beforeNewlines int,
+	afterNewlines int,
 	templateData interface{},
 ) error {
 	if m.MockWriteTemplate != nil {
-		return m.MockWriteTemplate(writer, template, pregap, postgap, templateData)
+		return m.MockWriteTemplate(writer, template, beforeNewlines, afterNewlines, templateData)
 	}
 
-	return m.standard.WriteTemplate(writer, template, pregap, postgap, templateData)
+	return m.standard.WriteTemplate(writer, template, beforeNewlines, afterNewlines, templateData)
 }
 
 func (m *MockBatchPipeline) WriteFile(
 	writer io.Writer,
 	config core.Config,
-	pregap int,
-	postgap int,
+	beforeNewlines int,
+	afterNewlines int,
 	relativePath string,
 	templateData interface{},
 ) error {
 	if m.MockWriteFile != nil {
-		return m.MockWriteFile(writer, config, pregap, postgap, relativePath, templateData)
+		return m.MockWriteFile(writer, config, beforeNewlines, afterNewlines, relativePath, templateData)
 	}
 
-	return m.standard.WriteFile(writer, config, pregap, postgap, relativePath, templateData)
+	return m.standard.WriteFile(writer, config, beforeNewlines, afterNewlines, relativePath, templateData)
 }
 
 func (m *MockBatchPipeline) WriteChanges(
