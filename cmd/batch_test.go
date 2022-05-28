@@ -86,7 +86,14 @@ func (m *MockBatchPipeline) WriteFile(
 		return m.MockWriteFile(writer, config, beforeNewlines, afterNewlines, relativePath, templateData)
 	}
 
-	return m.standard.WriteFile(writer, config, beforeNewlines, afterNewlines, relativePath, templateData)
+	return m.standard.WriteFile(
+		writer,
+		config,
+		beforeNewlines,
+		afterNewlines,
+		relativePath,
+		templateData,
+	)
 }
 
 func (m *MockBatchPipeline) WriteChanges(
@@ -544,8 +551,8 @@ second footer
 		mockPipeline.MockWriteFile = func(
 			writer io.Writer,
 			config core.Config,
-			pregap int,
-			postgap int,
+			beforeNewlines int,
+			afterNewlines int,
 			relativePath string,
 			templateData interface{},
 		) error {
@@ -555,8 +562,8 @@ second footer
 			return mockPipeline.standard.WriteFile(
 				writer,
 				config,
-				pregap,
-				postgap,
+				beforeNewlines,
+				afterNewlines,
 				relativePath,
 				templateData,
 			)
@@ -575,8 +582,8 @@ second footer
 		mockPipeline.MockWriteFile = func(
 			writer io.Writer,
 			config core.Config,
-			pregap int,
-			postgap int,
+			beforeNewlines int,
+			afterNewlines int,
 			relativePath string,
 			templateData interface{},
 		) error {
@@ -586,8 +593,8 @@ second footer
 			return mockPipeline.standard.WriteFile(
 				writer,
 				config,
-				pregap,
-				postgap,
+				beforeNewlines,
+				afterNewlines,
 				relativePath,
 				templateData,
 			)
@@ -606,8 +613,8 @@ second footer
 		mockPipeline.MockWriteFile = func(
 			writer io.Writer,
 			config core.Config,
-			pregap int,
-			postgap int,
+			beforeNewlines int,
+			afterNewlines int,
 			relativePath string,
 			templateData interface{},
 		) error {
@@ -617,8 +624,8 @@ second footer
 			return mockPipeline.standard.WriteFile(
 				writer,
 				config,
-				pregap,
-				postgap,
+				beforeNewlines,
+				afterNewlines,
 				relativePath,
 				templateData,
 			)
@@ -637,8 +644,8 @@ second footer
 		mockPipeline.MockWriteFile = func(
 			writer io.Writer,
 			config core.Config,
-			pregap int,
-			postgap int,
+			beforeNewlines int,
+			afterNewlines int,
 			relativePath string,
 			templateData interface{},
 		) error {
@@ -648,8 +655,8 @@ second footer
 			return mockPipeline.standard.WriteFile(
 				writer,
 				config,
-				pregap,
-				postgap,
+				beforeNewlines,
+				afterNewlines,
 				relativePath,
 				templateData,
 			)
