@@ -6,7 +6,6 @@ import (
 	"os"
 
 	"github.com/Masterminds/semver/v3"
-	"github.com/creasty/defaults"
 	"gopkg.in/yaml.v2"
 
 	"github.com/miniscruff/changie/shared"
@@ -54,19 +53,23 @@ func (b BodyConfig) CreatePrompt(stdinReader io.ReadCloser) Prompt {
 	return p
 }
 
-type NewLinesConfig struct {
-	BeforeVersion    int64 `yaml:"beforeVersion,omitempty"`
-	AfterVersion     int64 `yaml:"afterVersion,omitempty"`
-	BeforeComponent  int64 `default:"1" yaml:"beforeComponent,omitempty"`
-	AfterComponent   int64 `yaml:"afterComponent,omitempty"`
-	BeforeHeaderFile int64 `default:"1" yaml:"beforeHeaderFile,omitempty"`
-	AfterHeaderFile  int64 `yaml:"afterHeaderFile,omitempty"`
-	BeforeFooterFile int64 `default:"1" yaml:"beforeFooterFile,omitempty"`
-	AfterFooterFile  int64 `yaml:"afterFooterFile,omitempty"`
-	BeforeKindHeader int64 `default:"1" yaml:"beforeKindHeader,omitempty"`
-	AfterKindHeader  int64 `yaml:"afterKindHeader,omitempty"`
-	BeforeChanges    int64 `default:"1" yaml:"beforeChanges,omitempty"`
-	AfterChanges     int64 `yaml:"afterChanges,omitempty"`
+type NewLineConfig struct {
+	BeforeVersion    int `yaml:"beforeVersion,omitempty"`
+	AfterVersion     int `yaml:"afterVersion,omitempty"`
+	BeforeComponent  int `yaml:"beforeComponent,omitempty"`
+	AfterComponent   int `yaml:"afterComponent,omitempty"`
+	BeforeHeader     int `yaml:"beforeHeader,omitempty"`
+	AfterHeader      int `yaml:"afterHeader,omitempty"`
+	BeforeFooter     int `yaml:"beforeFooter,omitempty"`
+	AfterFooter      int `yaml:"afterFooter,omitempty"`
+	BeforeHeaderFile int `yaml:"beforeHeaderFile,omitempty"`
+	AfterHeaderFile  int `yaml:"afterHeaderFile,omitempty"`
+	BeforeFooterFile int `yaml:"beforeFooterFile,omitempty"`
+	AfterFooterFile  int `yaml:"afterFooterFile,omitempty"`
+	BeforeKindHeader int `yaml:"beforeKindHeader,omitempty"`
+	AfterKindHeader  int `yaml:"afterKindHeader,omitempty"`
+	BeforeChanges    int `yaml:"beforeChanges,omitempty"`
+	AfterChanges     int `yaml:"afterChanges,omitempty"`
 }
 
 // Config handles configuration for a changie project
@@ -92,8 +95,7 @@ type Config struct {
 	Kinds         []KindConfig  `yaml:"kinds,omitempty"`
 	CustomChoices []Custom      `yaml:"custom,omitempty"`
 	Replacements  []Replacement `yaml:"replacements,omitempty"`
-	// newlines
-	NewLines NewLinesConfig `yaml:"newlines,omitempty"`
+	NewLines      NewLineConfig `yaml:"newlines,omitempty"`
 }
 
 func (c Config) KindHeader(label string) string {
@@ -162,10 +164,6 @@ func LoadConfig(rf shared.ReadFiler) (Config, error) {
 		}
 
 		c.FragmentFileFormat += fmt.Sprintf("{{.Time.Format \"%v\"}}", timeFormat)
-	}
-
-	if err = defaults.Set(&c); err != nil {
-		return c, err
 	}
 
 	return c, nil

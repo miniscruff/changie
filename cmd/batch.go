@@ -19,13 +19,15 @@ type BatchPipeliner interface {
 	WriteTemplate(
 		writer io.Writer,
 		template string,
-		pregapLines int64,
-		postgapLines int64,
+		pregapLines int,
+		postgapLines int,
 		templateData interface{},
 	) error
 	WriteFile(
 		writer io.Writer,
 		config core.Config,
+		pregapLines int,
+		postgapLines int,
 		relativePath string,
 		templateData interface{},
 	) error
@@ -240,7 +242,14 @@ func batchPipeline(batcher BatchPipeliner, afs afero.Afero, version string) erro
 		oldHeaderPathFlag,
 		config.VersionHeaderPath,
 	} {
-		err = batcher.WriteFile(writer, config, relativePath, data)
+		err = batcher.WriteFile(
+			writer,
+			config,
+			config.NewLines.BeforeHeaderFile,
+			config.NewLines.AfterHeaderFile,
+			relativePath,
+			data,
+		)
 		if err != nil {
 			return err
 		}
@@ -249,8 +258,8 @@ func batchPipeline(batcher BatchPipeliner, afs afero.Afero, version string) erro
 	err = batcher.WriteTemplate(
 		writer,
 		config.HeaderFormat,
-		config.NewLines.BeforeHeaderFile,
-		config.NewLines.AfterHeaderFile,
+		config.NewLines.BeforeHeader+1,
+		config.NewLines.AfterHeader,
 		data,
 	)
 	if err != nil {
@@ -265,8 +274,8 @@ func batchPipeline(batcher BatchPipeliner, afs afero.Afero, version string) erro
 	err = batcher.WriteTemplate(
 		writer,
 		config.FooterFormat,
-		config.NewLines.BeforeFooterFile,
-		config.NewLines.AfterFooterFile,
+		config.NewLines.BeforeFooter+1,
+		config.NewLines.AfterFooter,
 		data,
 	)
 	if err != nil {
@@ -274,7 +283,14 @@ func batchPipeline(batcher BatchPipeliner, afs afero.Afero, version string) erro
 	}
 
 	for _, relativePath := range []string{versionFooterPathFlag, config.VersionFooterPath} {
-		err = batcher.WriteFile(writer, config, relativePath, data)
+		err = batcher.WriteFile(
+			writer,
+			config,
+			config.NewLines.BeforeFooterFile,
+			config.NewLines.AfterFooterFile,
+			relativePath,
+			data,
+		)
 		if err != nil {
 			return err
 		}
@@ -343,8 +359,8 @@ func (b *standardBatchPipeline) GetChanges(
 func (b *standardBatchPipeline) WriteTemplate(
 	writer io.Writer,
 	template string,
-	pregapLines int64,
-	postgapLines int64,
+	pregapLines int,
+	postgapLines int,
 	templateData interface{},
 ) error {
 	if template == "" {
@@ -352,7 +368,7 @@ func (b *standardBatchPipeline) WriteTemplate(
 	}
 
 	if pregapLines > 0 {
-		_, err := writer.Write([]byte(strings.Repeat("\n", int(pregapLines))))
+		_, err := writer.Write([]byte(strings.Repeat("\n", pregapLines)))
 		if err != nil {
 			return err
 		}
@@ -363,7 +379,7 @@ func (b *standardBatchPipeline) WriteTemplate(
 	}
 
 	if postgapLines > 0 {
-		_, err := writer.Write([]byte(strings.Repeat("\n", int(postgapLines))))
+		_, err := writer.Write([]byte(strings.Repeat("\n", postgapLines)))
 		if err != nil {
 			return err
 		}
@@ -375,6 +391,8 @@ func (b *standardBatchPipeline) WriteTemplate(
 func (b *standardBatchPipeline) WriteFile(
 	writer io.Writer,
 	config core.Config,
+	pregapLines int,
+	postgapLines int,
 	relativePath string,
 	templateData interface{},
 ) error {
@@ -393,7 +411,7 @@ func (b *standardBatchPipeline) WriteFile(
 		return nil
 	}
 
-	return b.WriteTemplate(writer, string(fileBytes), 1, 0, templateData)
+	return b.WriteTemplate(writer, string(fileBytes), pregapLines+1, postgapLines, templateData)
 }
 
 func (b *standardBatchPipeline) WriteChanges(
@@ -412,7 +430,7 @@ func (b *standardBatchPipeline) WriteChanges(
 			err := b.WriteTemplate(
 				writer,
 				config.ComponentFormat,
-				config.NewLines.BeforeComponent,
+				config.NewLines.BeforeComponent+1,
 				config.NewLines.AfterComponent,
 				map[string]string{
 					"Component": lastComponent,
@@ -430,7 +448,7 @@ func (b *standardBatchPipeline) WriteChanges(
 			err := b.WriteTemplate(
 				writer,
 				kindHeader,
-				config.NewLines.BeforeKindHeader,
+				config.NewLines.BeforeKindHeader+1,
 				config.NewLines.AfterKindHeader,
 				map[string]string{
 					"Kind": lastKind,
@@ -446,7 +464,7 @@ func (b *standardBatchPipeline) WriteChanges(
 		err := b.WriteTemplate(
 			writer,
 			changeFormat,
-			config.NewLines.BeforeChanges,
+			config.NewLines.BeforeChanges+1,
 			config.NewLines.AfterChanges,
 			change,
 		)
