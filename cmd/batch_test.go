@@ -220,10 +220,11 @@ var _ = Describe("Batch", func() {
 		Expect(afs.WriteFile(headerPath, headerData, os.ModePerm)).To(Succeed())
 	}
 
-	It("can add new lines before kind header", func() {
+	It("can add new lines after and before kind header", func() {
 		// declared path but missing is accepted
 		testConfig.VersionHeaderPath = "header.md"
-		testConfig.NewLines.BeforeKindHeader = 2
+		testConfig.Newlines.BeforeKindHeader = 2
+		testConfig.Newlines.AfterKindHeader = 2
 		Expect(testConfig.Save(afs.WriteFile)).To(Succeed())
 
 		writeChangeFile(core.Change{Kind: "added", Body: "A"})
@@ -237,39 +238,12 @@ var _ = Describe("Batch", func() {
 
 
 ### added
-* A
-* B
-
-
-### removed
-* C`
-
-		Expect(newVerPath).To(HaveContents(afs, verContents))
-
-		infos, err := afs.ReadDir(futurePath)
-		Expect(err).To(BeNil())
-		Expect(len(infos)).To(Equal(0))
-	})
-
-	It("can add new lines after kind header", func() {
-		// declared path but missing is accepted
-		testConfig.VersionHeaderPath = "header.md"
-		testConfig.NewLines.AfterKindHeader = 2
-		Expect(testConfig.Save(afs.WriteFile)).To(Succeed())
-
-		writeChangeFile(core.Change{Kind: "added", Body: "A"})
-		writeChangeFile(core.Change{Kind: "added", Body: "B"})
-		writeChangeFile(core.Change{Kind: "removed", Body: "C"})
-
-		err := batchPipeline(standard, afs, "v0.2.0")
-		Expect(err).To(BeNil())
-
-		verContents := `## v0.2.0
-### added
 
 
 * A
 * B
+
+
 ### removed
 
 
@@ -779,7 +753,7 @@ second footer
 		err := afs.WriteFile(filepath.Join(futurePath, "a.md"), text, os.ModePerm)
 		Expect(err).To(BeNil())
 
-		err = standard.WriteFile(&builder, testConfig, 0, 0, "a.md", nil)
+		err = standard.WriteFile(&builder, testConfig, 1, 0, "a.md", nil)
 		Expect(builder.String()).To(Equal("\nsome text"))
 		Expect(err).To(BeNil())
 	})
