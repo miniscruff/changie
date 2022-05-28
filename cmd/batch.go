@@ -379,10 +379,7 @@ func (b *standardBatchPipeline) WriteTemplate(
 	}
 
 	if afterNewlines > 0 {
-		_, err := writer.Write([]byte(strings.Repeat("\n", afterNewlines)))
-		if err != nil {
-			return err
-		}
+		writer.Write([]byte(strings.Repeat("\n", afterNewlines)))
 	}
 
 	return nil
