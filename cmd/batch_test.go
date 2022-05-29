@@ -263,6 +263,29 @@ var _ = Describe("Batch", func() {
 		Expect(len(infos)).To(Equal(0))
 	})
 
+	It("returns error on bad writer", func() {
+		testConfig.VersionFormat = "{{bad.format}"
+		testConfig.Newlines.BeforeVersion = 2
+
+		badFile := NewMockFile(fs, "a.md")
+		badFile.MockWrite = func([]byte) (int, error) {
+			return 0, mockError
+		}
+
+		text := []byte("some text")
+		err := afs.WriteFile(filepath.Join(futurePath, "a.md"), text, os.ModePerm)
+		Expect(err).To(BeNil())
+
+		err = standard.WriteTemplate(
+			badFile,
+			testConfig.VersionFormat,
+			testConfig.Newlines.BeforeVersion,
+			testConfig.Newlines.AfterVersion,
+			"v0.2.0",
+		)
+		Expect(err).To(Equal(mockError))
+	})
+
 	It("can batch version", func() {
 		// declared path but missing is accepted
 		testConfig.VersionHeaderPath = "header.md"
