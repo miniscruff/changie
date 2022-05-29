@@ -25,12 +25,12 @@ var ConfigPaths []string = []string{
 type GetVersions func(shared.ReadDirer, Config) ([]*semver.Version, error)
 
 type KindConfig struct {
-	Label             string   `yaml:""`
-	Format            string   `yaml:""`
-	ChangeFormat      string   `yaml:"changeFormat"`
-	SkipGlobalChoices bool     `yaml:"skipGlobalChoices"`
-	SkipBody          bool     `yaml:"skipBody"`
-	AdditionalChoices []Custom `yaml:"additionalChoices"`
+	Label             string   `yaml:",omitempty"`
+	Format            string   `yaml:",omitempty"`
+	ChangeFormat      string   `yaml:"changeFormat,omitempty"`
+	SkipGlobalChoices bool     `yaml:"skipGlobalChoices,omitempty"`
+	SkipBody          bool     `yaml:"skipBody,omitempty"`
+	AdditionalChoices []Custom `yaml:"additionalChoices,omitempty"`
 }
 
 func (kc KindConfig) String() string {
@@ -39,7 +39,7 @@ func (kc KindConfig) String() string {
 
 type BodyConfig struct {
 	MinLength *int64 `yaml:"minLength,omitempty"`
-	MaxLength *int64 `yaml:"minLength,omitempty"`
+	MaxLength *int64 `yaml:"maxLength,omitempty"`
 }
 
 func (b BodyConfig) CreatePrompt(stdinReader io.ReadCloser) Prompt {
@@ -79,10 +79,10 @@ func (b BodyConfig) CreatePrompt(stdinReader io.ReadCloser) Prompt {
 type Config struct {
 	// Directory for change files, header file and unreleased files.
 	// Relative to project root.
-	ChangesDir string `yaml:"changesDir"`
+	ChangesDir string `yaml:"changesDir" required:"true"`
 	// Directory for all unreleased change files.
 	// Relative to [changesDir](#config-changesdir).
-	UnreleasedDir string `yaml:"unreleasedDir"`
+	UnreleasedDir string `yaml:"unreleasedDir" required:"true"`
 	// When merging all versions into one changelog file content is added to the top from a header file.
 	// A default header file is created when initializing that follows "Keep a Changelog".
 	//
@@ -91,17 +91,17 @@ type Config struct {
 	HeaderPath string `yaml:"headerPath" required:"true"`
 	// Filepath for the generated changelog file.
 	// Relative to project root.
-	ChangelogPath string `yaml:"changelogPath"`
+	ChangelogPath string `yaml:"changelogPath" required:"true"`
 	// File extension for generated version files.
 	// This should probably match your changelog path file.
 	// Must not include the period.
-	VersionExt        string `yaml:"versionExt"`
+	VersionExt string `yaml:"versionExt" required:"true"`
 	// Filepath for your version header file relative to [unreleasedDir](#config-unreleaseddir).
 	// It is also possible to use the '--header-path' parameter when using the [batch command](/cli/changie_batch).
-	VersionHeaderPath string `yaml:"versionHeaderPath"`
+	VersionHeaderPath string `yaml:"versionHeaderPath,omitempty"`
 	// Filepath for your version footer file relative to [unreleasedDir](#config-unreleaseddir).
 	// It is also possible to use the '--footer-path' parameter when using the [batch command](/cli/changie_batch).
-	VersionFooterPath string `yaml:"versionFooterPath"`
+	VersionFooterPath string `yaml:"versionFooterPath,omitempty"`
 	// Customize the file name generated for new fragments.
 	// The default uses the component and kind only if configured for your project.
 	// The file is placed in the unreleased directory, so the full path is:
@@ -109,19 +109,19 @@ type Config struct {
 	// "{{.ChangesDir}}/{{.UnreleasedDir}}/{{.FragmentFileFormat}}.yaml"
 	// example: yaml
 	// fragmentFileFormat: "{{.Kind}}-{{.Custom.Issue}}"
-	FragmentFileFormat string `yaml:"fragmentFileFormat" default:"{{.Component}}-{{.Kind}}-{{.Time.Format \"20060102-150405\"}}" templateType:"Change"`
-	VersionFormat      string `yaml:"versionFormat" templateType:"BatchData"`
-	ComponentFormat    string `yaml:"componentFormat"`
-	KindFormat         string `yaml:"kindFormat"`
-	ChangeFormat       string `yaml:"changeFormat"`
-	HeaderFormat       string `yaml:"headerFormat"`
-	FooterFormat       string `yaml:"footerFormat"`
+	FragmentFileFormat string `yaml:"fragmentFileFormat,omitempty" default:"{{.Component}}-{{.Kind}}-{{.Time.Format \"20060102-150405\"}}" templateType:"Change"`
+	VersionFormat      string `yaml:"versionFormat,omitempty" templateType:"BatchData"`
+	ComponentFormat    string `yaml:"componentFormat,omitempty" templateType:"TODO"`
+	KindFormat         string `yaml:"kindFormat,omitempty" templateType:"TODO"`
+	ChangeFormat       string `yaml:"changeFormat" templateType:"Change"`
+	HeaderFormat       string `yaml:"headerFormat,omitempty" templateType:"BatchData"`
+	FooterFormat       string `yaml:"footerFormat,omitempty" templateType:"BatchData"`
 	// custom
-	Body          BodyConfig    `yaml:"body"`
-	Components    []string      `yaml:"components"`
-	Kinds         []KindConfig  `yaml:"kinds"`
-	CustomChoices []Custom      `yaml:"custom"`
-	Replacements  []Replacement `yaml:"replacements"`
+	Body          BodyConfig    `yaml:"body,omitempty"`
+	Components    []string      `yaml:"components,omitempty"`
+	Kinds         []KindConfig  `yaml:"kinds,omitempty"`
+	CustomChoices []Custom      `yaml:"custom,omitempty"`
+	Replacements  []Replacement `yaml:"replacements,omitempty"`
 }
 
 func (c Config) KindHeader(label string) string {

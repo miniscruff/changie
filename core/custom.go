@@ -47,8 +47,8 @@ type Prompt interface {
 type Custom struct {
 	Key         string     `yaml:""`
 	Type        CustomType `yaml:""`
-	Optional    bool       `yaml:""`
-	Label       string     `yaml:""`
+	Optional    bool       `yaml:",omitempty"`
+	Label       string     `yaml:",omitempty"`
 	MinInt      *int64     `yaml:"minInt,omitempty"`
 	MaxInt      *int64     `yaml:"maxInt,omitempty"`
 	MinLength   *int64     `yaml:"minLength,omitempty"`
