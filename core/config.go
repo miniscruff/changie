@@ -53,6 +53,25 @@ func (b BodyConfig) CreatePrompt(stdinReader io.ReadCloser) Prompt {
 	return p
 }
 
+type NewlineConfig struct {
+	BeforeVersion        int `yaml:"beforeVersion,omitempty"`
+	AfterVersion         int `yaml:"afterVersion,omitempty"`
+	BeforeComponent      int `yaml:"beforeComponent,omitempty"`
+	AfterComponent       int `yaml:"afterComponent,omitempty"`
+	BeforeHeaderTemplate int `yaml:"beforeHeader,omitempty"`
+	AfterHeaderTemplate  int `yaml:"afterHeader,omitempty"`
+	BeforeFooterTemplate int `yaml:"beforeFooter,omitempty"`
+	AfterFooterTemplate  int `yaml:"afterFooter,omitempty"`
+	BeforeHeaderFile     int `yaml:"beforeHeaderFile,omitempty"`
+	AfterHeaderFile      int `yaml:"afterHeaderFile,omitempty"`
+	BeforeFooterFile     int `yaml:"beforeFooterFile,omitempty"`
+	AfterFooterFile      int `yaml:"afterFooterFile,omitempty"`
+	BeforeKindHeader     int `yaml:"beforeKindHeader,omitempty"`
+	AfterKindHeader      int `yaml:"afterKindHeader,omitempty"`
+	BeforeChange         int `yaml:"beforeChange,omitempty"`
+	AfterChange          int `yaml:"afterChange,omitempty"`
+}
+
 // Config handles configuration for a changie project
 type Config struct {
 	ChangesDir        string `yaml:"changesDir"`
@@ -76,6 +95,7 @@ type Config struct {
 	Kinds         []KindConfig  `yaml:"kinds,omitempty"`
 	CustomChoices []Custom      `yaml:"custom,omitempty"`
 	Replacements  []Replacement `yaml:"replacements,omitempty"`
+	Newlines      NewlineConfig `yaml:"newlines,omitempty"`
 }
 
 func (c Config) KindHeader(label string) string {

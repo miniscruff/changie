@@ -4,6 +4,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
 
 	"github.com/spf13/afero"
@@ -15,10 +16,18 @@ import (
 type BatchPipeliner interface {
 	// afs afero.Afero should be part of struct
 	GetChanges(config core.Config, searchPaths []string) ([]core.Change, error)
-	WriteTemplate(writer io.Writer, template string, pregap bool, templateData interface{}) error
+	WriteTemplate(
+		writer io.Writer,
+		template string,
+		beforeNewlines int,
+		afterNewlines int,
+		templateData interface{},
+	) error
 	WriteFile(
 		writer io.Writer,
 		config core.Config,
+		beforeNewlines int,
+		afterNewlines int,
 		relativePath string,
 		templateData interface{},
 	) error
@@ -217,7 +226,13 @@ func batchPipeline(batcher BatchPipeliner, afs afero.Afero, version string) erro
 		writer = versionFile
 	}
 
-	err = batcher.WriteTemplate(writer, config.VersionFormat, false, data)
+	err = batcher.WriteTemplate(
+		writer,
+		config.VersionFormat,
+		config.Newlines.BeforeVersion,
+		config.Newlines.AfterVersion,
+		data,
+	)
 	if err != nil {
 		return err
 	}
@@ -227,13 +242,26 @@ func batchPipeline(batcher BatchPipeliner, afs afero.Afero, version string) erro
 		oldHeaderPathFlag,
 		config.VersionHeaderPath,
 	} {
-		err = batcher.WriteFile(writer, config, relativePath, data)
+		err = batcher.WriteFile(
+			writer,
+			config,
+			config.Newlines.BeforeHeaderFile+1,
+			config.Newlines.AfterHeaderFile,
+			relativePath,
+			data,
+		)
 		if err != nil {
 			return err
 		}
 	}
 
-	err = batcher.WriteTemplate(writer, config.HeaderFormat, true, data)
+	err = batcher.WriteTemplate(
+		writer,
+		config.HeaderFormat,
+		config.Newlines.BeforeHeaderTemplate+1,
+		config.Newlines.AfterHeaderTemplate,
+		data,
+	)
 	if err != nil {
 		return err
 	}
@@ -243,13 +271,26 @@ func batchPipeline(batcher BatchPipeliner, afs afero.Afero, version string) erro
 		return err
 	}
 
-	err = batcher.WriteTemplate(writer, config.FooterFormat, true, data)
+	err = batcher.WriteTemplate(
+		writer,
+		config.FooterFormat,
+		config.Newlines.BeforeFooterTemplate+1,
+		config.Newlines.AfterFooterTemplate,
+		data,
+	)
 	if err != nil {
 		return err
 	}
 
 	for _, relativePath := range []string{versionFooterPathFlag, config.VersionFooterPath} {
-		err = batcher.WriteFile(writer, config, relativePath, data)
+		err = batcher.WriteFile(
+			writer,
+			config,
+			config.Newlines.BeforeFooterFile+1,
+			config.Newlines.AfterFooterFile,
+			relativePath,
+			data,
+		)
 		if err != nil {
 			return err
 		}
@@ -318,26 +359,37 @@ func (b *standardBatchPipeline) GetChanges(
 func (b *standardBatchPipeline) WriteTemplate(
 	writer io.Writer,
 	template string,
-	pregap bool,
+	beforeNewlines int,
+	afterNewlines int,
 	templateData interface{},
 ) error {
 	if template == "" {
 		return nil
 	}
 
-	if pregap {
-		_, err := writer.Write([]byte("\n"))
+	if beforeNewlines > 0 {
+		_, err := writer.Write([]byte(strings.Repeat("\n", beforeNewlines)))
 		if err != nil {
 			return err
 		}
 	}
 
-	return b.templateCache.Execute(template, writer, templateData)
+	if err := b.templateCache.Execute(template, writer, templateData); err != nil {
+		return err
+	}
+
+	if afterNewlines > 0 {
+		_, _ = writer.Write([]byte(strings.Repeat("\n", afterNewlines)))
+	}
+
+	return nil
 }
 
 func (b *standardBatchPipeline) WriteFile(
 	writer io.Writer,
 	config core.Config,
+	beforeNewlines int,
+	afterNewlines int,
 	relativePath string,
 	templateData interface{},
 ) error {
@@ -356,7 +408,7 @@ func (b *standardBatchPipeline) WriteFile(
 		return nil
 	}
 
-	return b.WriteTemplate(writer, string(fileBytes), true, templateData)
+	return b.WriteTemplate(writer, string(fileBytes), beforeNewlines, afterNewlines, templateData)
 }
 
 func (b *standardBatchPipeline) WriteChanges(
@@ -372,9 +424,15 @@ func (b *standardBatchPipeline) WriteChanges(
 			lastComponent = change.Component
 			lastKind = ""
 
-			err := b.WriteTemplate(writer, config.ComponentFormat, true, map[string]string{
-				"Component": lastComponent,
-			})
+			err := b.WriteTemplate(
+				writer,
+				config.ComponentFormat,
+				config.Newlines.BeforeComponent+1,
+				config.Newlines.AfterComponent,
+				map[string]string{
+					"Component": lastComponent,
+				},
+			)
 			if err != nil {
 				return err
 			}
@@ -384,9 +442,15 @@ func (b *standardBatchPipeline) WriteChanges(
 			lastKind = change.Kind
 			kindHeader := config.KindHeader(change.Kind)
 
-			err := b.WriteTemplate(writer, kindHeader, true, map[string]string{
-				"Kind": lastKind,
-			})
+			err := b.WriteTemplate(
+				writer,
+				kindHeader,
+				config.Newlines.BeforeKindHeader+1,
+				config.Newlines.AfterKindHeader,
+				map[string]string{
+					"Kind": lastKind,
+				},
+			)
 			if err != nil {
 				return err
 			}
@@ -394,7 +458,13 @@ func (b *standardBatchPipeline) WriteChanges(
 
 		changeFormat := config.ChangeFormatForKind(lastKind)
 
-		err := b.WriteTemplate(writer, changeFormat, true, change)
+		err := b.WriteTemplate(
+			writer,
+			changeFormat,
+			config.Newlines.BeforeChange+1,
+			config.Newlines.AfterChange,
+			change,
+		)
 		if err != nil {
 			return err
 		}

@@ -23,12 +23,15 @@ type MockBatchPipeline struct {
 	MockWriteTemplate func(
 		writer io.Writer,
 		template string,
-		pregap bool,
+		beforeNewlines int,
+		afterNewlines int,
 		templateData interface{},
 	) error
 	MockWriteFile func(
 		writer io.Writer,
 		config core.Config,
+		beforeNewlines int,
+		afterNewlines int,
 		relativePath string,
 		templateData interface{},
 	) error
@@ -60,27 +63,37 @@ func (m *MockBatchPipeline) GetChanges(
 func (m *MockBatchPipeline) WriteTemplate(
 	writer io.Writer,
 	template string,
-	pregap bool,
+	beforeNewlines int,
+	afterNewlines int,
 	templateData interface{},
 ) error {
 	if m.MockWriteTemplate != nil {
-		return m.MockWriteTemplate(writer, template, pregap, templateData)
+		return m.MockWriteTemplate(writer, template, beforeNewlines, afterNewlines, templateData)
 	}
 
-	return m.standard.WriteTemplate(writer, template, pregap, templateData)
+	return m.standard.WriteTemplate(writer, template, beforeNewlines, afterNewlines, templateData)
 }
 
 func (m *MockBatchPipeline) WriteFile(
 	writer io.Writer,
 	config core.Config,
+	beforeNewlines int,
+	afterNewlines int,
 	relativePath string,
 	templateData interface{},
 ) error {
 	if m.MockWriteFile != nil {
-		return m.MockWriteFile(writer, config, relativePath, templateData)
+		return m.MockWriteFile(writer, config, beforeNewlines, afterNewlines, relativePath, templateData)
 	}
 
-	return m.standard.WriteFile(writer, config, relativePath, templateData)
+	return m.standard.WriteFile(
+		writer,
+		config,
+		beforeNewlines,
+		afterNewlines,
+		relativePath,
+		templateData,
+	)
 }
 
 func (m *MockBatchPipeline) WriteChanges(
@@ -213,6 +226,65 @@ var _ = Describe("Batch", func() {
 		headerPath := filepath.Join(futurePath, configPath)
 		Expect(afs.WriteFile(headerPath, headerData, os.ModePerm)).To(Succeed())
 	}
+
+	It("can add new lines after and before kind header", func() {
+		// declared path but missing is accepted
+		testConfig.VersionHeaderPath = "header.md"
+		testConfig.Newlines.BeforeKindHeader = 2
+		testConfig.Newlines.AfterKindHeader = 2
+		Expect(testConfig.Save(afs.WriteFile)).To(Succeed())
+
+		writeChangeFile(core.Change{Kind: "added", Body: "A"})
+		writeChangeFile(core.Change{Kind: "added", Body: "B"})
+		writeChangeFile(core.Change{Kind: "removed", Body: "C"})
+
+		err := batchPipeline(standard, afs, "v0.2.0")
+		Expect(err).To(BeNil())
+
+		verContents := `## v0.2.0
+
+
+### added
+
+
+* A
+* B
+
+
+### removed
+
+
+* C`
+
+		Expect(newVerPath).To(HaveContents(afs, verContents))
+
+		infos, err := afs.ReadDir(futurePath)
+		Expect(err).To(BeNil())
+		Expect(len(infos)).To(Equal(0))
+	})
+
+	It("returns error on bad writer", func() {
+		testConfig.VersionFormat = "{{bad.format}"
+		testConfig.Newlines.BeforeVersion = 2
+
+		badFile := NewMockFile(fs, "a.md")
+		badFile.MockWrite = func([]byte) (int, error) {
+			return 0, mockError
+		}
+
+		text := []byte("some text")
+		err := afs.WriteFile(filepath.Join(futurePath, "a.md"), text, os.ModePerm)
+		Expect(err).To(BeNil())
+
+		err = standard.WriteTemplate(
+			badFile,
+			testConfig.VersionFormat,
+			testConfig.Newlines.BeforeVersion,
+			testConfig.Newlines.AfterVersion,
+			"v0.2.0",
+		)
+		Expect(err).To(Equal(mockError))
+	})
 
 	It("can batch version", func() {
 		// declared path but missing is accepted
@@ -502,13 +574,22 @@ second footer
 		mockPipeline.MockWriteFile = func(
 			writer io.Writer,
 			config core.Config,
+			beforeNewlines int,
+			afterNewlines int,
 			relativePath string,
 			templateData interface{},
 		) error {
 			if strings.HasSuffix(relativePath, versionHeaderPathFlag) {
 				return mockError
 			}
-			return mockPipeline.standard.WriteFile(writer, config, relativePath, templateData)
+			return mockPipeline.standard.WriteFile(
+				writer,
+				config,
+				beforeNewlines,
+				afterNewlines,
+				relativePath,
+				templateData,
+			)
 		}
 
 		err := batchPipeline(mockPipeline, afs, "v0.1.1")
@@ -524,13 +605,22 @@ second footer
 		mockPipeline.MockWriteFile = func(
 			writer io.Writer,
 			config core.Config,
+			beforeNewlines int,
+			afterNewlines int,
 			relativePath string,
 			templateData interface{},
 		) error {
 			if strings.HasSuffix(relativePath, testConfig.VersionHeaderPath) {
 				return mockError
 			}
-			return mockPipeline.standard.WriteFile(writer, config, relativePath, templateData)
+			return mockPipeline.standard.WriteFile(
+				writer,
+				config,
+				beforeNewlines,
+				afterNewlines,
+				relativePath,
+				templateData,
+			)
 		}
 
 		err := batchPipeline(mockPipeline, afs, "v0.1.1")
@@ -546,13 +636,22 @@ second footer
 		mockPipeline.MockWriteFile = func(
 			writer io.Writer,
 			config core.Config,
+			beforeNewlines int,
+			afterNewlines int,
 			relativePath string,
 			templateData interface{},
 		) error {
 			if strings.HasSuffix(relativePath, versionFooterPathFlag) {
 				return mockError
 			}
-			return mockPipeline.standard.WriteFile(writer, config, relativePath, templateData)
+			return mockPipeline.standard.WriteFile(
+				writer,
+				config,
+				beforeNewlines,
+				afterNewlines,
+				relativePath,
+				templateData,
+			)
 		}
 
 		err := batchPipeline(mockPipeline, afs, "v0.1.1")
@@ -568,13 +667,22 @@ second footer
 		mockPipeline.MockWriteFile = func(
 			writer io.Writer,
 			config core.Config,
+			beforeNewlines int,
+			afterNewlines int,
 			relativePath string,
 			templateData interface{},
 		) error {
 			if strings.HasSuffix(relativePath, testConfig.VersionFooterPath) {
 				return mockError
 			}
-			return mockPipeline.standard.WriteFile(writer, config, relativePath, templateData)
+			return mockPipeline.standard.WriteFile(
+				writer,
+				config,
+				beforeNewlines,
+				afterNewlines,
+				relativePath,
+				templateData,
+			)
 		}
 
 		err := batchPipeline(mockPipeline, afs, "v0.1.1")
@@ -675,7 +783,7 @@ second footer
 		err := afs.WriteFile(filepath.Join(futurePath, "a.md"), text, os.ModePerm)
 		Expect(err).To(BeNil())
 
-		err = standard.WriteFile(&builder, testConfig, "a.md", nil)
+		err = standard.WriteFile(&builder, testConfig, 1, 0, "a.md", nil)
 		Expect(builder.String()).To(Equal("\nsome text"))
 		Expect(err).To(BeNil())
 	})
@@ -686,7 +794,7 @@ second footer
 		err := afs.WriteFile(filepath.Join(futurePath, "a.md"), text, os.ModePerm)
 		Expect(err).To(BeNil())
 
-		err = standard.WriteFile(&builder, testConfig, "", nil)
+		err = standard.WriteFile(&builder, testConfig, 0, 0, "", nil)
 		Expect(builder.String()).To(Equal(""))
 		Expect(err).To(BeNil())
 	})
@@ -702,7 +810,7 @@ second footer
 			return badFile, mockError
 		}
 
-		err := standard.WriteFile(&builder, testConfig, "a.md", nil)
+		err := standard.WriteFile(&builder, testConfig, 0, 0, "a.md", nil)
 		Expect(builder.String()).To(Equal(""))
 		Expect(err).To(Equal(mockError))
 	})
@@ -717,14 +825,14 @@ second footer
 		err := afs.WriteFile(filepath.Join(futurePath, "a.md"), text, os.ModePerm)
 		Expect(err).To(BeNil())
 
-		err = standard.WriteFile(badFile, testConfig, "a.md", nil)
+		err = standard.WriteFile(badFile, testConfig, 0, 0, "a.md", nil)
 		Expect(err).To(Equal(mockError))
 	})
 
 	It("skips writing if files does not exist", func() {
 		var builder strings.Builder
 
-		err := standard.WriteFile(&builder, testConfig, "a.md", nil)
+		err := standard.WriteFile(&builder, testConfig, 0, 0, "a.md", nil)
 		Expect(builder.String()).To(Equal(""))
 		Expect(err).To(BeNil())
 	})
