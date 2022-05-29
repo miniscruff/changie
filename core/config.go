@@ -25,12 +25,12 @@ var ConfigPaths []string = []string{
 type GetVersions func(shared.ReadDirer, Config) ([]*semver.Version, error)
 
 type KindConfig struct {
-	Label             string   `yaml:"label"`
-	Format            string   `yaml:"format,omitempty"`
-	ChangeFormat      string   `yaml:"changeFormat,omitempty"`
-	SkipGlobalChoices bool     `yaml:"skipGlobalChoices,omitempty"`
-	SkipBody          bool     `yaml:"skipBody,omitempty"`
-	AdditionalChoices []Custom `yaml:"additionalChoices,omitempty"`
+	Label             string   `yaml:""`
+	Format            string   `yaml:""`
+	ChangeFormat      string   `yaml:"changeFormat"`
+	SkipGlobalChoices bool     `yaml:"skipGlobalChoices"`
+	SkipBody          bool     `yaml:"skipBody"`
+	AdditionalChoices []Custom `yaml:"additionalChoices"`
 }
 
 func (kc KindConfig) String() string {
@@ -63,19 +63,19 @@ type Config struct {
 	ChangelogPath     string `yaml:"changelogPath"`
 	VersionExt        string `yaml:"versionExt"`
 	// formats
-	FragmentFileFormat string `yaml:"fragmentFileFormat,omitempty"`
-	VersionFormat      string `yaml:"versionFormat"`
-	ComponentFormat    string `yaml:"componentFormat,omitempty"`
-	KindFormat         string `yaml:"kindFormat,omitempty"`
+	FragmentFileFormat string `yaml:"fragmentFileFormat"`
+	VersionFormat      string `yaml:"versionFormat" templateType:"BatchData"`
+	ComponentFormat    string `yaml:"componentFormat"`
+	KindFormat         string `yaml:"kindFormat"`
 	ChangeFormat       string `yaml:"changeFormat"`
 	HeaderFormat       string `yaml:"headerFormat"`
 	FooterFormat       string `yaml:"footerFormat"`
 	// custom
-	Body          BodyConfig    `yaml:"body,omitempty"`
-	Components    []string      `yaml:"components,omitempty"`
-	Kinds         []KindConfig  `yaml:"kinds,omitempty"`
-	CustomChoices []Custom      `yaml:"custom,omitempty"`
-	Replacements  []Replacement `yaml:"replacements,omitempty"`
+	Body          BodyConfig    `yaml:"body"`
+	Components    []string      `yaml:"components"`
+	Kinds         []KindConfig  `yaml:"kinds"`
+	CustomChoices []Custom      `yaml:"custom"`
+	Replacements  []Replacement `yaml:"replacements"`
 }
 
 func (c Config) KindHeader(label string) string {

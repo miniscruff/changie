@@ -74,11 +74,11 @@ func (s *ChangesConfigSorter) Less(i, j int) bool {
 
 // Change represents an atomic change to a project
 type Change struct {
-	Component string `yaml:",omitempty"`
-	Kind      string `yaml:",omitempty"`
-	Body      string
-	Time      time.Time
-	Custom    map[string]string `yaml:",omitempty"`
+	Component string            `yaml:""`
+	Kind      string            `yaml:""`
+	Body      string            `yaml:""`
+	Time      time.Time         `yaml:""`
+	Custom    map[string]string `yaml:""`
 }
 
 // SaveUnreleased will save an unreleased change to the unreleased directory

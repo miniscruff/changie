@@ -45,10 +45,10 @@ type Prompt interface {
 
 // Custom contains the options for a custom choice for new changes
 type Custom struct {
-	Key         string
-	Type        CustomType
-	Optional    bool     `yaml:"optional,omitempty"`
-	Label       string   `yaml:",omitempty"`
+	Key         string `yaml:""`
+	Type        CustomType `yaml:""`
+	Optional    bool     `yaml:""`
+	Label       string   `yaml:""`
 	MinInt      *int64   `yaml:"minInt,omitempty"`
 	MaxInt      *int64   `yaml:"maxInt,omitempty"`
 	MinLength   *int64   `yaml:"minLength,omitempty"`

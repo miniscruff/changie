@@ -70,3 +70,7 @@ summaryLength = 30
     noClasses = true
     style = "monokai"
     tabWidth = 4
+  [markup.tableOfContents]
+    startLevel = 2
+    endLevel = 3
+    ordered = false
