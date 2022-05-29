@@ -45,15 +45,15 @@ type Prompt interface {
 
 // Custom contains the options for a custom choice for new changes
 type Custom struct {
-	Key         string `yaml:""`
+	Key         string     `yaml:""`
 	Type        CustomType `yaml:""`
-	Optional    bool     `yaml:""`
-	Label       string   `yaml:""`
-	MinInt      *int64   `yaml:"minInt,omitempty"`
-	MaxInt      *int64   `yaml:"maxInt,omitempty"`
-	MinLength   *int64   `yaml:"minLength,omitempty"`
-	MaxLength   *int64   `yaml:"maxLength,omitempty"`
-	EnumOptions []string `yaml:"enumOptions,omitempty"`
+	Optional    bool       `yaml:""`
+	Label       string     `yaml:""`
+	MinInt      *int64     `yaml:"minInt,omitempty"`
+	MaxInt      *int64     `yaml:"maxInt,omitempty"`
+	MinLength   *int64     `yaml:"minLength,omitempty"`
+	MaxLength   *int64     `yaml:"maxLength,omitempty"`
+	EnumOptions []string   `yaml:"enumOptions,omitempty"`
 }
 
 func (c Custom) DisplayLabel() string {

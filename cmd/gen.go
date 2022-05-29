@@ -11,6 +11,7 @@ import (
 	"path"
 	"path/filepath"
 	"reflect"
+	"sort"
 	"strings"
 	"time"
 
@@ -30,20 +31,22 @@ summary: "Help for using the '%s' command"
 type CoreTypes map[string]*godoc.Type
 
 type TypeProps struct {
-	Name string
-	Doc  string
+	Name   string
+	Doc    string
+	Fields []FieldProps
 }
 
 type FieldProps struct {
-	Name         string
-	Key          string
-	TypeName     string
-	Doc          string
-	Example      string
-	TemplateType string
-	IsCustomType bool
-	Required     bool
-	Slice        bool
+	Name           string
+	Key            string
+	TypeName       string
+	Doc            string
+	ExampleLang    string
+	ExampleContent string
+	TemplateType   string
+	IsCustomType   bool
+	Required       bool
+	Slice          bool
 }
 
 // genCmd represents the gen command
@@ -90,25 +93,53 @@ func genConfigDocs() error {
 	defer file.Close()
 	var writer io.Writer = file
 
-	writeConfigHeader(writer, time.Now)
+	writeConfigFrontMatter(writer, time.Now)
 
 	corePackages, err := getCorePackages("core")
 	if err != nil {
 		return err
 	}
 
-	err = writeFromPackage(writer, corePackages, "Config")
+	allTypeProps, err := buildUniqueTypes(writer, corePackages, "Config")
+	if err != nil {
+		return err
+	}
+
 	// TODO: build template funcs and types
+
+	// grab our root config and store it so we can sort the rest
+	// but keep Config at the top
+	rootConfigType := allTypeProps[0]
+	allTypeProps = append(allTypeProps[1:])
+
+	sort.Slice(
+		allTypeProps,
+		func(i, j int) bool {
+			return allTypeProps[i].Name < allTypeProps[j].Name
+		},
+	)
+
+	// put the now sorted items back after our root
+	allTypeProps = append([]TypeProps{rootConfigType}, allTypeProps...)
+
+	for _, typeProps := range allTypeProps {
+		err = writeType(writer, typeProps)
+		if err != nil {
+			return err
+		}
+	}
+
 	return err
 }
 
-func writeFromPackage(
+func buildUniqueTypes(
 	writer io.Writer,
 	coreTypes CoreTypes,
 	packageName string,
-) error {
+) ([]TypeProps, error) {
 	typeQueue := []string{packageName}
 	completed := make(map[string]struct{}, 0)
+	allTypeProps := make([]TypeProps, 0)
 
 	for {
 		if len(typeQueue) == 0 {
@@ -131,28 +162,17 @@ func writeFromPackage(
 
 		completed[typeName] = struct{}{}
 
-		fmt.Printf("Writing: %v\n", docType.Name)
+		fmt.Println("building type:", typeName)
 
-		// build our type and fields
-		typeProps, fieldProps, err := buildType(docType, coreTypes, &typeQueue)
+		typeProps, err := buildType(docType, coreTypes, &typeQueue)
 		if err != nil {
-			return err
+			return allTypeProps, err
 		}
 
-		err = writeType(writer, typeProps)
-		if err != nil {
-			return err
-		}
-
-		for _, f := range fieldProps {
-			err = writeField(writer, typeProps, f)
-			if err != nil {
-				return err
-			}
-		}
+		allTypeProps = append(allTypeProps, typeProps)
 	}
 
-	return nil
+	return allTypeProps, nil
 }
 
 func getCorePackages(packageName string) (CoreTypes, error) {
@@ -174,7 +194,7 @@ func getCorePackages(packageName string) (CoreTypes, error) {
 	return corePackages, nil
 }
 
-func writeConfigHeader(writer io.Writer, nower func() time.Time) {
+func writeConfigFrontMatter(writer io.Writer, nower func() time.Time) {
 	writer.Write([]byte(fmt.Sprintf(`---
 title: "Configuration"
 date: %v
@@ -182,14 +202,9 @@ layout: single
 singlePage: true
 ---
 `, nower())))
-
-	writer.Write([]byte(`
-Configurations for Changie are loaded from a '.changie.yaml' or '.changie.yml' file.
-A default configuration is created when running the 'init' command.
-`))
 }
 
-func buildType(docType *godoc.Type, coreTypes CoreTypes, queue *[]string) (TypeProps, []FieldProps, error) {
+func buildType(docType *godoc.Type, coreTypes CoreTypes, queue *[]string) (TypeProps, error) {
 	typeProps := TypeProps{
 		Name: docType.Name,
 		Doc:  docType.Doc,
@@ -211,14 +226,23 @@ func buildType(docType *godoc.Type, coreTypes CoreTypes, queue *[]string) (TypeP
 		for _, field := range structType.Fields.List {
 			newField, err := buildField(field, coreTypes, queue)
 			if err != nil {
-				return typeProps, fieldProps, err
+				return typeProps, err
 			}
 
 			fieldProps = append(fieldProps, newField)
 		}
 	}
 
-	return typeProps, fieldProps, nil
+	sort.Slice(
+		fieldProps,
+		func(i, j int) bool {
+			return fieldProps[i].Name < fieldProps[j].Name
+		},
+	)
+
+	typeProps.Fields = fieldProps
+
+	return typeProps, nil
 }
 
 func buildField(field *ast.Field, coreTypes CoreTypes, queue *[]string) (FieldProps, error) {
@@ -257,7 +281,9 @@ func buildField(field *ast.Field, coreTypes CoreTypes, queue *[]string) (FieldPr
 	before, after, found := strings.Cut(props.Doc, "example:")
 	if found {
 		props.Doc = before
-		props.Example = after
+		lang, content, _ := strings.Cut(strings.Trim(after, " "), "\n")
+		props.ExampleLang = lang
+		props.ExampleContent = content
 	}
 
 	_, isCoreType := coreTypes[props.TypeName]
@@ -285,24 +311,28 @@ func buildField(field *ast.Field, coreTypes CoreTypes, queue *[]string) (FieldPr
 		}
 	}
 
-
 	return props, nil
 }
 
 func writeType(writer io.Writer, typeProps TypeProps) error {
-	// Do not write our root Config type
-	if typeProps.Name == "Config" {
-		return nil
+	// Do not write our root Config type header
+	if typeProps.Name != "Config" {
+		_, err := writer.Write([]byte(fmt.Sprintf(
+			"## %s {#%s-type}\n%s\n\n",
+			typeProps.Name,
+			strings.ToLower(typeProps.Name),
+			typeProps.Doc,
+		)))
+		if err != nil {
+			return err
+		}
 	}
 
-	_, err := writer.Write([]byte(fmt.Sprintf(
-		"## %s {#%s-type}\n%s\n\n",
-		typeProps.Name,
-		strings.ToLower(typeProps.Name),
-		typeProps.Doc,
-	)))
-	if err != nil {
-		return err
+	for _, f := range typeProps.Fields {
+		err := writeField(writer, typeProps, f)
+		if err != nil {
+			return err
+		}
 	}
 
 	return nil
@@ -325,7 +355,7 @@ func writeField(writer io.Writer, parent TypeProps, field FieldProps) error {
 		writer.Write([]byte(fmt.Sprintf(
 			"type: [%s%s](#%s-type)",
 			typePrefix,
-			strings.ToLower(field.TypeName),
+			field.TypeName,
 			strings.ToLower(field.TypeName),
 		)))
 	} else {
@@ -354,12 +384,10 @@ func writeField(writer io.Writer, parent TypeProps, field FieldProps) error {
 	writer.Write([]byte(field.Doc))
 	writer.Write([]byte("\n\n"))
 
-	// TODO: expand shortcode
-	if field.Example != "" {
-		//writer.Write([]byte(`{{< expand "Example" >}}`))
-		writer.Write([]byte(field.Example))
-		writer.Write([]byte("\n"))
-		//writer.Write([]byte("{{< /expand >}}"))
+	if field.ExampleContent != "" {
+		writer.Write([]byte(fmt.Sprintf(`{{< expand "Example" "%v" >}}`, field.ExampleLang)))
+		writer.Write([]byte(field.ExampleContent))
+		writer.Write([]byte("{{< /expand >}}"))
 		writer.Write([]byte("\n"))
 	}
 

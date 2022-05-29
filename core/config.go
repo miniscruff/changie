@@ -53,17 +53,63 @@ func (b BodyConfig) CreatePrompt(stdinReader io.ReadCloser) Prompt {
 	return p
 }
 
-// Config handles configuration for a changie project
+// Config handles configuration for a project.
+//
+// Custom configuration path:
+//
+// By default Changie will try and load ".changie.yaml" and ".changie.yml" before running commands.
+// If you want to change this path set the environment variable `CHANGIE_CONFIG_PATH` to the desired file.
+//
+// `export CHANGIE_CONFIG_PATH=./tools/changie.yaml`
+//
+// **Templating**
+//
+// Changie utilizes [go template](https://golang.org/pkg/text/template/) and [sprig functions](https://masterminds.github.io/sprig/) for formatting.
+// In addition to that, custom template functions are available when working with changes.
+//
+// When batching changes into a version, the headers and footers are placed as such:
+//
+// 1. Header file
+// 1. Header template
+// 1. All changes
+// 1. Footer template
+// 1. Footer file
+//
+// All elements are optional and will be added together if all are provided.
 type Config struct {
-	ChangesDir        string `yaml:"changesDir"`
-	UnreleasedDir     string `yaml:"unreleasedDir"`
-	HeaderPath        string `yaml:"headerPath"`
-	VersionHeaderPath string `yaml:"versionHeaderPath"`
-	VersionFooterPath string `yaml:"versionFooterPath"`
-	ChangelogPath     string `yaml:"changelogPath"`
+	// Directory for change files, header file and unreleased files.
+	// Relative to project root.
+	ChangesDir string `yaml:"changesDir"`
+	// Directory for all unreleased change files.
+	// Relative to [changesDir](#config-changesdir).
+	UnreleasedDir string `yaml:"unreleasedDir"`
+	// When merging all versions into one changelog file content is added to the top from a header file.
+	// A default header file is created when initializing that follows "Keep a Changelog".
+	//
+	// Filepath for your changelog header file.
+	// Relative to [changesDir](#config-changesdir).
+	HeaderPath string `yaml:"headerPath" required:"true"`
+	// Filepath for the generated changelog file.
+	// Relative to project root.
+	ChangelogPath string `yaml:"changelogPath"`
+	// File extension for generated version files.
+	// This should probably match your changelog path file.
+	// Must not include the period.
 	VersionExt        string `yaml:"versionExt"`
-	// formats
-	FragmentFileFormat string `yaml:"fragmentFileFormat"`
+	// Filepath for your version header file relative to [unreleasedDir](#config-unreleaseddir).
+	// It is also possible to use the '--header-path' parameter when using the [batch command](/cli/changie_batch).
+	VersionHeaderPath string `yaml:"versionHeaderPath"`
+	// Filepath for your version footer file relative to [unreleasedDir](#config-unreleaseddir).
+	// It is also possible to use the '--footer-path' parameter when using the [batch command](/cli/changie_batch).
+	VersionFooterPath string `yaml:"versionFooterPath"`
+	// Customize the file name generated for new fragments.
+	// The default uses the component and kind only if configured for your project.
+	// The file is placed in the unreleased directory, so the full path is:
+	//
+	// "{{.ChangesDir}}/{{.UnreleasedDir}}/{{.FragmentFileFormat}}.yaml"
+	// example: yaml
+	// fragmentFileFormat: "{{.Kind}}-{{.Custom.Issue}}"
+	FragmentFileFormat string `yaml:"fragmentFileFormat" default:"{{.Component}}-{{.Kind}}-{{.Time.Format \"20060102-150405\"}}" templateType:"Change"`
 	VersionFormat      string `yaml:"versionFormat" templateType:"BatchData"`
 	ComponentFormat    string `yaml:"componentFormat"`
 	KindFormat         string `yaml:"kindFormat"`
