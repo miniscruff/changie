@@ -9,7 +9,8 @@ import (
 	"github.com/manifoldco/promptui"
 )
 
-// CustomType determines the possible custom choice types
+// CustomType determines the possible custom choice types.
+// Current values are: `string`, `int` and `enum`.
 type CustomType string
 
 const (
@@ -43,17 +44,63 @@ type Prompt interface {
 	Run() (string, error)
 }
 
-// Custom contains the options for a custom choice for new changes
+// Custom defines a custom choice that is asked when using 'changie new'.
+// The result is an additional custom value in the change file for including in the change line.
+//
+// A simple one could be the issue number or authors github name.
+// example: yaml
+// - key: Author
+//   label: GitHub Name
+//   type: string
+//   minLength: 3
 type Custom struct {
-	Key         string     `yaml:""`
-	Type        CustomType `yaml:""`
-	Optional    bool       `yaml:",omitempty"`
-	Label       string     `yaml:",omitempty"`
-	MinInt      *int64     `yaml:"minInt,omitempty"`
-	MaxInt      *int64     `yaml:"maxInt,omitempty"`
-	MinLength   *int64     `yaml:"minLength,omitempty"`
-	MaxLength   *int64     `yaml:"maxLength,omitempty"`
-	EnumOptions []string   `yaml:"enumOptions,omitempty"`
+	// Value used as the key in the custom map for the change format.
+	// This should only contain alpha numeric characters, usually starting with a capital.
+	// example: yaml
+	// key: Issue
+	Key string `yaml:"" required:"true"`
+
+	// Specifies the type of choice which changes the prompt.
+	//
+	// | value | description | options
+	// | -- | -- | -- |
+	// string | Freeform text option   | [minLength](#custom-minlength) and [maxLength](#custom-maxlength) to limit value
+	// int    | Whole numbers          | [minInt](#custom-minint) and [maxInt](#custom-maxint) values to limit value
+	// enum   | Limited set of strings | [enumOptions](#custom-enumoptions) is used to specify possible values
+	Type CustomType `yaml:"" required:"true"`
+
+	// If true, an empty value will not fail validation.
+	// The optional check is handled before min so you can specify that the value is optional but if it is used it must have a minimum length or value depending on type.
+	//
+	// When building templates that allow for optional values you can compare the custom choice to an empty string to check for a value or empty.
+	//
+	// example: yaml
+	// custom:
+	// - key: TicketNumber
+	//   type: int
+	//   optional: true
+	// changeFormat: >-
+	// {{- if not (eq .Custom.TicketNumber "")}}
+	// PROJ-{{.Custom.TicketNumber}}
+	// {{- end}}
+	// {{.Body}}
+	Optional bool `yaml:",omitempty" default:"false"`
+	// Description used in the prompt when asking for the choice.
+	// If empty key is used instead.
+	// example: yaml
+	// label: GitHub Username
+	Label string `yaml:",omitempty" default:""`
+	// If specified the input value must be greater than or equal to minInt.
+	MinInt *int64 `yaml:"minInt,omitempty" default:"nil"`
+	// If specified the input value must be less than or equal to maxInt.
+	MaxInt *int64 `yaml:"maxInt,omitempty" default:"nil"`
+	// If specified the string input must be at least this long
+	MinLength *int64 `yaml:"minLength,omitempty" default:"nil"`
+	// If specified string input must be no more than this long
+	MaxLength *int64 `yaml:"maxLength,omitempty" default:"nil"`
+	// When using the enum type, you must also specify what possible options to allow.
+	// Users will be given a selection list to select the value they want.
+	EnumOptions []string `yaml:"enumOptions,omitempty"`
 }
 
 func (c Custom) DisplayLabel() string {

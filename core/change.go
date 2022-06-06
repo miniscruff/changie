@@ -72,13 +72,24 @@ func (s *ChangesConfigSorter) Less(i, j int) bool {
 	return b.Time.After(a.Time)
 }
 
-// Change represents an atomic change to a project
+// Change represents an atomic change to a project.
 type Change struct {
-	Component string            `yaml:",omitempty"`
-	Kind      string            `yaml:",omitempty"`
-	Body      string            `yaml:",omitempty"`
-	Time      time.Time         `yaml:""`
-	Custom    map[string]string `yaml:",omitempty"`
+	// Component of our change, if one was provided.
+	Component string            `yaml:",omitempty" default:""`
+	// Kind of our change, if one was provided.
+	Kind      string            `yaml:",omitempty" default:""`
+	// Body message of our change, if one was provided.
+	Body      string            `yaml:",omitempty" default:""`
+	// When our change was made.
+	Time      time.Time         `yaml:"" required:"true"`
+	// Custom values corresponding to our options where each key-value pair is the key of the custom option
+	// and value the one provided in the change.
+	// example: yaml
+	// custom:
+	// - key: Issue
+	//   type: int
+	// changeFormat: "{{.Body}} from #{{.Custom.Issue}}"
+	Custom    map[string]string `yaml:",omitempty" default:"nil"`
 }
 
 // SaveUnreleased will save an unreleased change to the unreleased directory

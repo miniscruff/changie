@@ -31,9 +31,11 @@ summary: "Help for using the '%s' command"
 type CoreTypes map[string]*godoc.Type
 
 type TypeProps struct {
-	Name   string
-	Doc    string
-	Fields []FieldProps
+	Name           string
+	Doc            string
+	ExampleLang    string
+	ExampleContent string
+	Fields         []FieldProps
 }
 
 type FieldProps struct {
@@ -100,17 +102,15 @@ func genConfigDocs() error {
 		return err
 	}
 
-	allTypeProps, err := buildUniqueTypes(writer, corePackages, "Config")
+	allTypeProps, err := buildUniqueTypes(writer, corePackages, "Config", "TemplateCache")
 	if err != nil {
 		return err
 	}
 
-	// TODO: build template funcs and types
-
 	// grab our root config and store it so we can sort the rest
 	// but keep Config at the top
 	rootConfigType := allTypeProps[0]
-	allTypeProps = append(allTypeProps[1:])
+	allTypeProps = allTypeProps[1:]
 
 	sort.Slice(
 		allTypeProps,
@@ -135,9 +135,9 @@ func genConfigDocs() error {
 func buildUniqueTypes(
 	writer io.Writer,
 	coreTypes CoreTypes,
-	packageName string,
+	packageName ...string,
 ) ([]TypeProps, error) {
-	typeQueue := []string{packageName}
+	typeQueue := packageName
 	completed := make(map[string]struct{}, 0)
 	allTypeProps := make([]TypeProps, 0)
 
@@ -161,8 +161,6 @@ func buildUniqueTypes(
 		}
 
 		completed[typeName] = struct{}{}
-
-		fmt.Println("building type:", typeName)
 
 		typeProps, err := buildType(docType, coreTypes, &typeQueue)
 		if err != nil {
@@ -212,6 +210,27 @@ func buildType(docType *godoc.Type, coreTypes CoreTypes, queue *[]string) (TypeP
 
 	fieldProps := make([]FieldProps, 0)
 
+	// if any method has an example, we want to list it on the documentation,
+	// kind of an arbitrary rule but it works for now.
+	for _, method := range docType.Methods {
+		if strings.Contains(method.Doc, "example:") {
+			newField, err := buildMethod(method, coreTypes)
+			if err != nil {
+				return typeProps, err
+			}
+
+			fieldProps = append(fieldProps, newField)
+		}
+	}
+
+	before, after, found := strings.Cut(typeProps.Doc, "example:")
+	if found {
+		typeProps.Doc = before
+		lang, content, _ := strings.Cut(strings.Trim(after, " "), "\n")
+		typeProps.ExampleLang = lang
+		typeProps.ExampleContent = content
+	}
+
 	for _, spec := range docType.Decl.Specs {
 		typeSpec, ok := spec.(*ast.TypeSpec)
 		if !ok {
@@ -245,6 +264,26 @@ func buildType(docType *godoc.Type, coreTypes CoreTypes, queue *[]string) (TypeP
 	return typeProps, nil
 }
 
+func buildMethod(method *godoc.Func, coreTypes CoreTypes) (FieldProps, error) {
+	props := FieldProps{
+		Name:         method.Name,
+		Doc:          method.Doc,
+		Key:          strings.ToLower(method.Name),
+		IsCustomType: false,
+		Slice:        false,
+	}
+
+	before, after, found := strings.Cut(props.Doc, "example:")
+	if found {
+		props.Doc = before
+		lang, content, _ := strings.Cut(strings.Trim(after, " "), "\n")
+		props.ExampleLang = lang
+		props.ExampleContent = content
+	}
+
+	return props, nil
+}
+
 func buildField(field *ast.Field, coreTypes CoreTypes, queue *[]string) (FieldProps, error) {
 	props := FieldProps{
 		Name:  field.Names[0].Name,
@@ -270,12 +309,13 @@ func buildField(field *ast.Field, coreTypes CoreTypes, queue *[]string) (FieldPr
 		*queue = append(*queue, rootType.Name)
 		props.TypeName = rootType.Name
 	case *ast.MapType:
+		// TODO: custom is a map?
 		rootType := fieldType.Key.(*ast.Ident)
 		*queue = append(*queue, rootType.Name)
 		props.TypeName = rootType.Name
 	default:
-		fmt.Printf("unknown field type: %T for field: %v\n", fieldType, field.Names[0])
-		return props, fmt.Errorf("unknown field type: %T for field: '%v'\n", fieldType, field.Names[0])
+		fmt.Printf("unknown field type: %T for field: %v", fieldType, field.Names[0])
+		return props, fmt.Errorf("unknown field type: %T for field: '%v'", fieldType, field.Names[0])
 	}
 
 	before, after, found := strings.Cut(props.Doc, "example:")
@@ -328,12 +368,21 @@ func writeType(writer io.Writer, typeProps TypeProps) error {
 		}
 	}
 
+	if typeProps.ExampleContent != "" {
+		writer.Write([]byte(fmt.Sprintf(`{{< expand "Example" "%v" >}}`, typeProps.ExampleLang)))
+		writer.Write([]byte(typeProps.ExampleContent))
+		writer.Write([]byte("{{< /expand >}}"))
+		writer.Write([]byte("\n"))
+	}
+
 	for _, f := range typeProps.Fields {
 		err := writeField(writer, typeProps, f)
 		if err != nil {
 			return err
 		}
 	}
+
+	writer.Write([]byte("\n---\n"))
 
 	return nil
 }
@@ -358,17 +407,17 @@ func writeField(writer io.Writer, parent TypeProps, field FieldProps) error {
 			field.TypeName,
 			strings.ToLower(field.TypeName),
 		)))
-	} else {
+	} else if field.TypeName != "" {
 		writer.Write([]byte(fmt.Sprintf("type: `%s%s`", typePrefix, field.TypeName)))
 	}
 
-	writer.Write([]byte(" | "))
-
-	// TODO: templateData from struct tag
-	if field.Required {
-		writer.Write([]byte("required"))
-	} else {
-		writer.Write([]byte("optional"))
+	if field.TypeName != "" {
+		writer.Write([]byte(" | "))
+		if field.Required {
+			writer.Write([]byte("required"))
+		} else {
+			writer.Write([]byte("optional"))
+		}
 	}
 
 	if field.TemplateType != "" {

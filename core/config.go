@@ -24,12 +24,25 @@ var ConfigPaths []string = []string{
 // GetVersions will return, in semver sorted order, all released versions
 type GetVersions func(shared.ReadDirer, Config) ([]*semver.Version, error)
 
+// Kind config allows you to customize the options depending on what kind was selected.
 type KindConfig struct {
-	Label             string   `yaml:",omitempty"`
-	Format            string   `yaml:",omitempty"`
-	ChangeFormat      string   `yaml:"changeFormat,omitempty"`
-	SkipGlobalChoices bool     `yaml:"skipGlobalChoices,omitempty"`
-	SkipBody          bool     `yaml:"skipBody,omitempty"`
+	// Label is the value used in the prompt when selecting a kind.
+	// example: yaml
+	// label: Feature
+	Label string `yaml:",omitempty" required:"true"`
+	// Format will override the root kind format when building the kind header.
+	// example: yaml
+	// format: '### {{.Kind}} **Breaking Changes**'
+	Format string `yaml:",omitempty"`
+	// Change format will override the root change format when building changes specific to this kind.
+	// example: yaml
+	// changeFormat: 'Breaking: {{.Custom.Body}}
+	ChangeFormat string `yaml:"changeFormat,omitempty"`
+	// Skip global choices allows skipping the parent choices options
+	SkipGlobalChoices bool `yaml:"skipGlobalChoices,omitempty" default:"false"`
+	// Skip body allows skipping the parent body prompt
+	SkipBody bool `yaml:"skipBody,omitempty" default:"false"`
+	// Additional choices allows adding choices per kind
 	AdditionalChoices []Custom `yaml:"additionalChoices,omitempty"`
 }
 
@@ -37,9 +50,12 @@ func (kc KindConfig) String() string {
 	return kc.Label
 }
 
+// Body config allows you to customize the default body prompt
 type BodyConfig struct {
-	MinLength *int64 `yaml:"minLength,omitempty"`
-	MaxLength *int64 `yaml:"maxLength,omitempty"`
+	// Min length specifies the minimum body length
+	MinLength *int64 `yaml:"minLength,omitempty" default:"no min"`
+	// Max length specifies the maximum body length
+	MaxLength *int64 `yaml:"maxLength,omitempty" default:"no max"`
 }
 
 func (b BodyConfig) CreatePrompt(stdinReader io.ReadCloser) Prompt {
@@ -62,10 +78,7 @@ func (b BodyConfig) CreatePrompt(stdinReader io.ReadCloser) Prompt {
 //
 // `export CHANGIE_CONFIG_PATH=./tools/changie.yaml`
 //
-// **Templating**
-//
-// Changie utilizes [go template](https://golang.org/pkg/text/template/) and [sprig functions](https://masterminds.github.io/sprig/) for formatting.
-// In addition to that, custom template functions are available when working with changes.
+// [Template Cache](#templatecache-type) handles all the template executions.
 //
 // When batching changes into a version, the headers and footers are placed as such:
 //
@@ -79,22 +92,33 @@ func (b BodyConfig) CreatePrompt(stdinReader io.ReadCloser) Prompt {
 type Config struct {
 	// Directory for change files, header file and unreleased files.
 	// Relative to project root.
+	// example: yaml
+	// changesDir: .changes
 	ChangesDir string `yaml:"changesDir" required:"true"`
 	// Directory for all unreleased change files.
 	// Relative to [changesDir](#config-changesdir).
+	// example: yaml
+	// unreleasedDir: unreleased
 	UnreleasedDir string `yaml:"unreleasedDir" required:"true"`
 	// When merging all versions into one changelog file content is added to the top from a header file.
 	// A default header file is created when initializing that follows "Keep a Changelog".
 	//
 	// Filepath for your changelog header file.
 	// Relative to [changesDir](#config-changesdir).
+	// example: yaml
+	// headerPath: header.tpl.md
 	HeaderPath string `yaml:"headerPath" required:"true"`
 	// Filepath for the generated changelog file.
 	// Relative to project root.
+	// example: yaml
+	// changelogPath: CHANGELOG.md
 	ChangelogPath string `yaml:"changelogPath" required:"true"`
 	// File extension for generated version files.
 	// This should probably match your changelog path file.
 	// Must not include the period.
+	// example: yaml
+	// # for markdown changelogs
+	// versionExt: md
 	VersionExt string `yaml:"versionExt" required:"true"`
 	// Filepath for your version header file relative to [unreleasedDir](#config-unreleaseddir).
 	// It is also possible to use the '--header-path' parameter when using the [batch command](/cli/changie_batch).
@@ -110,18 +134,83 @@ type Config struct {
 	// example: yaml
 	// fragmentFileFormat: "{{.Kind}}-{{.Custom.Issue}}"
 	FragmentFileFormat string `yaml:"fragmentFileFormat,omitempty" default:"{{.Component}}-{{.Kind}}-{{.Time.Format \"20060102-150405\"}}" templateType:"Change"`
-	VersionFormat      string `yaml:"versionFormat,omitempty" templateType:"BatchData"`
-	ComponentFormat    string `yaml:"componentFormat,omitempty" templateType:"TODO"`
-	KindFormat         string `yaml:"kindFormat,omitempty" templateType:"TODO"`
-	ChangeFormat       string `yaml:"changeFormat" templateType:"Change"`
-	HeaderFormat       string `yaml:"headerFormat,omitempty" templateType:"BatchData"`
-	FooterFormat       string `yaml:"footerFormat,omitempty" templateType:"BatchData"`
-	// custom
-	Body          BodyConfig    `yaml:"body,omitempty"`
-	Components    []string      `yaml:"components,omitempty"`
-	Kinds         []KindConfig  `yaml:"kinds,omitempty"`
-	CustomChoices []Custom      `yaml:"custom,omitempty"`
-	Replacements  []Replacement `yaml:"replacements,omitempty"`
+	// Template used to generate version headers.
+	VersionFormat string `yaml:"versionFormat,omitempty" templateType:"BatchData"`
+	// Template used to generate component headers.
+	// If format is empty no header will be included.
+	// If components are disabled, the format is unused.
+	ComponentFormat string `yaml:"componentFormat,omitempty" templateType:"TODO"`
+	// Template used to generate kind headers.
+	// If format is empty no header will be included.
+	// If kinds are disabled, the format is unused.
+	KindFormat string `yaml:"kindFormat,omitempty" templateType:"TODO"`
+	// Template used to generate change lines in version files and changelog.
+	// Custom values are created through custom choices and can be accessible through the Custom argument.
+	// example: yaml
+	// changeFormat: '* [#{{.Custom.Issue}}](https://github.com/miniscruff/changie/issues/{{.Custom.Issue}}) {{.Body}}'
+	ChangeFormat string `yaml:"changeFormat" templateType:"Change"`
+	// Template used to generate a version header.
+	HeaderFormat string `yaml:"headerFormat,omitempty" templateType:"BatchData"`
+	// Template used to generate a version footer.
+	// example: yaml
+	// # config yaml
+	// custom:
+	// - key: Author
+	//   type: string
+	//   minLength: 3
+	// footerFormat: |
+	//   ### Contributors
+	//   {{- range (customs .Changes "Author" | uniq) }}
+	//   * [{{.}}](https://github.com/{{.}})
+	//   {{- end}}
+	FooterFormat string `yaml:"footerFormat,omitempty" templateType:"BatchData"`
+	// Options to customize the body prompt
+	Body BodyConfig `yaml:"body,omitempty"`
+	// Components are an additional layer of organization suited for projects that want to split change fragments by an area or tag of the project.
+	// An example could be splitting your changelogs by packages for a monorepo.
+	// If no components are listed then the component prompt will be skipped and no component header included.
+	// By default no components are configured.
+	// example: yaml
+	// components:
+	// - API
+	// - CLI
+	// - Frontend
+	Components []string `yaml:"components,omitempty"`
+	// Kinds are another optional layer of changelogs suited for specifying what type of change we are making.
+	// If configured, developers will be prompted to select a kind.
+	// See [kind config](#kindconfig-type) for how to further customize kinds.
+	//
+	// The default list comes from keep a changelog and includes; added, changed, removed, deprecated, fixed, and security.
+	// example: yaml
+	// kinds:
+	// - label: Added
+	// - label: Changed
+	// - label: Deprecated
+	// - label: Removed
+	// - label: Fixed
+	// - label: Security
+	Kinds []KindConfig `yaml:"kinds,omitempty"`
+	// Custom choices allow you to ask for additional information when creating a new change fragment.
+	// These custom choices are included in the [change custom](#change-custom) value.
+	// example: yaml
+	// # github issue and author name
+	// custom:
+	// - key: Issue
+	//   type: int
+	//   minInt: 1
+	// - key: Author
+	//   label: GitHub Name
+	//   type: string
+	//   minLength: 3
+	CustomChoices []Custom `yaml:"custom,omitempty"`
+	// Replacements to run when merging a changelog.
+	// example: yaml
+	// # nodejs package.json replacement
+	// replacements:
+	// - path: package.json
+	//   find: '  "version": ".*",'
+	//   replace: '  "version": "{{.VersionNoPrefix}}",'
+	Replacements []Replacement `yaml:"replacements,omitempty"`
 }
 
 func (c Config) KindHeader(label string) string {

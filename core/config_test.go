@@ -18,7 +18,7 @@ var _ = Describe("Config", func() {
 			HeaderPath:        "header.tpl.md",
 			VersionHeaderPath: "header.md",
 			VersionExt:        "md",
-			ChangeFormat: "chng",
+			ChangeFormat:      "chng",
 			ChangelogPath:     "CHANGELOG.md",
 		}
 

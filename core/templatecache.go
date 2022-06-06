@@ -9,18 +9,38 @@ import (
 	"github.com/Masterminds/sprig/v3"
 )
 
+// Batch data is a common structure for templates when generating change fragments.
 type BatchData struct {
-	Time            time.Time
-	Version         string
+	// Time of the change
+	Time time.Time
+	// Version of the change, will include "v" prefix if used
+	Version string
+	// Previous released version
 	PreviousVersion string
-	Major           int
-	Minor           int
-	Patch           int
-	Prerelease      string
-	Metadata        string
-	Changes         []Change
+	// Major value of the version
+	Major int
+	// Minor value of the version
+	Minor int
+	// Patch value of the version
+	Patch int
+	// Prerelease value of the version
+	Prerelease string
+	// Metadata value of the version
+	Metadata string
+	// Changes included in the batch
+	Changes []Change
 }
 
+// Template cache handles running all the templates for change fragments.
+// Included options include the default [go template](https://golang.org/pkg/text/template/)
+// and [sprig functions](https://masterminds.github.io/sprig/) for formatting.
+// Additionally, custom template functions are listed below for working with changes.
+// example: yaml
+// format: |
+// ### Contributors
+// {{- range (customs .Changes "Author" | uniq) }}
+// * [{{.}}](https://github.com/{{.}})
+// {{- end}}
 type TemplateCache struct {
 	cache map[string]*template.Template
 }
@@ -37,7 +57,7 @@ func (tc *TemplateCache) Load(text string) (*template.Template, error) {
 		return cachedTemplate, nil
 	}
 
-	templ, err := template.New(text).Funcs(funcMap()).Parse(text)
+	templ, err := template.New(text).Funcs(tc.buildFuncMap()).Parse(text)
 	tc.cache[text] = templ
 
 	return templ, err
@@ -52,21 +72,23 @@ func (tc *TemplateCache) Execute(text string, wr io.Writer, data interface{}) er
 	return templ.Execute(wr, data)
 }
 
-func funcMap() map[string]interface{} {
+func (tc *TemplateCache) buildFuncMap() map[string]interface{} {
 	funcs := sprig.TxtFuncMap()
 
-	// custom []Change funcs
-	funcs["count"] = countString
-	funcs["components"] = changeComponents
-	funcs["kinds"] = changeKinds
-	funcs["bodies"] = changeBodies
-	funcs["times"] = changeTimes
-	funcs["customs"] = changeCustoms
+	funcs["count"] = tc.Count
+	funcs["components"] = tc.Components
+	funcs["kinds"] = tc.Kinds
+	funcs["bodies"] = tc.Bodies
+	funcs["times"] = tc.Times
+	funcs["customs"] = tc.Customs
 
 	return funcs
 }
 
-func countString(value string, items []string) (int, error) {
+// Count will return the number of occurances of a string in a slice.
+// example: yaml
+// format: "{{ kinds .Changes | count \"added\" }} kinds"
+func (tc *TemplateCache) Count(value string, items []string) (int, error) {
 	count := 0
 
 	for _, i := range items {
@@ -78,7 +100,10 @@ func countString(value string, items []string) (int, error) {
 	return count, nil
 }
 
-func changeComponents(changes []Change) ([]string, error) {
+// Components will return all the components from the provided changes.
+// example: yaml
+// format: "{{components .Changes }} components"
+func (tc *TemplateCache) Components(changes []Change) ([]string, error) {
 	comps := make([]string, len(changes))
 
 	for i, c := range changes {
@@ -88,7 +113,10 @@ func changeComponents(changes []Change) ([]string, error) {
 	return comps, nil
 }
 
-func changeKinds(changes []Change) ([]string, error) {
+// Kinds will return all the kindsi from the provided changes.
+// example: yaml
+// format: "{{ kinds .Changes }} kinds"
+func (tc *TemplateCache) Kinds(changes []Change) ([]string, error) {
 	kinds := make([]string, len(changes))
 
 	for i, c := range changes {
@@ -98,7 +126,10 @@ func changeKinds(changes []Change) ([]string, error) {
 	return kinds, nil
 }
 
-func changeBodies(changes []Change) ([]string, error) {
+// Bodies will return all the bodies from the provided changes.
+// example: yaml
+// format: "{{ bodies .Changes }} bodies"
+func (tc *TemplateCache) Bodies(changes []Change) ([]string, error) {
 	bodies := make([]string, len(changes))
 
 	for i, c := range changes {
@@ -108,7 +139,10 @@ func changeBodies(changes []Change) ([]string, error) {
 	return bodies, nil
 }
 
-func changeTimes(changes []Change) ([]time.Time, error) {
+// Times will return all the times from the provided changes.
+// example: yaml
+// format: "{{ times .Changes }} times"
+func (tc *TemplateCache) Times(changes []Change) ([]time.Time, error) {
 	times := make([]time.Time, len(changes))
 
 	for i, c := range changes {
@@ -118,7 +152,10 @@ func changeTimes(changes []Change) ([]time.Time, error) {
 	return times, nil
 }
 
-func changeCustoms(changes []Change, key string) ([]string, error) {
+// Customs will return all the values from the custom map by a key.
+// example: yaml
+// format: "{{ customs .Changes \"Author\" }} authors"
+func (tc *TemplateCache) Customs(changes []Change, key string) ([]string, error) {
 	var ok bool
 
 	values := make([]string, len(changes))
