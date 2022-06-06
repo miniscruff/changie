@@ -139,11 +139,11 @@ type Config struct {
 	// Template used to generate component headers.
 	// If format is empty no header will be included.
 	// If components are disabled, the format is unused.
-	ComponentFormat string `yaml:"componentFormat,omitempty" templateType:"TODO"`
+	ComponentFormat string `yaml:"componentFormat,omitempty" templateType:"ComponentData"`
 	// Template used to generate kind headers.
 	// If format is empty no header will be included.
 	// If kinds are disabled, the format is unused.
-	KindFormat string `yaml:"kindFormat,omitempty" templateType:"TODO"`
+	KindFormat string `yaml:"kindFormat,omitempty" templateType:"KindData"`
 	// Template used to generate change lines in version files and changelog.
 	// Custom values are created through custom choices and can be accessible through the Custom argument.
 	// example: yaml

@@ -372,8 +372,8 @@ func (b *standardBatchPipeline) WriteChanges(
 			lastComponent = change.Component
 			lastKind = ""
 
-			err := b.WriteTemplate(writer, config.ComponentFormat, true, map[string]string{
-				"Component": lastComponent,
+			err := b.WriteTemplate(writer, config.ComponentFormat, true, core.ComponentData{
+				Component: lastComponent,
 			})
 			if err != nil {
 				return err
@@ -384,8 +384,8 @@ func (b *standardBatchPipeline) WriteChanges(
 			lastKind = change.Kind
 			kindHeader := config.KindHeader(change.Kind)
 
-			err := b.WriteTemplate(writer, kindHeader, true, map[string]string{
-				"Kind": lastKind,
+			err := b.WriteTemplate(writer, kindHeader, true, core.KindData{
+				Kind: lastKind,
 			})
 			if err != nil {
 				return err

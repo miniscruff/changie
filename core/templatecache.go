@@ -31,6 +31,18 @@ type BatchData struct {
 	Changes []Change
 }
 
+// Component data stores data related to writing component headers.
+type ComponentData struct {
+	// Name of the component
+	Component string `required:"true"`
+}
+
+// Kind data stores data related to writing kind headers.
+type KindData struct {
+	// Name of the kind
+	Kind string `required:"true"`
+}
+
 // Template cache handles running all the templates for change fragments.
 // Included options include the default [go template](https://golang.org/pkg/text/template/)
 // and [sprig functions](https://masterminds.github.io/sprig/) for formatting.
