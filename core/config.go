@@ -69,6 +69,42 @@ func (b BodyConfig) CreatePrompt(stdinReader io.ReadCloser) Prompt {
 	return p
 }
 
+// Configuration options for newlines before and after different elements.
+type NewlinesConfig struct {
+	// Add newlines after change fragment
+	AfterChange int `yaml:"afterChange,omitempty" default:"0"`
+	// Add newlines after component
+	AfterComponent int `yaml:"afterComponent,omitempty" default:"0"`
+	// Add newlines after footer file
+	AfterFooterFile int `yaml:"afterFooterFile,omitempty" default:"0"`
+	// Add newlines after footer template
+	AfterFooterTemplate int `yaml:"afterFooter,omitempty" default:"0"`
+	// Add newlines after header file
+	AfterHeaderFile int `yaml:"afterHeaderFile,omitempty" default:"0"`
+	// Add newlines after header template
+	AfterHeaderTemplate int `yaml:"afterHeader,omitempty" default:"0"`
+	// Add newlines after kind
+	AfterKind int `yaml:"afterKindHeader,omitempty" default:"0"`
+	// Add newlines after version
+	AfterVersion int `yaml:"afterVersion,omitempty" default:"0"`
+	// Add newlines before change fragment
+	BeforeChange int `yaml:"beforeChange,omitempty" default:"0"`
+	// Add newlines before component
+	BeforeComponent int `yaml:"beforeComponent,omitempty" default:"0"`
+	// Add newlines before footer file
+	BeforeFooterFile int `yaml:"beforeFooterFile,omitempty" default:"0"`
+	// Add newlines before footer template
+	BeforeFooterTemplate int `yaml:"beforeFooter,omitempty" default:"0"`
+	// Add newlines before header file
+	BeforeHeaderFile int `yaml:"beforeHeaderFile,omitempty" default:"0"`
+	// Add newlines before header template
+	BeforeHeaderTemplate int `yaml:"beforeHeader,omitempty" default:"0"`
+	// Add newlines before kind
+	BeforeKind int `yaml:"beforeKindHeader,omitempty" default:"0"`
+	// Add newlines before version
+	BeforeVersion int `yaml:"beforeVersion,omitempty" default:"0"`
+}
+
 // Config handles configuration for a project.
 //
 // Custom configuration path:
@@ -211,6 +247,8 @@ type Config struct {
 	//   find: '  "version": ".*",'
 	//   replace: '  "version": "{{.VersionNoPrefix}}",'
 	Replacements []Replacement `yaml:"replacements,omitempty"`
+	// Newline options allow you to add extra lines between elements written by changie.
+	Newlines NewlinesConfig `yaml:"newlines,omitempty"`
 }
 
 func (c Config) KindHeader(label string) string {
