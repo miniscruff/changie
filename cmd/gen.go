@@ -93,6 +93,7 @@ func genConfigDocs() error {
 	}
 
 	defer file.Close()
+
 	var writer io.Writer = file
 
 	writeConfigFrontMatter(writer, time.Now)
@@ -147,7 +148,7 @@ func buildUniqueTypes(
 		}
 
 		typeName := typeQueue[0]
-		typeQueue = append(typeQueue[1:])
+		typeQueue = typeQueue[1:]
 
 		docType, found := coreTypes[typeName]
 		if !found {
@@ -179,6 +180,7 @@ func getCorePackages(packageName string) (CoreTypes, error) {
 
 	fset := token.NewFileSet()
 	packages, err := parser.ParseDir(fset, packagePath, nil, parser.ParseComments)
+
 	if err != nil {
 		return corePackages, err
 	}
@@ -189,11 +191,12 @@ func getCorePackages(packageName string) (CoreTypes, error) {
 	for _, t := range p.Types {
 		corePackages[t.Name] = t
 	}
+
 	return corePackages, nil
 }
 
 func writeConfigFrontMatter(writer io.Writer, nower func() time.Time) {
-	writer.Write([]byte(fmt.Sprintf(`---
+	_, _ = writer.Write([]byte(fmt.Sprintf(`---
 title: "Configuration"
 date: %v
 layout: single
@@ -290,6 +293,7 @@ func buildField(field *ast.Field, coreTypes CoreTypes, queue *[]string) (FieldPr
 		Doc:   field.Doc.Text(),
 		Slice: false,
 	}
+
 	switch fieldType := field.Type.(type) {
 	case *ast.Ident:
 		*queue = append(*queue, fieldType.Name)
@@ -331,7 +335,7 @@ func buildField(field *ast.Field, coreTypes CoreTypes, queue *[]string) (FieldPr
 	props.Key = strings.ToLower(props.Name)
 
 	if field.Tag != nil {
-		var tags reflect.StructTag = reflect.StructTag(strings.Trim(field.Tag.Value, "`"))
+		tags := reflect.StructTag(strings.Trim(field.Tag.Value, "`"))
 
 		if yaml, ok := tags.Lookup("yaml"); ok {
 			// yaml can include more than a name, but its the first word separated by comma
@@ -369,10 +373,10 @@ func writeType(writer io.Writer, typeProps TypeProps) error {
 	}
 
 	if typeProps.ExampleContent != "" {
-		writer.Write([]byte(fmt.Sprintf(`{{< expand "Example" "%v" >}}`, typeProps.ExampleLang)))
-		writer.Write([]byte(typeProps.ExampleContent))
-		writer.Write([]byte("{{< /expand >}}"))
-		writer.Write([]byte("\n"))
+		_, _ = writer.Write([]byte(fmt.Sprintf(`{{< expand "Example" "%v" >}}`, typeProps.ExampleLang)))
+		_, _ = writer.Write([]byte(typeProps.ExampleContent))
+		_, _ = writer.Write([]byte("{{< /expand >}}"))
+		_, _ = writer.Write([]byte("\n"))
 	}
 
 	for _, f := range typeProps.Fields {
@@ -382,7 +386,7 @@ func writeType(writer io.Writer, typeProps TypeProps) error {
 		}
 	}
 
-	writer.Write([]byte("\n---\n"))
+	_, _ = writer.Write([]byte("\n---\n"))
 
 	return nil
 }
@@ -393,51 +397,55 @@ func writeField(writer io.Writer, parent TypeProps, field FieldProps) error {
 		typePrefix = "[]"
 	}
 
-	writer.Write([]byte(fmt.Sprintf(
+	_, err := writer.Write([]byte(fmt.Sprintf(
 		"### %s {#%s-%s}\n",
 		field.Key,
 		strings.ToLower(parent.Name),
 		strings.ToLower(field.Key),
 	)))
+	if err != nil {
+		return err
+	}
 
 	if field.IsCustomType {
-		writer.Write([]byte(fmt.Sprintf(
+		_, _ = writer.Write([]byte(fmt.Sprintf(
 			"type: [%s%s](#%s-type)",
 			typePrefix,
 			field.TypeName,
 			strings.ToLower(field.TypeName),
 		)))
 	} else if field.TypeName != "" {
-		writer.Write([]byte(fmt.Sprintf("type: `%s%s`", typePrefix, field.TypeName)))
+		_, _ = writer.Write([]byte(fmt.Sprintf("type: `%s%s`", typePrefix, field.TypeName)))
 	}
 
 	if field.TypeName != "" {
-		writer.Write([]byte(" | "))
+		_, _ = writer.Write([]byte(" | "))
+
 		if field.Required {
-			writer.Write([]byte("required"))
+			_, _ = writer.Write([]byte("required"))
 		} else {
-			writer.Write([]byte("optional"))
+			_, _ = writer.Write([]byte("optional"))
 		}
 	}
 
 	if field.TemplateType != "" {
-		writer.Write([]byte(" | "))
-		writer.Write([]byte(fmt.Sprintf(
+		_, _ = writer.Write([]byte(" | "))
+		_, _ = writer.Write([]byte(fmt.Sprintf(
 			"template type: [%s](#%s-type)",
 			field.TemplateType,
 			strings.ToLower(field.TemplateType),
 		)))
 	}
 
-	writer.Write([]byte("\n\n"))
-	writer.Write([]byte(field.Doc))
-	writer.Write([]byte("\n\n"))
+	_, _ = writer.Write([]byte("\n\n"))
+	_, _ = writer.Write([]byte(field.Doc))
+	_, _ = writer.Write([]byte("\n\n"))
 
 	if field.ExampleContent != "" {
-		writer.Write([]byte(fmt.Sprintf(`{{< expand "Example" "%v" >}}`, field.ExampleLang)))
-		writer.Write([]byte(field.ExampleContent))
-		writer.Write([]byte("{{< /expand >}}"))
-		writer.Write([]byte("\n"))
+		_, _ = writer.Write([]byte(fmt.Sprintf(`{{< expand "Example" "%v" >}}`, field.ExampleLang)))
+		_, _ = writer.Write([]byte(field.ExampleContent))
+		_, _ = writer.Write([]byte("{{< /expand >}}"))
+		_, _ = writer.Write([]byte("\n"))
 	}
 
 	return nil

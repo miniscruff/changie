@@ -202,7 +202,8 @@ type Config struct {
 	FooterFormat string `yaml:"footerFormat,omitempty" templateType:"BatchData"`
 	// Options to customize the body prompt
 	Body BodyConfig `yaml:"body,omitempty"`
-	// Components are an additional layer of organization suited for projects that want to split change fragments by an area or tag of the project.
+	// Components are an additional layer of organization suited for projects that want to split
+	// change fragments by an area or tag of the project.
 	// An example could be splitting your changelogs by packages for a monorepo.
 	// If no components are listed then the component prompt will be skipped and no component header included.
 	// By default no components are configured.
@@ -212,7 +213,8 @@ type Config struct {
 	// - CLI
 	// - Frontend
 	Components []string `yaml:"components,omitempty"`
-	// Kinds are another optional layer of changelogs suited for specifying what type of change we are making.
+	// Kinds are another optional layer of changelogs suited for specifying what type of change we are
+	// making.
 	// If configured, developers will be prompted to select a kind.
 	// See [kind config](#kindconfig-type) for how to further customize kinds.
 	//

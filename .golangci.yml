@@ -22,8 +22,6 @@ linters-settings:
         checks: argument,case,condition,return
   govet:
     check-shadowing: true
-  lll:
-    line-length: 100
   misspell:
     locale: US
   nolintlint:
@@ -52,7 +50,6 @@ linters:
     - gosimple
     - govet
     - ineffassign
-    - lll
     - misspell
     - nakedret
     - noctx
@@ -76,6 +73,7 @@ linters:
   # - godot
   # - godox these are the TODO panics
   # - goerr113
+  # - lll - some doc lines are too long
   # - maligned
   # - nestif
   # - prealloc

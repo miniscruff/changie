@@ -97,7 +97,7 @@ func (tc *TemplateCache) buildFuncMap() map[string]interface{} {
 	return funcs
 }
 
-// Count will return the number of occurances of a string in a slice.
+// Count will return the number of occurrences of a string in a slice.
 // example: yaml
 // format: "{{ kinds .Changes | count \"added\" }} kinds"
 func (tc *TemplateCache) Count(value string, items []string) (int, error) {

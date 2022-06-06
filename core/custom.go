@@ -64,15 +64,17 @@ type Custom struct {
 	//
 	// | value | description | options
 	// | -- | -- | -- |
-	// string | Freeform text option   | [minLength](#custom-minlength) and [maxLength](#custom-maxlength) to limit value
-	// int    | Whole numbers          | [minInt](#custom-minint) and [maxInt](#custom-maxint) values to limit value
-	// enum   | Limited set of strings | [enumOptions](#custom-enumoptions) is used to specify possible values
+	// string | Freeform text | [minLength](#custom-minlength) and [maxLength](#custom-maxlength)
+	// int | Whole numbers | [minInt](#custom-minint) and [maxInt](#custom-maxint)
+	// enum | Limited set of strings | [enumOptions](#custom-enumoptions) is used to specify values
 	Type CustomType `yaml:"" required:"true"`
 
 	// If true, an empty value will not fail validation.
-	// The optional check is handled before min so you can specify that the value is optional but if it is used it must have a minimum length or value depending on type.
+	// The optional check is handled before min so you can specify that the value is optional but if it
+	// is used it must have a minimum length or value depending on type.
 	//
-	// When building templates that allow for optional values you can compare the custom choice to an empty string to check for a value or empty.
+	// When building templates that allow for optional values you can compare the custom choice to an
+	// empty string to check for a value or empty.
 	//
 	// example: yaml
 	// custom:

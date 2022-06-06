@@ -997,7 +997,14 @@ second footer
 			Expect(f.Close()).To(Succeed())
 		}
 
-		err = standard.ClearUnreleased(testConfig, moveDirFlag, nil, "header.md", "", "does-not-exist.md")
+		err = standard.ClearUnreleased(
+			testConfig,
+			moveDirFlag,
+			nil,
+			"header.md",
+			"",
+			"does-not-exist.md",
+		)
 		Expect(err).To(BeNil())
 
 		// should of moved the unreleased and header file to beta
