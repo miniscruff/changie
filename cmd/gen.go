@@ -57,7 +57,16 @@ var genCmd = &cobra.Command{
 	Short: "Generate documentation",
 	Long:  `Generate markdown documentation.`,
 	RunE: func(cmd *cobra.Command, args []string) error {
-		err := genConfigDocs()
+		file, err := os.Create("website/content/config/_index.md")
+		if err != nil {
+			return err
+		}
+
+		defer file.Close()
+
+		corePackages := getCorePackages("core")
+
+		err = genConfigDocs(file, corePackages)
 		if err != nil {
 			return err
 		}
@@ -86,22 +95,8 @@ func linkHandler(name string) string {
 	return "/cli/" + strings.ToLower(base) + "/"
 }
 
-func genConfigDocs() error {
-	file, err := os.Create("website/content/config/_index.md")
-	if err != nil {
-		return err
-	}
-
-	defer file.Close()
-
-	var writer io.Writer = file
-
+func genConfigDocs(writer io.Writer, corePackages CoreTypes) error {
 	writeConfigFrontMatter(writer, time.Now)
-
-	corePackages, err := getCorePackages("core")
-	if err != nil {
-		return err
-	}
 
 	allTypeProps, err := buildUniqueTypes(writer, corePackages, "Config", "TemplateCache")
 	if err != nil {
@@ -174,16 +169,12 @@ func buildUniqueTypes(
 	return allTypeProps, nil
 }
 
-func getCorePackages(packageName string) (CoreTypes, error) {
+func getCorePackages(packageName string) CoreTypes {
 	corePackages := make(CoreTypes)
 	packagePath := fmt.Sprintf("./%v", packageName)
 
 	fset := token.NewFileSet()
-	packages, err := parser.ParseDir(fset, packagePath, nil, parser.ParseComments)
-
-	if err != nil {
-		return corePackages, err
-	}
+	packages, _ := parser.ParseDir(fset, packagePath, nil, parser.ParseComments)
 
 	corePackage := packages[packageName]
 	p := godoc.New(corePackage, "./", 0)
@@ -192,7 +183,7 @@ func getCorePackages(packageName string) (CoreTypes, error) {
 		corePackages[t.Name] = t
 	}
 
-	return corePackages, nil
+	return corePackages
 }
 
 func writeConfigFrontMatter(writer io.Writer, nower func() time.Time) {
