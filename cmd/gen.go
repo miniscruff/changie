@@ -57,19 +57,20 @@ var genCmd = &cobra.Command{
 	Short: "Generate documentation",
 	Long:  `Generate markdown documentation.`,
 	RunE: func(cmd *cobra.Command, args []string) error {
-		file, err := os.Create("website/content/config/_index.md")
+		file, err := os.Create(filepath.Join("website", "content", "config", "_index.md"))
 		if err != nil {
-			return err
+			return fmt.Errorf("unable to create or open config index: %w", err)
 		}
 
 		defer file.Close()
 
 		corePackages := getCorePackages("core")
 
-		err = genConfigDocs(file, corePackages)
-		if err != nil {
-			return err
-		}
+		writeConfigFrontMatter(file, time.Now)
+		// only way this can fail is a bad writer, but we assume the file is good above
+		// maybe not the best approach but for code generation that is only used internally
+		// it should be fine.
+		_ = genConfigDocs(file, corePackages)
 
 		return doc.GenMarkdownTreeCustom(rootCmd, "website/content/cli", filePrepender, linkHandler)
 	},
@@ -96,12 +97,7 @@ func linkHandler(name string) string {
 }
 
 func genConfigDocs(writer io.Writer, corePackages CoreTypes) error {
-	writeConfigFrontMatter(writer, time.Now)
-
-	allTypeProps, err := buildUniqueTypes(writer, corePackages, "Config", "TemplateCache")
-	if err != nil {
-		return err
-	}
+	allTypeProps := buildUniqueTypes(writer, corePackages, "Config", "TemplateCache")
 
 	// grab our root config and store it so we can sort the rest
 	// but keep Config at the top
@@ -119,20 +115,20 @@ func genConfigDocs(writer io.Writer, corePackages CoreTypes) error {
 	allTypeProps = append([]TypeProps{rootConfigType}, allTypeProps...)
 
 	for _, typeProps := range allTypeProps {
-		err = writeType(writer, typeProps)
+		err := writeType(writer, typeProps)
 		if err != nil {
 			return err
 		}
 	}
 
-	return err
+	return nil
 }
 
 func buildUniqueTypes(
 	writer io.Writer,
 	coreTypes CoreTypes,
 	packageName ...string,
-) ([]TypeProps, error) {
+) []TypeProps {
 	typeQueue := packageName
 	completed := make(map[string]struct{}, 0)
 	allTypeProps := make([]TypeProps, 0)
@@ -158,15 +154,11 @@ func buildUniqueTypes(
 
 		completed[typeName] = struct{}{}
 
-		typeProps, err := buildType(docType, coreTypes, &typeQueue)
-		if err != nil {
-			return allTypeProps, err
-		}
-
+		typeProps := buildType(docType, coreTypes, &typeQueue)
 		allTypeProps = append(allTypeProps, typeProps)
 	}
 
-	return allTypeProps, nil
+	return allTypeProps
 }
 
 func getCorePackages(packageName string) CoreTypes {
@@ -196,7 +188,7 @@ singlePage: true
 `, nower())))
 }
 
-func buildType(docType *godoc.Type, coreTypes CoreTypes, queue *[]string) (TypeProps, error) {
+func buildType(docType *godoc.Type, coreTypes CoreTypes, queue *[]string) TypeProps {
 	typeProps := TypeProps{
 		Name: docType.Name,
 		Doc:  docType.Doc,
@@ -208,11 +200,7 @@ func buildType(docType *godoc.Type, coreTypes CoreTypes, queue *[]string) (TypeP
 	// kind of an arbitrary rule but it works for now.
 	for _, method := range docType.Methods {
 		if strings.Contains(method.Doc, "example:") {
-			newField, err := buildMethod(method, coreTypes)
-			if err != nil {
-				return typeProps, err
-			}
-
+			newField := buildMethod(method, coreTypes)
 			fieldProps = append(fieldProps, newField)
 		}
 	}
@@ -226,22 +214,15 @@ func buildType(docType *godoc.Type, coreTypes CoreTypes, queue *[]string) (TypeP
 	}
 
 	for _, spec := range docType.Decl.Specs {
-		typeSpec, ok := spec.(*ast.TypeSpec)
-		if !ok {
-			continue
-		}
-
+		typeSpec, _ := spec.(*ast.TypeSpec)
 		structType, ok := typeSpec.Type.(*ast.StructType)
+
 		if !ok {
 			continue
 		}
 
 		for _, field := range structType.Fields.List {
-			newField, err := buildField(field, coreTypes, queue)
-			if err != nil {
-				return typeProps, err
-			}
-
+			newField := buildField(field, coreTypes, queue)
 			fieldProps = append(fieldProps, newField)
 		}
 	}
@@ -255,10 +236,10 @@ func buildType(docType *godoc.Type, coreTypes CoreTypes, queue *[]string) (TypeP
 
 	typeProps.Fields = fieldProps
 
-	return typeProps, nil
+	return typeProps
 }
 
-func buildMethod(method *godoc.Func, coreTypes CoreTypes) (FieldProps, error) {
+func buildMethod(method *godoc.Func, coreTypes CoreTypes) FieldProps {
 	props := FieldProps{
 		Name:         method.Name,
 		Doc:          method.Doc,
@@ -275,10 +256,10 @@ func buildMethod(method *godoc.Func, coreTypes CoreTypes) (FieldProps, error) {
 		props.ExampleContent = content
 	}
 
-	return props, nil
+	return props
 }
 
-func buildField(field *ast.Field, coreTypes CoreTypes, queue *[]string) (FieldProps, error) {
+func buildField(field *ast.Field, coreTypes CoreTypes, queue *[]string) FieldProps {
 	props := FieldProps{
 		Name:  field.Names[0].Name,
 		Doc:   field.Doc.Text(),
@@ -309,8 +290,7 @@ func buildField(field *ast.Field, coreTypes CoreTypes, queue *[]string) (FieldPr
 		*queue = append(*queue, rootType.Name)
 		props.TypeName = rootType.Name
 	default:
-		fmt.Printf("unknown field type: %T for field: %v", fieldType, field.Names[0])
-		return props, fmt.Errorf("unknown field type: %T for field: '%v'", fieldType, field.Names[0])
+		panic(fmt.Errorf("unknown field type: %T for field: '%v'", fieldType, field.Names[0]))
 	}
 
 	before, after, found := strings.Cut(props.Doc, "example:")
@@ -323,7 +303,7 @@ func buildField(field *ast.Field, coreTypes CoreTypes, queue *[]string) (FieldPr
 
 	_, isCoreType := coreTypes[props.TypeName]
 	props.IsCustomType = isCoreType
-	props.Key = strings.ToLower(props.Name)
+	props.Key = props.Name
 
 	if field.Tag != nil {
 		tags := reflect.StructTag(strings.Trim(field.Tag.Value, "`"))
@@ -333,6 +313,8 @@ func buildField(field *ast.Field, coreTypes CoreTypes, queue *[]string) (FieldPr
 			key, _, _ := strings.Cut(yaml, ",")
 			if key != "" {
 				props.Key = key
+			} else {
+				props.Key = strings.ToLower(props.Key)
 			}
 		}
 
@@ -346,14 +328,14 @@ func buildField(field *ast.Field, coreTypes CoreTypes, queue *[]string) (FieldPr
 		}
 	}
 
-	return props, nil
+	return props
 }
 
 func writeType(writer io.Writer, typeProps TypeProps) error {
 	// Do not write our root Config type header
 	if typeProps.Name != "Config" {
 		_, err := writer.Write([]byte(fmt.Sprintf(
-			"## %s {#%s-type}\n%s\n\n",
+			"## %s {#%s-type}\n%s\n",
 			typeProps.Name,
 			strings.ToLower(typeProps.Name),
 			typeProps.Doc,
@@ -364,10 +346,14 @@ func writeType(writer io.Writer, typeProps TypeProps) error {
 	}
 
 	if typeProps.ExampleContent != "" {
-		_, _ = writer.Write([]byte(fmt.Sprintf(`{{< expand "Example" "%v" >}}`, typeProps.ExampleLang)))
-		_, _ = writer.Write([]byte(typeProps.ExampleContent))
-		_, _ = writer.Write([]byte("{{< /expand >}}"))
-		_, _ = writer.Write([]byte("\n"))
+		_, _ = writer.Write([]byte(fmt.Sprintf(`
+{{< expand "Example" "%v" >}}
+%v
+{{< /expand >}}
+`,
+			typeProps.ExampleLang,
+			strings.Trim(typeProps.ExampleContent, "\n"),
+		)))
 	}
 
 	for _, f := range typeProps.Fields {
@@ -430,14 +416,19 @@ func writeField(writer io.Writer, parent TypeProps, field FieldProps) error {
 
 	_, _ = writer.Write([]byte("\n\n"))
 	_, _ = writer.Write([]byte(field.Doc))
-	_, _ = writer.Write([]byte("\n\n"))
 
 	if field.ExampleContent != "" {
-		_, _ = writer.Write([]byte(fmt.Sprintf(`{{< expand "Example" "%v" >}}`, field.ExampleLang)))
-		_, _ = writer.Write([]byte(field.ExampleContent))
-		_, _ = writer.Write([]byte("{{< /expand >}}"))
-		_, _ = writer.Write([]byte("\n"))
+		_, _ = writer.Write([]byte(fmt.Sprintf(`
+{{< expand "Example" "%v" >}}
+%v
+{{< /expand >}}
+`,
+			field.ExampleLang,
+			strings.Trim(field.ExampleContent, "\n"),
+		)))
 	}
+
+	_, _ = writer.Write([]byte("\n"))
 
 	return nil
 }
