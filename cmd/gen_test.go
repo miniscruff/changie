@@ -3,6 +3,7 @@ package cmd
 import (
 	"errors"
 	"fmt"
+	"go/ast"
 	"os"
 	"path/filepath"
 	"strings"
@@ -147,7 +148,177 @@ var _ = Describe("Gen", func() {
 		err := writeField(badWriter, parent, field)
 		Expect(err).NotTo(BeNil())
 	})
+
+	It("build field panics with a bad field type", func() {
+		corePackages := make(CoreTypes)
+		queue := make([]string, 0)
+		field := &ast.Field {
+			Names: []*ast.Ident{
+				{Name: "MyVar"},
+			},
+			Doc: &ast.CommentGroup{
+				List: []*ast.Comment{
+					{Text: "This is our var docs"},
+				},
+			},
+			Type: &ast.Ellipsis{},
+		}
+
+		Expect(func() {
+			_ = buildField(field, corePackages, &queue)
+		}).To(Panic())
+	})
 })
+
+var _ = DescribeTable(
+	"build field",
+	func(field *ast.Field, output FieldProps, expectedQueue ...string) {
+		corePackages := make(CoreTypes)
+		// include one package so we can check is custom type
+		corePackages["MyOptionalType"] = nil
+		queue := make([]string, 0)
+
+		props := buildField(field, corePackages, &queue)
+		Expect(props).To(Equal(output))
+		Expect(queue).To(Equal(expectedQueue))
+	},
+	Entry(
+		"identifier",
+		&ast.Field{
+			Names: []*ast.Ident{
+				{Name: "MyVar"},
+			},
+			Doc: &ast.CommentGroup{
+				List: []*ast.Comment{
+					{Text: "This is our var docs"},
+				},
+			},
+			Type: &ast.Ident{
+				Name: "MyType",
+			},
+		},
+		FieldProps{
+			Name:           "MyVar",
+			Key:            "MyVar",
+			TypeName:       "MyType",
+			Doc:            "This is our var docs\n",
+			ExampleLang:    "",
+			ExampleContent: "",
+			TemplateType:   "",
+			IsCustomType:   false,
+			Required:       false,
+			Slice:          false,
+		},
+		"MyType",
+	),
+	Entry(
+		"required slice with an example",
+		&ast.Field{
+			Names: []*ast.Ident{
+				{Name: "MySliceVar"},
+			},
+			Doc: &ast.CommentGroup{
+				List: []*ast.Comment{
+					{Text: "This is a slice with an example"},
+					{Text: "example: yaml"},
+					{Text: "mySliceVar: [1, 2, 3]"},
+				},
+			},
+			Type: &ast.ArrayType{
+				Elt: &ast.Ident{Name: "MySliceType"},
+			},
+			Tag: &ast.BasicLit{Value: `required:"true" yaml:"mySliceVar"`},
+		},
+		FieldProps{
+			Name:           "MySliceVar",
+			Key:            "mySliceVar",
+			TypeName:       "MySliceType",
+			Doc:            "This is a slice with an example\n",
+			ExampleLang:    "yaml",
+			ExampleContent: "mySliceVar: [1, 2, 3]\n",
+			TemplateType:   "",
+			IsCustomType:   false,
+			Required:       true,
+			Slice:          true,
+		},
+		"MySliceType",
+	),
+	Entry(
+		"pointer with template type",
+		&ast.Field{
+			Names: []*ast.Ident{
+				{Name: "Optional"},
+			},
+			Type: &ast.StarExpr{
+				X: &ast.Ident{Name: "MyOptionalType"},
+			},
+			Tag: &ast.BasicLit{Value: `yaml:"" templateType:"CustomData"`},
+		},
+		FieldProps{
+			Name:           "Optional",
+			Key:            "optional",
+			TypeName:       "MyOptionalType",
+			Doc:            "",
+			ExampleLang:    "",
+			ExampleContent: "",
+			TemplateType:   "CustomData",
+			IsCustomType:   true,
+			Required:       false,
+			Slice:          false,
+		},
+		"MyOptionalType",
+		"CustomData",
+	),
+	Entry(
+		"selector expressions",
+		&ast.Field{
+			Names: []*ast.Ident{
+				{Name: "MyVarName"},
+			},
+			Type: &ast.SelectorExpr{
+				Sel: &ast.Ident{Name: "MySelectorType"},
+			},
+		},
+		FieldProps{
+			Name:           "MyVarName",
+			Key:            "MyVarName",
+			TypeName:       "MySelectorType",
+			Doc:            "",
+			ExampleLang:    "",
+			ExampleContent: "",
+			TemplateType:   "",
+			IsCustomType:   false,
+			Required:       false,
+			Slice:          false,
+		},
+		"MySelectorType",
+	),
+	Entry(
+		"map type, TODO INCOMPLETE",
+		&ast.Field{
+			Names: []*ast.Ident{
+				{Name: "MyMap"},
+			},
+			Type: &ast.MapType{
+				Key: &ast.Ident{Name: "string"},
+				Value: &ast.Ident{Name: "string"},
+			},
+		},
+		FieldProps{
+			Name:           "MyMap",
+			Key:            "MyMap",
+			TypeName:       "string",
+			Doc:            "",
+			ExampleLang:    "",
+			ExampleContent: "",
+			TemplateType:   "",
+			IsCustomType:   false,
+			Required:       false,
+			Slice:          false,
+		},
+		"string",
+	),
+)
 
 var _ = DescribeTable(
 	"gen write type",
