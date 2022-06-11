@@ -152,7 +152,7 @@ var _ = Describe("Gen", func() {
 	It("build field panics with a bad field type", func() {
 		corePackages := make(CoreTypes)
 		queue := make([]string, 0)
-		field := &ast.Field {
+		field := &ast.Field{
 			Names: []*ast.Ident{
 				{Name: "MyVar"},
 			},
@@ -300,7 +300,7 @@ var _ = DescribeTable(
 				{Name: "MyMap"},
 			},
 			Type: &ast.MapType{
-				Key: &ast.Ident{Name: "string"},
+				Key:   &ast.Ident{Name: "string"},
 				Value: &ast.Ident{Name: "string"},
 			},
 		},
