@@ -475,7 +475,7 @@ var _ = DescribeTable(
 		"MySelectorType",
 	),
 	Entry(
-		"map type, TODO INCOMPLETE",
+		"map type",
 		&ast.Field{
 			Names: []*ast.Ident{
 				{Name: "MyMap"},
@@ -486,17 +486,20 @@ var _ = DescribeTable(
 			},
 		},
 		FieldProps{
-			Name:           "MyMap",
-			Key:            "MyMap",
-			TypeName:       "string",
-			Doc:            "",
-			ExampleLang:    "",
-			ExampleContent: "",
-			TemplateType:   "",
-			IsCustomType:   false,
-			Required:       false,
-			Slice:          false,
+			Name:             "MyMap",
+			Key:              "MyMap",
+			TypeName:         "",
+			MapKeyTypeName:   "string",
+			MapValueTypeName: "string",
+			Doc:              "",
+			ExampleLang:      "",
+			ExampleContent:   "",
+			TemplateType:     "",
+			IsCustomType:     false,
+			Required:         false,
+			Slice:            false,
 		},
+		"string",
 		"string",
 	),
 )
@@ -566,6 +569,7 @@ type: '{{.Thing}}'
 var _ = DescribeTable(
 	"gen write field",
 	func(field FieldProps, output string) {
+		format.TruncatedDiff = false
 		writer := strings.Builder{}
 		parent := TypeProps{
 			Name: "Parent",
@@ -603,7 +607,7 @@ type: [Animal](#animal-type) | required
 field description
 `),
 	Entry(
-		"with type name optional and slice",
+		"with type name, optional and slice",
 		FieldProps{
 			Name:     "Minimum",
 			Key:      "minimum",
@@ -617,6 +621,20 @@ type: %v | optional
 
 field description
 `, "`[]string`")),
+	Entry(
+		"map key and value",
+		FieldProps{
+			Name:             "Minimum",
+			Key:              "minimum",
+			Doc:              "field description",
+			MapKeyTypeName:   "string",
+			MapValueTypeName: "string",
+		},
+		fmt.Sprintf(`### minimum {#parent-minimum}
+type: map [ %v ] %v | optional
+
+field description
+`, "`string`", "`string`")),
 	Entry(
 		"with template type",
 		FieldProps{

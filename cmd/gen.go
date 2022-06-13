@@ -39,16 +39,18 @@ type TypeProps struct {
 }
 
 type FieldProps struct {
-	Name           string
-	Key            string
-	TypeName       string
-	Doc            string
-	ExampleLang    string
-	ExampleContent string
-	TemplateType   string
-	IsCustomType   bool
-	Required       bool
-	Slice          bool
+	Name             string
+	Key              string
+	TypeName         string
+	MapKeyTypeName   string
+	MapValueTypeName string
+	Doc              string
+	ExampleLang      string
+	ExampleContent   string
+	TemplateType     string
+	IsCustomType     bool
+	Required         bool
+	Slice            bool
 }
 
 // genCmd represents the gen command
@@ -284,10 +286,16 @@ func buildField(field *ast.Field, coreTypes CoreTypes, queue *[]string) FieldPro
 		*queue = append(*queue, rootType.Name)
 		props.TypeName = rootType.Name
 	case *ast.MapType:
-		// TODO: custom is a map?
-		rootType := fieldType.Key.(*ast.Ident)
-		*queue = append(*queue, rootType.Name)
-		props.TypeName = rootType.Name
+		mapKeyType := fieldType.Key.(*ast.Ident)
+		*queue = append(*queue, mapKeyType.Name)
+
+		mapValueType := fieldType.Value.(*ast.Ident)
+		*queue = append(*queue, mapValueType.Name)
+
+		// reset type name to empty as we need to use map key type and value type
+		props.TypeName = ""
+		props.MapKeyTypeName = mapKeyType.Name
+		props.MapValueTypeName = mapValueType.Name
 	default:
 		panic(fmt.Errorf("unknown field type: %T for field: '%v'", fieldType, field.Names[0]))
 	}
@@ -383,18 +391,27 @@ func writeField(writer io.Writer, parent TypeProps, field FieldProps) error {
 		return err
 	}
 
-	if field.IsCustomType {
+	switch {
+	case field.IsCustomType:
 		_, _ = writer.Write([]byte(fmt.Sprintf(
 			"type: [%s%s](#%s-type)",
 			typePrefix,
 			field.TypeName,
 			strings.ToLower(field.TypeName),
 		)))
-	} else if field.TypeName != "" {
+	case field.TypeName != "":
 		_, _ = writer.Write([]byte(fmt.Sprintf("type: `%s%s`", typePrefix, field.TypeName)))
+	case field.MapKeyTypeName != "":
+		// currently no option of having a map of custom types or slices
+		// but that is not used right now
+		_, _ = writer.Write([]byte(fmt.Sprintf(
+			"type: map [ `%s` ] `%s`",
+			field.MapKeyTypeName,
+			field.MapValueTypeName,
+		)))
 	}
 
-	if field.TypeName != "" {
+	if field.TypeName != "" || field.MapKeyTypeName != "" {
 		_, _ = writer.Write([]byte(" | "))
 
 		if field.Required {
