@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"go/ast"
+	godoc "go/doc"
 	"os"
 	"path/filepath"
 	"strings"
@@ -40,8 +41,6 @@ var _ = Describe("Gen", func() {
 	})
 
 	It("can gen files", func() {
-		Skip("temp skip for easy test coverage finding")
-
 		// move our wd to project root instead of cmd dir
 		wd, _ := os.Getwd()
 		Expect(os.Chdir(filepath.Join(wd, ".."))).To(Succeed())
@@ -81,8 +80,6 @@ var _ = Describe("Gen", func() {
 	})
 
 	It("will fail to gen if content path is missing", func() {
-		Skip("temp skip for easy test coverage finding")
-
 		startDir, err := os.Getwd()
 		Expect(err).To(BeNil())
 
@@ -169,6 +166,190 @@ var _ = Describe("Gen", func() {
 		}).To(Panic())
 	})
 })
+
+var _ = DescribeTable(
+	"build type",
+	func(docType *godoc.Type, output TypeProps, expectedQueue ...string) {
+		corePackages := make(CoreTypes)
+		// include one package so we can check is custom type
+		corePackages["MyOptionalType"] = nil
+		queue := make([]string, 0)
+
+		props := buildType(docType, corePackages, &queue)
+		Expect(props).To(Equal(output))
+		Expect(queue).To(Equal(expectedQueue))
+	},
+	Entry(
+		"type with example and a method",
+		&godoc.Type{
+			Name: "MyType",
+			Doc: `Type docs
+example: yaml
+here is an example`,
+			Methods: []*godoc.Func{{
+				Name: "MyFuncWithExample",
+				Doc: `Some func description
+example: yaml
+has example`,
+			}},
+			Decl: &ast.GenDecl{
+				Specs: []ast.Spec{},
+			},
+		},
+		TypeProps{
+			Name:           "MyType",
+			Doc:            "Type docs\n",
+			ExampleLang:    "yaml",
+			ExampleContent: "here is an example",
+			Fields: []FieldProps{
+				{
+					Name:           "MyFuncWithExample",
+					Key:            "myfuncwithexample",
+					TypeName:       "",
+					Doc:            "Some func description\n",
+					ExampleLang:    "yaml",
+					ExampleContent: "has example",
+					TemplateType:   "",
+					IsCustomType:   false,
+					Required:       false,
+					Slice:          false,
+				},
+			},
+		},
+	),
+	Entry(
+		"type with multiple specs",
+		&godoc.Type{
+			Name:    "MyType",
+			Doc:     "Type docs",
+			Methods: []*godoc.Func{},
+			Decl: &ast.GenDecl{
+				Specs: []ast.Spec{
+					&ast.TypeSpec{
+						Type: &ast.InterfaceType{},
+					},
+					&ast.TypeSpec{
+						Type: &ast.StructType{
+							Fields: &ast.FieldList{
+								List: []*ast.Field{
+									{
+										Names: []*ast.Ident{
+											{Name: "OtherVar"},
+										},
+										Doc: &ast.CommentGroup{
+											List: []*ast.Comment{
+												{Text: "othervar docs"},
+											},
+										},
+										Type: &ast.Ident{
+											Name: "string",
+										},
+									},
+									{
+										Names: []*ast.Ident{
+											{Name: "MyVar"},
+										},
+										Doc: &ast.CommentGroup{
+											List: []*ast.Comment{
+												{Text: "myvar docs"},
+											},
+										},
+										Type: &ast.Ident{
+											Name: "int",
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+		TypeProps{
+			Name:           "MyType",
+			Doc:            "Type docs",
+			ExampleLang:    "",
+			ExampleContent: "",
+			Fields: []FieldProps{
+				{
+					Name:           "MyVar",
+					Key:            "MyVar",
+					TypeName:       "int",
+					Doc:            "myvar docs\n",
+					ExampleLang:    "",
+					ExampleContent: "",
+					TemplateType:   "",
+					IsCustomType:   false,
+					Required:       false,
+					Slice:          false,
+				},
+				{
+					Name:           "OtherVar",
+					Key:            "OtherVar",
+					TypeName:       "string",
+					Doc:            "othervar docs\n",
+					ExampleLang:    "",
+					ExampleContent: "",
+					TemplateType:   "",
+					IsCustomType:   false,
+					Required:       false,
+					Slice:          false,
+				},
+			},
+		},
+		"string",
+		"int",
+	),
+)
+
+var _ = DescribeTable(
+	"build method",
+	func(method *godoc.Func, output FieldProps) {
+		props := buildMethod(method)
+		Expect(props).To(Equal(output))
+	},
+	Entry(
+		"method",
+		&godoc.Func{
+			Name: "MyFunc",
+			Doc:  "Func docs",
+		},
+		FieldProps{
+			Name:           "MyFunc",
+			Key:            "myfunc",
+			TypeName:       "",
+			Doc:            "Func docs",
+			ExampleLang:    "",
+			ExampleContent: "",
+			TemplateType:   "",
+			IsCustomType:   false,
+			Required:       false,
+			Slice:          false,
+		},
+	),
+	Entry(
+		"method with example",
+		&godoc.Func{
+			Name: "MyFuncWithExample",
+			Doc: `Some func description
+example: yaml
+doSomething: '{{.Body}}'
+`,
+		},
+		FieldProps{
+			Name:           "MyFuncWithExample",
+			Key:            "myfuncwithexample",
+			TypeName:       "",
+			Doc:            "Some func description\n",
+			ExampleLang:    "yaml",
+			ExampleContent: "doSomething: '{{.Body}}'\n",
+			TemplateType:   "",
+			IsCustomType:   false,
+			Required:       false,
+			Slice:          false,
+		},
+	),
+)
 
 var _ = DescribeTable(
 	"build field",

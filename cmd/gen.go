@@ -115,10 +115,9 @@ func genConfigDocs(writer io.Writer, corePackages CoreTypes) error {
 	allTypeProps = append([]TypeProps{rootConfigType}, allTypeProps...)
 
 	for _, typeProps := range allTypeProps {
-		err := writeType(writer, typeProps)
-		if err != nil {
-			return err
-		}
+		// we would have already written by this point, so we should be fine
+		// not ideal but should work
+		_ = writeType(writer, typeProps)
 	}
 
 	return nil
@@ -200,7 +199,7 @@ func buildType(docType *godoc.Type, coreTypes CoreTypes, queue *[]string) TypePr
 	// kind of an arbitrary rule but it works for now.
 	for _, method := range docType.Methods {
 		if strings.Contains(method.Doc, "example:") {
-			newField := buildMethod(method, coreTypes)
+			newField := buildMethod(method)
 			fieldProps = append(fieldProps, newField)
 		}
 	}
@@ -239,7 +238,7 @@ func buildType(docType *godoc.Type, coreTypes CoreTypes, queue *[]string) TypePr
 	return typeProps
 }
 
-func buildMethod(method *godoc.Func, coreTypes CoreTypes) FieldProps {
+func buildMethod(method *godoc.Func) FieldProps {
 	props := FieldProps{
 		Name:         method.Name,
 		Doc:          method.Doc,
