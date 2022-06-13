@@ -15,6 +15,8 @@ coverage.txt
 # hugo builds
 website/public
 website/resources
+website/content/config/_index.md
+*.hugo_build.lock
 
 # goreleaser builds
 dist/

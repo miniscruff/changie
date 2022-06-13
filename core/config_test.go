@@ -17,20 +17,18 @@ var _ = Describe("Config", func() {
 			UnreleasedDir:     "Unrel",
 			HeaderPath:        "header.tpl.md",
 			VersionHeaderPath: "header.md",
+			VersionExt:        "md",
+			ChangeFormat:      "chng",
 			ChangelogPath:     "CHANGELOG.md",
 		}
 
 		configYaml := `changesDir: Changes
 unreleasedDir: Unrel
 headerPath: header.tpl.md
-versionHeaderPath: header.md
-versionFooterPath: ""
 changelogPath: CHANGELOG.md
-versionExt: ""
-versionFormat: ""
-changeFormat: ""
-headerFormat: ""
-footerFormat: ""
+versionExt: md
+versionHeaderPath: header.md
+changeFormat: chng
 `
 
 		writeCalled := false
@@ -49,17 +47,20 @@ footerFormat: ""
 
 	It("should save the config with custom choices and optionals", func() {
 		config := Config{
-			ChangesDir:      "Changes",
-			UnreleasedDir:   "Unrel",
-			HeaderPath:      "header.tpl.md",
-			ChangelogPath:   "CHANGELOG.md",
-			VersionFormat:   "vers",
-			ComponentFormat: "comp",
-			KindFormat:      "kind",
-			ChangeFormat:    "chng",
-			Components:      []string{"A", "D", "G"},
-			HeaderFormat:    "",
-			FooterFormat:    "",
+			ChangesDir:        "Changes",
+			UnreleasedDir:     "Unrel",
+			HeaderPath:        "header.tpl.md",
+			VersionHeaderPath: "vheader",
+			VersionFooterPath: "vfooter",
+			VersionExt:        "md",
+			ChangelogPath:     "CHANGELOG.md",
+			VersionFormat:     "vers",
+			ComponentFormat:   "comp",
+			KindFormat:        "kind",
+			ChangeFormat:      "chng",
+			Components:        []string{"A", "D", "G"},
+			HeaderFormat:      "head",
+			FooterFormat:      "foot",
 			Kinds: []KindConfig{
 				{Label: "B"},
 				{Label: "C"},
@@ -77,16 +78,16 @@ footerFormat: ""
 		configYaml := `changesDir: Changes
 unreleasedDir: Unrel
 headerPath: header.tpl.md
-versionHeaderPath: ""
-versionFooterPath: ""
 changelogPath: CHANGELOG.md
-versionExt: ""
+versionExt: md
+versionHeaderPath: vheader
+versionFooterPath: vfooter
 versionFormat: vers
 componentFormat: comp
 kindFormat: kind
 changeFormat: chng
-headerFormat: ""
-footerFormat: ""
+headerFormat: head
+footerFormat: foot
 components:
 - A
 - D

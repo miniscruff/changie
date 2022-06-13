@@ -429,8 +429,8 @@ func (b *standardBatchPipeline) WriteChanges(
 				config.ComponentFormat,
 				config.Newlines.BeforeComponent+1,
 				config.Newlines.AfterComponent,
-				map[string]string{
-					"Component": lastComponent,
+				core.ComponentData{
+					Component: lastComponent,
 				},
 			)
 			if err != nil {
@@ -445,10 +445,10 @@ func (b *standardBatchPipeline) WriteChanges(
 			err := b.WriteTemplate(
 				writer,
 				kindHeader,
-				config.Newlines.BeforeKindHeader+1,
-				config.Newlines.AfterKindHeader,
-				map[string]string{
-					"Kind": lastKind,
+				config.Newlines.BeforeKind+1,
+				config.Newlines.AfterKind,
+				core.KindData{
+					Kind: lastKind,
 				},
 			)
 			if err != nil {

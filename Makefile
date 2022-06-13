@@ -12,16 +12,16 @@ lint:
 	goimports -w -local github.com/miniscruff/changie .
 	golangci-lint run ./...
 
-gen-cli-docs:
+gen:
 	go run main.go gen
 
 docs-serve:
 	hugo serve -s website
 
-docs-build: gen-cli-docs
+docs-build: gen
 	hugo -s website --minify --gc
 
-docs-release: gen-cli-docs
+docs-release: gen
 	awk 'NR > 1' CHANGELOG.md >> website/content/guide/changelog/index.md
 	hugo --minify -s website -b https://changie.dev/
 

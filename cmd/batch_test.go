@@ -230,8 +230,8 @@ var _ = Describe("Batch", func() {
 	It("can add new lines after and before kind header", func() {
 		// declared path but missing is accepted
 		testConfig.VersionHeaderPath = "header.md"
-		testConfig.Newlines.BeforeKindHeader = 2
-		testConfig.Newlines.AfterKindHeader = 2
+		testConfig.Newlines.BeforeKind = 2
+		testConfig.Newlines.AfterKind = 2
 		Expect(testConfig.Save(afs.WriteFile)).To(Succeed())
 
 		writeChangeFile(core.Change{Kind: "added", Body: "A"})
@@ -997,7 +997,14 @@ second footer
 			Expect(f.Close()).To(Succeed())
 		}
 
-		err = standard.ClearUnreleased(testConfig, moveDirFlag, nil, "header.md", "", "does-not-exist.md")
+		err = standard.ClearUnreleased(
+			testConfig,
+			moveDirFlag,
+			nil,
+			"header.md",
+			"",
+			"does-not-exist.md",
+		)
 		Expect(err).To(BeNil())
 
 		// should of moved the unreleased and header file to beta

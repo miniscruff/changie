@@ -4,10 +4,7 @@ import (
 	"fmt"
 	"io"
 	"os"
-	"path/filepath"
 	"time"
-
-	"github.com/miniscruff/changie/core"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -168,19 +165,6 @@ time: %s`, date)
 		Expect(mergeCmd.Flags().Set("dry-run", "false")).To(Succeed())
 	}
 
-	testGen := func() {
-		docsPath := filepath.Join(tempDir, "website", "content", "cli")
-		Expect(os.MkdirAll(docsPath, core.CreateDirMode)).To(Succeed())
-		rootCmd.SetArgs([]string{"gen"})
-		Expect(Execute("")).To(Succeed())
-
-		// test a few command files exist
-		Expect(filepath.Join(docsPath, "changie.md")).To(BeARegularFile())
-		Expect(filepath.Join(docsPath, "changie_init.md")).To(BeARegularFile())
-		Expect(filepath.Join(docsPath, "changie_batch.md")).To(BeARegularFile())
-		Expect(filepath.Join(docsPath, "changie_merge.md")).To(BeARegularFile())
-	}
-
 	It("should all work", func() {
 		testInit()
 		testEcho([]string{"latest"}, "0.0.0")
@@ -194,7 +178,6 @@ time: %s`, date)
 		testEcho([]string{"next", "major"}, "1.0.0")
 		testMergeDry()
 		testMerge()
-		testGen()
 	})
 
 	It("should fail on new with no config", func() {
