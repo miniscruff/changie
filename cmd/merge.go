@@ -74,16 +74,19 @@ func mergePipeline(afs afero.Afero) error {
 		defer headerFile.Close()
 
 		_, _ = io.Copy(writer, headerFile)
+		_ = core.WriteNewlines(writer, config.Newlines.AfterChangelogHeader)
 	}
 
 	for _, version := range allVersions {
-		_, _ = writer.Write([]byte("\n\n"))
+		_ = core.WriteNewlines(writer, config.Newlines.BeforeChangelogVersion)
 		versionPath := filepath.Join(config.ChangesDir, version.Original()+"."+config.VersionExt)
 
 		err = core.AppendFile(afs.Open, writer, versionPath)
 		if err != nil {
 			return err
 		}
+
+		_ = core.WriteNewlines(writer, config.Newlines.AfterChangelogVersion)
 	}
 
 	if len(allVersions) == 0 {

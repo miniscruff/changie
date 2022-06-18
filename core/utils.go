@@ -166,3 +166,13 @@ func FindChangeFiles(
 
 	return yamlFiles, nil
 }
+
+func WriteNewlines(writer io.Writer, lines int) error {
+	if lines == 0 {
+		return nil
+	}
+
+	_, err := writer.Write([]byte(strings.Repeat("\n", lines)))
+
+	return err
+}

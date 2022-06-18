@@ -63,6 +63,11 @@ func runInit(cmd *cobra.Command, args []string) error {
 			{Label: "Fixed"},
 			{Label: "Security"},
 		},
+		Newlines: core.NewlinesConfig{
+			AfterChangelogHeader:   1,
+			BeforeChangelogVersion: 1,
+			EndOfVersion:           1,
+		},
 	}
 
 	afs := afero.Afero{Fs: afero.NewOsFs()}

@@ -121,7 +121,8 @@ time: %s`, date)
 		changeContents := fmt.Sprintf(`## v0.1.0 - %s
 ### Changed
 * older
-* newer`, date)
+* newer
+`, date)
 		changeFile, err := os.ReadFile(".changes/v0.1.0.md")
 		Expect(err).To(BeNil())
 		Expect(string(changeFile)).To(Equal(changeContents))
@@ -147,7 +148,8 @@ time: %s`, date)
 ## v0.1.0 - %s
 ### Changed
 * older
-* newer`, defaultHeader, date)
+* newer
+`, defaultHeader, date)
 		changeFile, err := os.ReadFile("CHANGELOG.md")
 		Expect(err).To(BeNil())
 		Expect(string(changeFile)).To(Equal(changeContents))

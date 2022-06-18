@@ -73,6 +73,10 @@ func (b BodyConfig) CreatePrompt(stdinReader io.ReadCloser) Prompt {
 type NewlinesConfig struct {
 	// Add newlines after change fragment
 	AfterChange int `yaml:"afterChange,omitempty" default:"0"`
+	// Add newlines after the header file in the merged changelog
+	AfterChangelogHeader int `yaml:"afterChangelogHeader,omitempty" default:"0"`
+	// Add newlines after adding a version to the changelog
+	AfterChangelogVersion int `yaml:"afterChangelogVersion,omitempty" default:"0"`
 	// Add newlines after component
 	AfterComponent int `yaml:"afterComponent,omitempty" default:"0"`
 	// Add newlines after footer file
@@ -82,27 +86,31 @@ type NewlinesConfig struct {
 	// Add newlines after header file
 	AfterHeaderFile int `yaml:"afterHeaderFile,omitempty" default:"0"`
 	// Add newlines after header template
-	AfterHeaderTemplate int `yaml:"afterHeader,omitempty" default:"0"`
+	AfterHeaderTemplate int `yaml:"afterHeaderTemplate,omitempty" default:"0"`
 	// Add newlines after kind
-	AfterKind int `yaml:"afterKindHeader,omitempty" default:"0"`
+	AfterKind int `yaml:"afterKind,omitempty" default:"0"`
 	// Add newlines after version
 	AfterVersion int `yaml:"afterVersion,omitempty" default:"0"`
 	// Add newlines before change fragment
 	BeforeChange int `yaml:"beforeChange,omitempty" default:"0"`
+	// Add newlines before adding a version to the changelog
+	BeforeChangelogVersion int `yaml:"beforeChangelogVersion,omitempty" default:"0"`
 	// Add newlines before component
 	BeforeComponent int `yaml:"beforeComponent,omitempty" default:"0"`
 	// Add newlines before footer file
 	BeforeFooterFile int `yaml:"beforeFooterFile,omitempty" default:"0"`
 	// Add newlines before footer template
-	BeforeFooterTemplate int `yaml:"beforeFooter,omitempty" default:"0"`
+	BeforeFooterTemplate int `yaml:"beforeFooterTemplate,omitempty" default:"0"`
 	// Add newlines before header file
 	BeforeHeaderFile int `yaml:"beforeHeaderFile,omitempty" default:"0"`
 	// Add newlines before header template
-	BeforeHeaderTemplate int `yaml:"beforeHeader,omitempty" default:"0"`
+	BeforeHeaderTemplate int `yaml:"beforeHeaderTemplate,omitempty" default:"0"`
 	// Add newlines before kind
-	BeforeKind int `yaml:"beforeKindHeader,omitempty" default:"0"`
+	BeforeKind int `yaml:"beforeKind,omitempty" default:"0"`
 	// Add newlines before version
 	BeforeVersion int `yaml:"beforeVersion,omitempty" default:"0"`
+	// Add newlines at the end of the version file
+	EndOfVersion int `yaml:"endOfVersion,omitempty" default:"0"`
 }
 
 // Config handles configuration for a project.

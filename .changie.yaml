@@ -13,6 +13,12 @@ kinds:
   - label: Removed
   - label: Fixed
   - label: Security
+newlines:
+  afterChangelogHeader: 1
+  afterKind: 1
+  afterChangelogVersion: 1
+  beforeKind: 1
+  endOfVersion: 1
 custom:
 - key: Issue
   type: int

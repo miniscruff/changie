@@ -4,6 +4,7 @@ import (
 	"errors"
 	"os"
 	"path/filepath"
+	"strings"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -323,5 +324,27 @@ var _ = Describe("Utils", func() {
 
 		_, err := FindChangeFiles(config, afs.ReadDir, []string{"../../invalid"})
 		Expect(err).NotTo(BeNil())
+	})
+
+	It("can write newlines", func() {
+		var writer strings.Builder
+		err := WriteNewlines(&writer, 3)
+		Expect(err).To(BeNil())
+		Expect(writer.String()).To(Equal("\n\n\n"))
+	})
+
+	It("skips newlines if lines is 0", func() {
+		var writer strings.Builder
+		err := WriteNewlines(&writer, 0)
+		Expect(err).To(BeNil())
+		Expect(writer.String()).To(Equal(""))
+	})
+
+	It("returns error on bad write newlines", func() {
+		errMock := errors.New("mock error")
+		writer := BadWriter{Err: errMock}
+
+		err := WriteNewlines(&writer, 3)
+		Expect(err).To(Equal(errMock))
 	})
 })

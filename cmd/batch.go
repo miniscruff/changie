@@ -4,7 +4,6 @@ import (
 	"io"
 	"os"
 	"path/filepath"
-	"strings"
 	"time"
 
 	"github.com/spf13/afero"
@@ -296,6 +295,8 @@ func batchPipeline(batcher BatchPipeliner, afs afero.Afero, version string) erro
 		}
 	}
 
+	_ = core.WriteNewlines(writer, config.Newlines.EndOfVersion)
+
 	if !batchDryRunFlag && !keepFragmentsFlag {
 		err = batcher.ClearUnreleased(
 			config,
@@ -367,20 +368,16 @@ func (b *standardBatchPipeline) WriteTemplate(
 		return nil
 	}
 
-	if beforeNewlines > 0 {
-		_, err := writer.Write([]byte(strings.Repeat("\n", beforeNewlines)))
-		if err != nil {
-			return err
-		}
+	err := core.WriteNewlines(writer, beforeNewlines)
+	if err != nil {
+		return err
 	}
 
 	if err := b.templateCache.Execute(template, writer, templateData); err != nil {
 		return err
 	}
 
-	if afterNewlines > 0 {
-		_, _ = writer.Write([]byte(strings.Repeat("\n", afterNewlines)))
-	}
+	_ = core.WriteNewlines(writer, afterNewlines)
 
 	return nil
 }
