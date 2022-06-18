@@ -52,9 +52,9 @@ func mergePipeline(afs afero.Afero) error {
 	if _mergeDryRun {
 		writer = mergeDryRunOut
 	} else {
-		changeFile, err := afs.Create(config.ChangelogPath)
-		if err != nil {
-			return err
+		changeFile, changeErr := afs.Create(config.ChangelogPath)
+		if changeErr != nil {
+			return changeErr
 		}
 		defer changeFile.Close()
 		writer = changeFile
@@ -66,9 +66,9 @@ func mergePipeline(afs afero.Afero) error {
 	}
 
 	if config.HeaderPath != "" {
-		headerFile, err := afs.Open(filepath.Join(config.ChangesDir, config.HeaderPath))
-		if err != nil {
-			return err
+		headerFile, headerErr := afs.Open(filepath.Join(config.ChangesDir, config.HeaderPath))
+		if headerErr != nil {
+			return headerErr
 		}
 
 		defer headerFile.Close()

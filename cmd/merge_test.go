@@ -2,9 +2,9 @@ package cmd
 
 import (
 	"errors"
-	"strings"
-	"path/filepath"
 	"os"
+	"path/filepath"
+	"strings"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -19,7 +19,7 @@ var _ = Describe("Merge", func() {
 		fs         *MockFS
 		afs        afero.Afero
 		testConfig core.Config
-		stdout          *os.File
+		stdout     *os.File
 	)
 	BeforeEach(func() {
 		fs = NewMockFS()
