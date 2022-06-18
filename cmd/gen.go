@@ -59,7 +59,7 @@ var genCmd = &cobra.Command{
 	Short: "Generate documentation",
 	Long:  `Generate markdown documentation.`,
 	RunE: func(cmd *cobra.Command, args []string) error {
-		file, err := os.Create(filepath.Join("website", "content", "config", "_index.md"))
+		file, err := os.Create(filepath.Join("docs", "content", "config", "_index.md"))
 		if err != nil {
 			return fmt.Errorf("unable to create or open config index: %w", err)
 		}
@@ -74,7 +74,7 @@ var genCmd = &cobra.Command{
 		// it should be fine.
 		_ = genConfigDocs(file, corePackages)
 
-		return doc.GenMarkdownTreeCustom(rootCmd, "website/content/cli", filePrepender, linkHandler)
+		return doc.GenMarkdownTreeCustom(rootCmd, "docs/content/cli", filePrepender, linkHandler)
 	},
 	Hidden: true,
 }

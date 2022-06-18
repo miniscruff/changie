@@ -48,7 +48,7 @@ var _ = Describe("Gen", func() {
 			Expect(os.Chdir(wd)).To(Succeed())
 		}()
 
-		contentPath := filepath.Join("website", "content")
+		contentPath := filepath.Join("docs", "content")
 		cliDocsPath := filepath.Join(contentPath, "cli")
 		configDocsPath := filepath.Join(contentPath, "config", "_index.md")
 

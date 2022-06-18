@@ -13,9 +13,9 @@ coverage.txt
 *.out
 
 # hugo builds
-website/public
-website/resources
-website/content/config/_index.md
+docs/public
+docs/resources
+docs/content/config/_index.md
 *.hugo_build.lock
 
 # goreleaser builds
