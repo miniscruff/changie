@@ -68,22 +68,20 @@ var _ = Describe("Merge", func() {
 		onePath := filepath.Join("news", "v0.1.0.md")
 		twoPath := filepath.Join("news", "v0.2.0.md")
 
-		oneChanges := []byte("first version")
+		oneChanges := []byte("first version\n")
 		err := afs.WriteFile(onePath, oneChanges, core.CreateFileMode)
 		Expect(err).To(BeNil())
 
-		twoChanges := []byte("second version")
+		twoChanges := []byte("second version\n")
 		err = afs.WriteFile(twoPath, twoChanges, core.CreateFileMode)
 		Expect(err).To(BeNil())
 
 		err = mergePipeline(afs)
 		Expect(err).To(BeNil())
 
-		changeContents := `
-
-second version
-
-first version`
+		changeContents := `second version
+first version
+`
 
 		Expect("news.md").To(HaveContents(afs, changeContents))
 	})
@@ -93,11 +91,11 @@ first version`
 		onePath := filepath.Join("news", "v0.1.0.md")
 		twoPath := filepath.Join("news", "v0.2.0.md")
 
-		oneChanges := []byte("first version")
+		oneChanges := []byte("first version\n")
 		err := afs.WriteFile(onePath, oneChanges, core.CreateFileMode)
 		Expect(err).To(BeNil())
 
-		twoChanges := []byte("second version")
+		twoChanges := []byte("second version\n")
 		err = afs.WriteFile(twoPath, twoChanges, core.CreateFileMode)
 		Expect(err).To(BeNil())
 
@@ -123,11 +121,9 @@ first version`
 		Expect(err).To(BeNil())
 
 		changeContents := `a simple header
-
-
 second version
-
-first version`
+first version
+`
 
 		Expect("news.md").To(HaveContents(afs, changeContents))
 		Expect("replace.json").To(HaveContents(afs, newContents))
@@ -138,11 +134,11 @@ first version`
 		onePath := filepath.Join("news", "v0.1.0.md")
 		twoPath := filepath.Join("news", "v0.2.0.md")
 
-		oneChanges := []byte("first version")
+		oneChanges := []byte("first version\n")
 		err := afs.WriteFile(onePath, oneChanges, core.CreateFileMode)
 		Expect(err).To(BeNil())
 
-		twoChanges := []byte("second version")
+		twoChanges := []byte("second version\n")
 		err = afs.WriteFile(twoPath, twoChanges, core.CreateFileMode)
 		Expect(err).To(BeNil())
 
@@ -154,11 +150,9 @@ first version`
 		Expect(err).To(BeNil())
 
 		changeContents := `a simple header
-
-
 second version
-
-first version`
+first version
+`
 
 		var writer strings.Builder
 		mergeDryRunOut = &writer
