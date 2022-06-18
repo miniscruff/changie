@@ -48,6 +48,7 @@ var _ = Describe("end to end", func() {
 		os.Stdout = stdoutWriter
 
 		batchDryRunOut = stdoutWriter
+		mergeDryRunOut = stdoutWriter
 		rootCmd.SetOut(stdoutWriter)
 		rootCmd.SetIn(stdinReader)
 	})

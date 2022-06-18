@@ -2,7 +2,9 @@ package cmd
 
 import (
 	"errors"
+	"strings"
 	"path/filepath"
+	"os"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -17,10 +19,12 @@ var _ = Describe("Merge", func() {
 		fs         *MockFS
 		afs        afero.Afero
 		testConfig core.Config
+		stdout          *os.File
 	)
 	BeforeEach(func() {
 		fs = NewMockFS()
 		afs = afero.Afero{Fs: fs}
+		stdout = os.Stdout
 		testConfig = core.Config{
 			ChangesDir:    "news",
 			UnreleasedDir: "future",
@@ -45,12 +49,46 @@ var _ = Describe("Merge", func() {
 		}
 	})
 
+	AfterEach(func() {
+		// reset our cli vars
+		mergeDryRunOut = stdout
+		_mergeDryRun = false
+	})
+
 	saveAndCheckConfig := func() {
 		err := testConfig.Save(afs.WriteFile)
 		Expect(err).To(BeNil())
 	}
 
 	It("can merge versions", func() {
+		testConfig.HeaderPath = ""
+		testConfig.Replacements = nil
+		saveAndCheckConfig()
+
+		onePath := filepath.Join("news", "v0.1.0.md")
+		twoPath := filepath.Join("news", "v0.2.0.md")
+
+		oneChanges := []byte("first version")
+		err := afs.WriteFile(onePath, oneChanges, core.CreateFileMode)
+		Expect(err).To(BeNil())
+
+		twoChanges := []byte("second version")
+		err = afs.WriteFile(twoPath, twoChanges, core.CreateFileMode)
+		Expect(err).To(BeNil())
+
+		err = mergePipeline(afs)
+		Expect(err).To(BeNil())
+
+		changeContents := `
+
+second version
+
+first version`
+
+		Expect("news.md").To(HaveContents(afs, changeContents))
+	})
+
+	It("can merge versions with header and replacement", func() {
 		saveAndCheckConfig()
 		onePath := filepath.Join("news", "v0.1.0.md")
 		twoPath := filepath.Join("news", "v0.2.0.md")
@@ -81,8 +119,7 @@ var _ = Describe("Merge", func() {
 		err = afs.WriteFile("replace.json", []byte(jsonContents), core.CreateFileMode)
 		Expect(err).To(BeNil())
 
-		out, err := mergePipeline(afs, afs.Create, false)
-		Expect(out).To(BeEmpty())
+		err = mergePipeline(afs)
 		Expect(err).To(BeNil())
 
 		changeContents := `a simple header
@@ -123,8 +160,11 @@ second version
 
 first version`
 
-		out, err := mergePipeline(afs, afs.Create, true)
-		Expect(out).To(Equal(changeContents))
+		var writer strings.Builder
+		mergeDryRunOut = &writer
+		_mergeDryRun = true
+		err = mergePipeline(afs)
+		Expect(writer.String()).To(Equal(changeContents))
 		Expect(err).To(BeNil())
 	})
 
@@ -135,18 +175,14 @@ first version`
 		err := afs.WriteFile(filepath.Join("news", "header.rst"), headerContents, core.CreateFileMode)
 		Expect(err).To(BeNil())
 
-		out, err := mergePipeline(afs, afs.Create, false)
-		Expect(out).To(BeEmpty())
-		Expect(err).To(BeNil())
-
 		changeContents := "a simple header\n"
-		Expect("news.md").To(HaveContents(afs, changeContents))
-	})
 
-	It("returns error on bad config", func() {
-		out, err := mergePipeline(afs, afs.Create, false)
-		Expect(out).To(BeEmpty())
-		Expect(err).NotTo(BeNil())
+		var writer strings.Builder
+		mergeDryRunOut = &writer
+		_mergeDryRun = true
+		err = mergePipeline(afs)
+		Expect(writer.String()).To(Equal(changeContents))
+		Expect(err).To(BeNil())
 	})
 
 	It("returns error on bad changelog path", func() {
@@ -164,21 +200,19 @@ first version`
 		}
 
 		badError := errors.New("bad create")
-		badCreate := func(filename string) (afero.File, error) {
+		fs.MockCreate = func(filename string) (afero.File, error) {
 			var f afero.File
 			return f, badError
 		}
 
-		out, err := mergePipeline(afs, badCreate, false)
-		Expect(out).To(BeEmpty())
+		err = mergePipeline(afs)
 		Expect(err).To(Equal(badError))
 	})
 
 	It("returns error if unable to read changes", func() {
 		saveAndCheckConfig()
 		// no files, means bad read
-		out, err := mergePipeline(afs, afs.Create, false)
-		Expect(out).To(BeEmpty())
+		err := mergePipeline(afs)
 		Expect(err).NotTo(BeNil())
 	})
 
@@ -199,41 +233,8 @@ first version`
 		err := afs.WriteFile(onePath, oneChanges, core.CreateFileMode)
 		Expect(err).To(BeNil())
 
-		out, err := mergePipeline(afs, afs.Create, false)
-		Expect(out).To(BeEmpty())
+		err = mergePipeline(afs)
 		Expect(err).NotTo(BeNil())
-	})
-
-	It("returns error on bad changelog write string", func() {
-		saveAndCheckConfig()
-		badError := errors.New("bad write string")
-		mockFile := NewMockFile(afs, "changelog")
-		mockCreate := func(filename string) (afero.File, error) {
-			if filename == "news.md" {
-				return mockFile, nil
-			}
-
-			return afs.Create(filename)
-		}
-
-		mockFile.MockWrite = func(data []byte) (int, error) {
-			return 0, badError
-		}
-
-		// we need a header and at least one version
-		headerContents := []byte("a simple header\n")
-		err := afs.WriteFile(filepath.Join("news", "header.rst"), headerContents, core.CreateFileMode)
-		Expect(err).To(BeNil())
-
-		onePath := filepath.Join("news", "v0.1.0.md")
-
-		oneChanges := []byte("first version")
-		err = afs.WriteFile(onePath, oneChanges, core.CreateFileMode)
-		Expect(err).To(BeNil())
-
-		out, err := mergePipeline(afs, mockCreate, false)
-		Expect(out).To(BeEmpty())
-		Expect(err).To(Equal(badError))
 	})
 
 	It("returns error on bad second append", func() {
@@ -258,8 +259,7 @@ first version`
 			return fs.MemFS.Open(filename)
 		}
 
-		out, err := mergePipeline(afs, afs.Create, false)
-		Expect(out).To(BeEmpty())
+		err = mergePipeline(afs)
 		Expect(err).To(Equal(badError))
 	})
 
@@ -277,8 +277,7 @@ first version`
 		err = afs.WriteFile(onePath, oneChanges, core.CreateFileMode)
 		Expect(err).To(BeNil())
 
-		out, err := mergePipeline(afs, afs.Create, false)
-		Expect(out).To(BeEmpty())
+		err = mergePipeline(afs)
 		Expect(err).NotTo(BeNil())
 	})
 })

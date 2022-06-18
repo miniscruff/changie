@@ -136,14 +136,14 @@ type Config struct {
 	// example: yaml
 	// unreleasedDir: unreleased
 	UnreleasedDir string `yaml:"unreleasedDir" required:"true"`
-	// When merging all versions into one changelog file content is added to the top from a header file.
+	// Header content included at the top of the merged changelog.
 	// A default header file is created when initializing that follows "Keep a Changelog".
 	//
 	// Filepath for your changelog header file.
 	// Relative to [changesDir](#config-changesdir).
 	// example: yaml
 	// headerPath: header.tpl.md
-	HeaderPath string `yaml:"headerPath" required:"true"`
+	HeaderPath string `yaml:"headerPath"`
 	// Filepath for the generated changelog file.
 	// Relative to project root.
 	// example: yaml
