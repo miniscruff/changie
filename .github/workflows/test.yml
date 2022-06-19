@@ -7,14 +7,14 @@ on:
     - '.github/'
     - 'changes/'
     - 'resources/'
-    - 'website/'
+    - 'docs/'
   pull_request:
     branches: [ main ]
     paths-ignore:
     - '.github/'
     - 'changes/'
     - 'resources/'
-    - 'website/'
+    - 'docs/'
 
 jobs:
 

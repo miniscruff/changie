@@ -1,6 +1,6 @@
 <p align="center">
   <a href="https://changie.dev">
-    <img alt="Changie Logo" src="./website/themes/hugo-whisper-theme/static/images/logo.svg" height="256" />
+    <img alt="Changie Logo" src="./docs/themes/hugo-whisper-theme/static/images/logo.svg" height="256" />
   </a>
   <h3 align="center">Changie</h3>
   <p align="center">Separate your changelog from commit messages without conflicts.</p>
@@ -13,7 +13,7 @@
 [![PkgGoDev](https://pkg.go.dev/badge/github.com/miniscruff/changie)](https://pkg.go.dev/github.com/miniscruff/changie)
 [![Mentioned in Awesome Go](https://awesome.re/mentioned-badge.svg)](https://github.com/avelino/awesome-go)
 
-![asciicast](./website/static/recordings/overview.gif)
+![asciicast](./docs/static/recordings/overview.gif)
 
 ## Features
 * File based changelog management keeps your commit history and release notes separate.
