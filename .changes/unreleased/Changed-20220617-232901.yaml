@@ -1,5 +1,0 @@
-kind: Changed
-body: Header path is now optional when merging the changelog
-time: 2022-06-17T23:29:01.5701388-07:00
-custom:
-  Issue: "324"
