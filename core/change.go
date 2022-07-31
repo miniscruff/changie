@@ -103,7 +103,7 @@ func (change Change) Write(writer io.Writer) error {
 
 // AskPrompts will ask the user prompts based on the configuration
 // updating the change as prompts are answered.
-func AskPrompts(change *Change, config Config, stdinReader io.ReadCloser) error {
+func (change *Change) AskPrompts(config Config, stdinReader io.ReadCloser) error {
 	p := Prompter{
 		change:      change,
 		config:      config,

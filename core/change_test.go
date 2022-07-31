@@ -159,7 +159,7 @@ var _ = Describe("Change ask prompts", func() {
 		}()
 
 		c := &Change{}
-		Expect(AskPrompts(c, config, stdinReader)).To(Succeed())
+		Expect(c.AskPrompts(config, stdinReader)).To(Succeed())
 		Expect(c.Component).To(BeEmpty())
 		Expect(c.Kind).To(BeEmpty())
 		Expect(c.Custom).To(BeEmpty())
@@ -183,7 +183,7 @@ var _ = Describe("Change ask prompts", func() {
 		}()
 
 		c := &Change{}
-		Expect(AskPrompts(c, config, stdinReader)).To(Succeed())
+		Expect(c.AskPrompts(config, stdinReader)).To(Succeed())
 		Expect(c.Component).To(Equal("tests"))
 		Expect(c.Kind).To(Equal("removed"))
 		Expect(c.Custom).To(BeEmpty())
@@ -204,7 +204,7 @@ var _ = Describe("Change ask prompts", func() {
 		}()
 
 		c := &Change{}
-		Expect(AskPrompts(c, config, stdinReader)).To(Succeed())
+		Expect(c.AskPrompts(config, stdinReader)).To(Succeed())
 		Expect(c.Component).To(BeEmpty())
 		Expect(c.Kind).To(BeEmpty())
 		Expect(c.Custom["check"]).To(Equal("custom check value"))
@@ -235,7 +235,7 @@ var _ = Describe("Change ask prompts", func() {
 		}()
 
 		c := &Change{}
-		Expect(AskPrompts(c, config, stdinReader)).To(Succeed())
+		Expect(c.AskPrompts(config, stdinReader)).To(Succeed())
 		Expect(c.Component).To(BeEmpty())
 		Expect(c.Kind).To(Equal("added"))
 		Expect(c.Custom).NotTo(HaveKey("skipped"))
@@ -261,7 +261,7 @@ var _ = Describe("Change ask prompts", func() {
 		}()
 
 		c := &Change{}
-		Expect(AskPrompts(c, config, stdinReader)).NotTo(Succeed())
+		Expect(c.AskPrompts(config, stdinReader)).NotTo(Succeed())
 		Expect(submitFailed).To(BeTrue())
 	})
 
@@ -277,7 +277,7 @@ var _ = Describe("Change ask prompts", func() {
 		}()
 
 		c := &Change{}
-		Expect(AskPrompts(c, config, stdinReader)).NotTo(Succeed())
+		Expect(c.AskPrompts(config, stdinReader)).NotTo(Succeed())
 	})
 
 	It("gets error for invalid component", func() {
@@ -289,7 +289,7 @@ var _ = Describe("Change ask prompts", func() {
 		}()
 
 		c := &Change{}
-		Expect(AskPrompts(c, config, stdinReader)).NotTo(Succeed())
+		Expect(c.AskPrompts(config, stdinReader)).NotTo(Succeed())
 	})
 
 	It("gets error for invalid kind", func() {
@@ -304,7 +304,7 @@ var _ = Describe("Change ask prompts", func() {
 		}()
 
 		c := &Change{}
-		Expect(AskPrompts(c, config, stdinReader)).NotTo(Succeed())
+		Expect(c.AskPrompts(config, stdinReader)).NotTo(Succeed())
 	})
 
 	It("gets error for invalid body", func() {
@@ -314,7 +314,7 @@ var _ = Describe("Change ask prompts", func() {
 		}()
 
 		c := &Change{}
-		Expect(AskPrompts(c, config, stdinReader)).NotTo(Succeed())
+		Expect(c.AskPrompts(config, stdinReader)).NotTo(Succeed())
 	})
 
 	It("gets error for invalid custom value", func() {
@@ -331,7 +331,7 @@ var _ = Describe("Change ask prompts", func() {
 		}()
 
 		c := &Change{}
-		Expect(AskPrompts(c, config, stdinReader)).NotTo(Succeed())
+		Expect(c.AskPrompts(config, stdinReader)).NotTo(Succeed())
 	})
 
 	It("errors when trying to find kind from bad label", func() {
@@ -346,7 +346,7 @@ var _ = Describe("Change ask prompts", func() {
 			Body: "body",
 		}
 
-		Expect(AskPrompts(c, config, stdinReader)).NotTo(Succeed())
+		Expect(c.AskPrompts(config, stdinReader)).NotTo(Succeed())
 	})
 
 	It("doesn't prompt for kind if it's already set", func() {
@@ -365,7 +365,7 @@ var _ = Describe("Change ask prompts", func() {
 			DelayWrite(stdinWriter, []byte{13})
 		}()
 
-		Expect(AskPrompts(c, config, stdinReader)).To(Succeed())
+		Expect(c.AskPrompts(config, stdinReader)).To(Succeed())
 		Expect(c.Kind).To(Equal("kind"))
 		Expect(c.Body).To(Equal("body"))
 	})
@@ -386,7 +386,7 @@ var _ = Describe("Change ask prompts", func() {
 			DelayWrite(stdinWriter, []byte{13})
 		}()
 
-		Expect(AskPrompts(c, config, stdinReader)).To(Succeed())
+		Expect(c.AskPrompts(config, stdinReader)).To(Succeed())
 		Expect(c.Kind).To(Equal("kind"))
 		Expect(c.Body).To(Equal("body"))
 	})

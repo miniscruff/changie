@@ -75,7 +75,7 @@ func newPipeline(newConfig newConfig) error {
 	change.Kind = _kind
 	change.Body = _body
 
-	err = core.AskPrompts(&change, config, newConfig.stdinReader)
+	err = change.AskPrompts(config, newConfig.stdinReader)
 	if err != nil {
 		return err
 	}
