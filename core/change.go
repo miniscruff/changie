@@ -101,90 +101,132 @@ func (change Change) Write(writer io.Writer) error {
 	return err
 }
 
-func kindFromLabel(config Config, label string) (*KindConfig, error) {
-	for _, kindConfig := range config.Kinds {
-		if kindConfig.Label == label {
-			return &kindConfig, nil
-		}
-	}
-
-	return nil, errors.New("invalid kind")
-}
-
 // AskPrompts will ask the user prompts based on the configuration
 // updating the change as prompts are answered.
 func AskPrompts(change *Change, config Config, stdinReader io.ReadCloser) error {
-	var (
-		err  error
-		kind *KindConfig
-	)
+	p := Prompter{
+		change:      change,
+		config:      config,
+		stdinReader: stdinReader,
+		kind:        nil,
+		err:         nil,
+	}
 
-	if len(config.Components) > 0 {
-		compPrompt := promptui.Select{
-			Label: "Component",
-			Items: config.Components,
-			Stdin: stdinReader,
-		}
+	return p.Prompt()
+}
 
-		_, change.Component, err = compPrompt.Run()
-		if err != nil {
-			return err
+type Prompter struct {
+	change      *Change
+	config      Config
+	stdinReader io.ReadCloser
+	kind        *KindConfig
+	err         error
+}
+
+func (p *Prompter) Prompt() error {
+	p.promptForComponent()
+	p.promptForKind()
+	p.parseKind()
+	p.promptForBody()
+	p.promptForUserChoices()
+
+	return p.err
+}
+
+func (p *Prompter) promptForComponent() {
+	if len(p.config.Components) == 0 {
+		return
+	}
+
+	compPrompt := promptui.Select{
+		Label: "Component",
+		Items: p.config.Components,
+		Stdin: p.stdinReader,
+	}
+
+	_, p.change.Component, p.err = compPrompt.Run()
+}
+
+func (p *Prompter) promptForKind() {
+	if p.err != nil {
+		return
+	}
+
+	if len(p.config.Kinds) == 0 || len(p.change.Kind) > 0 {
+		return
+	}
+
+	kindPrompt := promptui.Select{
+		Label: "Kind",
+		Items: p.config.Kinds,
+		Stdin: p.stdinReader,
+	}
+
+	_, p.change.Kind, p.err = kindPrompt.Run()
+}
+
+func (p *Prompter) parseKind() {
+	if p.err != nil {
+		return
+	}
+
+	if len(p.change.Kind) == 0 {
+		return
+	}
+
+	for i := range p.config.Kinds {
+		kindConfig := &p.config.Kinds[i]
+
+		if kindConfig.Label == p.change.Kind {
+			p.kind = kindConfig
+			return
 		}
 	}
 
-	if len(config.Kinds) > 0 {
-		if len(change.Kind) == 0 {
-			kindPrompt := promptui.Select{
-				Label: "Kind",
-				Items: config.Kinds,
-				Stdin: stdinReader,
-			}
+	p.err = errors.New("invalid kind")
+}
 
-			_, change.Kind, err = kindPrompt.Run()
-			if err != nil {
-				return err
-			}
-		}
-
-		kind, err = kindFromLabel(config, change.Kind)
-		if err != nil {
-			return err
-		}
+func (p *Prompter) promptForBody() {
+	if p.err != nil {
+		return
 	}
 
-	if (kind == nil || !kind.SkipBody) && len(change.Body) == 0 {
-		bodyPrompt := config.Body.CreatePrompt(stdinReader)
-		change.Body, err = bodyPrompt.Run()
+	if (p.kind == nil || !p.kind.SkipBody) && len(p.change.Body) == 0 {
+		bodyPrompt := p.config.Body.CreatePrompt(p.stdinReader)
+		p.change.Body, p.err = bodyPrompt.Run()
+	}
+}
 
-		if err != nil {
-			return err
-		}
+func (p *Prompter) promptForUserChoices() {
+	if p.err != nil {
+		return
 	}
 
-	change.Custom = make(map[string]string)
+	p.change.Custom = make(map[string]string)
 	userChoices := make([]Custom, 0)
 
-	if kind == nil || !kind.SkipGlobalChoices {
-		userChoices = append(userChoices, config.CustomChoices...)
+	if p.kind == nil || !p.kind.SkipGlobalChoices {
+		userChoices = append(userChoices, p.config.CustomChoices...)
 	}
 
-	if kind != nil {
-		userChoices = append(userChoices, kind.AdditionalChoices...)
+	if p.kind != nil {
+		userChoices = append(userChoices, p.kind.AdditionalChoices...)
 	}
 
 	for _, custom := range userChoices {
-		prompt, err := custom.CreatePrompt(stdinReader)
-		if err != nil {
-			return err
+		var prompt Prompt
+		prompt, p.err = custom.CreatePrompt(p.stdinReader)
+
+		if p.err != nil {
+			return
 		}
 
-		change.Custom[custom.Key], err = prompt.Run()
-		if err != nil {
-			return err
+		p.change.Custom[custom.Key], p.err = prompt.Run()
+
+		if p.err != nil {
+			return
 		}
 	}
-
-	return nil
 }
 
 // LoadChange will load a change from file path
