@@ -334,17 +334,60 @@ var _ = Describe("Change ask prompts", func() {
 		Expect(AskPrompts(c, config, stdinReader)).NotTo(Succeed())
 	})
 
-	It("panics when trying to find kind from bad label", func() {
+	It("errors when trying to find kind from bad label", func() {
 		config := Config{
 			Kinds: []KindConfig{
-				{Label: "a"},
+				{Label: "kind"},
 			},
 		}
-		badKindFromLabel := func() {
-			_ = kindFromLabel(config, "not a")
-			Fail("should panic before this")
+
+		c := &Change{
+			Kind: "not kind",
+			Body: "body",
 		}
-		defer GinkgoRecover()
-		Expect(badKindFromLabel).To(Panic())
+
+		Expect(AskPrompts(c, config, stdinReader)).NotTo(Succeed())
+	})
+
+	It("doesn't prompt for kind if it's already set", func() {
+		config := Config{
+			Kinds: []KindConfig{
+				{Label: "kind"},
+			},
+		}
+
+		c := &Change{
+			Kind: "kind",
+		}
+
+		go func() {
+			DelayWrite(stdinWriter, []byte("body"))
+			DelayWrite(stdinWriter, []byte{13})
+		}()
+
+		Expect(AskPrompts(c, config, stdinReader)).To(Succeed())
+		Expect(c.Kind).To(Equal("kind"))
+		Expect(c.Body).To(Equal("body"))
+	})
+
+	It("doesn't prompt for body if it's already set", func() {
+		config := Config{
+			Kinds: []KindConfig{
+				{Label: "kind"},
+			},
+		}
+
+		c := &Change{
+			Body: "body",
+		}
+
+		go func() {
+			DelayWrite(stdinWriter, []byte("kind"))
+			DelayWrite(stdinWriter, []byte{13})
+		}()
+
+		Expect(AskPrompts(c, config, stdinReader)).To(Succeed())
+		Expect(c.Kind).To(Equal("kind"))
+		Expect(c.Body).To(Equal("body"))
 	})
 })

@@ -1,0 +1,5 @@
+kind: Added
+body: Add `-b/--body` option to `new` command.
+time: 2022-07-31T17:49:06.958627173+03:00
+custom:
+  Issue: "338"

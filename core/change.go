@@ -1,6 +1,7 @@
 package core
 
 import (
+	"errors"
 	"io"
 	"sort"
 	"time"
@@ -100,14 +101,14 @@ func (change Change) Write(writer io.Writer) error {
 	return err
 }
 
-func kindFromLabel(config Config, label string) *KindConfig {
+func kindFromLabel(config Config, label string) (*KindConfig, error) {
 	for _, kindConfig := range config.Kinds {
 		if kindConfig.Label == label {
-			return &kindConfig
+			return &kindConfig, nil
 		}
 	}
 
-	panic("label not part of any kind")
+	return nil, errors.New("invalid kind")
 }
 
 // AskPrompts will ask the user prompts based on the configuration
@@ -132,21 +133,26 @@ func AskPrompts(change *Change, config Config, stdinReader io.ReadCloser) error 
 	}
 
 	if len(config.Kinds) > 0 {
-		kindPrompt := promptui.Select{
-			Label: "Kind",
-			Items: config.Kinds,
-			Stdin: stdinReader,
+		if len(change.Kind) == 0 {
+			kindPrompt := promptui.Select{
+				Label: "Kind",
+				Items: config.Kinds,
+				Stdin: stdinReader,
+			}
+
+			_, change.Kind, err = kindPrompt.Run()
+			if err != nil {
+				return err
+			}
 		}
 
-		_, change.Kind, err = kindPrompt.Run()
+		kind, err = kindFromLabel(config, change.Kind)
 		if err != nil {
 			return err
 		}
-
-		kind = kindFromLabel(config, change.Kind)
 	}
 
-	if kind == nil || !kind.SkipBody {
+	if (kind == nil || !kind.SkipBody) && len(change.Body) == 0 {
 		bodyPrompt := config.Body.CreatePrompt(stdinReader)
 		change.Body, err = bodyPrompt.Run()
 
