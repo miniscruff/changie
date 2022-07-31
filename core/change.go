@@ -109,111 +109,105 @@ func (change Change) Write(writer io.Writer) error {
 	return err
 }
 
-// AskPrompts will ask the user prompts based on the configuration
-// updating the change as prompts are answered.
-func (change *Change) AskPrompts(config Config, stdinReader io.ReadCloser) error {
-	p := Prompter{
-		change:      change,
-		config:      config,
-		stdinReader: stdinReader,
-		kind:        nil,
-	}
-
-	return p.Prompt()
-}
-
-type Prompter struct {
-	change      *Change
+type PromptContext struct {
 	config      Config
 	stdinReader io.ReadCloser
 	kind        *KindConfig
 }
 
-func (p *Prompter) Prompt() error {
-	err := p.promptForComponent()
+// AskPrompts will ask the user prompts based on the configuration
+// updating the change as prompts are answered.
+func (change *Change) AskPrompts(config Config, stdinReader io.ReadCloser) error {
+	ctx := PromptContext{
+		config:      config,
+		stdinReader: stdinReader,
+		kind:        nil,
+	}
+
+	err := change.promptForComponent(&ctx)
 
 	if err != nil {
 		return err
 	}
 
-	err = p.promptForKind()
+	err = change.promptForKind(&ctx)
 
 	if err != nil {
 		return err
 	}
 
-	err = p.parseKind()
+	err = change.parseKind(&ctx)
 
 	if err != nil {
 		return err
 	}
 
-	err = p.promptForBody()
+	err = change.promptForBody(&ctx)
 
 	if err != nil {
 		return err
 	}
 
-	return p.promptForUserChoices()
+	return change.promptForUserChoices(&ctx)
 }
 
-func (p *Prompter) promptForComponent() error {
-	if len(p.config.Components) == 0 {
+func (change *Change) promptForComponent(ctx *PromptContext) error {
+	if len(ctx.config.Components) == 0 {
 		return nil
 	}
 
 	compPrompt := promptui.Select{
 		Label: "Component",
-		Items: p.config.Components,
-		Stdin: p.stdinReader,
+		Items: ctx.config.Components,
+		Stdin: ctx.stdinReader,
 	}
 
 	var err error
-	_, p.change.Component, err = compPrompt.Run()
+	_, change.Component, err = compPrompt.Run()
 
 	return err
 }
 
-func (p *Prompter) promptForKind() error {
-	if len(p.config.Kinds) == 0 || len(p.change.Kind) > 0 {
+func (change *Change) promptForKind(ctx *PromptContext) error {
+	if len(ctx.config.Kinds) == 0 || len(change.Kind) > 0 {
 		return nil
 	}
 
 	kindPrompt := promptui.Select{
 		Label: "Kind",
-		Items: p.config.Kinds,
-		Stdin: p.stdinReader,
+		Items: ctx.config.Kinds,
+		Stdin: ctx.stdinReader,
 	}
 
 	var err error
-	_, p.change.Kind, err = kindPrompt.Run()
+	_, change.Kind, err = kindPrompt.Run()
 
 	return err
 }
 
-func (p *Prompter) parseKind() error {
-	if len(p.change.Kind) == 0 {
+func (change *Change) parseKind(ctx *PromptContext) error {
+	if len(change.Kind) == 0 {
 		return nil
 	}
 
-	for i := range p.config.Kinds {
-		kindConfig := &p.config.Kinds[i]
+	for i := range ctx.config.Kinds {
+		kindConfig := &ctx.config.Kinds[i]
 
-		if kindConfig.Label == p.change.Kind {
-			p.kind = kindConfig
+		if kindConfig.Label == change.Kind {
+			ctx.kind = kindConfig
 			return nil
 		}
 	}
 
-	return ErrInvalidKind{p.change.Kind}
+	return ErrInvalidKind{change.Kind}
 }
 
-func (p *Prompter) promptForBody() error {
-	if (p.kind == nil || !p.kind.SkipBody) && len(p.change.Body) == 0 {
-		bodyPrompt := p.config.Body.CreatePrompt(p.stdinReader)
+func (change *Change) promptForBody(ctx *PromptContext) error {
+	if (ctx.kind == nil || !ctx.kind.SkipBody) && len(change.Body) == 0 {
+		bodyPrompt := ctx.config.Body.CreatePrompt(ctx.stdinReader)
 
 		var err error
-		p.change.Body, err = bodyPrompt.Run()
+		change.Body, err = bodyPrompt.Run()
 
 		return err
 	}
@@ -221,26 +215,26 @@ func (p *Prompter) promptForBody() error {
 	return nil
 }
 
-func (p *Prompter) promptForUserChoices() error {
-	p.change.Custom = make(map[string]string)
+func (change *Change) promptForUserChoices(ctx *PromptContext) error {
+	change.Custom = make(map[string]string)
 	userChoices := make([]Custom, 0)
 
-	if p.kind == nil || !p.kind.SkipGlobalChoices {
-		userChoices = append(userChoices, p.config.CustomChoices...)
+	if ctx.kind == nil || !ctx.kind.SkipGlobalChoices {
+		userChoices = append(userChoices, ctx.config.CustomChoices...)
 	}
 
-	if p.kind != nil {
-		userChoices = append(userChoices, p.kind.AdditionalChoices...)
+	if ctx.kind != nil {
+		userChoices = append(userChoices, ctx.kind.AdditionalChoices...)
 	}
 
 	for _, custom := range userChoices {
-		prompt, err := custom.CreatePrompt(p.stdinReader)
+		prompt, err := custom.CreatePrompt(ctx.stdinReader)
 
 		if err != nil {
 			return err
 		}
 
-		p.change.Custom[custom.Key], err = prompt.Run()
+		change.Custom[custom.Key], err = prompt.Run()
 
 		if err != nil {
 			return err
