@@ -117,7 +117,6 @@ func (change *Change) AskPrompts(config Config, stdinReader io.ReadCloser) error
 		config:      config,
 		stdinReader: stdinReader,
 		kind:        nil,
-		err:         nil,
 	}
 
 	return p.Prompt()
@@ -128,22 +127,39 @@ type Prompter struct {
 	config      Config
 	stdinReader io.ReadCloser
 	kind        *KindConfig
-	err         error
 }
 
 func (p *Prompter) Prompt() error {
-	p.promptForComponent()
-	p.promptForKind()
-	p.parseKind()
-	p.promptForBody()
-	p.promptForUserChoices()
+	err := p.promptForComponent()
 
-	return p.err
+	if err != nil {
+		return err
+	}
+
+	err = p.promptForKind()
+
+	if err != nil {
+		return err
+	}
+
+	err = p.parseKind()
+
+	if err != nil {
+		return err
+	}
+
+	err = p.promptForBody()
+
+	if err != nil {
+		return err
+	}
+
+	return p.promptForUserChoices()
 }
 
-func (p *Prompter) promptForComponent() {
+func (p *Prompter) promptForComponent() error {
 	if len(p.config.Components) == 0 {
-		return
+		return nil
 	}
 
 	compPrompt := promptui.Select{
@@ -152,16 +168,15 @@ func (p *Prompter) promptForComponent() {
 		Stdin: p.stdinReader,
 	}
 
-	_, p.change.Component, p.err = compPrompt.Run()
+	var err error
+	_, p.change.Component, err = compPrompt.Run()
+
+	return err
 }
 
-func (p *Prompter) promptForKind() {
-	if p.err != nil {
-		return
-	}
-
+func (p *Prompter) promptForKind() error {
 	if len(p.config.Kinds) == 0 || len(p.change.Kind) > 0 {
-		return
+		return nil
 	}
 
 	kindPrompt := promptui.Select{
@@ -170,16 +185,15 @@ func (p *Prompter) promptForKind() {
 		Stdin: p.stdinReader,
 	}
 
-	_, p.change.Kind, p.err = kindPrompt.Run()
+	var err error
+	_, p.change.Kind, err = kindPrompt.Run()
+
+	return err
 }
 
-func (p *Prompter) parseKind() {
-	if p.err != nil {
-		return
-	}
-
+func (p *Prompter) parseKind() error {
 	if len(p.change.Kind) == 0 {
-		return
+		return nil
 	}
 
 	for i := range p.config.Kinds {
@@ -187,29 +201,27 @@ func (p *Prompter) parseKind() {
 
 		if kindConfig.Label == p.change.Kind {
 			p.kind = kindConfig
-			return
+			return nil
 		}
 	}
 
-	p.err = ErrInvalidKind{p.change.Kind}
+	return ErrInvalidKind{p.change.Kind}
 }
 
-func (p *Prompter) promptForBody() {
-	if p.err != nil {
-		return
-	}
-
+func (p *Prompter) promptForBody() error {
 	if (p.kind == nil || !p.kind.SkipBody) && len(p.change.Body) == 0 {
 		bodyPrompt := p.config.Body.CreatePrompt(p.stdinReader)
-		p.change.Body, p.err = bodyPrompt.Run()
+
+		var err error
+		p.change.Body, err = bodyPrompt.Run()
+
+		return err
 	}
+
+	return nil
 }
 
-func (p *Prompter) promptForUserChoices() {
-	if p.err != nil {
-		return
-	}
-
+func (p *Prompter) promptForUserChoices() error {
 	p.change.Custom = make(map[string]string)
 	userChoices := make([]Custom, 0)
 
@@ -222,19 +234,20 @@ func (p *Prompter) promptForUserChoices() {
 	}
 
 	for _, custom := range userChoices {
-		var prompt Prompt
-		prompt, p.err = custom.CreatePrompt(p.stdinReader)
+		prompt, err := custom.CreatePrompt(p.stdinReader)
 
-		if p.err != nil {
-			return
+		if err != nil {
+			return err
 		}
 
-		p.change.Custom[custom.Key], p.err = prompt.Run()
+		p.change.Custom[custom.Key], err = prompt.Run()
 
-		if p.err != nil {
-			return
+		if err != nil {
+			return err
 		}
 	}
+
+	return nil
 }
 
 // LoadChange will load a change from file path
