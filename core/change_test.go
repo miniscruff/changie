@@ -346,7 +346,7 @@ var _ = Describe("Change ask prompts", func() {
 			Body: "body",
 		}
 
-		Expect(c.AskPrompts(config, stdinReader)).NotTo(Succeed())
+		Expect(c.AskPrompts(config, stdinReader)).To(Equal(ErrInvalidKind{"not kind"}))
 	})
 
 	It("doesn't prompt for kind if it's already set", func() {

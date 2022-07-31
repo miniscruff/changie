@@ -1,7 +1,7 @@
 package core
 
 import (
-	"errors"
+	"fmt"
 	"io"
 	"sort"
 	"time"
@@ -16,6 +16,14 @@ import (
 type ChangesConfigSorter struct {
 	changes []Change
 	config  Config
+}
+
+type ErrInvalidKind struct {
+	message string
+}
+
+func (e ErrInvalidKind) Error() string {
+	return fmt.Sprintf("ErrInvalidKind: %s", e.message)
 }
 
 func SortByConfig(config Config) *ChangesConfigSorter {
@@ -183,7 +191,7 @@ func (p *Prompter) parseKind() {
 		}
 	}
 
-	p.err = errors.New("invalid kind")
+	p.err = ErrInvalidKind{p.change.Kind}
 }
 
 func (p *Prompter) promptForBody() {
