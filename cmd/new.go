@@ -45,8 +45,18 @@ func init() {
 		false,
 		"Print new fragment instead of writing to disk",
 	)
-	newCmd.Flags().StringVarP(&_kind, "kind", "k", "", "Set the change kind")
-	newCmd.Flags().StringVarP(&_body, "body", "b", "", "Set the change body")
+	newCmd.Flags().StringVarP(
+		&_kind,
+		"kind", "k",
+		"",
+		"Set the change kind without a prompt",
+	)
+	newCmd.Flags().StringVarP(
+		&_body,
+		"body", "b",
+		"",
+		"Set the change body without a prompt",
+	)
 	rootCmd.AddCommand(newCmd)
 }
 
