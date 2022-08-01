@@ -20,7 +20,7 @@ type ChangesConfigSorter struct {
 }
 
 var errInvalidKind = errors.New("invalid kind")
-var errKindDoesNotAcceptBody = errors.New("this kind does not accept a body")
+var errKindDoesNotAcceptBody = errors.New("kind does not accept a body")
 
 func SortByConfig(config Config) *ChangesConfigSorter {
 	return &ChangesConfigSorter{
@@ -181,6 +181,7 @@ func (change *Change) promptForKind(ctx *PromptContext) error {
 	return err
 }
 
+// parseKind will validate and the kind exists and save the kind config for later use
 func (change *Change) parseKind(ctx *PromptContext) error {
 	if len(change.Kind) == 0 {
 		return nil
@@ -199,11 +200,11 @@ func (change *Change) parseKind(ctx *PromptContext) error {
 }
 
 func (change *Change) promptForBody(ctx *PromptContext) error {
-	if change.expectsNoBody(ctx) && len(change.Body) > 0 {
-		return errKindDoesNotAcceptBody
+	if ctx.expectsNoBody() && len(change.Body) > 0 {
+		return fmt.Errorf("%w: %s", errKindDoesNotAcceptBody, change.Kind)
 	}
 
-	if change.expectsBody(ctx) && len(change.Body) == 0 {
+	if ctx.expectsBody() && len(change.Body) == 0 {
 		bodyPrompt := ctx.config.Body.CreatePrompt(ctx.stdinReader)
 
 		var err error
@@ -212,18 +213,18 @@ func (change *Change) promptForBody(ctx *PromptContext) error {
 		return err
 	}
 
-	if change.expectsBody(ctx) && len(change.Body) > 0 {
+	if ctx.expectsBody() && len(change.Body) > 0 {
 		return ctx.config.Body.Validate(change.Body)
 	}
 
 	return nil
 }
 
-func (change *Change) expectsNoBody(ctx *PromptContext) bool {
+func (ctx *PromptContext) expectsNoBody() bool {
 	return ctx.kind != nil && ctx.kind.SkipBody
 }
 
-func (change *Change) expectsBody(ctx *PromptContext) bool {
+func (ctx *PromptContext) expectsBody() bool {
 	return ctx.kind == nil || !ctx.kind.SkipBody
 }
 

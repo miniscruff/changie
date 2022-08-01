@@ -27,7 +27,7 @@ var _ = Describe("Custom", func() {
 		Expect(errors.Is(err, errInvalidPromptType)).To(BeTrue())
 	})
 
-	It("returns error on invalid prompt type from .Validate()", func() {
+	It("validate returns error on invalid prompt type", func() {
 		err := Custom{
 			Type: "invalid type",
 		}.Validate("blah")
