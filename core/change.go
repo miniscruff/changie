@@ -212,6 +212,10 @@ func (change *Change) promptForBody(ctx *PromptContext) error {
 		return err
 	}
 
+	if change.expectsBody(ctx) && len(change.Body) > 0 {
+		return ctx.config.Body.Validate(change.Body)
+	}
+
 	return nil
 }
 

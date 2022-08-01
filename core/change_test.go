@@ -408,4 +408,25 @@ var _ = Describe("Change ask prompts", func() {
 		err := c.AskPrompts(config, stdinReader)
 		Expect(err).To(Equal(errKindDoesNotAcceptBody))
 	})
+
+	It("validates body without prompt", func() {
+		var min int64 = 10
+
+		config := Config{
+			Kinds: []KindConfig{
+				{Label: "kind"},
+			},
+			Body: BodyConfig{
+				MinLength: &min,
+			},
+		}
+
+		c := &Change{
+			Kind: "kind",
+			Body: "body",
+		}
+
+		err := c.AskPrompts(config, stdinReader)
+		Expect(errors.Unwrap(err)).To(Equal(errInputTooShort))
+	})
 })
