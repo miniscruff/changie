@@ -1,6 +1,8 @@
 package core
 
 import (
+	"errors"
+	"fmt"
 	"io"
 	"sort"
 	"time"
@@ -16,6 +18,9 @@ type ChangesConfigSorter struct {
 	changes []Change
 	config  Config
 }
+
+var errInvalidKind = errors.New("invalid kind")
+var errKindDoesNotAcceptBody = errors.New("kind does not accept a body")
 
 func SortByConfig(config Config) *ChangesConfigSorter {
 	return &ChangesConfigSorter{
@@ -100,79 +105,150 @@ func (change Change) Write(writer io.Writer) error {
 	return err
 }
 
-func kindFromLabel(config Config, label string) *KindConfig {
-	for _, kindConfig := range config.Kinds {
-		if kindConfig.Label == label {
-			return &kindConfig
-		}
-	}
-
-	panic("label not part of any kind")
+type PromptContext struct {
+	config      Config
+	stdinReader io.ReadCloser
+	kind        *KindConfig
 }
 
 // AskPrompts will ask the user prompts based on the configuration
 // updating the change as prompts are answered.
-func AskPrompts(change *Change, config Config, stdinReader io.ReadCloser) error {
-	var (
-		err  error
-		kind *KindConfig
-	)
+func (change *Change) AskPrompts(config Config, stdinReader io.ReadCloser) error {
+	ctx := PromptContext{
+		config:      config,
+		stdinReader: stdinReader,
+		kind:        nil,
+	}
 
-	if len(config.Components) > 0 {
-		compPrompt := promptui.Select{
-			Label: "Component",
-			Items: config.Components,
-			Stdin: stdinReader,
-		}
+	err := change.promptForComponent(&ctx)
 
-		_, change.Component, err = compPrompt.Run()
-		if err != nil {
-			return err
+	if err != nil {
+		return err
+	}
+
+	err = change.promptForKind(&ctx)
+
+	if err != nil {
+		return err
+	}
+
+	err = change.parseKind(&ctx)
+
+	if err != nil {
+		return err
+	}
+
+	err = change.promptForBody(&ctx)
+
+	if err != nil {
+		return err
+	}
+
+	return change.promptForUserChoices(&ctx)
+}
+
+func (change *Change) promptForComponent(ctx *PromptContext) error {
+	if len(ctx.config.Components) == 0 {
+		return nil
+	}
+
+	compPrompt := promptui.Select{
+		Label: "Component",
+		Items: ctx.config.Components,
+		Stdin: ctx.stdinReader,
+	}
+
+	var err error
+	_, change.Component, err = compPrompt.Run()
+
+	return err
+}
+
+func (change *Change) promptForKind(ctx *PromptContext) error {
+	if len(ctx.config.Kinds) == 0 || len(change.Kind) > 0 {
+		return nil
+	}
+
+	kindPrompt := promptui.Select{
+		Label: "Kind",
+		Items: ctx.config.Kinds,
+		Stdin: ctx.stdinReader,
+	}
+
+	var err error
+	_, change.Kind, err = kindPrompt.Run()
+
+	return err
+}
+
+// parseKind will validate and the kind exists and save the kind config for later use
+func (change *Change) parseKind(ctx *PromptContext) error {
+	if len(change.Kind) == 0 {
+		return nil
+	}
+
+	for i := range ctx.config.Kinds {
+		kindConfig := &ctx.config.Kinds[i]
+
+		if kindConfig.Label == change.Kind {
+			ctx.kind = kindConfig
+			return nil
 		}
 	}
 
-	if len(config.Kinds) > 0 {
-		kindPrompt := promptui.Select{
-			Label: "Kind",
-			Items: config.Kinds,
-			Stdin: stdinReader,
-		}
+	return fmt.Errorf("%w: %s", errInvalidKind, change.Kind)
+}
 
-		_, change.Kind, err = kindPrompt.Run()
-		if err != nil {
-			return err
-		}
-
-		kind = kindFromLabel(config, change.Kind)
+func (change *Change) promptForBody(ctx *PromptContext) error {
+	if ctx.expectsNoBody() && len(change.Body) > 0 {
+		return fmt.Errorf("%w: %s", errKindDoesNotAcceptBody, change.Kind)
 	}
 
-	if kind == nil || !kind.SkipBody {
-		bodyPrompt := config.Body.CreatePrompt(stdinReader)
+	if ctx.expectsBody() && len(change.Body) == 0 {
+		bodyPrompt := ctx.config.Body.CreatePrompt(ctx.stdinReader)
+
+		var err error
 		change.Body, err = bodyPrompt.Run()
 
-		if err != nil {
-			return err
-		}
+		return err
 	}
 
+	if ctx.expectsBody() && len(change.Body) > 0 {
+		return ctx.config.Body.Validate(change.Body)
+	}
+
+	return nil
+}
+
+func (ctx *PromptContext) expectsNoBody() bool {
+	return ctx.kind != nil && ctx.kind.SkipBody
+}
+
+func (ctx *PromptContext) expectsBody() bool {
+	return ctx.kind == nil || !ctx.kind.SkipBody
+}
+
+func (change *Change) promptForUserChoices(ctx *PromptContext) error {
 	change.Custom = make(map[string]string)
 	userChoices := make([]Custom, 0)
 
-	if kind == nil || !kind.SkipGlobalChoices {
-		userChoices = append(userChoices, config.CustomChoices...)
+	if ctx.kind == nil || !ctx.kind.SkipGlobalChoices {
+		userChoices = append(userChoices, ctx.config.CustomChoices...)
 	}
 
-	if kind != nil {
-		userChoices = append(userChoices, kind.AdditionalChoices...)
+	if ctx.kind != nil {
+		userChoices = append(userChoices, ctx.kind.AdditionalChoices...)
 	}
 
 	for _, custom := range userChoices {
-		prompt, err := custom.CreatePrompt(stdinReader)
+		prompt, err := custom.CreatePrompt(ctx.stdinReader)
+
 		if err != nil {
 			return err
 		}
 
 		change.Custom[custom.Key], err = prompt.Run()
+
 		if err != nil {
 			return err
 		}

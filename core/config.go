@@ -69,6 +69,17 @@ func (b BodyConfig) CreatePrompt(stdinReader io.ReadCloser) Prompt {
 	return p
 }
 
+func (b BodyConfig) Validate(input string) error {
+	c := Custom{
+		Label:     "Body",
+		Type:      CustomString,
+		MinLength: b.MinLength,
+		MaxLength: b.MaxLength,
+	}
+
+	return c.Validate(input)
+}
+
 // Configuration options for newlines before and after different elements.
 type NewlinesConfig struct {
 	// Add newlines after change fragment
