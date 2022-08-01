@@ -392,4 +392,20 @@ var _ = Describe("Change ask prompts", func() {
 		Expect(c.Kind).To(Equal("kind"))
 		Expect(c.Body).To(Equal("body"))
 	})
+
+	It("errors when body is given for a kind that shouldn't have one", func() {
+		config := Config{
+			Kinds: []KindConfig{
+				{Label: "kind", SkipBody: true},
+			},
+		}
+
+		c := &Change{
+			Body: "body",
+			Kind: "kind",
+		}
+
+		err := c.AskPrompts(config, stdinReader)
+		Expect(err).To(Equal(errKindDoesNotAcceptBody))
+	})
 })

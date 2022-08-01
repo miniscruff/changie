@@ -20,6 +20,7 @@ type ChangesConfigSorter struct {
 }
 
 var errInvalidKind = errors.New("invalid kind")
+var errKindDoesNotAcceptBody = errors.New("this kind does not accept a body")
 
 func SortByConfig(config Config) *ChangesConfigSorter {
 	return &ChangesConfigSorter{
@@ -198,7 +199,11 @@ func (change *Change) parseKind(ctx *PromptContext) error {
 }
 
 func (change *Change) promptForBody(ctx *PromptContext) error {
-	if (ctx.kind == nil || !ctx.kind.SkipBody) && len(change.Body) == 0 {
+	if change.expectsNoBody(ctx) && len(change.Body) > 0 {
+		return errKindDoesNotAcceptBody
+	}
+
+	if change.expectsBody(ctx) && len(change.Body) == 0 {
 		bodyPrompt := ctx.config.Body.CreatePrompt(ctx.stdinReader)
 
 		var err error
@@ -208,6 +213,14 @@ func (change *Change) promptForBody(ctx *PromptContext) error {
 	}
 
 	return nil
+}
+
+func (change *Change) expectsNoBody(ctx *PromptContext) bool {
+	return ctx.kind != nil && ctx.kind.SkipBody
+}
+
+func (change *Change) expectsBody(ctx *PromptContext) bool {
+	return ctx.kind == nil || !ctx.kind.SkipBody
 }
 
 func (change *Change) promptForUserChoices(ctx *PromptContext) error {
