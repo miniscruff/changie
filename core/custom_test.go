@@ -27,6 +27,13 @@ var _ = Describe("Custom", func() {
 		Expect(errors.Is(err, errInvalidPromptType)).To(BeTrue())
 	})
 
+	It("returns error on invalid prompt type from .Validate()", func() {
+		err := Custom{
+			Type: "invalid type",
+		}.Validate("blah")
+		Expect(errors.Is(err, errInvalidPromptType)).To(BeTrue())
+	})
+
 	It("can create custom string prompt", func() {
 		prompt, err := Custom{
 			Type:  CustomString,
@@ -166,5 +173,66 @@ var _ = Describe("Custom", func() {
 		out, err := prompt.Run()
 		Expect(err).To(BeNil())
 		Expect(out).To(Equal("b"))
+	})
+
+	It("validates strings", func() {
+		var minLength int64 = 4
+		var maxLength int64 = 5
+
+		c := Custom{
+			Type:      CustomString,
+			MinLength: &minLength,
+			MaxLength: &maxLength,
+		}
+
+		var err error
+
+		err = c.Validate("bad")
+		Expect(err).ToNot(BeNil())
+		Expect(errors.Unwrap(err)).To(Equal(errInputTooShort))
+
+		err = c.Validate("good")
+		Expect(err).To(BeNil())
+
+		err = c.Validate("bad-again")
+		Expect(err).ToNot(BeNil())
+		Expect(errors.Unwrap(err)).To(Equal(errInputTooLong))
+	})
+
+	It("validates ints", func() {
+		var minInt int64 = 4
+		var maxInt int64 = 5
+
+		c := Custom{
+			Type:   CustomInt,
+			MinInt: &minInt,
+			MaxInt: &maxInt,
+		}
+
+		var err error
+
+		err = c.Validate("3")
+		Expect(err).ToNot(BeNil())
+		Expect(errors.Unwrap(err)).To(Equal(errIntTooLow))
+
+		Expect(c.Validate("4")).To(BeNil())
+		Expect(c.Validate("5")).To(BeNil())
+
+		err = c.Validate("6")
+		Expect(err).ToNot(BeNil())
+		Expect(errors.Unwrap(err)).To(Equal(errIntTooHigh))
+	})
+
+	It("validates enums", func() {
+		c := Custom{
+			Type:        CustomEnum,
+			EnumOptions: []string{"good"},
+		}
+
+		Expect(c.Validate("good")).To(BeNil())
+
+		err := c.Validate("bad")
+		Expect(err).ToNot(BeNil())
+		Expect(errors.Unwrap(err)).To(Equal(errInvalidEnum))
 	})
 })

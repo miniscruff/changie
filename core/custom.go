@@ -26,6 +26,7 @@ var (
 	errIntTooHigh        = errors.New("input above maximum")
 	errInputTooLong      = errors.New("input length too long")
 	errInputTooShort     = errors.New("input length too short")
+	errInvalidEnum       = errors.New("invalid enum")
 	base10               = 10
 	bit64                = 64
 )
@@ -115,46 +116,17 @@ func (c Custom) DisplayLabel() string {
 
 func (c Custom) createStringPrompt(stdinReader io.ReadCloser) (Prompt, error) {
 	return &promptui.Prompt{
-		Label: c.DisplayLabel(),
-		Stdin: stdinReader,
-		Validate: func(input string) error {
-			length := int64(len(input))
-
-			if c.Optional && length == 0 {
-				return nil
-			}
-			if c.MinLength != nil && length < *c.MinLength {
-				return fmt.Errorf("%w: length of %v < %v", errInputTooShort, length, c.MinLength)
-			}
-			if c.MaxLength != nil && length > *c.MaxLength {
-				return fmt.Errorf("%w: length of %v > %v", errInputTooLong, length, c.MaxLength)
-			}
-			return nil
-		},
+		Label:    c.DisplayLabel(),
+		Stdin:    stdinReader,
+		Validate: c.validateString,
 	}, nil
 }
 
 func (c Custom) createIntPrompt(stdinReader io.ReadCloser) (Prompt, error) {
 	return &promptui.Prompt{
-		Label: c.DisplayLabel(),
-		Stdin: stdinReader,
-		Validate: func(input string) error {
-			if c.Optional && input == "" {
-				return nil
-			}
-
-			value, err := strconv.ParseInt(input, base10, bit64)
-			if err != nil {
-				return errInvalidIntInput
-			}
-			if c.MinInt != nil && value < *c.MinInt {
-				return fmt.Errorf("%w: %v < %v", errIntTooLow, value, c.MinInt)
-			}
-			if c.MaxInt != nil && value > *c.MaxInt {
-				return fmt.Errorf("%w: %v > %v", errIntTooHigh, value, c.MinInt)
-			}
-			return nil
-		},
+		Label:    c.DisplayLabel(),
+		Stdin:    stdinReader,
+		Validate: c.validateInt,
 	}, nil
 }
 
@@ -179,4 +151,67 @@ func (c Custom) CreatePrompt(stdinReader io.ReadCloser) (Prompt, error) {
 	}
 
 	return nil, errInvalidPromptType
+}
+
+func (c Custom) Validate(input string) error {
+	switch c.Type {
+	case CustomString:
+		return c.validateString(input)
+	case CustomInt:
+		return c.validateInt(input)
+	case CustomEnum:
+		return c.validateEnum(input)
+	}
+
+	return errInvalidPromptType
+}
+
+func (c Custom) validateString(input string) error {
+	length := int64(len(input))
+
+	if c.Optional && length == 0 {
+		return nil
+	}
+
+	if c.MinLength != nil && length < *c.MinLength {
+		return fmt.Errorf("%w: length of %v < %v", errInputTooShort, length, c.MinLength)
+	}
+
+	if c.MaxLength != nil && length > *c.MaxLength {
+		return fmt.Errorf("%w: length of %v > %v", errInputTooLong, length, c.MaxLength)
+	}
+
+	return nil
+}
+
+func (c Custom) validateInt(input string) error {
+	if c.Optional && input == "" {
+		return nil
+	}
+
+	value, err := strconv.ParseInt(input, base10, bit64)
+
+	if err != nil {
+		return errInvalidIntInput
+	}
+
+	if c.MinInt != nil && value < *c.MinInt {
+		return fmt.Errorf("%w: %v < %v", errIntTooLow, value, c.MinInt)
+	}
+
+	if c.MaxInt != nil && value > *c.MaxInt {
+		return fmt.Errorf("%w: %v > %v", errIntTooHigh, value, c.MinInt)
+	}
+
+	return nil
+}
+
+func (c Custom) validateEnum(input string) error {
+	for _, value := range c.EnumOptions {
+		if input == value {
+			return nil
+		}
+	}
+
+	return fmt.Errorf("%w: %s", errInvalidEnum, input)
 }
