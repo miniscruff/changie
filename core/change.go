@@ -19,8 +19,13 @@ type ChangesConfigSorter struct {
 	config  Config
 }
 
-var errInvalidKind = errors.New("invalid kind")
-var errKindDoesNotAcceptBody = errors.New("kind does not accept a body")
+var (
+	errInvalidKind                        = errors.New("invalid kind")
+	errInvalidComponent                   = errors.New("invalid component")
+	errKindDoesNotAcceptBody              = errors.New("kind does not accept a body")
+	errKindProvidedWhenNotConfigured      = errors.New("kind provided but not supported")
+	errComponentProvidedWhenNotConfigured = errors.New("component provided but not supported")
+)
 
 func SortByConfig(config Config) *ChangesConfigSorter {
 	return &ChangesConfigSorter{
@@ -120,26 +125,22 @@ func (change *Change) AskPrompts(config Config, stdinReader io.ReadCloser) error
 		kind:        nil,
 	}
 
-	err := change.promptForComponent(&ctx)
+	err := change.validateArguments(config)
+	if err != nil {
+		return err
+	}
 
+	err = change.promptForComponent(&ctx)
 	if err != nil {
 		return err
 	}
 
 	err = change.promptForKind(&ctx)
-
-	if err != nil {
-		return err
-	}
-
-	err = change.parseKind(&ctx)
-
 	if err != nil {
 		return err
 	}
 
 	err = change.promptForBody(&ctx)
-
 	if err != nil {
 		return err
 	}
@@ -147,44 +148,68 @@ func (change *Change) AskPrompts(config Config, stdinReader io.ReadCloser) error
 	return change.promptForUserChoices(&ctx)
 }
 
+// validateArguments will check the initial state of a change against the config
+// and return an error if anything is invalid
+func (change *Change) validateArguments(config Config) error {
+	if len(config.Components) == 0 && len(change.Component) > 0 {
+		return errComponentProvidedWhenNotConfigured
+	}
+
+	if len(config.Kinds) == 0 && len(change.Kind) > 0 {
+		return errKindProvidedWhenNotConfigured
+	}
+
+	return nil
+}
+
 func (change *Change) promptForComponent(ctx *PromptContext) error {
 	if len(ctx.config.Components) == 0 {
 		return nil
 	}
 
-	compPrompt := promptui.Select{
-		Label: "Component",
-		Items: ctx.config.Components,
-		Stdin: ctx.stdinReader,
+	if len(change.Component) == 0 {
+		compPrompt := promptui.Select{
+			Label: "Component",
+			Items: ctx.config.Components,
+			Stdin: ctx.stdinReader,
+		}
+
+		var err error
+		_, change.Component, err = compPrompt.Run()
+		if err != nil {
+			return err
+		}
 	}
 
-	var err error
-	_, change.Component, err = compPrompt.Run()
+	for _, comp := range ctx.config.Components {
+		if comp == change.Component {
+			return nil
+		}
+	}
 
-	return err
+	return fmt.Errorf("%w: %s", errInvalidComponent, change.Component)
 }
 
+// promptForKind will prompt for a kind if not provided
+// and validate and the kind exists and save the kind config for later use
 func (change *Change) promptForKind(ctx *PromptContext) error {
-	if len(ctx.config.Kinds) == 0 || len(change.Kind) > 0 {
+	if len(ctx.config.Kinds) == 0 {
 		return nil
 	}
 
-	kindPrompt := promptui.Select{
-		Label: "Kind",
-		Items: ctx.config.Kinds,
-		Stdin: ctx.stdinReader,
-	}
-
-	var err error
-	_, change.Kind, err = kindPrompt.Run()
-
-	return err
-}
-
-// parseKind will validate and the kind exists and save the kind config for later use
-func (change *Change) parseKind(ctx *PromptContext) error {
 	if len(change.Kind) == 0 {
-		return nil
+		kindPrompt := promptui.Select{
+			Label: "Kind",
+			Items: ctx.config.Kinds,
+			Stdin: ctx.stdinReader,
+		}
+
+		var err error
+
+		_, change.Kind, err = kindPrompt.Run()
+		if err != nil {
+			return err
+		}
 	}
 
 	for i := range ctx.config.Kinds {

@@ -348,7 +348,41 @@ var _ = Describe("Change ask prompts", func() {
 
 		err := c.AskPrompts(config, stdinReader)
 		Expect(err).NotTo(BeNil())
-		Expect(errors.Is(err, errInvalidKind)).To(BeTrue())
+		Expect(err).To(MatchError(errInvalidKind))
+	})
+
+	It("errors when trying to find component from bad input", func() {
+		config := Config{
+			Components: []string{"a", "b", "c"},
+		}
+
+		c := &Change{
+			Component: "d",
+			Body: "body",
+		}
+
+		err := c.AskPrompts(config, stdinReader)
+		Expect(err).NotTo(BeNil())
+		Expect(err).To(MatchError(errInvalidComponent))
+	})
+
+	It("doesn't prompt for component if it's already set", func() {
+		config := Config{
+			Components: []string{"a", "b"},
+		}
+
+		c := &Change{
+			Component: "a",
+		}
+
+		go func() {
+			DelayWrite(stdinWriter, []byte("body"))
+			DelayWrite(stdinWriter, []byte{13})
+		}()
+
+		Expect(c.AskPrompts(config, stdinReader)).To(Succeed())
+		Expect(c.Component).To(Equal("a"))
+		Expect(c.Body).To(Equal("body"))
 	})
 
 	It("doesn't prompt for kind if it's already set", func() {
@@ -393,6 +427,30 @@ var _ = Describe("Change ask prompts", func() {
 		Expect(c.Body).To(Equal("body"))
 	})
 
+	It("errors when component is given when no configuration is used", func() {
+		config := Config{}
+
+		c := &Change{
+			Component: "we shouldn't have a component",
+			Body: "body",
+		}
+
+		err := c.AskPrompts(config, stdinReader)
+		Expect(err).To(MatchError(errComponentProvidedWhenNotConfigured))
+	})
+
+	It("errors when kind is given when no configured is used", func() {
+		config := Config{}
+
+		c := &Change{
+			Kind: "we shouldn't have a kind",
+			Body: "body",
+		}
+
+		err := c.AskPrompts(config, stdinReader)
+		Expect(err).To(MatchError(errKindProvidedWhenNotConfigured))
+	})
+
 	It("errors when body is given for a kind that shouldn't have one", func() {
 		config := Config{
 			Kinds: []KindConfig{
@@ -406,7 +464,7 @@ var _ = Describe("Change ask prompts", func() {
 		}
 
 		err := c.AskPrompts(config, stdinReader)
-		Expect(errors.Is(err, errKindDoesNotAcceptBody)).To(BeTrue())
+		Expect(err).To(MatchError(errKindDoesNotAcceptBody))
 	})
 
 	It("validates body without prompt", func() {
@@ -427,6 +485,6 @@ var _ = Describe("Change ask prompts", func() {
 		}
 
 		err := c.AskPrompts(config, stdinReader)
-		Expect(errors.Is(err, errInputTooShort)).To(BeTrue())
+		Expect(err).To(MatchError(errInputTooShort))
 	})
 })
