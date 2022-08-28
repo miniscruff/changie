@@ -24,6 +24,7 @@ type newConfig struct {
 
 var (
 	_newDryRun = false
+	_component = ""
 	_kind      = ""
 	_body      = ""
 )
@@ -44,6 +45,12 @@ func init() {
 		"dry-run", "d",
 		false,
 		"Print new fragment instead of writing to disk",
+	)
+	newCmd.Flags().StringVarP(
+		&_component,
+		"component", "c",
+		"",
+		"Set the change component without a prompt",
 	)
 	newCmd.Flags().StringVarP(
 		&_kind,
@@ -80,10 +87,11 @@ func newPipeline(newConfig newConfig) error {
 		return err
 	}
 
-	var change core.Change
-
-	change.Kind = _kind
-	change.Body = _body
+	change := core.Change{
+		Component: _component,
+		Kind:      _kind,
+		Body:      _body,
+	}
 
 	err = change.AskPrompts(config, newConfig.stdinReader)
 	if err != nil {
