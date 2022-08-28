@@ -235,4 +235,22 @@ var _ = Describe("Custom", func() {
 		Expect(err).ToNot(BeNil())
 		Expect(errors.Unwrap(err)).To(Equal(errInvalidEnum))
 	})
+
+})
+
+var _ = Describe("CustomMapFromStrings", func() {
+	It("splits multiple strings", func() {
+		inputs := []string{"Issue=15", "Tag=alpha", "Owner=team-name"}
+		customValues, err := CustomMapFromStrings(inputs)
+		Expect(err).To(BeNil())
+		Expect(customValues["Issue"]).To(Equal("15"))
+		Expect(customValues["Tag"]).To(Equal("alpha"))
+		Expect(customValues["Owner"]).To(Equal("team-name"))
+	})
+
+	It("returns error on bad format", func() {
+		inputs := []string{"Issue=15", "Tag=alpha", "Ownerteam-name"}
+		_, err := CustomMapFromStrings(inputs)
+		Expect(err).To(MatchError(errInvalidCustomFormat))
+	})
 })

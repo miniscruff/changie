@@ -1,6 +1,9 @@
 test:
 	go test -coverprofile=c.out ./...
 
+test-no-color:
+	go test -coverprofile=c.out ./... -ginkgo.noColor -test.failfast
+
 coverage: test
 	go tool cover -html=c.out
 

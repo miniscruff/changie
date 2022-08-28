@@ -1,0 +1,5 @@
+kind: Added
+body: Custom option to new command
+time: 2022-08-27T19:38:13.6667299-07:00
+custom:
+  Issue: "340"
