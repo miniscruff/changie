@@ -358,7 +358,7 @@ var _ = Describe("Change ask prompts", func() {
 
 		c := &Change{
 			Component: "d",
-			Body: "body",
+			Body:      "body",
 		}
 
 		err := c.AskPrompts(config, stdinReader)
@@ -432,7 +432,7 @@ var _ = Describe("Change ask prompts", func() {
 
 		c := &Change{
 			Component: "we shouldn't have a component",
-			Body: "body",
+			Body:      "body",
 		}
 
 		err := c.AskPrompts(config, stdinReader)

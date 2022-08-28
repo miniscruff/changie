@@ -89,8 +89,8 @@ func newPipeline(newConfig newConfig) error {
 
 	change := core.Change{
 		Component: _component,
-		Kind: _kind,
-		Body: _body,
+		Kind:      _kind,
+		Body:      _body,
 	}
 
 	err = change.AskPrompts(config, newConfig.stdinReader)

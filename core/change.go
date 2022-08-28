@@ -175,6 +175,7 @@ func (change *Change) promptForComponent(ctx *PromptContext) error {
 		}
 
 		var err error
+
 		_, change.Component, err = compPrompt.Run()
 		if err != nil {
 			return err
