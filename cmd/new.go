@@ -16,17 +16,17 @@ import (
 type newConfig struct {
 	afs           afero.Afero
 	cmdOut        io.Writer
-	dryRun        bool
 	timeNow       shared.TimeNow
 	stdinReader   io.ReadCloser
 	templateCache *core.TemplateCache
 }
 
 var (
-	_newDryRun = false
-	_component = ""
-	_kind      = ""
-	_body      = ""
+	_newDryRun          = false
+	_component          = ""
+	_kind               = ""
+	_body               = ""
+	_custom    []string = nil
 )
 
 // newCmd represents the new command
@@ -64,6 +64,12 @@ func init() {
 		"",
 		"Set the change body without a prompt",
 	)
+	newCmd.Flags().StringSliceVarP(
+		&_custom,
+		"custom", "m",
+		nil,
+		"Set custom values without a prompt",
+	)
 	rootCmd.AddCommand(newCmd)
 }
 
@@ -77,7 +83,6 @@ func runNew(cmd *cobra.Command, args []string) error {
 		stdinReader:   os.Stdin,
 		templateCache: core.NewTemplateCache(),
 		cmdOut:        cmd.OutOrStdout(),
-		dryRun:        _newDryRun,
 	})
 }
 
@@ -87,10 +92,16 @@ func newPipeline(newConfig newConfig) error {
 		return err
 	}
 
+	customValues, err := core.CustomMapFromStrings(_custom)
+	if err != nil {
+		return err
+	}
+
 	change := core.Change{
 		Component: _component,
 		Kind:      _kind,
 		Body:      _body,
+		Custom:    customValues,
 	}
 
 	err = change.AskPrompts(config, newConfig.stdinReader)
@@ -102,7 +113,7 @@ func newPipeline(newConfig newConfig) error {
 
 	var writer io.Writer
 
-	if newConfig.dryRun {
+	if _newDryRun {
 		writer = newConfig.cmdOut
 	} else {
 		var outputPath strings.Builder

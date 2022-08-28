@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"strconv"
+	"strings"
 
 	"github.com/manifoldco/promptui"
 )
@@ -20,15 +21,16 @@ const (
 )
 
 var (
-	errInvalidPromptType = errors.New("invalid prompt type")
-	errInvalidIntInput   = errors.New("invalid number")
-	errIntTooLow         = errors.New("input below minimum")
-	errIntTooHigh        = errors.New("input above maximum")
-	errInputTooLong      = errors.New("input length too long")
-	errInputTooShort     = errors.New("input length too short")
-	errInvalidEnum       = errors.New("invalid enum")
-	base10               = 10
-	bit64                = 64
+	errInvalidPromptType   = errors.New("invalid prompt type")
+	errInvalidIntInput     = errors.New("invalid number")
+	errIntTooLow           = errors.New("input below minimum")
+	errIntTooHigh          = errors.New("input above maximum")
+	errInputTooLong        = errors.New("input length too long")
+	errInputTooShort       = errors.New("input length too short")
+	errInvalidEnum         = errors.New("invalid enum")
+	errInvalidCustomFormat = errors.New("invalid custom format, must be \"Key=Value\"")
+	base10                 = 10
+	bit64                  = 64
 )
 
 type enumWrapper struct {
@@ -214,4 +216,23 @@ func (c Custom) validateEnum(input string) error {
 	}
 
 	return fmt.Errorf("%w: %s", errInvalidEnum, input)
+}
+
+// CustomMapFromStrings will parse a CLI argument of strings into a key value map
+// where each string is a key value pair separted by an equal sign.
+// Eg: Issue=15 turns into {"Issue": "15"}
+func CustomMapFromStrings(input []string) (map[string]string, error) {
+	ret := make(map[string]string)
+
+	for _, s := range input {
+		key, value, found := strings.Cut(s, "=")
+		if !found {
+			// error
+			return ret, fmt.Errorf("%w: %s", errInvalidCustomFormat, s)
+		}
+
+		ret[key] = value
+	}
+
+	return ret, nil
 }

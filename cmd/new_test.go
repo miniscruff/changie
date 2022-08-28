@@ -26,6 +26,7 @@ var _ = Describe("New", func() {
 		afs        afero.Afero
 		testConfig core.Config
 	)
+
 	BeforeEach(func() {
 		fs = NewMockFS()
 		afs = afero.Afero{Fs: fs}
@@ -44,6 +45,14 @@ var _ = Describe("New", func() {
 				{Label: "other"},
 			},
 		}
+	})
+
+	AfterEach(func() {
+		_newDryRun = false
+		_body = ""
+		_kind = ""
+		_component = ""
+		_custom = nil
 	})
 
 	It("creates new file on completion of prompts", func() {
@@ -122,6 +131,20 @@ var _ = Describe("New", func() {
 		Expect(changePath).To(HaveContents(afs, changeContent))
 	})
 
+	It("returns error on bad custom values", func() {
+		Expect(testConfig.Save(afs.WriteFile)).To(Succeed())
+
+		_custom = []string{"bad-format"}
+
+		err := newPipeline(newConfig{
+			afs:           afs,
+			timeNow:       mockTime,
+			stdinReader:   nil,
+			templateCache: core.NewTemplateCache(),
+		})
+		Expect(err).NotTo(BeNil())
+	})
+
 	It("returns error on bad write", func() {
 		testConfig.Kinds = []core.KindConfig{}
 		Expect(testConfig.Save(afs.WriteFile)).To(Succeed())
@@ -177,6 +200,7 @@ var _ = Describe("New", func() {
 	})
 
 	It("outputs to cmdOut in dry run", func() {
+		_newDryRun = true
 		testConfig.Kinds = []core.KindConfig{}
 		err := testConfig.Save(afs.WriteFile)
 		Expect(err).To(BeNil())
@@ -205,7 +229,6 @@ var _ = Describe("New", func() {
 			stdinReader:   stdinReader,
 			templateCache: core.NewTemplateCache(),
 			cmdOut:        &writer,
-			dryRun:        true,
 		})
 		Expect(writer.String()).To(Equal(changeContent))
 		Expect(err).To(BeNil())

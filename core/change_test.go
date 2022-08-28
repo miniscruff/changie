@@ -211,6 +211,33 @@ var _ = Describe("Change ask prompts", func() {
 		Expect(c.Body).To(Equal("body again"))
 	})
 
+	It("for body and custom with existing custom value", func() {
+		config := Config{
+			CustomChoices: []Custom{
+				{Key: "Issue", Type: CustomString},
+				{Key: "Project", Type: CustomString},
+			},
+		}
+		go func() {
+			DelayWrite(stdinWriter, []byte("body again"))
+			DelayWrite(stdinWriter, []byte{13})
+			DelayWrite(stdinWriter, []byte("256"))
+			DelayWrite(stdinWriter, []byte{13})
+		}()
+
+		c := &Change{
+			Custom: map[string]string{
+				"Project": "Changie",
+			},
+		}
+		Expect(c.AskPrompts(config, stdinReader)).To(Succeed())
+		Expect(c.Component).To(BeEmpty())
+		Expect(c.Kind).To(BeEmpty())
+		Expect(c.Custom["Issue"]).To(Equal("256"))
+		Expect(c.Custom["Project"]).To(Equal("Changie"))
+		Expect(c.Body).To(Equal("body again"))
+	})
+
 	It("for skipped body, skipped global choices and kind choices", func() {
 		config := Config{
 			CustomChoices: []Custom{
@@ -449,6 +476,41 @@ var _ = Describe("Change ask prompts", func() {
 
 		err := c.AskPrompts(config, stdinReader)
 		Expect(err).To(MatchError(errKindProvidedWhenNotConfigured))
+	})
+
+	It("errors when custom is given when not present", func() {
+		config := Config{
+			CustomChoices: []Custom{
+				{Key: "Issue", Type: CustomInt},
+			},
+		}
+
+		c := &Change{
+			Custom: map[string]string{
+				"MissingKey": "40",
+			},
+		}
+
+		err := c.AskPrompts(config, stdinReader)
+		Expect(err).NotTo(BeNil())
+	})
+
+	It("errors when custom is given that does not pass validation", func() {
+		minValue := int64(50)
+		config := Config{
+			CustomChoices: []Custom{
+				{Key: "Issue", Type: CustomInt, MinInt: &minValue},
+			},
+		}
+
+		c := &Change{
+			Custom: map[string]string{
+				"Issue": "40",
+			},
+		}
+
+		err := c.AskPrompts(config, stdinReader)
+		Expect(err).NotTo(BeNil())
 	})
 
 	It("errors when body is given for a kind that shouldn't have one", func() {

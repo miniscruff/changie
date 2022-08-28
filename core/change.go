@@ -25,6 +25,7 @@ var (
 	errKindDoesNotAcceptBody              = errors.New("kind does not accept a body")
 	errKindProvidedWhenNotConfigured      = errors.New("kind provided but not supported")
 	errComponentProvidedWhenNotConfigured = errors.New("component provided but not supported")
+	errCustomProvidedNotConfigured        = errors.New("custom value provided but not configured")
 )
 
 func SortByConfig(config Config) *ChangesConfigSorter {
@@ -159,6 +160,29 @@ func (change *Change) validateArguments(config Config) error {
 		return errKindProvidedWhenNotConfigured
 	}
 
+	// make sure no custom values are assigned that do not exist
+	foundCustoms := map[string]struct{}{}
+
+	for key, value := range change.Custom {
+		for _, choice := range config.CustomChoices {
+			if choice.DisplayLabel() == key {
+				foundCustoms[key] = struct{}{}
+
+				err := choice.Validate(value)
+				if err != nil {
+					return err
+				}
+			}
+		}
+	}
+
+	for key := range change.Custom {
+		_, ok := foundCustoms[key]
+		if !ok {
+			return fmt.Errorf("%w: %s", errCustomProvidedNotConfigured, key)
+		}
+	}
+
 	return nil
 }
 
@@ -255,7 +279,6 @@ func (ctx *PromptContext) expectsBody() bool {
 }
 
 func (change *Change) promptForUserChoices(ctx *PromptContext) error {
-	change.Custom = make(map[string]string)
 	userChoices := make([]Custom, 0)
 
 	if ctx.kind == nil || !ctx.kind.SkipGlobalChoices {
@@ -266,7 +289,18 @@ func (change *Change) promptForUserChoices(ctx *PromptContext) error {
 		userChoices = append(userChoices, ctx.kind.AdditionalChoices...)
 	}
 
+	// custom map may be nil, which is fine if we have no choices
+	// otherwise we need to initialize it
+	if len(userChoices) > 0 && change.Custom == nil {
+		change.Custom = make(map[string]string)
+	}
+
 	for _, custom := range userChoices {
+		// skip already provided values
+		if change.Custom[custom.Key] != "" {
+			continue
+		}
+
 		prompt, err := custom.CreatePrompt(ctx.stdinReader)
 
 		if err != nil {
