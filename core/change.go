@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"sort"
+	"strings"
 	"time"
 
 	"github.com/manifoldco/promptui"
@@ -146,7 +147,12 @@ func (change *Change) AskPrompts(config Config, stdinReader io.ReadCloser) error
 		return err
 	}
 
-	return change.promptForUserChoices(&ctx)
+	err = change.promptForUserChoices(&ctx)
+	if err != nil {
+		return err
+	}
+
+	return change.postProcess(&ctx)
 }
 
 // validateArguments will check the initial state of a change against the config
@@ -312,6 +318,41 @@ func (change *Change) promptForUserChoices(ctx *PromptContext) error {
 		if err != nil {
 			return err
 		}
+	}
+
+	return nil
+}
+
+func (change *Change) postProcess(ctx *PromptContext) error {
+	postConfigs := make([]PostProcessConfig, 0)
+
+	if ctx.kind == nil || !ctx.kind.SkipGlobalPost {
+		postConfigs = append(postConfigs, ctx.config.Post...)
+	}
+
+	if ctx.kind != nil {
+		postConfigs = append(postConfigs, ctx.kind.Post...)
+	}
+
+	if len(postConfigs) == 0 {
+		return nil
+	}
+
+	if change.Custom == nil {
+		change.Custom = make(map[string]string)
+	}
+
+	templateCache := NewTemplateCache()
+
+	for _, post := range postConfigs {
+		writer := strings.Builder{}
+
+		err := templateCache.Execute(post.Value, &writer, change)
+		if err != nil {
+			return err
+		}
+
+		change.Custom[post.Key] = writer.String()
 	}
 
 	return nil
