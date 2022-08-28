@@ -190,6 +190,36 @@ var _ = Describe("Change ask prompts", func() {
 		Expect(c.Body).To(Equal("body here"))
 	})
 
+	It("for body, kind and post process", func() {
+		config := Config{
+			Kinds: []KindConfig{
+				{
+					Label: "added",
+					Post: []PostProcessConfig{
+						{Key: "Post", Value: "{{.Body}}+{{.Custom.Issue}}"},
+					},
+				},
+			},
+			CustomChoices: []Custom{
+				{Key: "Issue", Type: CustomInt},
+			},
+		}
+
+		c := &Change{
+			Body: "our body",
+			Kind: "added",
+			Custom: map[string]string{
+				"Issue": "25",
+			},
+		}
+		Expect(c.AskPrompts(config, stdinReader)).To(Succeed())
+		Expect(c.Component).To(BeEmpty())
+		Expect(c.Kind).To(Equal("added"))
+		Expect(c.Body).To(Equal("our body"))
+		Expect(c.Custom["Issue"]).To(Equal("25"))
+		Expect(c.Custom["Post"]).To(Equal("our body+25"))
+	})
+
 	It("for body and custom", func() {
 		config := Config{
 			CustomChoices: []Custom{
@@ -270,6 +300,58 @@ var _ = Describe("Change ask prompts", func() {
 		Expect(c.Body).To(BeEmpty())
 	})
 
+	It("for body and post process", func() {
+		config := Config{
+			Post: []PostProcessConfig{
+				{Key: "Post", Value: "Body again {{.Body}}"},
+			},
+		}
+
+		c := &Change{
+			Body: "our body",
+		}
+		Expect(c.AskPrompts(config, stdinReader)).To(Succeed())
+		Expect(c.Component).To(BeEmpty())
+		Expect(c.Kind).To(BeEmpty())
+		Expect(c.Body).To(Equal("our body"))
+		Expect(c.Custom["Post"]).To(Equal("Body again our body"))
+	})
+
+	It("for body and post process skipping global post", func() {
+		config := Config{
+			Kinds: []KindConfig{
+				{
+					Label:          "added",
+					SkipGlobalPost: true,
+					Post: []PostProcessConfig{
+						{Key: "Post", Value: "{{.Body}}+{{.Custom.Issue}}"},
+					},
+				},
+			},
+			CustomChoices: []Custom{
+				{Key: "Issue", Type: CustomInt},
+			},
+			Post: []PostProcessConfig{
+				{Key: "GlobalPost", Value: "should be skipped"},
+			},
+		}
+
+		c := &Change{
+			Body: "our body",
+			Kind: "added",
+			Custom: map[string]string{
+				"Issue": "30",
+			},
+		}
+
+		Expect(c.AskPrompts(config, stdinReader)).To(Succeed())
+		Expect(c.Component).To(BeEmpty())
+		Expect(c.Kind).To(Equal("added"))
+		Expect(c.Body).To(Equal("our body"))
+		Expect(c.Custom["GlobalPost"]).To(BeEmpty())
+		Expect(c.Custom["Post"]).To(Equal("our body+30"))
+	})
+
 	It("gets error for invalid body", func() {
 		var min int64 = 5
 		submitFailed := false
@@ -290,6 +372,19 @@ var _ = Describe("Change ask prompts", func() {
 		c := &Change{}
 		Expect(c.AskPrompts(config, stdinReader)).NotTo(Succeed())
 		Expect(submitFailed).To(BeTrue())
+	})
+
+	It("gets error for invalid post", func() {
+		config := Config{
+			Post: []PostProcessConfig{
+				{Key: "Post", Value: "invalid {{++...thing}}"},
+			},
+		}
+
+		c := &Change{
+			Body: "our body",
+		}
+		Expect(c.AskPrompts(config, stdinReader)).NotTo(Succeed())
 	})
 
 	It("gets error for invalid custom type", func() {

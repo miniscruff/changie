@@ -38,12 +38,16 @@ type KindConfig struct {
 	// example: yaml
 	// changeFormat: 'Breaking: {{.Custom.Body}}
 	ChangeFormat string `yaml:"changeFormat,omitempty"`
-	// Skip global choices allows skipping the parent choices options
-	SkipGlobalChoices bool `yaml:"skipGlobalChoices,omitempty" default:"false"`
-	// Skip body allows skipping the parent body prompt
-	SkipBody bool `yaml:"skipBody,omitempty" default:"false"`
 	// Additional choices allows adding choices per kind
 	AdditionalChoices []Custom `yaml:"additionalChoices,omitempty"`
+	// Post process options when saving a new change fragment specific to this kind.
+	Post []PostProcessConfig `yaml:"post,omitempty"`
+	// Skip global choices allows skipping the parent choices options.
+	SkipGlobalChoices bool `yaml:"skipGlobalChoices,omitempty" default:"false"`
+	// Skip body allows skipping the parent body prompt.
+	SkipBody bool `yaml:"skipBody,omitempty" default:"false"`
+	// Skip global post allows skipping the parent post processing.
+	SkipGlobalPost bool `yaml:"skipGlobalPost,omitempty" default:"false"`
 }
 
 func (kc KindConfig) String() string {
@@ -122,6 +126,16 @@ type NewlinesConfig struct {
 	BeforeVersion int `yaml:"beforeVersion,omitempty" default:"0"`
 	// Add newlines at the end of the version file
 	EndOfVersion int `yaml:"endOfVersion,omitempty" default:"0"`
+}
+
+// PostProcessConfig allows adding additional custom values to a change fragment
+// after all the other inputs are complete.
+// This will add additional keys to the `custom` section of the fragment.
+type PostProcessConfig struct {
+	// Key to save the custom value with
+	Key string `yaml:"key"`
+	// Value of the custom value as a go template
+	Value string `yaml:"value" templateType:"Change"`
 }
 
 // Config handles configuration for a project.
@@ -270,6 +284,8 @@ type Config struct {
 	Replacements []Replacement `yaml:"replacements,omitempty"`
 	// Newline options allow you to add extra lines between elements written by changie.
 	Newlines NewlinesConfig `yaml:"newlines,omitempty"`
+	// Post process options when saving a new change fragment.
+	Post []PostProcessConfig `yaml:"post,omitempty"`
 }
 
 func (c Config) KindHeader(label string) string {
