@@ -5,21 +5,21 @@
 class Changie < Formula
   desc "Automated changelog tool for preparing releases with lots of customization options."
   homepage "https://changie.dev"
-  version "1.9.0"
+  version "1.9.1"
   license "MIT"
 
   on_macos do
     if Hardware::CPU.intel?
-      url "https://github.com/miniscruff/changie/releases/download/v1.9.0/changie_1.9.0_darwin_amd64.tar.gz"
-      sha256 "6d7159ca0dfab400d1ba62eab36406077ba721d33b1139220800a0b65092db6c"
+      url "https://github.com/miniscruff/changie/releases/download/v1.9.1/changie_1.9.1_darwin_amd64.tar.gz"
+      sha256 "279fde44deb1b36907b3315ecc6431831562b1890fdeb24184bba820282eebd7"
 
       def install
         bin.install "changie"
       end
     end
     if Hardware::CPU.arm?
-      url "https://github.com/miniscruff/changie/releases/download/v1.9.0/changie_1.9.0_darwin_arm64.tar.gz"
-      sha256 "01755751d1745e4b128d732b4189d946fe947212790913238853e6ed03244030"
+      url "https://github.com/miniscruff/changie/releases/download/v1.9.1/changie_1.9.1_darwin_arm64.tar.gz"
+      sha256 "843638b584583873fb832f523d5c832d8b36e3d4eb295cab562cc7107b6b3535"
 
       def install
         bin.install "changie"
@@ -28,17 +28,17 @@ class Changie < Formula
   end
 
   on_linux do
-    if Hardware::CPU.intel?
-      url "https://github.com/miniscruff/changie/releases/download/v1.9.0/changie_1.9.0_linux_amd64.tar.gz"
-      sha256 "33c711de9dd4bee7e4b37f2a99da367055f137c5ba623c7eb5f3aa0d940f7350"
+    if Hardware::CPU.arm? && Hardware::CPU.is_64_bit?
+      url "https://github.com/miniscruff/changie/releases/download/v1.9.1/changie_1.9.1_linux_arm64.tar.gz"
+      sha256 "1a2314884c476c656f1b867eb0ba6215d744d40db9d545e90412ddf7b4083c55"
 
       def install
         bin.install "changie"
       end
     end
-    if Hardware::CPU.arm? && Hardware::CPU.is_64_bit?
-      url "https://github.com/miniscruff/changie/releases/download/v1.9.0/changie_1.9.0_linux_arm64.tar.gz"
-      sha256 "9a63b0aef746d3de16d11f9bdfbedd4320b674548cc1326eb18cc401d93a0952"
+    if Hardware::CPU.intel?
+      url "https://github.com/miniscruff/changie/releases/download/v1.9.1/changie_1.9.1_linux_amd64.tar.gz"
+      sha256 "8bc12b46f51d1c8161476a191e5ddc03ac870f6443698eef7cfc5eef62176ae1"
 
       def install
         bin.install "changie"
