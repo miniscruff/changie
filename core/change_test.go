@@ -245,7 +245,7 @@ var _ = Describe("Change ask prompts", func() {
 		config := Config{
 			CustomChoices: []Custom{
 				{Key: "Issue", Type: CustomString},
-				{Key: "Project", Type: CustomString},
+				{Key: "Project", Label: "Custom Project Prompt", Type: CustomString},
 			},
 		}
 		go func() {

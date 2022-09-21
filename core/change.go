@@ -171,7 +171,7 @@ func (change *Change) validateArguments(config Config) error {
 
 	for key, value := range change.Custom {
 		for _, choice := range config.CustomChoices {
-			if choice.DisplayLabel() == key {
+			if choice.Key == key {
 				foundCustoms[key] = struct{}{}
 
 				err := choice.Validate(value)
