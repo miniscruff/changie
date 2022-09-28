@@ -3,11 +3,12 @@ package core
 import (
 	"errors"
 	"fmt"
-	"io"
 	"strconv"
 	"strings"
 
 	"github.com/manifoldco/promptui"
+	"github.com/AlecAivazis/survey/v2"
+	"github.com/AlecAivazis/survey/v2/terminal"
 )
 
 // CustomType determines the possible custom choice types.
@@ -45,6 +46,26 @@ func (e *enumWrapper) Run() (string, error) {
 // Prompt is a small wrapper around the promptui Run method
 type Prompt interface {
 	Run() (string, error)
+}
+
+type surveyPrompt struct {
+	prompt survey.Prompt
+	validator survey.Validator
+}
+
+func (sp *surveyPrompt) Run() (string, error) {
+	var response string
+
+	err := survey.AskOne(
+		sp.prompt,
+		&response,
+		survey.WithValidator(sp.validator),
+	)
+	if err != nil {
+		return "", err
+	}
+
+	return response, nil
 }
 
 // Custom defines a custom choice that is asked when using 'changie new'.
@@ -116,33 +137,45 @@ func (c Custom) DisplayLabel() string {
 	return c.Label
 }
 
-func (c Custom) createStringPrompt(stdinReader io.ReadCloser) (Prompt, error) {
-	return &promptui.Prompt{
-		Label:    c.DisplayLabel(),
-		Stdin:    stdinReader,
-		Validate: c.validateString,
+func (c Custom) createStringPrompt(stdinReader terminal.FileReader) (Prompt, error) {
+	prompt := &survey.Input{
+		Message: c.DisplayLabel(),
+	}
+	prompt.WithStdio(terminal.Stdio{In: stdinReader})
+
+	return &surveyPrompt{
+		prompt: prompt,
+		validator: c.validateString,
 	}, nil
 }
 
-func (c Custom) createIntPrompt(stdinReader io.ReadCloser) (Prompt, error) {
-	return &promptui.Prompt{
-		Label:    c.DisplayLabel(),
-		Stdin:    stdinReader,
-		Validate: c.validateInt,
+func (c Custom) createIntPrompt(stdinReader terminal.FileReader) (Prompt, error) {
+	prompt := &survey.Input{
+		Message: c.DisplayLabel(),
+	}
+	prompt.WithStdio(terminal.Stdio{In: stdinReader})
+
+	return &surveyPrompt{
+		prompt: prompt,
+		validator: c.validateInt,
 	}, nil
 }
 
-func (c Custom) createEnumPrompt(stdinReader io.ReadCloser) (Prompt, error) {
-	return &enumWrapper{
-		Select: &promptui.Select{
-			Label: c.DisplayLabel(),
-			Stdin: stdinReader,
-			Items: c.EnumOptions,
-		}}, nil
+func (c Custom) createEnumPrompt(stdinReader terminal.FileReader) (Prompt, error) {
+	prompt := &survey.Select{
+		Message: c.DisplayLabel(),
+		Options: c.EnumOptions,
+	}
+	prompt.WithStdio(terminal.Stdio{In: stdinReader})
+
+	return &surveyPrompt{
+		prompt: prompt,
+		validator: c.validateEnum,
+	}, nil
 }
 
 // CreatePrompt will create a promptui select or prompt from a custom choice
-func (c Custom) CreatePrompt(stdinReader io.ReadCloser) (Prompt, error) {
+func (c Custom) CreatePrompt(stdinReader terminal.FileReader) (Prompt, error) {
 	switch c.Type {
 	case CustomString:
 		return c.createStringPrompt(stdinReader)
@@ -168,54 +201,65 @@ func (c Custom) Validate(input string) error {
 	return errInvalidPromptType
 }
 
-func (c Custom) validateString(input string) error {
-	length := int64(len(input))
+func (c Custom) validateString(input interface{}) error {
+	strInput := input.(string)
+	length := int64(len(strInput))
 
 	if c.Optional && length == 0 {
 		return nil
 	}
 
 	if c.MinLength != nil && length < *c.MinLength {
-		return fmt.Errorf("%w: length of %v < %v", errInputTooShort, length, c.MinLength)
+		return fmt.Errorf("%w: length of %v < %v", errInputTooShort, length, *c.MinLength)
 	}
 
 	if c.MaxLength != nil && length > *c.MaxLength {
-		return fmt.Errorf("%w: length of %v > %v", errInputTooLong, length, c.MaxLength)
+		return fmt.Errorf("%w: length of %v > %v", errInputTooLong, length, *c.MaxLength)
 	}
 
 	return nil
 }
 
-func (c Custom) validateInt(input string) error {
-	if c.Optional && input == "" {
+func (c Custom) validateInt(input interface{}) error {
+	strInput := input.(string)
+
+	if c.Optional && strInput == "" {
 		return nil
 	}
 
-	value, err := strconv.ParseInt(input, base10, bit64)
+	value, err := strconv.ParseInt(strInput, base10, bit64)
 
 	if err != nil {
 		return errInvalidIntInput
 	}
 
 	if c.MinInt != nil && value < *c.MinInt {
-		return fmt.Errorf("%w: %v < %v", errIntTooLow, value, c.MinInt)
+		return fmt.Errorf("%w: %v < %v", errIntTooLow, value, *c.MinInt)
 	}
 
 	if c.MaxInt != nil && value > *c.MaxInt {
-		return fmt.Errorf("%w: %v > %v", errIntTooHigh, value, c.MinInt)
+		return fmt.Errorf("%w: %v > %v", errIntTooHigh, value, *c.MinInt)
 	}
 
 	return nil
 }
 
-func (c Custom) validateEnum(input string) error {
+func (c Custom) validateEnum(input interface{}) error {
+	var strInput string
+	answer, ok := input.(survey.OptionAnswer)
+	if ok {
+		strInput = answer.Value
+	} else {
+		strInput = input.(string)
+	}
+
 	for _, value := range c.EnumOptions {
-		if input == value {
+		if strInput == value {
 			return nil
 		}
 	}
 
-	return fmt.Errorf("%w: %s", errInvalidEnum, input)
+	return fmt.Errorf("%w: %s", errInvalidEnum, strInput)
 }
 
 // CustomMapFromStrings will parse a CLI argument of strings into a key value map

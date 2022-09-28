@@ -17,7 +17,7 @@ type newConfig struct {
 	afs           afero.Afero
 	cmdOut        io.Writer
 	timeNow       shared.TimeNow
-	stdinReader   io.ReadCloser
+	stdinReader   *os.File
 	templateCache *core.TemplateCache
 }
 

@@ -4,11 +4,10 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"os"
 	"sort"
 	"strings"
 	"time"
-
-	"github.com/manifoldco/promptui"
 
 	"gopkg.in/yaml.v2"
 
@@ -114,13 +113,13 @@ func (change Change) Write(writer io.Writer) error {
 
 type PromptContext struct {
 	config      Config
-	stdinReader io.ReadCloser
+	stdinReader *os.File
 	kind        *KindConfig
 }
 
 // AskPrompts will ask the user prompts based on the configuration
 // updating the change as prompts are answered.
-func (change *Change) AskPrompts(config Config, stdinReader io.ReadCloser) error {
+func (change *Change) AskPrompts(config Config, stdinReader *os.File) error {
 	ctx := PromptContext{
 		config:      config,
 		stdinReader: stdinReader,
@@ -198,15 +197,16 @@ func (change *Change) promptForComponent(ctx *PromptContext) error {
 	}
 
 	if len(change.Component) == 0 {
-		compPrompt := promptui.Select{
-			Label: "Component",
-			Items: ctx.config.Components,
-			Stdin: ctx.stdinReader,
+		compCustom := &Custom{
+			Key:         "Component",
+			Type:        CustomEnum,
+			EnumOptions: ctx.config.Components,
 		}
+		compPrompt, _ := compCustom.CreatePrompt(ctx.stdinReader)
 
 		var err error
 
-		_, change.Component, err = compPrompt.Run()
+		change.Component, err = compPrompt.Run()
 		if err != nil {
 			return err
 		}
@@ -229,15 +229,21 @@ func (change *Change) promptForKind(ctx *PromptContext) error {
 	}
 
 	if len(change.Kind) == 0 {
-		kindPrompt := promptui.Select{
-			Label: "Kind",
-			Items: ctx.config.Kinds,
-			Stdin: ctx.stdinReader,
+		var kindStrings []string
+		for _, kc := range ctx.config.Kinds {
+			kindStrings = append(kindStrings, kc.String())
 		}
+
+		kindCustom := &Custom{
+			Key:         "Kind",
+			Type:        CustomEnum,
+			EnumOptions: kindStrings,
+		}
+		kindPrompt, _ := kindCustom.CreatePrompt(ctx.stdinReader)
 
 		var err error
 
-		_, change.Kind, err = kindPrompt.Run()
+		change.Kind, err = kindPrompt.Run()
 		if err != nil {
 			return err
 		}
@@ -308,13 +314,11 @@ func (change *Change) promptForUserChoices(ctx *PromptContext) error {
 		}
 
 		prompt, err := custom.CreatePrompt(ctx.stdinReader)
-
 		if err != nil {
 			return err
 		}
 
 		change.Custom[custom.Key], err = prompt.Run()
-
 		if err != nil {
 			return err
 		}
