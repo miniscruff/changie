@@ -6,7 +6,6 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/manifoldco/promptui"
 	"github.com/AlecAivazis/survey/v2"
 	"github.com/AlecAivazis/survey/v2/terminal"
 )
@@ -34,15 +33,6 @@ var (
 	bit64                  = 64
 )
 
-type enumWrapper struct {
-	*promptui.Select
-}
-
-func (e *enumWrapper) Run() (string, error) {
-	_, value, err := e.Select.Run()
-	return value, err
-}
-
 // Prompt is a small wrapper around the promptui Run method
 type Prompt interface {
 	Run() (string, error)
@@ -60,6 +50,7 @@ func (sp *surveyPrompt) Run() (string, error) {
 		sp.prompt,
 		&response,
 		survey.WithValidator(sp.validator),
+		survey.WithShowCursor(true),
 	)
 	if err != nil {
 		return "", err
