@@ -11,7 +11,7 @@ require (
 	github.com/onsi/gomega v1.22.1
 	github.com/spf13/afero v1.9.2
 	github.com/spf13/cobra v1.6.0
-	golang.org/x/text v0.3.8
+	golang.org/x/text v0.4.0
 	gopkg.in/yaml.v2 v2.4.0
 )
 
