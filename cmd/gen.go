@@ -69,10 +69,7 @@ var genCmd = &cobra.Command{
 		corePackages := getCorePackages("core")
 
 		writeConfigFrontMatter(file, time.Now)
-		// only way this can fail is a bad writer, but we assume the file is good above
-		// maybe not the best approach but for code generation that is only used internally
-		// it should be fine.
-		_ = genConfigDocs(file, corePackages)
+		genConfigDocs(file, corePackages)
 
 		return doc.GenMarkdownTreeCustom(rootCmd, "docs/content/cli", filePrepender, linkHandler)
 	},
@@ -98,8 +95,8 @@ func linkHandler(name string) string {
 	return "/cli/" + strings.ToLower(base) + "/"
 }
 
-func genConfigDocs(writer io.Writer, corePackages CoreTypes) error {
-	allTypeProps := buildUniqueTypes(writer, corePackages, "Config", "TemplateCache")
+func genConfigDocs(writer io.Writer, corePackages CoreTypes) {
+	allTypeProps := buildUniqueTypes(corePackages, "Config", "TemplateCache")
 
 	// grab our root config and store it so we can sort the rest
 	// but keep Config at the top
@@ -121,12 +118,9 @@ func genConfigDocs(writer io.Writer, corePackages CoreTypes) error {
 		// not ideal but should work
 		_ = writeType(writer, typeProps)
 	}
-
-	return nil
 }
 
 func buildUniqueTypes(
-	writer io.Writer,
 	coreTypes CoreTypes,
 	packageName ...string,
 ) []TypeProps {
