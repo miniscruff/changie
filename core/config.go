@@ -131,6 +131,7 @@ type NewlinesConfig struct {
 // PostProcessConfig allows adding additional custom values to a change fragment
 // after all the other inputs are complete.
 // This will add additional keys to the `custom` section of the fragment.
+// If the key already exists as part of a custom choice the value will be overriden.
 type PostProcessConfig struct {
 	// Key to save the custom value with
 	Key string `yaml:"key"`
@@ -285,13 +286,13 @@ type Config struct {
 	Newlines NewlinesConfig `yaml:"newlines,omitempty"`
 	// Post process options when saving a new change fragment.
 	// example: yaml
-	// # build a GitHub URL from author choice
+	// # build a GitHub link from author choice
 	// post:
-	// - key: GithubAuthorURL
+	// - key: AuthorLink
 	//   value: "https://github.com/{{.Custom.Author}}
-	// changeFormat: "* {{.Body}} by [{{.Custom.Author}}]({{.Custom.GithubAUthor}})
+	// changeFormat: "* {{.Body}} by [{{.Custom.Author}}]({{.Custom.AuthorLink}})"
 	Post []PostProcessConfig `yaml:"post,omitempty"`
-	// Prefix of environment variables to load for any template.
+	// Prefix of environment variables to load for templates.
 	// The prefix is removed from resulting key map.
 	// example: yaml
 	// # if we have an environment variable like so:
