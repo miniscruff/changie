@@ -316,13 +316,17 @@ var _ = Describe("Batch", func() {
 		batchIncludeDirs = []string{"beta"}
 		batchPrereleaseFlag = []string{"b1"}
 		batchMetaFlag = []string{"hash"}
+		testConfig.EnvPrefix = "TEST_CHANGIE_"
 		testConfig.HeaderFormat = "{{ bodies .Changes | len }} changes this release"
 		testConfig.ChangeFormat = "* {{.Body}} by {{.Custom.Author}}"
 		testConfig.FooterFormat = `### contributors
 {{- range (customs .Changes "Author" | uniq) }}
 * [{{.}}](https://github.com/{{.}})
-{{- end}}`
+{{- end}}
+env: {{.Env.ENV_KEY}}`
 		Expect(testConfig.Save(afs.WriteFile)).To(Succeed())
+
+		os.Setenv("TEST_CHANGIE_ENV_KEY", "env value")
 
 		writeChangeFile(core.Change{
 			Kind: "added",
@@ -355,7 +359,8 @@ var _ = Describe("Batch", func() {
 * E by otherAuthor
 ### contributors
 * [miniscruff](https://github.com/miniscruff)
-* [otherAuthor](https://github.com/otherAuthor)`
+* [otherAuthor](https://github.com/otherAuthor)
+env: env value`
 
 		complicatedVerPath := filepath.Join("news", "v0.2.0-b1+hash.md")
 		Expect(complicatedVerPath).To(HaveContents(afs, verContents))

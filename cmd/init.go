@@ -68,6 +68,7 @@ func runInit(cmd *cobra.Command, args []string) error {
 			BeforeChangelogVersion: 1,
 			EndOfVersion:           1,
 		},
+		EnvPrefix: "CHANGIE_",
 	}
 
 	afs := afero.Afero{Fs: afero.NewOsFs()}
