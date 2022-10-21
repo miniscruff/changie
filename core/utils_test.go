@@ -347,4 +347,43 @@ var _ = Describe("Utils", func() {
 		err := WriteNewlines(&writer, 3)
 		Expect(err).To(Equal(errMock))
 	})
+
+	It("can split env vars", func() {
+		vars := []string{
+			"A=b",
+			"B=5+5=10",
+			"CHANGIE_NAME=some_name",
+		}
+		Expect(EnvVarMap(vars)).To(Equal(map[string]string{
+			"A":            "b",
+			"B":            "5+5=10",
+			"CHANGIE_NAME": "some_name",
+		}))
+	})
+
+	It("does not load any env vars if no config", func() {
+		cfg := Config{}
+		vars := []string{
+			"A=b",
+			"B=5+5=10",
+			"CHANGIE_NAME=some_name",
+		}
+		envs := LoadEnvVars(&cfg, vars)
+		Expect(envs).To(BeEmpty())
+	})
+
+	It("loads envs with prefix", func() {
+		cfg := Config{
+			EnvPrefix: "CHANGIE_",
+		}
+		vars := []string{
+			"A=b",
+			"B=5+5=10",
+			"CHANGIE_NAME=some_name",
+		}
+		envs := LoadEnvVars(&cfg, vars)
+		Expect(envs).To(Equal(map[string]string{
+			"NAME": "some_name",
+		}))
+	})
 })

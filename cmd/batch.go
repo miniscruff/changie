@@ -195,6 +195,7 @@ func getBatchData(
 		Prerelease:      currentVersion.Prerelease(),
 		Metadata:        currentVersion.Metadata(),
 		Changes:         allChanges,
+		Env:             config.EnvVars(),
 	}, nil
 }
 
@@ -349,6 +350,7 @@ func (b *standardBatchPipeline) GetChanges(
 			return changes, err
 		}
 
+		c.Env = config.EnvVars()
 		changes = append(changes, c)
 	}
 
@@ -428,6 +430,7 @@ func (b *standardBatchPipeline) WriteChanges(
 				config.Newlines.AfterComponent,
 				core.ComponentData{
 					Component: lastComponent,
+					Env:       config.EnvVars(),
 				},
 			)
 			if err != nil {
@@ -446,6 +449,7 @@ func (b *standardBatchPipeline) WriteChanges(
 				config.Newlines.AfterKind,
 				core.KindData{
 					Kind: lastKind,
+					Env:  config.EnvVars(),
 				},
 			)
 			if err != nil {
