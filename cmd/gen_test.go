@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"go/ast"
 	godoc "go/doc"
+	"go/token"
 	"os"
 	"path/filepath"
 	"strings"
@@ -151,7 +152,7 @@ var _ = Describe("Gen", func() {
 		queue := make([]string, 0)
 		field := &ast.Field{
 			Names: []*ast.Ident{
-				{Name: "MyVar"},
+				{Name: "MyVar", NamePos: 1},
 			},
 			Doc: &ast.CommentGroup{
 				List: []*ast.Comment{
@@ -161,8 +162,11 @@ var _ = Describe("Gen", func() {
 			Type: &ast.Ellipsis{},
 		}
 
+		fset := token.NewFileSet()
+		_ = fset.AddFile("file.go", -1, 1000)
+
 		Expect(func() {
-			_ = buildField(field, corePackages, &queue)
+			_ = buildField(fset, field, corePackages, &queue)
 		}).To(Panic())
 	})
 })
@@ -174,8 +178,13 @@ var _ = DescribeTable(
 		// include one package so we can check is custom type
 		corePackages["MyOptionalType"] = nil
 		queue := make([]string, 0)
+		fset := token.NewFileSet()
+		_ = fset.AddFile("a.go", -1, 100)
+		_ = fset.AddFile("b.go", -1, 100)
+		_ = fset.AddFile("c.go", -1, 100)
+		_ = fset.AddFile("d.go", -1, 100)
 
-		props := buildType(docType, corePackages, &queue)
+		props := buildType(fset, docType, corePackages, &queue)
 		Expect(props).To(Equal(output))
 		Expect(queue).To(Equal(expectedQueue))
 	},
@@ -188,23 +197,33 @@ example: yaml
 here is an example`,
 			Methods: []*godoc.Func{{
 				Name: "MyFuncWithExample",
+				Decl: &ast.FuncDecl{
+					Type: &ast.FuncType{
+						Func: 250,
+					},
+				},
 				Doc: `Some func description
 example: yaml
 has example`,
 			}},
 			Decl: &ast.GenDecl{
-				Specs: []ast.Spec{},
+				TokPos: 1,
+				Specs:  []ast.Spec{},
 			},
 		},
 		TypeProps{
 			Name:           "MyType",
 			Doc:            "Type docs\n",
+			File:           "a.go",
+			Line:           1,
 			ExampleLang:    "yaml",
 			ExampleContent: "here is an example",
 			Fields: []FieldProps{
 				{
 					Name:           "MyFuncWithExample",
 					Key:            "myfuncwithexample",
+					File:           "c.go",
+					Line:           1,
 					TypeName:       "",
 					Doc:            "Some func description\n",
 					ExampleLang:    "yaml",
@@ -224,17 +243,27 @@ has example`,
 			Doc:     "Type docs",
 			Methods: []*godoc.Func{},
 			Decl: &ast.GenDecl{
+				TokPos: 1,
 				Specs: []ast.Spec{
 					&ast.TypeSpec{
+						Name: &ast.Ident{
+							Name: "RandomInterface",
+							NamePos: 10,
+						},
 						Type: &ast.InterfaceType{},
 					},
 					&ast.TypeSpec{
+						Name: &ast.Ident{
+							Name: "ParentType",
+							NamePos: 30,
+						},
 						Type: &ast.StructType{
+							Struct: 150,
 							Fields: &ast.FieldList{
 								List: []*ast.Field{
 									{
 										Names: []*ast.Ident{
-											{Name: "OtherVar"},
+											{Name: "OtherVar", NamePos: 250},
 										},
 										Doc: &ast.CommentGroup{
 											List: []*ast.Comment{
@@ -247,7 +276,7 @@ has example`,
 									},
 									{
 										Names: []*ast.Ident{
-											{Name: "MyVar"},
+											{Name: "MyVar", NamePos: 350},
 										},
 										Doc: &ast.CommentGroup{
 											List: []*ast.Comment{
@@ -268,6 +297,8 @@ has example`,
 		TypeProps{
 			Name:           "MyType",
 			Doc:            "Type docs",
+			File:           "a.go",
+			Line:           1,
 			ExampleLang:    "",
 			ExampleContent: "",
 			Fields: []FieldProps{
@@ -276,6 +307,8 @@ has example`,
 					Key:            "MyVar",
 					TypeName:       "int",
 					Doc:            "myvar docs\n",
+					File: "d.go",
+					Line: 1,
 					ExampleLang:    "",
 					ExampleContent: "",
 					TemplateType:   "",
@@ -287,6 +320,8 @@ has example`,
 					Name:           "OtherVar",
 					Key:            "OtherVar",
 					TypeName:       "string",
+					File: "c.go",
+					Line: 1,
 					Doc:            "othervar docs\n",
 					ExampleLang:    "",
 					ExampleContent: "",
@@ -305,18 +340,27 @@ has example`,
 var _ = DescribeTable(
 	"build method",
 	func(method *godoc.Func, output FieldProps) {
-		props := buildMethod(method)
+		fset := token.NewFileSet()
+		_ = fset.AddFile("file.go", -1, 1000)
+		props := buildMethod(fset, method)
 		Expect(props).To(Equal(output))
 	},
 	Entry(
 		"method",
 		&godoc.Func{
 			Name: "MyFunc",
-			Doc:  "Func docs",
+			Decl: &ast.FuncDecl{
+				Type: &ast.FuncType{
+					Func: 1,
+				},
+			},
+			Doc: "Func docs",
 		},
 		FieldProps{
 			Name:           "MyFunc",
 			Key:            "myfunc",
+			File:           "file.go",
+			Line:           1,
 			TypeName:       "",
 			Doc:            "Func docs",
 			ExampleLang:    "",
@@ -331,6 +375,11 @@ var _ = DescribeTable(
 		"method with example",
 		&godoc.Func{
 			Name: "MyFuncWithExample",
+			Decl: &ast.FuncDecl{
+				Type: &ast.FuncType{
+					Func: 1,
+				},
+			},
 			Doc: `Some func description
 example: yaml
 doSomething: '{{.Body}}'
@@ -340,6 +389,8 @@ doSomething: '{{.Body}}'
 			Name:           "MyFuncWithExample",
 			Key:            "myfuncwithexample",
 			TypeName:       "",
+			File:           "file.go",
+			Line:           1,
 			Doc:            "Some func description\n",
 			ExampleLang:    "yaml",
 			ExampleContent: "doSomething: '{{.Body}}'\n",
@@ -358,8 +409,10 @@ var _ = DescribeTable(
 		// include one package so we can check is custom type
 		corePackages["MyOptionalType"] = nil
 		queue := make([]string, 0)
+		fset := token.NewFileSet()
+		_ = fset.AddFile("file.go", -1, 1000)
 
-		props := buildField(field, corePackages, &queue)
+		props := buildField(fset, field, corePackages, &queue)
 		Expect(props).To(Equal(output))
 		Expect(queue).To(Equal(expectedQueue))
 	},
@@ -367,7 +420,7 @@ var _ = DescribeTable(
 		"identifier",
 		&ast.Field{
 			Names: []*ast.Ident{
-				{Name: "MyVar"},
+				{Name: "MyVar", NamePos: 1},
 			},
 			Doc: &ast.CommentGroup{
 				List: []*ast.Comment{
@@ -382,6 +435,8 @@ var _ = DescribeTable(
 			Name:           "MyVar",
 			Key:            "MyVar",
 			TypeName:       "MyType",
+			File:           "file.go",
+			Line:           1,
 			Doc:            "This is our var docs\n",
 			ExampleLang:    "",
 			ExampleContent: "",
@@ -396,7 +451,7 @@ var _ = DescribeTable(
 		"required slice with an example",
 		&ast.Field{
 			Names: []*ast.Ident{
-				{Name: "MySliceVar"},
+				{Name: "MySliceVar", NamePos: 1},
 			},
 			Doc: &ast.CommentGroup{
 				List: []*ast.Comment{
@@ -414,6 +469,8 @@ var _ = DescribeTable(
 			Name:           "MySliceVar",
 			Key:            "mySliceVar",
 			TypeName:       "MySliceType",
+			File:           "file.go",
+			Line:           1,
 			Doc:            "This is a slice with an example\n",
 			ExampleLang:    "yaml",
 			ExampleContent: "mySliceVar: [1, 2, 3]\n",
@@ -428,7 +485,7 @@ var _ = DescribeTable(
 		"pointer with template type",
 		&ast.Field{
 			Names: []*ast.Ident{
-				{Name: "Optional"},
+				{Name: "Optional", NamePos: 1},
 			},
 			Type: &ast.StarExpr{
 				X: &ast.Ident{Name: "MyOptionalType"},
@@ -439,6 +496,8 @@ var _ = DescribeTable(
 			Name:           "Optional",
 			Key:            "optional",
 			TypeName:       "MyOptionalType",
+			File:           "file.go",
+			Line:           1,
 			Doc:            "",
 			ExampleLang:    "",
 			ExampleContent: "",
@@ -454,7 +513,7 @@ var _ = DescribeTable(
 		"selector expressions",
 		&ast.Field{
 			Names: []*ast.Ident{
-				{Name: "MyVarName"},
+				{Name: "MyVarName", NamePos: 1},
 			},
 			Type: &ast.SelectorExpr{
 				Sel: &ast.Ident{Name: "MySelectorType"},
@@ -464,6 +523,8 @@ var _ = DescribeTable(
 			Name:           "MyVarName",
 			Key:            "MyVarName",
 			TypeName:       "MySelectorType",
+			File:           "file.go",
+			Line:           1,
 			Doc:            "",
 			ExampleLang:    "",
 			ExampleContent: "",
@@ -478,7 +539,7 @@ var _ = DescribeTable(
 		"map type",
 		&ast.Field{
 			Names: []*ast.Ident{
-				{Name: "MyMap"},
+				{Name: "MyMap", NamePos: 1},
 			},
 			Type: &ast.MapType{
 				Key:   &ast.Ident{Name: "string"},
@@ -488,6 +549,8 @@ var _ = DescribeTable(
 		FieldProps{
 			Name:             "MyMap",
 			Key:              "MyMap",
+			File:             "file.go",
+			Line:             1,
 			TypeName:         "",
 			MapKeyTypeName:   "string",
 			MapValueTypeName: "string",
@@ -522,16 +585,20 @@ var _ = DescribeTable(
 		"basic type with field",
 		TypeProps{
 			Name: "Minimum",
+			File: "core/mini.go",
+			Line: 22,
 			Doc:  "type description",
 			Fields: []FieldProps{{
 				Name: "MyField",
 				Key:  "myField",
+				File: "core/field.go",
+				Line: 13,
 				Doc:  "field description",
 			}},
 		},
-		`## Minimum {#minimum-type}
+		`## Minimum {{< source name="Minimum" file="core/mini.go" line="22" >}} {#minimum-type}
 type description
-### myField {#minimum-myfield}
+### myField {{< source name="MyField" file="core/field.go" line="13" >}} {#minimum-myfield}
 
 
 field description
@@ -551,11 +618,13 @@ field description
 		"type with example",
 		TypeProps{
 			Name:           "Minimum",
+			File:           "core/config.go",
+			Line:           15,
 			Doc:            "type description",
 			ExampleLang:    "yaml",
 			ExampleContent: "type: '{{.Thing}}'",
 		},
-		`## Minimum {#minimum-type}
+		`## Minimum {{< source name="Minimum" file="core/config.go" line="15" >}} {#minimum-type}
 type description
 
 {{< expand "Example" "yaml" >}}
@@ -584,9 +653,11 @@ var _ = DescribeTable(
 		FieldProps{
 			Name: "Minimum",
 			Key:  "minimum",
+			File: "mini.go",
+			Line: 29,
 			Doc:  "field description",
 		},
-		`### minimum {#parent-minimum}
+		`### minimum {{< source name="Minimum" file="mini.go" line="29" >}} {#parent-minimum}
 
 
 field description
@@ -596,12 +667,14 @@ field description
 		FieldProps{
 			Name:         "Minimum",
 			Key:          "minimum",
+			File:         "mini.go",
+			Line:         28,
 			Doc:          "field description",
 			TypeName:     "Animal",
 			Required:     true,
 			IsCustomType: true,
 		},
-		`### minimum {#parent-minimum}
+		`### minimum {{< source name="Minimum" file="mini.go" line="28" >}} {#parent-minimum}
 type: [Animal](#animal-type) | required
 
 field description
@@ -612,11 +685,13 @@ field description
 			Name:     "Minimum",
 			Key:      "minimum",
 			TypeName: "string",
+			File:     "mini.go",
+			Line:     27,
 			Required: false,
 			Slice:    true,
 			Doc:      "field description",
 		},
-		fmt.Sprintf(`### minimum {#parent-minimum}
+		fmt.Sprintf(`### minimum {{< source name="Minimum" file="mini.go" line="27" >}} {#parent-minimum}
 type: %v | optional
 
 field description
@@ -626,11 +701,13 @@ field description
 		FieldProps{
 			Name:             "Minimum",
 			Key:              "minimum",
+			File:             "mini.go",
+			Line:             26,
 			Doc:              "field description",
 			MapKeyTypeName:   "string",
 			MapValueTypeName: "string",
 		},
-		fmt.Sprintf(`### minimum {#parent-minimum}
+		fmt.Sprintf(`### minimum {{< source name="Minimum" file="mini.go" line="26" >}} {#parent-minimum}
 type: map [ %v ] %v | optional
 
 field description
@@ -641,12 +718,14 @@ field description
 			Name:         "Minimum",
 			Key:          "minimum",
 			Doc:          "field description",
+			File:         "mini.go",
+			Line:         25,
 			TypeName:     "string",
 			IsCustomType: false,
 			Required:     false,
 			TemplateType: "Kitchen",
 		},
-		fmt.Sprintf(`### minimum {#parent-minimum}
+		fmt.Sprintf(`### minimum {{< source name="Minimum" file="mini.go" line="25" >}} {#parent-minimum}
 type: %v | optional | template type: [Kitchen](#kitchen-type)
 
 field description
@@ -656,11 +735,13 @@ field description
 		FieldProps{
 			Name:           "Minimum",
 			Key:            "minimum",
+			File:           "mini.go",
+			Line:           24,
 			Doc:            "field description",
 			ExampleLang:    "yaml",
 			ExampleContent: "format: '{{.Body}}'",
 		},
-		`### minimum {#parent-minimum}
+		`### minimum {{< source name="Minimum" file="mini.go" line="24" >}} {#parent-minimum}
 
 
 field description
