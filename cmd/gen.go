@@ -325,31 +325,36 @@ func buildField(fset *token.FileSet, field *ast.Field, coreTypes CoreTypes, queu
 	_, isCoreType := coreTypes[props.TypeName]
 	props.IsCustomType = isCoreType
 	props.Key = props.Name
+	parseFieldStructTags(field, &props, queue)
 
-	if field.Tag != nil {
-		tags := reflect.StructTag(strings.Trim(field.Tag.Value, "`"))
+	return props
+}
 
-		if yaml, ok := tags.Lookup("yaml"); ok {
-			// yaml can include more than a name, but its the first word separated by comma
-			key, _, _ := strings.Cut(yaml, ",")
-			if key != "" {
-				props.Key = key
-			} else {
-				props.Key = strings.ToLower(props.Key)
-			}
-		}
+func parseFieldStructTags(field *ast.Field, props *FieldProps, queue *[]string) {
+	if field.Tag == nil {
+		return
+	}
 
-		if isRequired, ok := tags.Lookup("required"); ok {
-			props.Required = isRequired == "true"
-		}
+	tags := reflect.StructTag(strings.Trim(field.Tag.Value, "`"))
 
-		if templateType, ok := tags.Lookup("templateType"); ok {
-			props.TemplateType = templateType
-			*queue = append(*queue, templateType)
+	if yaml, ok := tags.Lookup("yaml"); ok {
+		// yaml can include more than a name, but its the first word separated by comma
+		key, _, _ := strings.Cut(yaml, ",")
+		if key != "" && key != "-" {
+			props.Key = key
+		} else {
+			props.Key = strings.ToLower(props.Key)
 		}
 	}
 
-	return props
+	if isRequired, ok := tags.Lookup("required"); ok {
+		props.Required = isRequired == "true"
+	}
+
+	if templateType, ok := tags.Lookup("templateType"); ok {
+		props.TemplateType = templateType
+		*queue = append(*queue, templateType)
+	}
 }
 
 func writeType(writer io.Writer, typeProps TypeProps) error {

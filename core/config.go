@@ -131,7 +131,7 @@ type NewlinesConfig struct {
 // PostProcessConfig allows adding additional custom values to a change fragment
 // after all the other inputs are complete.
 // This will add additional keys to the `custom` section of the fragment.
-// If the key already exists as part of a custom choice the value will be overriden.
+// If the key already exists as part of a custom choice the value will be overridden.
 type PostProcessConfig struct {
 	// Key to save the custom value with
 	Key string `yaml:"key"`

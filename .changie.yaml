@@ -23,3 +23,7 @@ custom:
 - key: Issue
   type: int
   minInt: 1
+replacements:
+- path: 'docs/config.toml'
+  find: "  version = '.*"
+  replace: "  version = '{{.Version}}'"
