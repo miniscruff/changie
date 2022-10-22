@@ -33,6 +33,8 @@ type CoreTypes map[string]*godoc.Type
 type TypeProps struct {
 	Name           string
 	Doc            string
+	File           string
+	Line           int
 	ExampleLang    string
 	ExampleContent string
 	Fields         []FieldProps
@@ -40,11 +42,13 @@ type TypeProps struct {
 
 type FieldProps struct {
 	Name             string
-	Key              string
 	TypeName         string
+	Doc              string
+	File             string
+	Line             int
+	Key              string
 	MapKeyTypeName   string
 	MapValueTypeName string
-	Doc              string
 	ExampleLang      string
 	ExampleContent   string
 	TemplateType     string
@@ -66,13 +70,10 @@ var genCmd = &cobra.Command{
 
 		defer file.Close()
 
-		corePackages := getCorePackages("core")
+		fset, corePackages := getCorePackages("core")
 
 		writeConfigFrontMatter(file, time.Now)
-		// only way this can fail is a bad writer, but we assume the file is good above
-		// maybe not the best approach but for code generation that is only used internally
-		// it should be fine.
-		_ = genConfigDocs(file, corePackages)
+		genConfigDocs(fset, file, corePackages)
 
 		return doc.GenMarkdownTreeCustom(rootCmd, "docs/content/cli", filePrepender, linkHandler)
 	},
@@ -98,8 +99,8 @@ func linkHandler(name string) string {
 	return "/cli/" + strings.ToLower(base) + "/"
 }
 
-func genConfigDocs(writer io.Writer, corePackages CoreTypes) error {
-	allTypeProps := buildUniqueTypes(writer, corePackages, "Config", "TemplateCache")
+func genConfigDocs(fset *token.FileSet, writer io.Writer, corePackages CoreTypes) {
+	allTypeProps := buildUniqueTypes(fset, corePackages, "Config", "TemplateCache")
 
 	// grab our root config and store it so we can sort the rest
 	// but keep Config at the top
@@ -121,12 +122,10 @@ func genConfigDocs(writer io.Writer, corePackages CoreTypes) error {
 		// not ideal but should work
 		_ = writeType(writer, typeProps)
 	}
-
-	return nil
 }
 
 func buildUniqueTypes(
-	writer io.Writer,
+	fset *token.FileSet,
 	coreTypes CoreTypes,
 	packageName ...string,
 ) []TypeProps {
@@ -155,14 +154,14 @@ func buildUniqueTypes(
 
 		completed[typeName] = struct{}{}
 
-		typeProps := buildType(docType, coreTypes, &typeQueue)
+		typeProps := buildType(fset, docType, coreTypes, &typeQueue)
 		allTypeProps = append(allTypeProps, typeProps)
 	}
 
 	return allTypeProps
 }
 
-func getCorePackages(packageName string) CoreTypes {
+func getCorePackages(packageName string) (*token.FileSet, CoreTypes) {
 	corePackages := make(CoreTypes)
 	packagePath := fmt.Sprintf("./%v", packageName)
 
@@ -176,7 +175,7 @@ func getCorePackages(packageName string) CoreTypes {
 		corePackages[t.Name] = t
 	}
 
-	return corePackages
+	return fset, corePackages
 }
 
 func writeConfigFrontMatter(writer io.Writer, nower func() time.Time) {
@@ -189,10 +188,15 @@ singlePage: true
 `, nower())))
 }
 
-func buildType(docType *godoc.Type, coreTypes CoreTypes, queue *[]string) TypeProps {
+func buildType(fset *token.FileSet, docType *godoc.Type, coreTypes CoreTypes, queue *[]string) TypeProps {
+	tokPos := docType.Decl.TokPos
+	typeFile := fset.File(tokPos)
+
 	typeProps := TypeProps{
 		Name: docType.Name,
 		Doc:  docType.Doc,
+		File: typeFile.Name(),
+		Line: typeFile.Position(tokPos).Line,
 	}
 
 	fieldProps := make([]FieldProps, 0)
@@ -201,7 +205,7 @@ func buildType(docType *godoc.Type, coreTypes CoreTypes, queue *[]string) TypePr
 	// kind of an arbitrary rule but it works for now.
 	for _, method := range docType.Methods {
 		if strings.Contains(method.Doc, "example:") {
-			newField := buildMethod(method)
+			newField := buildMethod(fset, method)
 			fieldProps = append(fieldProps, newField)
 		}
 	}
@@ -223,7 +227,7 @@ func buildType(docType *godoc.Type, coreTypes CoreTypes, queue *[]string) TypePr
 		}
 
 		for _, field := range structType.Fields.List {
-			newField := buildField(field, coreTypes, queue)
+			newField := buildField(fset, field, coreTypes, queue)
 			fieldProps = append(fieldProps, newField)
 		}
 	}
@@ -240,9 +244,14 @@ func buildType(docType *godoc.Type, coreTypes CoreTypes, queue *[]string) TypePr
 	return typeProps
 }
 
-func buildMethod(method *godoc.Func) FieldProps {
+func buildMethod(fset *token.FileSet, method *godoc.Func) FieldProps {
+	tokPos := method.Decl.Pos()
+	tokenFile := fset.File(tokPos)
+
 	props := FieldProps{
 		Name:         method.Name,
+		File:         tokenFile.Name(),
+		Line:         tokenFile.Line(tokPos),
 		Doc:          method.Doc,
 		Key:          strings.ToLower(method.Name),
 		IsCustomType: false,
@@ -260,9 +269,14 @@ func buildMethod(method *godoc.Func) FieldProps {
 	return props
 }
 
-func buildField(field *ast.Field, coreTypes CoreTypes, queue *[]string) FieldProps {
+func buildField(fset *token.FileSet, field *ast.Field, coreTypes CoreTypes, queue *[]string) FieldProps {
+	tokPos := field.Pos()
+	tokenFile := fset.File(tokPos)
+
 	props := FieldProps{
 		Name:  field.Names[0].Name,
+		File:  tokenFile.Name(),
+		Line:  tokenFile.Line(tokPos),
 		Doc:   field.Doc.Text(),
 		Slice: false,
 	}
@@ -311,39 +325,45 @@ func buildField(field *ast.Field, coreTypes CoreTypes, queue *[]string) FieldPro
 	_, isCoreType := coreTypes[props.TypeName]
 	props.IsCustomType = isCoreType
 	props.Key = props.Name
+	parseFieldStructTags(field, &props, queue)
 
-	if field.Tag != nil {
-		tags := reflect.StructTag(strings.Trim(field.Tag.Value, "`"))
+	return props
+}
 
-		if yaml, ok := tags.Lookup("yaml"); ok {
-			// yaml can include more than a name, but its the first word separated by comma
-			key, _, _ := strings.Cut(yaml, ",")
-			if key != "" {
-				props.Key = key
-			} else {
-				props.Key = strings.ToLower(props.Key)
-			}
-		}
+func parseFieldStructTags(field *ast.Field, props *FieldProps, queue *[]string) {
+	if field.Tag == nil {
+		return
+	}
 
-		if isRequired, ok := tags.Lookup("required"); ok {
-			props.Required = isRequired == "true"
-		}
+	tags := reflect.StructTag(strings.Trim(field.Tag.Value, "`"))
 
-		if templateType, ok := tags.Lookup("templateType"); ok {
-			props.TemplateType = templateType
-			*queue = append(*queue, templateType)
+	if yaml, ok := tags.Lookup("yaml"); ok {
+		// yaml can include more than a name, but its the first word separated by comma
+		key, _, _ := strings.Cut(yaml, ",")
+		if key != "" && key != "-" {
+			props.Key = key
+		} else {
+			props.Key = strings.ToLower(props.Key)
 		}
 	}
 
-	return props
+	if isRequired, ok := tags.Lookup("required"); ok {
+		props.Required = isRequired == "true"
+	}
+
+	if templateType, ok := tags.Lookup("templateType"); ok {
+		props.TemplateType = templateType
+		*queue = append(*queue, templateType)
+	}
 }
 
 func writeType(writer io.Writer, typeProps TypeProps) error {
 	// Do not write our root Config type header
 	if typeProps.Name != "Config" {
 		_, err := writer.Write([]byte(fmt.Sprintf(
-			"## %s {#%s-type}\n%s\n",
+			"## %s %v {#%s-type}\n%s\n",
 			typeProps.Name,
+			buildSourceLink(typeProps.Name, typeProps.File, typeProps.Line),
 			strings.ToLower(typeProps.Name),
 			typeProps.Doc,
 		)))
@@ -382,8 +402,9 @@ func writeField(writer io.Writer, parent TypeProps, field FieldProps) error {
 	}
 
 	_, err := writer.Write([]byte(fmt.Sprintf(
-		"### %s {#%s-%s}\n",
+		"### %s %v {#%s-%s}\n",
 		field.Key,
+		buildSourceLink(field.Name, field.File, field.Line),
 		strings.ToLower(parent.Name),
 		strings.ToLower(field.Key),
 	)))
@@ -447,4 +468,12 @@ func writeField(writer io.Writer, parent TypeProps, field FieldProps) error {
 	_, _ = writer.Write([]byte("\n"))
 
 	return nil
+}
+
+func buildSourceLink(name, fileName string, line int) string {
+	return fmt.Sprintf("{{< source name=\"%v\" file=\"%v\" line=\"%v\" >}}",
+		name,
+		strings.ReplaceAll(fileName, "\\", "/"),
+		line,
+	)
 }

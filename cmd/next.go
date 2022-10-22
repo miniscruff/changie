@@ -22,7 +22,7 @@ var nextCmd = &cobra.Command{
 Check latest version and increment part (major, minor, patch).
 Echo the next release version number to be used by CI tools or other commands like batch.`,
 	ValidArgs: []string{"major", "minor", "patch"},
-	Args:      cobra.ExactValidArgs(1),
+	Args:      cobra.MatchAll(cobra.ExactArgs(1), cobra.OnlyValidArgs),
 	RunE:      runNext,
 }
 

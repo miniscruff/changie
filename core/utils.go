@@ -176,3 +176,29 @@ func WriteNewlines(writer io.Writer, lines int) error {
 
 	return err
 }
+
+func EnvVarMap(environ []string) map[string]string {
+	ret := make(map[string]string)
+
+	for _, env := range environ {
+		split := strings.SplitN(env, "=", 2)
+		ret[split[0]] = split[1]
+	}
+
+	return ret
+}
+
+func LoadEnvVars(config *Config, envs []string) map[string]string {
+	ret := make(map[string]string)
+	if config.EnvPrefix == "" {
+		return ret
+	}
+
+	for k, v := range EnvVarMap(envs) {
+		if strings.HasPrefix(k, config.EnvPrefix) {
+			ret[strings.TrimPrefix(k, config.EnvPrefix)] = v
+		}
+	}
+
+	return ret
+}

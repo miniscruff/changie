@@ -13,6 +13,16 @@ if (content) {
     addHeaderAnchors(content);
 }
 
+// due to a hugo issue the source icons mess up toc labels
+// but we can fix that by removing text pass the first space
+// as all our toc values in config are one word
+var toc = document.getElementById("TableOfContents")
+if (toc) {
+    for (ele of toc.getElementsByTagName("a")) {
+        ele.innerHTML = ele.innerHTML.split(" ")[0];
+    }
+}
+
 function addHeaderAnchors(content) {
     var headers = content.querySelectorAll('h1, h2, h3, h4');
     // SVG data from https://iconmonstr.com/link-1-svg/
@@ -33,3 +43,4 @@ function addHeaderAnchors(content) {
         }
     }
 }
+

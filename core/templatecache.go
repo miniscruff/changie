@@ -29,18 +29,27 @@ type BatchData struct {
 	Metadata string
 	// Changes included in the batch
 	Changes []Change
+	// Env vars configured by the system.
+	// See [envPrefix](#config-envprefix) for configuration.
+	Env map[string]string
 }
 
 // Component data stores data related to writing component headers.
 type ComponentData struct {
 	// Name of the component
 	Component string `required:"true"`
+	// Env vars configured by the system.
+	// See [envPrefix](#config-envprefix) for configuration.
+	Env map[string]string
 }
 
 // Kind data stores data related to writing kind headers.
 type KindData struct {
 	// Name of the kind
 	Kind string `required:"true"`
+	// Env vars configured by the system.
+	// See [envPrefix](#config-envprefix) for configuration.
+	Env map[string]string
 }
 
 // Template cache handles running all the templates for change fragments.

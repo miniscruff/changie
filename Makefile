@@ -18,7 +18,7 @@ lint:
 gen:
 	go run main.go gen
 
-docs-serve:
+docs-serve: gen
 	hugo serve -s docs
 
 docs-build: gen

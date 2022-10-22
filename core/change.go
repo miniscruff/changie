@@ -102,6 +102,12 @@ type Change struct {
 	//   type: int
 	// changeFormat: "{{.Body}} from #{{.Custom.Issue}}"
 	Custom map[string]string `yaml:",omitempty" default:"nil"`
+	// Env vars configured by the system.
+	// This is not written in change fragments but instead loaded by the system and accessible for templates.
+	// For example if you want to use an env var in [change format](#config-changeformat) you can,
+	// but env vars configured when executing `changie new` will not be saved.
+	// See [envPrefix](#config-envprefix) for configuration.
+	Env map[string]string `yaml:"-" default:"nil"`
 }
 
 // SaveUnreleased will save an unreleased change to the unreleased directory

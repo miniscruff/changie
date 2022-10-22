@@ -15,11 +15,6 @@ linters-settings:
     local-prefixes: github.com/miniscruff/changie
   golint:
     min-confidence: 0
-  gomnd:
-    settings:
-      mnd:
-        # don't include the "operation" and "assign"
-        checks: argument,case,condition,return
   govet:
     check-shadowing: true
   misspell:
@@ -32,7 +27,6 @@ linters-settings:
 linters:
   enable:
     - bodyclose
-    - deadcode
     - depguard
     - dogsled
     - dupl
@@ -44,7 +38,6 @@ linters:
     - gocyclo
     - gofmt
     - goimports
-    - gomnd
     - goprintffuncname
     - gosec
     - gosimple
@@ -56,26 +49,10 @@ linters:
     - nolintlint
     - rowserrcheck
     - staticcheck
-    - structcheck
     - stylecheck
     - typecheck
     - unconvert
     - unparam
     - unused
-    - varcheck
     - whitespace
     - wsl
-  # don't enable:
-  # - asciicheck
-  # - gochecknoglobals
-  # - gochecknoinits - required for cobra flags
-  # - gocognit
-  # - godot
-  # - godox these are the TODO panics
-  # - goerr113
-  # - lll - some doc lines are too long
-  # - maligned
-  # - nestif
-  # - prealloc
-  # - testpackage
-  # - wsl
