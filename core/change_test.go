@@ -132,6 +132,27 @@ var _ = Describe("Change", func() {
 		Expect(changes[2].Body).To(Equal("third"))
 		Expect(changes[3].Body).To(Equal("fourth"))
 	})
+
+	It("can load env vars", func() {
+		config := Config{
+			EnvPrefix: "TEST_CHANGIE_",
+		}
+
+		Expect(os.Setenv("TEST_CHANGIE_ALPHA", "Beta")).To(Succeed())
+		Expect(os.Setenv("IGNORED", "Delta")).To(Succeed())
+
+		Expect(config.EnvVars()).To(Equal(map[string]string{
+			"ALPHA": "Beta",
+		}))
+
+		Expect(os.Unsetenv("TEST_CHANGIE_ALPHA")).To(Succeed())
+		Expect(os.Unsetenv("IGNORED")).To(Succeed())
+
+		// will use the cached results
+		Expect(config.EnvVars()).To(Equal(map[string]string{
+			"ALPHA": "Beta",
+		}))
+	})
 })
 
 var _ = Describe("Change ask prompts", func() {

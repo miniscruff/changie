@@ -131,6 +131,7 @@ type NewlinesConfig struct {
 // PostProcessConfig allows adding additional custom values to a change fragment
 // after all the other inputs are complete.
 // This will add additional keys to the `custom` section of the fragment.
+// If the key already exists as part of a custom choice the value will be overridden.
 type PostProcessConfig struct {
 	// Key to save the custom value with
 	Key string `yaml:"key"`
@@ -249,7 +250,6 @@ type Config struct {
 	// Kinds are another optional layer of changelogs suited for specifying what type of change we are
 	// making.
 	// If configured, developers will be prompted to select a kind.
-	// See [kind config](#kindconfig-type) for how to further customize kinds.
 	//
 	// The default list comes from keep a changelog and includes; added, changed, removed, deprecated, fixed, and security.
 	// example: yaml
@@ -285,10 +285,27 @@ type Config struct {
 	// Newline options allow you to add extra lines between elements written by changie.
 	Newlines NewlinesConfig `yaml:"newlines,omitempty"`
 	// Post process options when saving a new change fragment.
+	// example: yaml
+	// # build a GitHub link from author choice
+	// post:
+	// - key: AuthorLink
+	//   value: "https://github.com/{{.Custom.Author}}
+	// changeFormat: "* {{.Body}} by [{{.Custom.Author}}]({{.Custom.AuthorLink}})"
 	Post []PostProcessConfig `yaml:"post,omitempty"`
+	// Prefix of environment variables to load for templates.
+	// The prefix is removed from resulting key map.
+	// example: yaml
+	// # if we have an environment variable like so:
+	// # export CHANGIE_PROJECT=changie
+	// # we can use that in our templates if we set the prefix
+	// envPrefix: "CHANGIE_"
+	// versionFormat: "New release for {{.env.PROJECT}}"
+	EnvPrefix string `yaml:"envPrefix,omitempty"`
+
+	cachedEnvVars map[string]string
 }
 
-func (c Config) KindHeader(label string) string {
+func (c *Config) KindHeader(label string) string {
 	for _, kindConfig := range c.Kinds {
 		if kindConfig.Format != "" && kindConfig.Label == label {
 			return kindConfig.Format
@@ -298,7 +315,7 @@ func (c Config) KindHeader(label string) string {
 	return c.KindFormat
 }
 
-func (c Config) ChangeFormatForKind(label string) string {
+func (c *Config) ChangeFormatForKind(label string) string {
 	for _, kindConfig := range c.Kinds {
 		if kindConfig.ChangeFormat != "" && kindConfig.Label == label {
 			return kindConfig.ChangeFormat
@@ -308,8 +325,16 @@ func (c Config) ChangeFormatForKind(label string) string {
 	return c.ChangeFormat
 }
 
+func (c *Config) EnvVars() map[string]string {
+	if c.cachedEnvVars == nil {
+		c.cachedEnvVars = LoadEnvVars(c, os.Environ())
+	}
+
+	return c.cachedEnvVars
+}
+
 // Save will save the config as a yaml file to the default path
-func (c Config) Save(wf shared.WriteFiler) error {
+func (c *Config) Save(wf shared.WriteFiler) error {
 	bs, _ := yaml.Marshal(&c)
 	return wf(ConfigPaths[0], bs, CreateFileMode)
 }
