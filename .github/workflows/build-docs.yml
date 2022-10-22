@@ -6,7 +6,8 @@ on:
     paths:
     - 'docs/**'
     - 'cmd/**'
-    - 'CHANGELOG.md'
+    - 'core/**'
+    - '*/CHANGELOG.md'
 
 jobs:
 
