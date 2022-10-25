@@ -34,6 +34,19 @@ An [AUR package](https://aur.archlinux.org/packages/changie/) is available.
 trizen -S changie
 ```
 
+## GitHub action
+This [GitHub action](https://github.com/miniscruff/changie-action) can be used.
+
+```yaml
+- name: Batch a new minor version
+  uses: miniscruff/changie-action@version # view action repo for latest version
+  with:
+    version: latest # download the latest changie version
+    args: batch minor
+  env:
+    GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+```
+
 ## Docker
 Docker images are uploaded to [GitHub Packages](https://github.com/miniscruff/changie/pkgs/container/changie).
 
