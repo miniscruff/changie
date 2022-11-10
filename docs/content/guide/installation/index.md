@@ -59,9 +59,9 @@ docker run \
     latest
 ```
 
-**CAUTION** : With the `new` command, you must add 
-the `it` ([interactive terminal](https://docs.docker.com/engine/reference/commandline/run/#assign-name-and-allocate-pseudo-tty---name--it)) option. 
-Otherwise, it won't run as expected.
+**CAUTION** : When you create a new change file with the `new` command, without specify required flags,
+you must add the `it` ([interactive terminal](https://docs.docker.com/engine/reference/commandline/run/#assign-name-and-allocate-pseudo-tty---name--it)) option,
+otherwise, it won't run as expected.
 
 ```sh
 docker run \
@@ -71,6 +71,8 @@ docker run \
     ghcr.io/miniscruff/changie \
     new
 ```
+
+**NOTE** : The `it` option is not required in batch mode when you specify all required flags for the `new` command.
 
 ## Manual
 * Download from [here](https://github.com/miniscruff/changie/releases).
