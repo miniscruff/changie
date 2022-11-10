@@ -59,6 +59,19 @@ docker run \
     latest
 ```
 
+**CAUTION** : With the `new` command, you must add 
+the `it` ([interactive terminal](https://docs.docker.com/engine/reference/commandline/run/#assign-name-and-allocate-pseudo-tty---name--it)) option. 
+Otherwise, it won't run as expected.
+
+```sh
+docker run \
+    --mount type=bind,source=$PWD,target=/src \
+    -w /src \
+    -it \
+    ghcr.io/miniscruff/changie \
+    new
+```
+
 ## Manual
 * Download from [here](https://github.com/miniscruff/changie/releases).
 * Add executable somewhere in your path depending on your platform.
