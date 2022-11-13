@@ -71,14 +71,6 @@ docker run \
     --user $(id -u ${USER}):$(id -g ${USER}) \
     ghcr.io/miniscruff/changie \
     new
-
-```sh
-docker run \
-    --mount type=bind,source=$PWD,target=/src \
-    -w /src \
-    -it \
-    ghcr.io/miniscruff/changie \
-    new
 ```
 
 **NOTE** : The `it` option is not required in batch mode when you specify all required flags for the `new` command.
