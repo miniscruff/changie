@@ -72,9 +72,6 @@ docker run \
     ghcr.io/miniscruff/changie \
     new
 ```
-
-**NOTE** : The `it` option is not required in batch mode when you specify all required flags for the `new` command.
-
 ## Manual
 * Download from [here](https://github.com/miniscruff/changie/releases).
 * Add executable somewhere in your path depending on your platform.
