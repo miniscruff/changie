@@ -59,6 +59,19 @@ docker run \
     latest
 ```
 
+**Notes**
+1. In order to complete prompts with docker you will need to use an [interactive terminal](https://docs.docker.com/engine/reference/commandline/run/#assign-name-and-allocate-pseudo-tty---name--it)
+1. You may also want to include your own user and group ID if any files would be created using the [user option](https://docs.docker.com/engine/reference/run/#user).
+
+```sh
+docker run \
+    --mount type=bind,source=$PWD,target=/src \
+    -w /src \
+    -it \
+    --user $(id -u ${USER}):$(id -g ${USER}) \
+    ghcr.io/miniscruff/changie \
+    new
+```
 ## Manual
 * Download from [here](https://github.com/miniscruff/changie/releases).
 * Add executable somewhere in your path depending on your platform.
