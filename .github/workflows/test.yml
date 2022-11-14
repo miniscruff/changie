@@ -5,14 +5,14 @@ on:
     branches: [ main ]
     paths-ignore:
     - '.github/'
-    - 'changes/'
+    - '.changes/'
     - 'resources/'
     - 'docs/'
   pull_request:
     branches: [ main ]
     paths-ignore:
     - '.github/'
-    - 'changes/'
+    - '.changes/'
     - 'resources/'
     - 'docs/'
 
