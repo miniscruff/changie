@@ -32,7 +32,10 @@ jobs:
         go-version: 1.18
 
     - name: Debug
-      run: gofmt -s -e .
+      run: |
+        gofmt -s -w .
+        git status
+        git diff
 
     - name: golangci-lint
       uses: golangci/golangci-lint-action@v3
