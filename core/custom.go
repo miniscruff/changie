@@ -219,7 +219,7 @@ func (c Custom) validateEnum(input string) error {
 }
 
 // CustomMapFromStrings will parse a CLI argument of strings into a key value map
-// where each string is a key value pair separted by an equal sign.
+// where each string is a key value pair separated by an equal sign.
 // Eg: Issue=15 turns into {"Issue": "15"}
 func CustomMapFromStrings(input []string) (map[string]string, error) {
 	ret := make(map[string]string)
