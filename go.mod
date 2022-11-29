@@ -3,7 +3,7 @@ module github.com/miniscruff/changie
 go 1.18
 
 require (
-	github.com/Masterminds/semver/v3 v3.1.1
+	github.com/Masterminds/semver/v3 v3.2.0
 	github.com/Masterminds/sprig/v3 v3.2.2
 	github.com/icholy/replace v0.6.0
 	github.com/manifoldco/promptui v0.9.0
