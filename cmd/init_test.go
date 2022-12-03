@@ -40,7 +40,7 @@ var _ = Describe("Init", func() {
 	})
 
 	It("builds default skeleton", func() {
-		err := initPipeline(afs.MkdirAll, afs.WriteFile, testConfig)
+		err := initPipeline(afs.MkdirAll, afs.WriteFile, afs.Exists, testConfig)
 
 		Expect(err).To(BeNil())
 		Expect("chgs/").To(BeADir(afs))
@@ -54,8 +54,26 @@ var _ = Describe("Init", func() {
 		badMkdir := func(path string, mode os.FileMode) error {
 			return mockError
 		}
-		err := initPipeline(badMkdir, afs.WriteFile, testConfig)
+		err := initPipeline(badMkdir, afs.WriteFile, afs.Exists, testConfig)
 		Expect(err).To(Equal(mockError))
+	})
+
+	It("returns error if file exisits", func() {
+		badFileExists := func(path string) (bool, error) {
+			return true, nil
+		}
+
+		err := initPipeline(afs.MkdirAll, afs.WriteFile, badFileExists, testConfig)
+		Expect(err).To(Equal(errConfigExists))
+	})
+
+	It("returns error if unable to check if file exists", func() {
+		badFileExists := func(path string) (bool, error) {
+			return false, errors.New("doesn't matter")
+		}
+
+		err := initPipeline(afs.MkdirAll, afs.WriteFile, badFileExists, testConfig)
+		Expect(err).To(Equal(errConfigExists))
 	})
 
 	DescribeTable("error creating file",
@@ -66,7 +84,7 @@ var _ = Describe("Init", func() {
 				}
 				return nil
 			}
-			err := initPipeline(afs.MkdirAll, mockWriteFile, testConfig)
+			err := initPipeline(afs.MkdirAll, mockWriteFile, afs.Exists, testConfig)
 			Expect(err).To(Equal(mockError))
 		},
 		Entry("config file", ".changie.yaml"),
