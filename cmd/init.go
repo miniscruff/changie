@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"errors"
 	"path/filepath"
 
 	"github.com/spf13/afero"
@@ -28,8 +29,10 @@ Default values follow keep a changelog and semver specs but are customizable.`,
 }
 
 var (
-	changesDir    string
-	changelogPath string
+	changesDir      string
+	changelogPath   string
+	initForce       bool
+	errConfigExists = errors.New("changie config already exists")
 )
 
 func init() {
@@ -43,6 +46,7 @@ func init() {
 		"CHANGELOG.md",
 		"file path to output our changelog",
 	)
+	initCmd.Flags().BoolVarP(&initForce, "force", "f", false, "force initialize even if config already exist")
 }
 
 func runInit(cmd *cobra.Command, args []string) error {
@@ -73,15 +77,22 @@ func runInit(cmd *cobra.Command, args []string) error {
 
 	afs := afero.Afero{Fs: afero.NewOsFs()}
 
-	return initPipeline(afs.MkdirAll, afs.WriteFile, config)
+	return initPipeline(afs.MkdirAll, afs.WriteFile, afs.Exists, config)
 }
 
-func initPipeline(mkdir shared.MkdirAller, wf shared.WriteFiler, config core.Config) error {
+func initPipeline(mkdir shared.MkdirAller, wf shared.WriteFiler, fe shared.FileExister, config core.Config) error {
 	var err error
 
 	headerPath := filepath.Join(config.ChangesDir, config.HeaderPath)
 	unreleasedPath := filepath.Join(config.ChangesDir, config.UnreleasedDir)
 	keepPath := filepath.Join(unreleasedPath, ".gitkeep")
+
+	if !initForce {
+		exists, existErr := config.Exists(fe)
+		if exists || existErr != nil {
+			return errConfigExists
+		}
+	}
 
 	err = config.Save(wf)
 	if err != nil {

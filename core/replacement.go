@@ -38,9 +38,9 @@ type ReplaceData struct {
 // example: yaml
 // # NodeJS package.json
 // replacements:
-// - path: package.json
-//   find: '  "version": ".*",'
-//   replace: '  "version": "{{.VersionNoPrefix}}",'
+//   - path: package.json
+//     find: '  "version": ".*",'
+//     replace: '  "version": "{{.VersionNoPrefix}}",'
 type Replacement struct {
 	// Path of the file to find and replace in.
 	Path string `yaml:"path" required:"true"`

@@ -37,10 +37,27 @@ var _ = Describe("Init", func() {
 			ChangeFormat:  "",
 			Kinds:         []core.KindConfig{},
 		}
+		initForce = false
 	})
 
 	It("builds default skeleton", func() {
-		err := initPipeline(afs.MkdirAll, afs.WriteFile, testConfig)
+		err := initPipeline(afs.MkdirAll, afs.WriteFile, afs.Exists, testConfig)
+
+		Expect(err).To(BeNil())
+		Expect("chgs/").To(BeADir(afs))
+		Expect("chgs/unrel").To(BeADir(afs))
+		Expect("chgs/unrel/.gitkeep").To(BeAnEmptyFile(afs))
+		Expect("chgs/head.tpl.md").To(HaveContents(afs, defaultHeader))
+		Expect("changelog.md").To(HaveContents(afs, defaultChangelog))
+	})
+
+	It("builds default skeleton if file exists but forced", func() {
+		initForce = true
+		fileExists := func(path string) (bool, error) {
+			return true, nil
+		}
+
+		err := initPipeline(afs.MkdirAll, afs.WriteFile, fileExists, testConfig)
 
 		Expect(err).To(BeNil())
 		Expect("chgs/").To(BeADir(afs))
@@ -54,8 +71,26 @@ var _ = Describe("Init", func() {
 		badMkdir := func(path string, mode os.FileMode) error {
 			return mockError
 		}
-		err := initPipeline(badMkdir, afs.WriteFile, testConfig)
+		err := initPipeline(badMkdir, afs.WriteFile, afs.Exists, testConfig)
 		Expect(err).To(Equal(mockError))
+	})
+
+	It("returns error if file exisits", func() {
+		badFileExists := func(path string) (bool, error) {
+			return true, nil
+		}
+
+		err := initPipeline(afs.MkdirAll, afs.WriteFile, badFileExists, testConfig)
+		Expect(err).To(Equal(errConfigExists))
+	})
+
+	It("returns error if unable to check if file exists", func() {
+		badFileExists := func(path string) (bool, error) {
+			return false, errors.New("doesn't matter")
+		}
+
+		err := initPipeline(afs.MkdirAll, afs.WriteFile, badFileExists, testConfig)
+		Expect(err).To(Equal(errConfigExists))
 	})
 
 	DescribeTable("error creating file",
@@ -66,7 +101,7 @@ var _ = Describe("Init", func() {
 				}
 				return nil
 			}
-			err := initPipeline(afs.MkdirAll, mockWriteFile, testConfig)
+			err := initPipeline(afs.MkdirAll, mockWriteFile, afs.Exists, testConfig)
 			Expect(err).To(Equal(mockError))
 		},
 		Entry("config file", ".changie.yaml"),

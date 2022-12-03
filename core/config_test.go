@@ -116,6 +116,42 @@ custom:
 		Expect(writeCalled).To(Equal(true))
 	})
 
+	It("can check if file does not exist", func() {
+		config := Config{}
+
+		exister := func(path string) (bool, error) {
+			return false, nil
+		}
+
+		exist, err := config.Exists(exister)
+		Expect(exist).To(BeFalse())
+		Expect(err).To(BeNil())
+	})
+
+	It("can check if file does exist", func() {
+		config := Config{}
+
+		exister := func(path string) (bool, error) {
+			return true, nil
+		}
+
+		exist, err := config.Exists(exister)
+		Expect(exist).To(BeTrue())
+		Expect(err).To(BeNil())
+	})
+
+	It("will handle file exists returning error", func() {
+		config := Config{}
+		mockError := errors.New("mock error")
+
+		exister := func(path string) (bool, error) {
+			return false, mockError
+		}
+
+		_, err := config.Exists(exister)
+		Expect(err).To(Equal(mockError))
+	})
+
 	It("should load config from path", func() {
 		mockRf := func(filepath string) ([]byte, error) {
 			if filepath == ConfigPaths[0] {

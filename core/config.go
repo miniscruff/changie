@@ -339,6 +339,17 @@ func (c *Config) Save(wf shared.WriteFiler) error {
 	return wf(ConfigPaths[0], bs, CreateFileMode)
 }
 
+// Exists returns whether or not a config already exists
+func (c *Config) Exists(fe shared.FileExister) (bool, error) {
+	for _, p := range ConfigPaths {
+		if exists, err := fe(p); exists || err != nil {
+			return exists, err
+		}
+	}
+
+	return false, nil
+}
+
 // LoadConfig will load the config from the default path
 func LoadConfig(rf shared.ReadFiler) (Config, error) {
 	var (
