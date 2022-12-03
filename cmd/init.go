@@ -29,8 +29,9 @@ Default values follow keep a changelog and semver specs but are customizable.`,
 }
 
 var (
-	changesDir    string
-	changelogPath string
+	changesDir      string
+	changelogPath   string
+	initForce       bool
 	errConfigExists = errors.New("changie config already exists")
 )
 
@@ -45,6 +46,7 @@ func init() {
 		"CHANGELOG.md",
 		"file path to output our changelog",
 	)
+	initCmd.Flags().BoolVarP(&initForce, "force", "f", false, "force initialize even if config already exist")
 }
 
 func runInit(cmd *cobra.Command, args []string) error {
@@ -85,9 +87,11 @@ func initPipeline(mkdir shared.MkdirAller, wf shared.WriteFiler, fe shared.FileE
 	unreleasedPath := filepath.Join(config.ChangesDir, config.UnreleasedDir)
 	keepPath := filepath.Join(unreleasedPath, ".gitkeep")
 
-	exists, err := config.Exists(fe)
-	if exists || err != nil {
-		return errConfigExists
+	if !initForce {
+		exists, err := config.Exists(fe)
+		if exists || err != nil {
+			return errConfigExists
+		}
 	}
 
 	err = config.Save(wf)

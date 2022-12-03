@@ -37,10 +37,27 @@ var _ = Describe("Init", func() {
 			ChangeFormat:  "",
 			Kinds:         []core.KindConfig{},
 		}
+		initForce = false
 	})
 
 	It("builds default skeleton", func() {
 		err := initPipeline(afs.MkdirAll, afs.WriteFile, afs.Exists, testConfig)
+
+		Expect(err).To(BeNil())
+		Expect("chgs/").To(BeADir(afs))
+		Expect("chgs/unrel").To(BeADir(afs))
+		Expect("chgs/unrel/.gitkeep").To(BeAnEmptyFile(afs))
+		Expect("chgs/head.tpl.md").To(HaveContents(afs, defaultHeader))
+		Expect("changelog.md").To(HaveContents(afs, defaultChangelog))
+	})
+
+	It("builds default skeleton if file exists but forced", func() {
+		initForce = true
+		fileExists := func(path string) (bool, error) {
+			return true, nil
+		}
+
+		err := initPipeline(afs.MkdirAll, afs.WriteFile, fileExists, testConfig)
 
 		Expect(err).To(BeNil())
 		Expect("chgs/").To(BeADir(afs))

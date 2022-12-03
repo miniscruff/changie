@@ -1,0 +1,6 @@
+kind: Fixed
+body: Init command will exit if a changie config file already exists, a new force
+  option exists if you want to reset your config
+time: 2022-12-03T00:03:48.281757832-08:00
+custom:
+  Issue: "404"
