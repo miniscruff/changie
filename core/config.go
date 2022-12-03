@@ -346,6 +346,7 @@ func (c *Config) Exists(fe shared.FileExister) (bool, error) {
 			return exists, err
 		}
 	}
+
 	return false, nil
 }
 

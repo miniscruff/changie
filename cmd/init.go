@@ -88,8 +88,8 @@ func initPipeline(mkdir shared.MkdirAller, wf shared.WriteFiler, fe shared.FileE
 	keepPath := filepath.Join(unreleasedPath, ".gitkeep")
 
 	if !initForce {
-		exists, err := config.Exists(fe)
-		if exists || err != nil {
+		exists, existErr := config.Exists(fe)
+		if exists || existErr != nil {
 			return errConfigExists
 		}
 	}

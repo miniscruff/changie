@@ -52,10 +52,10 @@ type Prompt interface {
 //
 // A simple one could be the issue number or authors github name.
 // example: yaml
-// - key: Author
-//   label: GitHub Name
-//   type: string
-//   minLength: 3
+//   - key: Author
+//     label: GitHub Name
+//     type: string
+//     minLength: 3
 type Custom struct {
 	// Value used as the key in the custom map for the change format.
 	// This should only contain alpha numeric characters, usually starting with a capital.
