@@ -1,0 +1,6 @@
+kind: Fixed
+body: Batch command will exit if the version file already exists, a new force option
+  was added if you want to override it
+time: 2022-12-09T19:32:25.137531159-08:00
+custom:
+  Issue: "406"

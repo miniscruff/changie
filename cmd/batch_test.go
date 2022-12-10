@@ -182,6 +182,7 @@ var _ = Describe("Batch", func() {
 		batchDryRunFlag = false
 		batchPrereleaseFlag = nil
 		batchMetaFlag = nil
+		batchForce = false
 	})
 
 	// this mimics the change.SaveUnreleased but prevents clobbering in same
@@ -478,6 +479,36 @@ second footer
 		infos, err := afs.ReadDir(futurePath)
 		Expect(err).To(BeNil())
 		Expect(len(infos)).To(Equal(0))
+	})
+
+	It("can override version if batch is forced", func() {
+		batchForce = true
+		Expect(testConfig.Save(afs.WriteFile)).To(Succeed())
+
+		writeChangeFile(core.Change{Kind: "added", Body: "A"})
+		err := batchPipeline(standard, afs, "v0.2.0")
+		Expect(err).To(BeNil())
+
+		writeChangeFile(core.Change{Kind: "added", Body: "B"})
+		err = batchPipeline(standard, afs, "v0.2.0")
+		Expect(err).To(BeNil())
+
+		verContents := `## v0.2.0
+### added
+* B`
+		Expect(newVerPath).To(HaveContents(afs, verContents))
+	})
+
+	It("returns error if batch already exists", func() {
+		Expect(testConfig.Save(afs.WriteFile)).To(Succeed())
+
+		writeChangeFile(core.Change{Kind: "added", Body: "A"})
+		err := batchPipeline(standard, afs, "v0.2.0")
+		Expect(err).To(BeNil())
+
+		writeChangeFile(core.Change{Kind: "added", Body: "B"})
+		err = batchPipeline(standard, afs, "v0.2.0")
+		Expect(err).To(MatchError(errVersionExists))
 	})
 
 	It("returns error on bad semver", func() {

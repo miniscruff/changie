@@ -1,7 +1,10 @@
 package cmd
 
 import (
+	"errors"
+	"fmt"
 	"io"
+	"io/fs"
 	"os"
 	"path/filepath"
 	"time"
@@ -57,6 +60,8 @@ var (
 	batchDryRunFlag                = false
 	batchPrereleaseFlag   []string = nil
 	batchMetaFlag         []string = nil
+	batchForce                     = false
+	errVersionExists               = errors.New("version already exists")
 )
 
 var batchCmd = &cobra.Command{
@@ -140,6 +145,12 @@ func init() {
 		nil,
 		"Metadata values to append to version",
 	)
+	batchCmd.Flags().BoolVarP(
+		&batchForce,
+		"force", "f",
+		false,
+		"Force a new version file even if one already exists",
+	)
 	rootCmd.AddCommand(batchCmd)
 }
 
@@ -216,6 +227,13 @@ func batchPipeline(batcher BatchPipeliner, afs afero.Afero, version string) erro
 		writer = batchDryRunOut
 	} else {
 		versionPath := filepath.Join(config.ChangesDir, data.Version+"."+config.VersionExt)
+
+		if !batchForce {
+			_, statErr := afs.Fs.Stat(versionPath)
+			if !errors.Is(statErr, fs.ErrNotExist) {
+				return fmt.Errorf("%w: %v", errVersionExists, versionPath)
+			}
+		}
 
 		versionFile, createErr := afs.Fs.Create(versionPath)
 		if createErr != nil {
