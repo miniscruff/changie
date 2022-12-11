@@ -299,7 +299,7 @@ type Config struct {
 	// # export CHANGIE_PROJECT=changie
 	// # we can use that in our templates if we set the prefix
 	// envPrefix: "CHANGIE_"
-	// versionFormat: "New release for {{.env.PROJECT}}"
+	// versionFormat: "New release for {{.Env.PROJECT}}"
 	EnvPrefix string `yaml:"envPrefix,omitempty"`
 
 	cachedEnvVars map[string]string
