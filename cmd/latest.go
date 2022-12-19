@@ -66,8 +66,8 @@ func latestPipeline(afs afero.Afero, skipPrereleases bool) (string, error) {
 	}
 
 	if removePrefix {
-		return fmt.Sprintln(strings.TrimPrefix(ver.Original(), "v")), nil
+		return fmt.Sprint(strings.TrimPrefix(ver.Original(), "v")), nil
 	}
 
-	return fmt.Sprintln(ver.Original()), nil
+	return fmt.Sprint(ver.Original()), nil
 }
