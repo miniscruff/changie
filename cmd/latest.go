@@ -1,7 +1,6 @@
 package cmd
 
 import (
-	"fmt"
 	"strings"
 
 	"github.com/spf13/afero"
@@ -66,8 +65,8 @@ func latestPipeline(afs afero.Afero, skipPrereleases bool) (string, error) {
 	}
 
 	if removePrefix {
-		return fmt.Sprintln(strings.TrimPrefix(ver.Original(), "v")), nil
+		return strings.TrimPrefix(ver.Original(), "v"), nil
 	}
 
-	return fmt.Sprintln(ver.Original()), nil
+	return ver.Original(), nil
 }

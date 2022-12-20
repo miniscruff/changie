@@ -46,7 +46,7 @@ var _ = Describe("Latest", func() {
 		removePrefix = false
 		res, err := latestPipeline(afs, false)
 		Expect(err).To(BeNil())
-		Expect(res).To(Equal("v0.2.0-rc1\n"))
+		Expect(res).To(Equal("v0.2.0-rc1"))
 	})
 
 	It("echos latest version not a prerelease", func() {
@@ -62,7 +62,7 @@ var _ = Describe("Latest", func() {
 		removePrefix = false
 		res, err := latestPipeline(afs, true)
 		Expect(err).To(BeNil())
-		Expect(res).To(Equal("v0.1.0\n"))
+		Expect(res).To(Equal("v0.1.0"))
 	})
 
 	It("echos latest version without prefix", func() {
@@ -76,7 +76,7 @@ var _ = Describe("Latest", func() {
 		removePrefix = true
 		res, err := latestPipeline(afs, false)
 		Expect(err).To(BeNil())
-		Expect(res).To(Equal("0.1.0\n"))
+		Expect(res).To(Equal("0.1.0"))
 	})
 
 	It("fails if bad config file", func() {
