@@ -1,5 +1,0 @@
-kind: Fixed
-body: Remove extra newline character from the output of `changie latest`
-time: 2022-12-19T18:03:11.291655-06:00
-custom:
-  Issue: "430"

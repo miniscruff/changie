@@ -46,7 +46,7 @@ summaryLength = 30
   ]
   enable_anchor_link = true
   issues_url = 'https://github.com/miniscruff/changie/issues/new'
-  version = 'v1.10.1'
+  version = 'v1.10.2'
 
   [params.homepage_meta_tags]
     meta_description = "Changie is a file based changelog management tool."
