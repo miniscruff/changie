@@ -5,155 +5,331 @@ import (
 	"fmt"
 	"os"
 	"strings"
+	"testing"
 	"time"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
 	. "github.com/miniscruff/changie/testutils"
+	"github.com/miniscruff/changie/then"
 )
 
-var _ = Describe("Change", func() {
-	mockTime := func() time.Time {
-		return time.Date(2016, 5, 24, 3, 30, 10, 5, time.Local)
-	}
-
-	orderedTimes := []time.Time{
+var (
+	orderedTimes = []time.Time{
 		time.Date(2018, 5, 24, 3, 30, 10, 5, time.Local),
 		time.Date(2017, 5, 24, 3, 30, 10, 5, time.Local),
 		time.Date(2016, 5, 24, 3, 30, 10, 5, time.Local),
 	}
+)
 
-	It("should write a change", func() {
-		change := Change{
-			Body: "some body message",
-			Time: mockTime(),
-		}
+func mockTime() time.Time {
+	return time.Date(2016, 5, 24, 3, 30, 10, 5, time.Local)
+}
 
-		changesYaml := fmt.Sprintf(
-			"body: some body message\ntime: %s\n",
-			mockTime().Format(time.RFC3339Nano),
-		)
+func TestWriteChange(t *testing.T) {
+	change := Change{
+		Body: "some body message",
+		Time: mockTime(),
+	}
 
-		var builder strings.Builder
-		err := change.Write(&builder)
+	changesYaml := fmt.Sprintf(
+		"body: some body message\ntime: %s\n",
+		mockTime().Format(time.RFC3339Nano),
+	)
 
-		Expect(builder.String()).To(Equal(changesYaml))
-		Expect(err).To(BeNil())
-	})
+	var builder strings.Builder
+	err := change.Write(&builder)
 
-	It("should load change from path", func() {
-		mockRf := func(filepath string) ([]byte, error) {
-			Expect(filepath).To(Equal("some_file.yaml"))
-			return []byte("kind: A\nbody: hey\n"), nil
-		}
+	then.Equals(t, changesYaml, builder.String())
+	then.Nil(t, err)
+}
 
-		change, err := LoadChange("some_file.yaml", mockRf)
-		Expect(err).To(BeNil())
-		Expect(change.Kind).To(Equal("A"))
-		Expect(change.Body).To(Equal("hey"))
-	})
+func TestLoadChangeFromPath(t *testing.T) {
+	mockRf := func(filepath string) ([]byte, error) {
+		then.Equals(t, "some_file.yaml", filepath)
+		return []byte("kind: A\nbody: hey\n"), nil
+	}
 
-	It("should return error from bad read", func() {
-		mockErr := errors.New("bad file")
+	change, err := LoadChange("some_file.yaml", mockRf)
 
-		mockRf := func(filepath string) ([]byte, error) {
-			Expect(filepath).To(Equal("some_file.yaml"))
-			return []byte(""), mockErr
-		}
+	then.Nil(t, err)
+	then.Equals(t, "A", change.Kind)
+	then.Equals(t, "hey", change.Body)
+}
 
-		_, err := LoadChange("some_file.yaml", mockRf)
-		Expect(err).To(Equal(mockErr))
-	})
+func TestBadRead(t *testing.T) {
+	mockErr := errors.New("bad file")
 
-	It("should return error from bad file", func() {
-		mockRf := func(filepath string) ([]byte, error) {
-			Expect(filepath).To(Equal("some_file.yaml"))
-			return []byte("not a yaml file---"), nil
-		}
+	mockRf := func(filepath string) ([]byte, error) {
+		then.Equals(t, "some_file.yaml", filepath)
+		return []byte(""), mockErr
+	}
 
-		_, err := LoadChange("some_file.yaml", mockRf)
-		Expect(err).NotTo(BeNil())
-	})
+	_, err := LoadChange("some_file.yaml", mockRf)
+	then.Err(t, mockErr, err)
+}
 
-	It("should sort by time", func() {
-		changes := []Change{
-			{Body: "third", Time: orderedTimes[2]},
-			{Body: "second", Time: orderedTimes[1]},
-			{Body: "first", Time: orderedTimes[0]},
-		}
-		config := Config{}
-		SortByConfig(config).Sort(changes)
+func TestBadYamlFile(t *testing.T) {
+	mockRf := func(filepath string) ([]byte, error) {
+		then.Equals(t, "some_file.yaml", filepath)
+		return []byte("not a yaml file---"), nil
+	}
 
-		Expect(changes[0].Body).To(Equal("third"))
-		Expect(changes[1].Body).To(Equal("second"))
-		Expect(changes[2].Body).To(Equal("first"))
-	})
+	_, err := LoadChange("some_file.yaml", mockRf)
+	then.NotNil(t, err)
+}
 
-	It("should sort by kind then time", func() {
-		config := Config{
-			Kinds: []KindConfig{
-				{Label: "A"},
-				{Label: "B"},
+func TestSortByTime(t *testing.T) {
+	changes := []Change{
+		{Body: "third", Time: orderedTimes[2]},
+		{Body: "second", Time: orderedTimes[1]},
+		{Body: "first", Time: orderedTimes[0]},
+	}
+	config := Config{}
+	SortByConfig(config).Sort(changes)
+
+	then.Equals(t, "third", changes[0].Body)
+	then.Equals(t, "second", changes[1].Body)
+	then.Equals(t, "first", changes[2].Body)
+}
+
+func TestSortByKindThenTime(t *testing.T) {
+	config := Config{
+		Kinds: []KindConfig{
+			{Label: "A"},
+			{Label: "B"},
+		},
+	}
+	changes := []Change{
+		{Kind: "B", Body: "fourth", Time: orderedTimes[0]},
+		{Kind: "A", Body: "second", Time: orderedTimes[1]},
+		{Kind: "B", Body: "third", Time: orderedTimes[1]},
+		{Kind: "A", Body: "first", Time: orderedTimes[2]},
+	}
+	SortByConfig(config).Sort(changes)
+
+	then.Equals(t, "first", changes[0].Body)
+	then.Equals(t, "second", changes[1].Body)
+	then.Equals(t, "third", changes[2].Body)
+	then.Equals(t, "fourth", changes[3].Body)
+}
+
+func TestSortByComponentThenKind(t *testing.T) {
+	config := Config{
+		Kinds: []KindConfig{
+			{Label: "D"},
+			{Label: "E"},
+		},
+		Components: []string{"A", "B", "C"},
+	}
+	changes := []Change{
+		{Body: "fourth", Component: "B", Kind: "E"},
+		{Body: "second", Component: "A", Kind: "E"},
+		{Body: "third", Component: "B", Kind: "D"},
+		{Body: "first", Component: "A", Kind: "D"},
+	}
+	SortByConfig(config).Sort(changes)
+
+	then.Equals(t, "first", changes[0].Body)
+	then.Equals(t, "second", changes[1].Body)
+	then.Equals(t, "third", changes[2].Body)
+	then.Equals(t, "fourth", changes[3].Body)
+}
+
+func TestLoadEnvVars(t *testing.T) {
+	config := Config{
+		EnvPrefix: "TEST_CHANGIE_",
+	}
+
+	t.Setenv("TEST_CHANGIE_ALPHA", "Beta")
+	t.Setenv("IGNORE", "Delta")
+
+	expectedEnvVars := map[string]string{
+		"ALPHA": "Beta",
+	}
+
+	then.MapEquals(t, expectedEnvVars, config.EnvVars())
+
+	// will use the cached results
+	t.Setenv("TEST_CHANGIE_UNUSED", "NotRead")
+	then.MapEquals(t, expectedEnvVars, config.EnvVars())
+}
+
+func TestAskPromptsForBody(t *testing.T) {
+	reader, writer := then.WithStdIn(t)
+
+	then.DelayWrite(
+		t, writer,
+		[]byte("body stuff"),
+		[]byte{13},
+	)
+
+	config := Config{}
+	c := &Change{}
+	then.Nil(t, c.AskPrompts(config, reader))
+
+	then.Equals(t, "", c.Component)
+	then.Equals(t, "", c.Kind)
+	then.Equals(t, 0, len(c.Custom))
+	then.Equals(t, "body stuff", c.Body)
+}
+
+func TestAskComponentKindBody(t *testing.T) {
+	reader, writer := then.WithStdIn(t)
+
+	then.DelayWrite(
+		t, writer,
+		[]byte{106, 13},
+		[]byte{106, 106, 13},
+		[]byte("body here"),
+		[]byte{13},
+	)
+
+	config := Config{
+		Components: []string{"cli", "tests", "utils"},
+		Kinds: []KindConfig{
+			{Label: "added"},
+			{Label: "changed"},
+			{Label: "removed"},
+		},
+	}
+	c := &Change{}
+	then.Nil(t, c.AskPrompts(config, reader))
+
+	then.Equals(t, "tests", c.Component)
+	then.Equals(t, "removed", c.Kind)
+	then.Equals(t, len(c.Custom), 0)
+	then.Equals(t, "body here", c.Body)
+}
+
+func TestBodyKindPostProcess(t *testing.T) {
+	reader, _ := then.WithStdIn(t)
+
+	config := Config{
+		Kinds: []KindConfig{
+			{
+				Label: "added",
+				Post: []PostProcessConfig{
+					{Key: "Post", Value: "{{.Body}}+{{.Custom.Issue}}"},
+				},
 			},
-		}
-		changes := []Change{
-			{Kind: "B", Body: "fourth", Time: orderedTimes[0]},
-			{Kind: "A", Body: "second", Time: orderedTimes[1]},
-			{Kind: "B", Body: "third", Time: orderedTimes[1]},
-			{Kind: "A", Body: "first", Time: orderedTimes[2]},
-		}
-		SortByConfig(config).Sort(changes)
+		},
+		CustomChoices: []Custom{
+			{Key: "Issue", Type: CustomInt},
+		},
+	}
+	c := &Change{
+		Body: "our body",
+		Kind: "added",
+		Custom: map[string]string{
+			"Issue": "25",
+		},
+	}
 
-		Expect(changes[0].Body).To(Equal("first"))
-		Expect(changes[1].Body).To(Equal("second"))
-		Expect(changes[2].Body).To(Equal("third"))
-		Expect(changes[3].Body).To(Equal("fourth"))
-	})
+	then.Nil(t, c.AskPrompts(config, reader))
 
-	It("should sort by component then kind", func() {
-		config := Config{
-			Kinds: []KindConfig{
-				{Label: "D"},
-				{Label: "E"},
+	then.Equals(t, "", c.Component)
+	then.Equals(t, "added", c.Kind)
+	then.Equals(t, "our body", c.Body)
+	then.Equals(t, "25", c.Custom["Issue"])
+	then.Equals(t, "our body+25", c.Custom["Post"])
+}
+
+func TestBodyCustom(t *testing.T) {
+	reader, writer := then.WithStdIn(t)
+
+	then.DelayWrite(
+		t, writer,
+		[]byte("body again"),
+		[]byte{13},
+		[]byte("custom check value"),
+		[]byte{13},
+	)
+
+	config := Config{
+		CustomChoices: []Custom{
+			{Key: "check", Type: CustomString},
+		},
+	}
+	c := &Change{}
+	then.Nil(t, c.AskPrompts(config, reader))
+
+	then.Equals(t, "", c.Component)
+	then.Equals(t, "", c.Kind)
+	then.Equals(t, "custom check value", c.Custom["check"])
+	then.Equals(t, "body again", c.Body)
+}
+
+func TestBodyCustomWithExistingCustomValue(t *testing.T) {
+	reader, writer := then.WithStdIn(t)
+
+	then.DelayWrite(
+		t, writer,
+		[]byte("body again"),
+		[]byte{13},
+		[]byte("256"),
+		[]byte{13},
+	)
+
+	config := Config{
+		CustomChoices: []Custom{
+			{Key: "Issue", Type: CustomString},
+			{Key: "Project", Label: "Custom Project Prompt", Type: CustomString},
+		},
+	}
+	c := &Change{
+		Custom: map[string]string{
+			"Project": "Changie",
+		},
+	}
+
+	then.Nil(t, c.AskPrompts(config, reader))
+
+	then.Equals(t, "", c.Component)
+	then.Equals(t, "", c.Kind)
+	then.Equals(t, "256", c.Custom["Issue"])
+	then.Equals(t, "Changie", c.Custom["Project"])
+	then.Equals(t, "body again", c.Body)
+}
+
+/*
+func TestSkippedBodyGlobalChoicesKindWithAdditional(t *testing.T) {
+	writer, reader := then.WithStdIn(t)
+
+	then.DelayWrite(
+		t, writer,
+		[]byte{13},
+		[]byte("breaking value"),
+		[]byte{13},
+	)
+
+	config := Config{
+		CustomChoices: []Custom{
+			{Key: "skipped", Type: CustomString, Label: "a"},
+		},
+		Kinds: []KindConfig{
+			{
+				Label:             "added",
+				SkipBody:          true,
+				SkipGlobalChoices: true,
+				AdditionalChoices: []Custom{
+					{Key: "break", Type: CustomString, Label: "b"},
+				},
 			},
-			Components: []string{"A", "B", "C"},
-		}
-		changes := []Change{
-			{Body: "fourth", Component: "B", Kind: "E"},
-			{Body: "second", Component: "A", Kind: "E"},
-			{Body: "third", Component: "B", Kind: "D"},
-			{Body: "first", Component: "A", Kind: "D"},
-		}
-		SortByConfig(config).Sort(changes)
+			{Label: "not used"},
+		},
+	}
 
-		Expect(changes[0].Body).To(Equal("first"))
-		Expect(changes[1].Body).To(Equal("second"))
-		Expect(changes[2].Body).To(Equal("third"))
-		Expect(changes[3].Body).To(Equal("fourth"))
-	})
+	c := &Change{}
+	then.Nil(t, c.AskPrompts(config, reader))
 
-	It("can load env vars", func() {
-		config := Config{
-			EnvPrefix: "TEST_CHANGIE_",
-		}
-
-		Expect(os.Setenv("TEST_CHANGIE_ALPHA", "Beta")).To(Succeed())
-		Expect(os.Setenv("IGNORED", "Delta")).To(Succeed())
-
-		Expect(config.EnvVars()).To(Equal(map[string]string{
-			"ALPHA": "Beta",
-		}))
-
-		Expect(os.Unsetenv("TEST_CHANGIE_ALPHA")).To(Succeed())
-		Expect(os.Unsetenv("IGNORED")).To(Succeed())
-
-		// will use the cached results
-		Expect(config.EnvVars()).To(Equal(map[string]string{
-			"ALPHA": "Beta",
-		}))
-	})
-})
+	then.Equals(t, "", c.Component)
+	then.Equals(t, "", c.Custom["skipped"])
+	then.Equals(t, "breaking value", c.Custom["break"])
+	then.Equals(t, "", c.Body)
+}
+*/
 
 var _ = Describe("Change ask prompts", func() {
 	var (
@@ -170,123 +346,6 @@ var _ = Describe("Change ask prompts", func() {
 	AfterEach(func() {
 		stdinReader.Close()
 		stdinWriter.Close()
-	})
-
-	It("for only body", func() {
-		config := Config{}
-		go func() {
-			DelayWrite(stdinWriter, []byte("body stuff"))
-			DelayWrite(stdinWriter, []byte{13})
-		}()
-
-		c := &Change{}
-		Expect(c.AskPrompts(config, stdinReader)).To(Succeed())
-		Expect(c.Component).To(BeEmpty())
-		Expect(c.Kind).To(BeEmpty())
-		Expect(c.Custom).To(BeEmpty())
-		Expect(c.Body).To(Equal("body stuff"))
-	})
-
-	It("for component, kind and body", func() {
-		config := Config{
-			Components: []string{"cli", "tests", "utils"},
-			Kinds: []KindConfig{
-				{Label: "added"},
-				{Label: "changed"},
-				{Label: "removed"},
-			},
-		}
-		go func() {
-			DelayWrite(stdinWriter, []byte{106, 13})
-			DelayWrite(stdinWriter, []byte{106, 106, 13})
-			DelayWrite(stdinWriter, []byte("body here"))
-			DelayWrite(stdinWriter, []byte{13})
-		}()
-
-		c := &Change{}
-		Expect(c.AskPrompts(config, stdinReader)).To(Succeed())
-		Expect(c.Component).To(Equal("tests"))
-		Expect(c.Kind).To(Equal("removed"))
-		Expect(c.Custom).To(BeEmpty())
-		Expect(c.Body).To(Equal("body here"))
-	})
-
-	It("for body, kind and post process", func() {
-		config := Config{
-			Kinds: []KindConfig{
-				{
-					Label: "added",
-					Post: []PostProcessConfig{
-						{Key: "Post", Value: "{{.Body}}+{{.Custom.Issue}}"},
-					},
-				},
-			},
-			CustomChoices: []Custom{
-				{Key: "Issue", Type: CustomInt},
-			},
-		}
-
-		c := &Change{
-			Body: "our body",
-			Kind: "added",
-			Custom: map[string]string{
-				"Issue": "25",
-			},
-		}
-		Expect(c.AskPrompts(config, stdinReader)).To(Succeed())
-		Expect(c.Component).To(BeEmpty())
-		Expect(c.Kind).To(Equal("added"))
-		Expect(c.Body).To(Equal("our body"))
-		Expect(c.Custom["Issue"]).To(Equal("25"))
-		Expect(c.Custom["Post"]).To(Equal("our body+25"))
-	})
-
-	It("for body and custom", func() {
-		config := Config{
-			CustomChoices: []Custom{
-				{Key: "check", Type: CustomString},
-			},
-		}
-		go func() {
-			DelayWrite(stdinWriter, []byte("body again"))
-			DelayWrite(stdinWriter, []byte{13})
-			DelayWrite(stdinWriter, []byte("custom check value"))
-			DelayWrite(stdinWriter, []byte{13})
-		}()
-
-		c := &Change{}
-		Expect(c.AskPrompts(config, stdinReader)).To(Succeed())
-		Expect(c.Component).To(BeEmpty())
-		Expect(c.Kind).To(BeEmpty())
-		Expect(c.Custom["check"]).To(Equal("custom check value"))
-		Expect(c.Body).To(Equal("body again"))
-	})
-
-	It("for body and custom with existing custom value", func() {
-		config := Config{
-			CustomChoices: []Custom{
-				{Key: "Issue", Type: CustomString},
-				{Key: "Project", Label: "Custom Project Prompt", Type: CustomString},
-			},
-		}
-		go func() {
-			DelayWrite(stdinWriter, []byte("body again"))
-			DelayWrite(stdinWriter, []byte{13})
-			DelayWrite(stdinWriter, []byte("256"))
-			DelayWrite(stdinWriter, []byte{13})
-		}()
-
-		c := &Change{
-			Custom: map[string]string{
-				"Project": "Changie",
-			},
-		}
-		Expect(c.AskPrompts(config, stdinReader)).To(Succeed())
-		Expect(c.Component).To(BeEmpty())
-		Expect(c.Kind).To(BeEmpty())
-		Expect(c.Custom["Issue"]).To(Equal("256"))
-		Expect(c.Custom["Project"]).To(Equal("Changie"))
-		Expect(c.Body).To(Equal("body again"))
 	})
 
 	It("for skipped body, skipped global choices and kind choices", func() {

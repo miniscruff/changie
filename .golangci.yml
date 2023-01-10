@@ -34,7 +34,6 @@ linters:
     - exhaustive
     - funlen
     - goconst
-    - gocritic
     - gocyclo
     - gofmt
     - goimports
