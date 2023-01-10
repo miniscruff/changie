@@ -34,6 +34,7 @@ changeFormat: chng
 	mockWf := func(filepath string, bytes []byte, perm os.FileMode) error {
 		then.Equals(t, ConfigPaths[0], filepath)
 		then.Equals(t, configYaml, string(bytes))
+
 		return nil
 	}
 
@@ -101,6 +102,7 @@ custom:
 	mockWf := func(filepath string, bytes []byte, perm os.FileMode) error {
 		then.Equals(t, ConfigPaths[0], filepath)
 		then.Equals(t, configYaml, string(bytes))
+
 		return nil
 	}
 
@@ -146,6 +148,7 @@ func TestLoadConfigFromPath(t *testing.T) {
 		if filepath == ConfigPaths[0] {
 			return []byte("changesDir: C\nfragmentFileFormat: \"{{.Custom.Issue}}\"\n"), nil
 		}
+
 		return nil, os.ErrNotExist
 	}
 
@@ -160,6 +163,7 @@ func TestLoadConfigFromAlternatePath(t *testing.T) {
 		if filepath == ConfigPaths[1] {
 			return []byte("changesDir: C\nheaderPath: header.rst\n"), nil
 		}
+
 		return nil, os.ErrNotExist
 	}
 
@@ -175,6 +179,7 @@ func TestLoadConfigFromEnvVar(t *testing.T) {
 		if filepath == customPath {
 			return []byte("changesDir: C\nheaderPath: header.rst\n"), nil
 		}
+
 		return nil, os.ErrNotExist
 	}
 
@@ -199,6 +204,7 @@ components:
 - G
 `), nil
 		}
+
 		return nil, os.ErrNotExist
 	}
 	defaultFragmentFormat := fmt.Sprintf("{{.Component}}-{{.Kind}}-{{.Time.Format \"%v\"}}", timeFormat)
@@ -217,6 +223,7 @@ func TestDefaultFragmentTemplateWithKinds(t *testing.T) {
 - label: E
 `), nil
 		}
+
 		return nil, os.ErrNotExist
 	}
 	defaultFragmentFormat := fmt.Sprintf("{{.Kind}}-{{.Time.Format \"%v\"}}", timeFormat)
@@ -231,6 +238,7 @@ func TestDefaultFragmentTemplateWithoutKindsOrComponents(t *testing.T) {
 		if filepath == ConfigPaths[0] {
 			return []byte("unreleasedDir: unrel"), nil
 		}
+
 		return nil, os.ErrNotExist
 	}
 	defaultFragmentFormat := fmt.Sprintf("{{.Time.Format \"%v\"}}", timeFormat)
