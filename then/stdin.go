@@ -14,7 +14,6 @@ func WithStdIn(t *testing.T) (*os.File, *os.File) {
 	}
 
 	t.Cleanup(func() {
-		t.Log("cleaning up stdin/out")
 		if err := reader.Close(); err != nil {
 			t.Fatal("failure to close reader:", err)
 		}
