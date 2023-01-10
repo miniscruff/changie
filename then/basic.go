@@ -63,3 +63,19 @@ func Err(t *testing.T, expected, actual error) {
 		t.Errorf("expected '%v' to be '%v'", expected, actual)
 	}
 }
+
+func True(t *testing.T, value bool) {
+	t.Helper()
+
+	if !value {
+		t.Errorf("expected value to be true")
+	}
+}
+
+func False(t *testing.T, value bool) {
+	t.Helper()
+
+	if value {
+		t.Errorf("expected value to be false")
+	}
+}

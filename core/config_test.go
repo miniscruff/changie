@@ -4,25 +4,25 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"testing"
 
 	"github.com/manifoldco/promptui"
-	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/gomega"
+
+	"github.com/miniscruff/changie/then"
 )
 
-var _ = Describe("Config", func() {
-	It("should save the config", func() {
-		config := Config{
-			ChangesDir:        "Changes",
-			UnreleasedDir:     "Unrel",
-			HeaderPath:        "header.tpl.md",
-			VersionHeaderPath: "header.md",
-			VersionExt:        "md",
-			ChangeFormat:      "chng",
-			ChangelogPath:     "CHANGELOG.md",
-		}
+func TestSaveConfig(t *testing.T) {
+	config := Config{
+		ChangesDir:        "Changes",
+		UnreleasedDir:     "Unrel",
+		HeaderPath:        "header.tpl.md",
+		VersionHeaderPath: "header.md",
+		VersionExt:        "md",
+		ChangeFormat:      "chng",
+		ChangelogPath:     "CHANGELOG.md",
+	}
 
-		configYaml := `changesDir: Changes
+	configYaml := `changesDir: Changes
 unreleasedDir: Unrel
 headerPath: header.tpl.md
 changelogPath: CHANGELOG.md
@@ -31,51 +31,47 @@ versionHeaderPath: header.md
 changeFormat: chng
 `
 
-		writeCalled := false
+	mockWf := func(filepath string, bytes []byte, perm os.FileMode) error {
+		then.Equals(t, ConfigPaths[0], filepath)
+		then.Equals(t, configYaml, string(bytes))
+		return nil
+	}
 
-		mockWf := func(filepath string, bytes []byte, perm os.FileMode) error {
-			writeCalled = true
-			Expect(filepath).To(Equal(ConfigPaths[0]))
-			Expect(string(bytes)).To(Equal(configYaml))
-			return nil
-		}
+	err := config.Save(mockWf)
+	then.Nil(t, err)
+}
 
-		err := config.Save(mockWf)
-		Expect(err).To(BeNil())
-		Expect(writeCalled).To(Equal(true))
-	})
-
-	It("should save the config with custom choices and optionals", func() {
-		config := Config{
-			ChangesDir:        "Changes",
-			UnreleasedDir:     "Unrel",
-			HeaderPath:        "header.tpl.md",
-			VersionHeaderPath: "vheader",
-			VersionFooterPath: "vfooter",
-			VersionExt:        "md",
-			ChangelogPath:     "CHANGELOG.md",
-			VersionFormat:     "vers",
-			ComponentFormat:   "comp",
-			KindFormat:        "kind",
-			ChangeFormat:      "chng",
-			Components:        []string{"A", "D", "G"},
-			HeaderFormat:      "head",
-			FooterFormat:      "foot",
-			Kinds: []KindConfig{
-				{Label: "B"},
-				{Label: "C"},
-				{Label: "E"},
+func TestSaveConfigWithCustomChoicesAndOptionals(t *testing.T) {
+	config := Config{
+		ChangesDir:        "Changes",
+		UnreleasedDir:     "Unrel",
+		HeaderPath:        "header.tpl.md",
+		VersionHeaderPath: "vheader",
+		VersionFooterPath: "vfooter",
+		VersionExt:        "md",
+		ChangelogPath:     "CHANGELOG.md",
+		VersionFormat:     "vers",
+		ComponentFormat:   "comp",
+		KindFormat:        "kind",
+		ChangeFormat:      "chng",
+		Components:        []string{"A", "D", "G"},
+		HeaderFormat:      "head",
+		FooterFormat:      "foot",
+		Kinds: []KindConfig{
+			{Label: "B"},
+			{Label: "C"},
+			{Label: "E"},
+		},
+		CustomChoices: []Custom{
+			{
+				Key:   "first",
+				Type:  CustomString,
+				Label: "First name",
 			},
-			CustomChoices: []Custom{
-				{
-					Key:   "first",
-					Type:  CustomString,
-					Label: "First name",
-				},
-			},
-		}
+		},
+	}
 
-		configYaml := `changesDir: Changes
+	configYaml := `changesDir: Changes
 unreleasedDir: Unrel
 headerPath: header.tpl.md
 changelogPath: CHANGELOG.md
@@ -102,74 +98,98 @@ custom:
   label: First name
 `
 
-		writeCalled := false
+	mockWf := func(filepath string, bytes []byte, perm os.FileMode) error {
+		then.Equals(t, ConfigPaths[0], filepath)
+		then.Equals(t, configYaml, string(bytes))
+		return nil
+	}
 
-		mockWf := func(filepath string, bytes []byte, perm os.FileMode) error {
-			writeCalled = true
-			Expect(filepath).To(Equal(ConfigPaths[0]))
-			Expect(string(bytes)).To(Equal(configYaml))
-			return nil
+	err := config.Save(mockWf)
+	then.Nil(t, err)
+}
+
+func TestCanCheckIfFileDoesExist(t *testing.T) {
+	config := Config{}
+	exister := func(path string) (bool, error) {
+		return true, nil
+	}
+
+	exist, err := config.Exists(exister)
+	then.True(t, exist)
+	then.Nil(t, err)
+}
+
+func TestCanCheckIfFileDoesNotExist(t *testing.T) {
+	config := Config{}
+	exister := func(path string) (bool, error) {
+		return false, nil
+	}
+
+	exist, err := config.Exists(exister)
+	then.False(t, exist)
+	then.Nil(t, err)
+}
+
+func TestErrorWhenCheckingFileExists(t *testing.T) {
+	mockError := errors.New("mock error")
+	config := Config{}
+	exister := func(path string) (bool, error) {
+		return false, mockError
+	}
+
+	_, err := config.Exists(exister)
+	then.Err(t, mockError, err)
+}
+
+func TestLoadConfigFromPath(t *testing.T) {
+	mockRf := func(filepath string) ([]byte, error) {
+		if filepath == ConfigPaths[0] {
+			return []byte("changesDir: C\nfragmentFileFormat: \"{{.Custom.Issue}}\"\n"), nil
 		}
+		return nil, os.ErrNotExist
+	}
 
-		err := config.Save(mockWf)
-		Expect(err).To(BeNil())
-		Expect(writeCalled).To(Equal(true))
-	})
+	config, err := LoadConfig(mockRf)
+	then.Nil(t, err)
+	then.Equals(t, "C", config.ChangesDir)
+	then.Equals(t, "{{.Custom.Issue}}", config.FragmentFileFormat)
+}
 
-	It("can check if file does not exist", func() {
-		config := Config{}
-
-		exister := func(path string) (bool, error) {
-			return false, nil
+func TestLoadConfigFromAlternatePath(t *testing.T) {
+	mockRf := func(filepath string) ([]byte, error) {
+		if filepath == ConfigPaths[1] {
+			return []byte("changesDir: C\nheaderPath: header.rst\n"), nil
 		}
+		return nil, os.ErrNotExist
+	}
 
-		exist, err := config.Exists(exister)
-		Expect(exist).To(BeFalse())
-		Expect(err).To(BeNil())
-	})
+	config, err := LoadConfig(mockRf)
+	then.Nil(t, err)
+	then.Equals(t, "C", config.ChangesDir)
+	then.Equals(t, "header.rst", config.HeaderPath)
+}
 
-	It("can check if file does exist", func() {
-		config := Config{}
-
-		exister := func(path string) (bool, error) {
-			return true, nil
+func TestLoadConfigFromEnvVar(t *testing.T) {
+	customPath := "./custom/changie.yaml"
+	mockRf := func(filepath string) ([]byte, error) {
+		if filepath == customPath {
+			return []byte("changesDir: C\nheaderPath: header.rst\n"), nil
 		}
+		return nil, os.ErrNotExist
+	}
 
-		exist, err := config.Exists(exister)
-		Expect(exist).To(BeTrue())
-		Expect(err).To(BeNil())
-	})
+	t.Setenv("CHANGIE_CONFIG_PATH", customPath)
 
-	It("will handle file exists returning error", func() {
-		config := Config{}
-		mockError := errors.New("mock error")
+	config, err := LoadConfig(mockRf)
+	then.Nil(t, err)
+	then.Equals(t, "C", config.ChangesDir)
+	then.Equals(t, "header.rst", config.HeaderPath)
+}
 
-		exister := func(path string) (bool, error) {
-			return false, mockError
-		}
-
-		_, err := config.Exists(exister)
-		Expect(err).To(Equal(mockError))
-	})
-
-	It("should load config from path", func() {
-		mockRf := func(filepath string) ([]byte, error) {
-			if filepath == ConfigPaths[0] {
-				return []byte("changesDir: C\nfragmentFileFormat: \"{{.Custom.Issue}}\"\n"), nil
-			}
-			return nil, os.ErrNotExist
-		}
-
-		config, err := LoadConfig(mockRf)
-		Expect(err).To(BeNil())
-		Expect(config.ChangesDir).To(Equal("C"))
-		Expect(config.FragmentFileFormat).To(Equal("{{.Custom.Issue}}"))
-	})
-
-	It("should configure default fragment template with kinds and components", func() {
-		mockRf := func(filepath string) ([]byte, error) {
-			if filepath == ConfigPaths[0] {
-				return []byte(`kinds:
+func TestDefaultFragmentTemplateWithKindsAndComponents(t *testing.T) {
+	mockRf := func(filepath string) ([]byte, error) {
+		if filepath == ConfigPaths[0] {
+			return []byte(`kinds:
 - label: B
 - label: C
 - label: E
@@ -178,164 +198,130 @@ components:
 - D
 - G
 `), nil
-			}
-			return nil, os.ErrNotExist
 		}
+		return nil, os.ErrNotExist
+	}
+	defaultFragmentFormat := fmt.Sprintf("{{.Component}}-{{.Kind}}-{{.Time.Format \"%v\"}}", timeFormat)
 
-		config, err := LoadConfig(mockRf)
-		Expect(err).To(BeNil())
-		Expect(config.FragmentFileFormat).To(Equal(
-			fmt.Sprintf("{{.Component}}-{{.Kind}}-{{.Time.Format \"%v\"}}", timeFormat),
-		))
-	})
+	config, err := LoadConfig(mockRf)
+	then.Nil(t, err)
+	then.Equals(t, defaultFragmentFormat, config.FragmentFileFormat)
+}
 
-	It("should configure default fragment template with just kinds", func() {
-		mockRf := func(filepath string) ([]byte, error) {
-			if filepath == ConfigPaths[0] {
-				return []byte(`kinds:
+func TestDefaultFragmentTemplateWithKinds(t *testing.T) {
+	mockRf := func(filepath string) ([]byte, error) {
+		if filepath == ConfigPaths[0] {
+			return []byte(`kinds:
 - label: B
 - label: C
 - label: E
 `), nil
-			}
-			return nil, os.ErrNotExist
 		}
+		return nil, os.ErrNotExist
+	}
+	defaultFragmentFormat := fmt.Sprintf("{{.Kind}}-{{.Time.Format \"%v\"}}", timeFormat)
 
-		config, err := LoadConfig(mockRf)
-		Expect(err).To(BeNil())
-		Expect(config.FragmentFileFormat).To(Equal(
-			fmt.Sprintf("{{.Kind}}-{{.Time.Format \"%v\"}}", timeFormat),
-		))
-	})
+	config, err := LoadConfig(mockRf)
+	then.Nil(t, err)
+	then.Equals(t, defaultFragmentFormat, config.FragmentFileFormat)
+}
 
-	It("should configure default fragment template without kinds or components", func() {
-		mockRf := func(filepath string) ([]byte, error) {
-			if filepath == ConfigPaths[0] {
-				return []byte("unreleasedDir: unrel"), nil
-			}
-			return nil, os.ErrNotExist
+func TestDefaultFragmentTemplateWithoutKindsOrComponents(t *testing.T) {
+	mockRf := func(filepath string) ([]byte, error) {
+		if filepath == ConfigPaths[0] {
+			return []byte("unreleasedDir: unrel"), nil
 		}
+		return nil, os.ErrNotExist
+	}
+	defaultFragmentFormat := fmt.Sprintf("{{.Time.Format \"%v\"}}", timeFormat)
 
-		config, err := LoadConfig(mockRf)
-		Expect(err).To(BeNil())
-		Expect(config.FragmentFileFormat).To(Equal(
-			fmt.Sprintf("{{.Time.Format \"%v\"}}", timeFormat),
-		))
-	})
+	config, err := LoadConfig(mockRf)
+	then.Nil(t, err)
+	then.Equals(t, defaultFragmentFormat, config.FragmentFileFormat)
+}
 
-	It("should load config from alternate path", func() {
-		mockRf := func(filepath string) ([]byte, error) {
-			if filepath == ConfigPaths[1] {
-				return []byte("changesDir: C\nheaderPath: header.rst\n"), nil
-			}
-			return nil, os.ErrNotExist
-		}
+func TestErrorBadRead(t *testing.T) {
+	mockErr := errors.New("bad file")
+	mockRf := func(filepath string) ([]byte, error) {
+		return []byte(""), mockErr
+	}
 
-		config, err := LoadConfig(mockRf)
-		Expect(err).To(BeNil())
-		Expect(config.ChangesDir).To(Equal("C"))
-		Expect(config.HeaderPath).To(Equal("header.rst"))
-	})
+	_, err := LoadConfig(mockRf)
+	then.Err(t, mockErr, err)
+}
 
-	It("should load config from custom path", func() {
-		mockRf := func(filepath string) ([]byte, error) {
-			if filepath == "./custom/changie.yaml" {
-				return []byte("changesDir: C\nheaderPath: header.rst\n"), nil
-			}
-			return nil, os.ErrNotExist
-		}
+func TestErrorBadYamlFile(t *testing.T) {
+	mockRf := func(filepath string) ([]byte, error) {
+		return []byte("not a valid yaml file---"), nil
+	}
 
-		os.Setenv("CHANGIE_CONFIG_PATH", "./custom/changie.yaml")
-		config, err := LoadConfig(mockRf)
-		Expect(err).To(BeNil())
-		Expect(config.ChangesDir).To(Equal("C"))
-		Expect(config.HeaderPath).To(Equal("header.rst"))
-		os.Setenv("CHANGIE_CONFIG_PATH", "")
-	})
+	_, err := LoadConfig(mockRf)
+	then.NotNil(t, err)
+}
 
-	It("should return error from bad read", func() {
-		mockErr := errors.New("bad file")
+func TestGetHeaderFromKindLabel(t *testing.T) {
+	config := Config{
+		Kinds: []KindConfig{
+			{Label: "A", Format: "unused"},
+			{Label: "unused", Format: ""},
+			{Label: "C", Format: "KF"},
+		},
+	}
+	format := config.KindHeader("C")
+	then.Equals(t, "KF", format)
+}
 
-		mockRf := func(filepath string) ([]byte, error) {
-			return []byte(""), mockErr
-		}
+func TestGetDefaultHeaderForKind(t *testing.T) {
+	config := Config{
+		Kinds: []KindConfig{
+			{Label: "ignored"},
+		},
+		KindFormat: "KF",
+	}
+	format := config.KindHeader("unused label")
+	then.Equals(t, "KF", format)
+}
 
-		_, err := LoadConfig(mockRf)
-		Expect(err).To(Equal(mockErr))
-	})
+func TestGetChangeFormatFromKindLabel(t *testing.T) {
+	config := Config{
+		Kinds: []KindConfig{
+			{Label: "A", ChangeFormat: "unused"},
+			{Label: "unused", ChangeFormat: ""},
+			{Label: "C", ChangeFormat: "CF"},
+		},
+	}
+	format := config.ChangeFormatForKind("C")
+	then.Equals(t, "CF", format)
+}
 
-	It("should return error from bad file", func() {
-		mockRf := func(filepath string) ([]byte, error) {
-			return []byte("not a yaml file---"), nil
-		}
+func TestGetDefaultChangeFormatIfNoCustomOnesExist(t *testing.T) {
+	config := Config{
+		Kinds: []KindConfig{
+			{Label: "unused", ChangeFormat: "ignored"},
+		},
+		ChangeFormat: "CF",
+	}
+	format := config.ChangeFormatForKind("C")
+	then.Equals(t, "CF", format)
+}
 
-		_, err := LoadConfig(mockRf)
-		Expect(err).NotTo(BeNil())
-	})
+func TestBodyConfigCreatePrompt(t *testing.T) {
+	p := BodyConfig{}.CreatePrompt(os.Stdin)
+	underPrompt, ok := p.(*promptui.Prompt)
 
-	It("can get header from kind label", func() {
-		config := Config{
-			Kinds: []KindConfig{
-				{Label: "A", Format: "unused"},
-				{Label: "unused", Format: ""},
-				{Label: "C", Format: "KF"},
-			},
-		}
-		format := config.KindHeader("C")
-		Expect(format).To(Equal("KF"))
-	})
+	then.True(t, ok)
+	then.Equals(t, "Body", underPrompt.Label.(string))
+	then.Nil(t, underPrompt.Validate("anything"))
+}
 
-	It("can get default header for kind", func() {
-		config := Config{
-			Kinds: []KindConfig{
-				{Label: "ignored"},
-			},
-			KindFormat: "KF",
-		}
-		format := config.KindHeader("unused label")
-		Expect(format).To(Equal("KF"))
-	})
+func TestBodyConfigWithMinAndMax(t *testing.T) {
+	var max int64 = 10
 
-	It("can get the change format from kind label", func() {
-		config := Config{
-			Kinds: []KindConfig{
-				{Label: "A", ChangeFormat: "unused"},
-				{Label: "unused", ChangeFormat: ""},
-				{Label: "C", ChangeFormat: "CF"},
-			},
-		}
-		format := config.ChangeFormatForKind("C")
-		Expect(format).To(Equal("CF"))
-	})
+	longInput := "jas dklfjaklsd fjklasjd flkasjdfkl sd"
+	p := BodyConfig{MaxLength: &max}.CreatePrompt(os.Stdin)
+	underPrompt, ok := p.(*promptui.Prompt)
 
-	It("can get default change format if no custom ones exist", func() {
-		config := Config{
-			Kinds: []KindConfig{
-				{Label: "unused", ChangeFormat: "ignored"},
-			},
-			ChangeFormat: "CF",
-		}
-		format := config.ChangeFormatForKind("C")
-		Expect(format).To(Equal("CF"))
-	})
-})
-
-var _ = Describe("Body Config", func() {
-	It("can create prompt when config empty", func() {
-		p := BodyConfig{}.CreatePrompt(os.Stdin)
-		underPrompt, ok := p.(*promptui.Prompt)
-		Expect(ok).To(BeTrue())
-		Expect(underPrompt.Label).To(Equal("Body"))
-		Expect(underPrompt.Validate("anything")).To(BeNil())
-	})
-
-	It("can create prompt with min and max", func() {
-		var max int64 = 10
-		longInput := "jas dklfjaklsd fjklasjd flkasjdfkl sd"
-		p := BodyConfig{MaxLength: &max}.CreatePrompt(os.Stdin)
-		underPrompt, ok := p.(*promptui.Prompt)
-		Expect(ok).To(BeTrue())
-		Expect(underPrompt.Label).To(Equal("Body"))
-		Expect(errors.Is(underPrompt.Validate(longInput), errInputTooLong)).To(BeTrue())
-	})
-})
+	then.True(t, ok)
+	then.Equals(t, "Body", underPrompt.Label.(string))
+	then.Err(t, errInputTooLong, underPrompt.Validate(longInput))
+}
