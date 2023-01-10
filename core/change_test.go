@@ -149,7 +149,7 @@ func TestLoadEnvVars(t *testing.T) {
 }
 
 func TestAskPromptsForBody(t *testing.T) {
-	reader, writer := then.WithStdIn(t)
+	reader, writer := then.WithReadWritePipe(t)
 	then.DelayWrite(
 		t, writer,
 		[]byte("body stuff"),
@@ -167,7 +167,7 @@ func TestAskPromptsForBody(t *testing.T) {
 }
 
 func TestAskComponentKindBody(t *testing.T) {
-	reader, writer := then.WithStdIn(t)
+	reader, writer := then.WithReadWritePipe(t)
 	then.DelayWrite(
 		t, writer,
 		[]byte{106, 13},
@@ -194,7 +194,7 @@ func TestAskComponentKindBody(t *testing.T) {
 }
 
 func TestBodyKindPostProcess(t *testing.T) {
-	reader, _ := then.WithStdIn(t)
+	reader, _ := then.WithReadWritePipe(t)
 
 	config := Config{
 		Kinds: []KindConfig{
@@ -227,7 +227,7 @@ func TestBodyKindPostProcess(t *testing.T) {
 }
 
 func TestBodyCustom(t *testing.T) {
-	reader, writer := then.WithStdIn(t)
+	reader, writer := then.WithReadWritePipe(t)
 	then.DelayWrite(
 		t, writer,
 		[]byte("body again"),
@@ -251,7 +251,7 @@ func TestBodyCustom(t *testing.T) {
 }
 
 func TestBodyCustomWithExistingCustomValue(t *testing.T) {
-	reader, writer := then.WithStdIn(t)
+	reader, writer := then.WithReadWritePipe(t)
 	then.DelayWrite(
 		t, writer,
 		[]byte("body again"),
@@ -282,7 +282,7 @@ func TestBodyCustomWithExistingCustomValue(t *testing.T) {
 }
 
 func TestSkippedBodyGlobalChoicesKindWithAdditional(t *testing.T) {
-	reader, writer := then.WithStdIn(t)
+	reader, writer := then.WithReadWritePipe(t)
 	then.DelayWrite(
 		t, writer,
 		[]byte{13},
@@ -317,7 +317,7 @@ func TestSkippedBodyGlobalChoicesKindWithAdditional(t *testing.T) {
 }
 
 func TestBodyAndPostProcess(t *testing.T) {
-	reader, _ := then.WithStdIn(t)
+	reader, _ := then.WithReadWritePipe(t)
 
 	config := Config{
 		Post: []PostProcessConfig{
@@ -338,7 +338,7 @@ func TestBodyAndPostProcess(t *testing.T) {
 }
 
 func TestBodyAndPostProcessSkipGlobalPost(t *testing.T) {
-	reader, _ := then.WithStdIn(t)
+	reader, _ := then.WithReadWritePipe(t)
 	config := Config{
 		Kinds: []KindConfig{
 			{
@@ -375,7 +375,7 @@ func TestBodyAndPostProcessSkipGlobalPost(t *testing.T) {
 }
 
 func TestErrorInvalidBody(t *testing.T) {
-	reader, writer := then.WithStdIn(t)
+	reader, writer := then.WithReadWritePipe(t)
 	then.DelayWrite(
 		t, writer,
 		[]byte("abc"),
@@ -384,6 +384,7 @@ func TestErrorInvalidBody(t *testing.T) {
 	)
 
 	var min int64 = 5
+
 	config := Config{
 		Body: BodyConfig{
 			MinLength: &min,
@@ -394,7 +395,7 @@ func TestErrorInvalidBody(t *testing.T) {
 }
 
 func TestErrorInvalidPost(t *testing.T) {
-	reader, _ := then.WithStdIn(t)
+	reader, _ := then.WithReadWritePipe(t)
 	config := Config{
 		Post: []PostProcessConfig{
 			{Key: "Post", Value: "invalid {{++...thing}}"},
@@ -407,7 +408,7 @@ func TestErrorInvalidPost(t *testing.T) {
 }
 
 func TestErrorInvalidCustomType(t *testing.T) {
-	reader, writer := then.WithStdIn(t)
+	reader, writer := then.WithReadWritePipe(t)
 	then.DelayWrite(
 		t, writer,
 		[]byte("invalid custom type"),
@@ -425,7 +426,7 @@ func TestErrorInvalidCustomType(t *testing.T) {
 }
 
 func TestErrorInvalidComponent(t *testing.T) {
-	reader, writer := then.WithStdIn(t)
+	reader, writer := then.WithReadWritePipe(t)
 	then.DelayWrite(
 		t, writer,
 		[]byte{3},
@@ -439,7 +440,7 @@ func TestErrorInvalidComponent(t *testing.T) {
 }
 
 func TestErrorInvalidKind(t *testing.T) {
-	reader, writer := then.WithStdIn(t)
+	reader, writer := then.WithReadWritePipe(t)
 	then.DelayWrite(
 		t, writer,
 		[]byte{3},
@@ -456,7 +457,7 @@ func TestErrorInvalidKind(t *testing.T) {
 }
 
 func TestErrorFaultBody(t *testing.T) {
-	reader, writer := then.WithStdIn(t)
+	reader, writer := then.WithReadWritePipe(t)
 	then.DelayWrite(
 		t, writer,
 		[]byte{3},
@@ -468,7 +469,7 @@ func TestErrorFaultBody(t *testing.T) {
 }
 
 func TestErrorInvalidCustomValue(t *testing.T) {
-	reader, writer := then.WithStdIn(t)
+	reader, writer := then.WithReadWritePipe(t)
 	then.DelayWrite(
 		t, writer,
 		[]byte("custom body"),
@@ -487,7 +488,7 @@ func TestErrorInvalidCustomValue(t *testing.T) {
 }
 
 func TestErrorBadKindLabel(t *testing.T) {
-	reader, _ := then.WithStdIn(t)
+	reader, _ := then.WithReadWritePipe(t)
 	config := Config{
 		Kinds: []KindConfig{
 			{Label: "kind"},
@@ -503,7 +504,7 @@ func TestErrorBadKindLabel(t *testing.T) {
 }
 
 func TestErrorBadComponentInput(t *testing.T) {
-	reader, _ := then.WithStdIn(t)
+	reader, _ := then.WithReadWritePipe(t)
 	config := Config{
 		Components: []string{"a", "b", "c"},
 	}
@@ -517,7 +518,7 @@ func TestErrorBadComponentInput(t *testing.T) {
 }
 
 func TestErrorComponentGivenWithNoConfiguration(t *testing.T) {
-	reader, _ := then.WithStdIn(t)
+	reader, _ := then.WithReadWritePipe(t)
 	config := Config{}
 	c := &Change{
 		Component: "we shouldn't have a component",
@@ -529,7 +530,7 @@ func TestErrorComponentGivenWithNoConfiguration(t *testing.T) {
 }
 
 func TestErrorKindGivenWithNoConfiguration(t *testing.T) {
-	reader, _ := then.WithStdIn(t)
+	reader, _ := then.WithReadWritePipe(t)
 	config := Config{}
 	c := &Change{
 		Kind: "we shouldn't have a kind",
@@ -541,7 +542,7 @@ func TestErrorKindGivenWithNoConfiguration(t *testing.T) {
 }
 
 func TestErrorCustomGivenWithNoConfiguration(t *testing.T) {
-	reader, _ := then.WithStdIn(t)
+	reader, _ := then.WithReadWritePipe(t)
 	config := Config{
 		CustomChoices: []Custom{
 			{Key: "Issue", Type: CustomInt},
@@ -558,7 +559,7 @@ func TestErrorCustomGivenWithNoConfiguration(t *testing.T) {
 }
 
 func TestErrorCustomGivenDoesNotPassValidation(t *testing.T) {
-	reader, _ := then.WithStdIn(t)
+	reader, _ := then.WithReadWritePipe(t)
 	minValue := int64(50)
 	config := Config{
 		CustomChoices: []Custom{
@@ -576,7 +577,7 @@ func TestErrorCustomGivenDoesNotPassValidation(t *testing.T) {
 }
 
 func TestErrorBodyGivenWithNoConfiguration(t *testing.T) {
-	reader, _ := then.WithStdIn(t)
+	reader, _ := then.WithReadWritePipe(t)
 	config := Config{
 		Kinds: []KindConfig{
 			{Label: "kind", SkipBody: true},
@@ -594,7 +595,7 @@ func TestErrorBodyGivenWithNoConfiguration(t *testing.T) {
 func TestErrorBodyGivenDoesNotPassValidation(t *testing.T) {
 	var min int64 = 10
 
-	reader, _ := then.WithStdIn(t)
+	reader, _ := then.WithReadWritePipe(t)
 	config := Config{
 		Kinds: []KindConfig{
 			{Label: "kind"},
@@ -613,7 +614,7 @@ func TestErrorBodyGivenDoesNotPassValidation(t *testing.T) {
 }
 
 func TestSkipPromptForComponentIfSet(t *testing.T) {
-	reader, writer := then.WithStdIn(t)
+	reader, writer := then.WithReadWritePipe(t)
 	then.DelayWrite(
 		t, writer,
 		[]byte("skip component body"),
@@ -633,12 +634,13 @@ func TestSkipPromptForComponentIfSet(t *testing.T) {
 }
 
 func TestSkipPromptForKindIfSet(t *testing.T) {
-	reader, writer := then.WithStdIn(t)
+	reader, writer := then.WithReadWritePipe(t)
 	then.DelayWrite(
 		t, writer,
 		[]byte("skip kind body"),
 		[]byte{13},
 	)
+
 	config := Config{
 		Kinds: []KindConfig{
 			{Label: "kind"},
@@ -654,7 +656,7 @@ func TestSkipPromptForKindIfSet(t *testing.T) {
 }
 
 func TestSkipPromptForBodyIfSet(t *testing.T) {
-	reader, writer := then.WithStdIn(t)
+	reader, writer := then.WithReadWritePipe(t)
 	then.DelayWrite(
 		t, writer,
 		[]byte("kind"),

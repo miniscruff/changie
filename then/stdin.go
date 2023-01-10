@@ -5,7 +5,7 @@ import (
 	"testing"
 )
 
-func WithStdIn(t *testing.T) (*os.File, *os.File) {
+func WithReadWritePipe(t *testing.T) (*os.File, *os.File) {
 	t.Helper()
 
 	reader, writer, err := os.Pipe()
