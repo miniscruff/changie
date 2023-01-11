@@ -176,11 +176,11 @@ func (c Custom) validateString(input string) error {
 	}
 
 	if c.MinLength != nil && length < *c.MinLength {
-		return fmt.Errorf("%w: length of %v < %v", errInputTooShort, length, c.MinLength)
+		return fmt.Errorf("%w: length of %v < %v", errInputTooShort, length, *c.MinLength)
 	}
 
 	if c.MaxLength != nil && length > *c.MaxLength {
-		return fmt.Errorf("%w: length of %v > %v", errInputTooLong, length, c.MaxLength)
+		return fmt.Errorf("%w: length of %v > %v", errInputTooLong, length, *c.MaxLength)
 	}
 
 	return nil
@@ -198,11 +198,11 @@ func (c Custom) validateInt(input string) error {
 	}
 
 	if c.MinInt != nil && value < *c.MinInt {
-		return fmt.Errorf("%w: %v < %v", errIntTooLow, value, c.MinInt)
+		return fmt.Errorf("%w: %v < %v", errIntTooLow, value, *c.MinInt)
 	}
 
 	if c.MaxInt != nil && value > *c.MaxInt {
-		return fmt.Errorf("%w: %v > %v", errIntTooHigh, value, c.MinInt)
+		return fmt.Errorf("%w: %v > %v", errIntTooHigh, value, *c.MinInt)
 	}
 
 	return nil
