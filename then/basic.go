@@ -47,16 +47,16 @@ func SliceEquals[T comparable](t *testing.T, expected, actual []T) {
 		t.Errorf("length of expected does not equal actual: %v != %v", len(expected), len(actual))
 	}
 
-    for i := 0; i < len(expected); i++ {
-        if expected[i] != actual[i] {
+	for i := 0; i < len(expected); i++ {
+		if expected[i] != actual[i] {
 			t.Errorf(
 				"expected value does not equal actual at index %v: expected '%v' != '%v'",
 				i,
 				expected[i],
 				actual[i],
 			)
-        }
-    }
+		}
+	}
 }
 
 func Nil(t *testing.T, value any) {
