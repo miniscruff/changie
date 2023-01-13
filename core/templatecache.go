@@ -79,8 +79,12 @@ func (tc *TemplateCache) Load(text string) (*template.Template, error) {
 	}
 
 	templ, err := template.New(text).Funcs(tc.buildFuncMap()).Parse(text)
-	tc.cache[text] = templ
+    if err != nil {
+        // do not save our template if it had an error
+        return nil, err
+    }
 
+	tc.cache[text] = templ
 	return templ, err
 }
 
