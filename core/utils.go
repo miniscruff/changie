@@ -21,7 +21,7 @@ func AppendFile(opener shared.OpenFiler, rootFile io.Writer, path string) error 
 	}
 	defer otherFile.Close()
 
-	// Copy doesn't seem to break in any test I have
+	// Copy doesn't seem to break in any test I have tried
 	// so ignoring this err return value
 	_, _ = io.Copy(rootFile, otherFile)
 

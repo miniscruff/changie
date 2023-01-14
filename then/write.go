@@ -1,6 +1,7 @@
 package then
 
 import (
+	"errors"
 	"io"
 	"testing"
 	"time"
@@ -26,10 +27,16 @@ type ErrWriter struct {
 	err error
 }
 
-func NewErrWriter(err error) *ErrWriter {
-	return &ErrWriter{err: err}
+func NewErrWriter() *ErrWriter {
+	return &ErrWriter{
+		err: errors.New("error from ErrWriter"),
+	}
 }
 
 func (w *ErrWriter) Write(data []byte) (int, error) {
 	return 0, w.err
+}
+
+func (w *ErrWriter) Raised(t *testing.T, err error) {
+	Err(t, w.err, err)
 }
