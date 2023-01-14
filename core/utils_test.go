@@ -7,8 +7,9 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/miniscruff/changie/then"
 	"github.com/spf13/afero"
+
+	"github.com/miniscruff/changie/then"
 )
 
 func TestAppendFileAppendsTwoFiles(t *testing.T) {
@@ -303,6 +304,7 @@ func TestCanFindChangeFiles(t *testing.T) {
 				&then.MockFileInfo{MockName: "h.md"},
 			}, nil
 		}
+
 		return nil, nil
 	}
 

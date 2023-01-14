@@ -28,32 +28,32 @@ func FileContents(t *testing.T, afs afero.Afero, filepath, contents string) {
 }
 
 type MockFileInfo struct {
-    MockName string
-    MockIsDir bool
+	MockName  string
+	MockIsDir bool
 }
 
 var _ os.FileInfo = (*MockFileInfo)(nil)
 
 func (m *MockFileInfo) Name() string {
-    return m.MockName
+	return m.MockName
 }
 
 func (m *MockFileInfo) IsDir() bool {
-    return m.MockIsDir
+	return m.MockIsDir
 }
 
 func (m *MockFileInfo) Size() int64 {
-    return 0
+	return 0
 }
 
 func (m *MockFileInfo) Mode() os.FileMode {
-    return os.ModeAppend
+	return os.ModeAppend
 }
 
 func (m *MockFileInfo) ModTime() time.Time {
-    return time.Now()
+	return time.Now()
 }
 
 func (m *MockFileInfo) Sys() any {
-    return nil
+	return nil
 }
