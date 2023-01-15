@@ -6,296 +6,202 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"testing"
 	"time"
 
-	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/gomega"
-	"github.com/spf13/afero"
-
 	"github.com/miniscruff/changie/core"
-	. "github.com/miniscruff/changie/testutils"
+	"github.com/miniscruff/changie/then"
+	"github.com/spf13/afero"
 )
 
-var _ = Describe("New", func() {
-	mockTime := func() time.Time {
-		return time.Date(2021, 5, 22, 13, 30, 10, 5, time.UTC)
+func newTestConfig() *core.Config {
+	return &core.Config{
+		ChangesDir:    "news",
+		UnreleasedDir: "future",
+		HeaderPath:    "header.rst",
+		ChangelogPath: "news.md",
+		VersionExt:    "md",
+		VersionFormat: "## {{.Version}}",
+		KindFormat:    "### {{.Kind}}",
+		ChangeFormat:  "* {{.Body}}",
+		Kinds: []core.KindConfig{
+			{Label: "added"},
+			{Label: "removed"},
+			{Label: "other"},
+		},
 	}
+}
 
-	var (
-		fs         *MockFS
-		afs        afero.Afero
-		testConfig core.Config
+func newResetVars() {
+	_newDryRun = false
+	_body = ""
+	_kind = ""
+	_component = ""
+	_custom = nil
+}
+
+func newMockTime() time.Time {
+	return time.Date(2021, 5, 22, 13, 30, 10, 5, time.UTC)
+}
+
+func TestNewCreatesNewFileAfterPrompts(t *testing.T) {
+	cfg := newTestConfig()
+	_, afs := then.WithAferoFSConfig(t, cfg)
+	reader, writer := then.WithReadWritePipe(t)
+	then.DelayWrite(
+		t, writer,
+		[]byte{106, 13},
+		[]byte("a message"),
+		[]byte{13},
 	)
 
-	BeforeEach(func() {
-		fs = NewMockFS()
-		afs = afero.Afero{Fs: fs}
-		testConfig = core.Config{
-			ChangesDir:    "news",
-			UnreleasedDir: "future",
-			HeaderPath:    "header.rst",
-			ChangelogPath: "news.md",
-			VersionExt:    "md",
-			VersionFormat: "## {{.Version}}",
-			KindFormat:    "### {{.Kind}}",
-			ChangeFormat:  "* {{.Body}}",
-			Kinds: []core.KindConfig{
-				{Label: "added"},
-				{Label: "removed"},
-				{Label: "other"},
-			},
-		}
+	err := newPipeline(newConfig{
+		afs:           afs,
+		timeNow:       newMockTime,
+		stdinReader:   reader,
+		templateCache: core.NewTemplateCache(),
 	})
+	then.Nil(t, err)
 
-	AfterEach(func() {
-		_newDryRun = false
-		_body = ""
-		_kind = ""
-		_component = ""
-		_custom = nil
+	futurePath := filepath.Join(cfg.ChangesDir, cfg.UnreleasedDir)
+	fileInfos, err := afs.ReadDir(futurePath)
+	then.Nil(t, err)
+	then.Equals(t, 1, len(fileInfos))
+	then.Equals(t, ".yaml", filepath.Ext(fileInfos[0].Name()))
+
+	changeContent := fmt.Sprintf(
+		"kind: removed\nbody: a message\ntime: %s\n",
+		newMockTime().Format(time.RFC3339Nano),
+	)
+	changePath := filepath.Join(futurePath, fileInfos[0].Name())
+	then.FileContents(t, afs, changePath, changeContent)
+}
+
+func TestErrorNewBadCustomValues(t *testing.T) {
+	_, afs := then.WithAferoFSConfig(t, newTestConfig())
+	_custom = []string{"bad-format"}
+	t.Cleanup(newResetVars)
+
+	err := newPipeline(newConfig{
+		afs:           afs,
+		timeNow:       newMockTime,
+		stdinReader:   nil,
+		templateCache: core.NewTemplateCache(),
 	})
+	then.NotNil(t, err)
+}
 
-	It("creates new file on completion of prompts", func() {
-		err := testConfig.Save(afs.WriteFile)
-		Expect(err).To(BeNil())
-
-		stdinReader, stdinWriter, err := os.Pipe()
-		Expect(err).To(BeNil())
-
-		defer stdinReader.Close()
-		defer stdinWriter.Close()
-
-		go func() {
-			DelayWrite(stdinWriter, []byte{106, 13})
-			DelayWrite(stdinWriter, []byte("a message"))
-			DelayWrite(stdinWriter, []byte{13})
-		}()
-
-		err = newPipeline(newConfig{
-			afs:           afs,
-			timeNow:       mockTime,
-			stdinReader:   stdinReader,
-			templateCache: core.NewTemplateCache(),
-		})
-		Expect(err).To(BeNil())
-
-		futurePath := filepath.Join(testConfig.ChangesDir, testConfig.UnreleasedDir)
-		fileInfos, err := afs.ReadDir(futurePath)
-		Expect(err).To(BeNil())
-		Expect(fileInfos).To(HaveLen(1))
-		Expect(fileInfos[0].Name()).To(HaveSuffix(".yaml"))
-
-		changeContent := fmt.Sprintf(
-			"kind: removed\nbody: a message\ntime: %s\n",
-			mockTime().Format(time.RFC3339Nano),
-		)
-		changePath := filepath.Join(futurePath, fileInfos[0].Name())
-		Expect(changePath).To(HaveContents(afs, changeContent))
+func TestErrorOnBadConfig(t *testing.T) {
+	_, afs := then.WithAferoFS()
+	err := newPipeline(newConfig{
+		afs:           afs,
+		timeNow:       newMockTime,
+		stdinReader:   os.Stdin,
+		templateCache: core.NewTemplateCache(),
 	})
+	then.NotNil(t, err)
+}
 
-	It("creates new file with just a body", func() {
-		testConfig.Kinds = []core.KindConfig{}
-		err := testConfig.Save(afs.WriteFile)
-		Expect(err).To(BeNil())
+func TestErrorNewOnBadWrite(t *testing.T) {
+	cfg := newTestConfig()
+	cfg.Kinds = []core.KindConfig{}
+	fs, afs := then.WithAferoFSConfig(t, cfg)
 
-		stdinReader, stdinWriter, err := os.Pipe()
-		Expect(err).To(BeNil())
+	reader, writer := then.WithReadWritePipe(t)
+	then.DelayWrite(
+		t, writer,
+		[]byte("body stuff"),
+		[]byte{13},
+	)
 
-		defer stdinReader.Close()
-		defer stdinWriter.Close()
+	mockError := errors.New("dummy mock error")
+	fs.MockCreate = func(name string) (afero.File, error) {
+		return nil, mockError
+	}
 
-		go func() {
-			DelayWrite(stdinWriter, []byte("body stuff"))
-			DelayWrite(stdinWriter, []byte{13})
-		}()
-
-		err = newPipeline(newConfig{
-			afs:           afs,
-			timeNow:       mockTime,
-			stdinReader:   stdinReader,
-			templateCache: core.NewTemplateCache(),
-		})
-		Expect(err).To(BeNil())
-
-		futurePath := filepath.Join(testConfig.ChangesDir, testConfig.UnreleasedDir)
-		fileInfos, err := afs.ReadDir(futurePath)
-		Expect(err).To(BeNil())
-		Expect(fileInfos).To(HaveLen(1))
-		Expect(fileInfos[0].Name()).To(HaveSuffix(".yaml"))
-
-		changeContent := fmt.Sprintf(
-			"body: body stuff\ntime: %s\n",
-			mockTime().Format(time.RFC3339Nano),
-		)
-		changePath := filepath.Join(futurePath, fileInfos[0].Name())
-		Expect(changePath).To(HaveContents(afs, changeContent))
+	err := newPipeline(newConfig{
+		afs:           afs,
+		timeNow:       newMockTime,
+		stdinReader:   reader,
+		templateCache: core.NewTemplateCache(),
 	})
+	then.Err(t, mockError, err)
+}
 
-	It("returns error on bad custom values", func() {
-		Expect(testConfig.Save(afs.WriteFile)).To(Succeed())
+func TestErrorNewFragmentTemplate(t *testing.T) {
+	cfg := newTestConfig()
+	cfg.FragmentFileFormat = "{{...asdf}}"
+	_, afs := then.WithAferoFSConfig(t, cfg)
 
-		_custom = []string{"bad-format"}
+	reader, writer := then.WithReadWritePipe(t)
+	then.DelayWrite(
+		t, writer,
+		[]byte{106, 13},
+		[]byte("a message"),
+		[]byte{13},
+	)
 
-		err := newPipeline(newConfig{
-			afs:           afs,
-			timeNow:       mockTime,
-			stdinReader:   nil,
-			templateCache: core.NewTemplateCache(),
-		})
-		Expect(err).NotTo(BeNil())
+	err := newPipeline(newConfig{
+		afs:           afs,
+		timeNow:       newMockTime,
+		stdinReader:   reader,
+		templateCache: core.NewTemplateCache(),
 	})
+	then.NotNil(t, err)
+}
 
-	It("returns error on bad write", func() {
-		testConfig.Kinds = []core.KindConfig{}
-		Expect(testConfig.Save(afs.WriteFile)).To(Succeed())
+func TestNewOutputsToCmdOutWhenDry(t *testing.T) {
+	_newDryRun = true
+	t.Cleanup(newResetVars)
 
-		stdinReader, stdinWriter, err := os.Pipe()
-		Expect(err).To(BeNil())
+	cfg := newTestConfig()
+	cfg.Kinds = []core.KindConfig{}
+	_, afs := then.WithAferoFSConfig(t, cfg)
 
-		defer stdinReader.Close()
-		defer stdinWriter.Close()
+	reader, writer := then.WithReadWritePipe(t)
+	then.DelayWrite(
+		t, writer,
+		[]byte("another body"),
+		[]byte{13},
+	)
 
-		go func() {
-			DelayWrite(stdinWriter, []byte("body stuff"))
-			DelayWrite(stdinWriter, []byte{13})
-		}()
+	outWriter := strings.Builder{}
 
-		mockError := errors.New("dummy mock error")
-		fs.MockCreate = func(name string) (afero.File, error) {
-			return nil, mockError
-		}
+	changeContent := fmt.Sprintf(
+		"body: another body\ntime: %s\n",
+		newMockTime().Format(time.RFC3339Nano),
+	)
 
-		err = newPipeline(newConfig{
-			afs:           afs,
-			timeNow:       mockTime,
-			stdinReader:   stdinReader,
-			templateCache: core.NewTemplateCache(),
-		})
-		Expect(err).To(Equal(mockError))
+	err := newPipeline(newConfig{
+		afs:           afs,
+		timeNow:       newMockTime,
+		stdinReader:   reader,
+		templateCache: core.NewTemplateCache(),
+		cmdOut:        &outWriter,
 	})
+	then.Nil(t, err)
+	then.Equals(t, changeContent, outWriter.String())
 
-	It("returns error on fragment template", func() {
-		testConfig.FragmentFileFormat = "{{...asdf}}"
-		Expect(testConfig.Save(afs.WriteFile)).To(Succeed())
+	futurePath := filepath.Join(cfg.ChangesDir, cfg.UnreleasedDir)
+	_, err = afs.ReadDir(futurePath)
+	then.NotNil(t, err)
+}
 
-		stdinReader, stdinWriter, err := os.Pipe()
-		Expect(err).To(BeNil())
+func TestErrorNewBadBody(t *testing.T) {
+	_, afs := then.WithAferoFSConfig(t, newTestConfig())
+	reader, writer := then.WithReadWritePipe(t)
+	then.DelayWrite(
+		t, writer,
+		[]byte{13},
+		[]byte("ctrl-c next"),
+		[]byte{3},
+	)
 
-		defer stdinReader.Close()
-		defer stdinWriter.Close()
-
-		go func() {
-			DelayWrite(stdinWriter, []byte{106, 13})
-			DelayWrite(stdinWriter, []byte("a message"))
-			DelayWrite(stdinWriter, []byte{13})
-		}()
-
-		err = newPipeline(newConfig{
-			afs:           afs,
-			timeNow:       mockTime,
-			stdinReader:   stdinReader,
-			templateCache: core.NewTemplateCache(),
-		})
-		Expect(err).NotTo(BeNil())
+	err := newPipeline(newConfig{
+		afs:           afs,
+		timeNow:       newMockTime,
+		stdinReader:   reader,
+		templateCache: core.NewTemplateCache(),
 	})
-
-	It("outputs to cmdOut in dry run", func() {
-		_newDryRun = true
-		testConfig.Kinds = []core.KindConfig{}
-		err := testConfig.Save(afs.WriteFile)
-		Expect(err).To(BeNil())
-
-		stdinReader, stdinWriter, err := os.Pipe()
-		Expect(err).To(BeNil())
-
-		defer stdinReader.Close()
-		defer stdinWriter.Close()
-
-		go func() {
-			DelayWrite(stdinWriter, []byte("body stuff"))
-			DelayWrite(stdinWriter, []byte{13})
-		}()
-
-		var writer strings.Builder
-
-		changeContent := fmt.Sprintf(
-			"body: body stuff\ntime: %s\n",
-			mockTime().Format(time.RFC3339Nano),
-		)
-
-		err = newPipeline(newConfig{
-			afs:           afs,
-			timeNow:       mockTime,
-			stdinReader:   stdinReader,
-			templateCache: core.NewTemplateCache(),
-			cmdOut:        &writer,
-		})
-		Expect(writer.String()).To(Equal(changeContent))
-		Expect(err).To(BeNil())
-
-		futurePath := filepath.Join(testConfig.ChangesDir, testConfig.UnreleasedDir)
-		fileInfos, err := afs.ReadDir(futurePath)
-		Expect(err).NotTo(BeNil())
-		Expect(fileInfos).To(HaveLen(0))
-	})
-
-	It("returns error on bad body", func() {
-		err := testConfig.Save(afs.WriteFile)
-		Expect(err).To(BeNil())
-
-		stdinReader, stdinWriter, err := os.Pipe()
-		Expect(err).To(BeNil())
-
-		defer stdinReader.Close()
-		defer stdinWriter.Close()
-
-		go func() {
-			DelayWrite(stdinWriter, []byte{13})
-			DelayWrite(stdinWriter, []byte("ctrl-c here"))
-			DelayWrite(stdinWriter, []byte{3})
-		}()
-
-		err = newPipeline(newConfig{
-			afs:           afs,
-			timeNow:       mockTime,
-			stdinReader:   stdinReader,
-			templateCache: core.NewTemplateCache(),
-		})
-		Expect(err).NotTo(BeNil())
-	})
-
-	It("returns error on bad write", func() {
-		err := testConfig.Save(afs.WriteFile)
-		Expect(err).To(BeNil())
-
-		stdinReader, stdinWriter, err := os.Pipe()
-		Expect(err).To(BeNil())
-
-		defer stdinReader.Close()
-		defer stdinWriter.Close()
-
-		go func() {
-			DelayWrite(stdinWriter, []byte{13})
-			DelayWrite(stdinWriter, []byte("ctrl-c here"))
-			DelayWrite(stdinWriter, []byte{3})
-		}()
-
-		err = newPipeline(newConfig{
-			afs:           afs,
-			timeNow:       mockTime,
-			stdinReader:   stdinReader,
-			templateCache: core.NewTemplateCache(),
-		})
-		Expect(err).NotTo(BeNil())
-	})
-
-	It("returns error on bad config", func() {
-		err := newPipeline(newConfig{
-			afs:           afs,
-			timeNow:       mockTime,
-			stdinReader:   os.Stdin,
-			templateCache: core.NewTemplateCache(),
-		})
-		Expect(err).NotTo(BeNil())
-	})
-})
+	then.NotNil(t, err)
+}

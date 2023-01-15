@@ -98,21 +98,6 @@ var _ = Describe("end to end", func() {
 		Expect(Execute("")).To(Succeed())
 	}
 
-	testNewDry := func(body string) {
-		go func() {
-			delayWrite(stdinWriter, []byte{106, 13})
-			delayWrite(stdinWriter, []byte(body))
-			delayWrite(stdinWriter, []byte{13})
-		}()
-
-		date := time.Now().Format("2006-01-02")
-		contents := fmt.Sprintf(`kind: Changed
-body: show contents
-time: %s`, date)
-		testEcho([]string{"new", "--dry-run"}, contents)
-		Expect(newCmd.Flags().Set("dry-run", "false")).To(Succeed())
-	}
-
 	testBatch := func() {
 		rootCmd.SetArgs([]string{"batch", "v0.1.0"})
 		Expect(Execute("")).To(Succeed())
@@ -174,19 +159,12 @@ time: %s`, date)
 		testNew("older")
 		time.Sleep(2 * time.Second) // let time pass for the next change
 		testNew("newer")
-		testNewDry("show contents")
 		testBatchDry()
 		testBatch()
 		testEcho([]string{"latest"}, "0.1.0")
 		testEcho([]string{"next", "major"}, "1.0.0")
 		testMergeDry()
 		testMerge()
-	})
-
-	It("should fail on new with no config", func() {
-		rootCmd.SetArgs([]string{"new"})
-		err := Execute("")
-		Expect(err).NotTo(BeNil())
 	})
 
 	It("should fail on merge with no config", func() {
