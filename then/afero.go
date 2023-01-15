@@ -6,9 +6,10 @@ import (
 	"testing"
 	"time"
 
+	"github.com/spf13/afero"
+
 	"github.com/miniscruff/changie/shared"
 	"github.com/miniscruff/changie/testutils"
-	"github.com/spf13/afero"
 )
 
 func WithAferoFS() (afero.Fs, afero.Afero) {
@@ -19,24 +20,24 @@ func WithAferoFS() (afero.Fs, afero.Afero) {
 }
 
 type Saver interface {
-    Save(shared.WriteFiler) error
+	Save(shared.WriteFiler) error
 }
 
 func WithAferoFSConfig(t *testing.T, cfg Saver) (*testutils.MockFS, afero.Afero) {
-    fs := testutils.NewMockFS()
+	fs := testutils.NewMockFS()
 	// fs := afero.NewMemMapFs()
 	afs := afero.Afero{Fs: fs}
 
-    err := cfg.Save(afs.WriteFile)
-    Nil(t, err)
+	err := cfg.Save(afs.WriteFile)
+	Nil(t, err)
 
 	return fs, afs
 }
 
 func CreateFile(t *testing.T, afs afero.Afero, paths ...string) {
-    fullPath := filepath.Join(paths...)
-    _, err := afs.Create(fullPath)
-    Nil(t, err)
+	fullPath := filepath.Join(paths...)
+	_, err := afs.Create(fullPath)
+	Nil(t, err)
 }
 
 func FileContents(t *testing.T, afs afero.Afero, filepath, contents string) {

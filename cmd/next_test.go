@@ -52,7 +52,7 @@ func TestErrorNextVersionBadConfig(t *testing.T) {
 	_, afs := then.WithAferoFS()
 	builder := strings.Builder{}
 
-    err := nextPipeline(afs, &builder, "major", nil, nil)
+	err := nextPipeline(afs, &builder, "major", nil, nil)
 	then.NotNil(t, err)
 }
 
@@ -60,9 +60,9 @@ func TestErrorNextPartNotSupported(t *testing.T) {
 	_, afs := then.WithAferoFSConfig(t, nextTestConfig)
 	builder := strings.Builder{}
 
-    then.CreateFile(t, afs, "chgs", "v0.0.1.md")
+	then.CreateFile(t, afs, "chgs", "v0.0.1.md")
 
-    err := nextPipeline(afs, &builder, "notsupported", nil, nil)
+	err := nextPipeline(afs, &builder, "notsupported", nil, nil)
 	then.NotNil(t, err)
 }
 

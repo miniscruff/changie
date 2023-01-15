@@ -9,9 +9,10 @@ import (
 	"testing"
 	"time"
 
+	"github.com/spf13/afero"
+
 	"github.com/miniscruff/changie/core"
 	"github.com/miniscruff/changie/then"
-	"github.com/spf13/afero"
 )
 
 func newTestConfig() *core.Config {
@@ -80,6 +81,7 @@ func TestNewCreatesNewFileAfterPrompts(t *testing.T) {
 func TestErrorNewBadCustomValues(t *testing.T) {
 	_, afs := then.WithAferoFSConfig(t, newTestConfig())
 	_custom = []string{"bad-format"}
+
 	t.Cleanup(newResetVars)
 
 	err := newPipeline(newConfig{
@@ -152,6 +154,7 @@ func TestErrorNewFragmentTemplate(t *testing.T) {
 
 func TestNewOutputsToCmdOutWhenDry(t *testing.T) {
 	_newDryRun = true
+
 	t.Cleanup(newResetVars)
 
 	cfg := newTestConfig()
