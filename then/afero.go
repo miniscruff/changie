@@ -25,7 +25,6 @@ type Saver interface {
 
 func WithAferoFSConfig(t *testing.T, cfg Saver) (*testutils.MockFS, afero.Afero) {
 	fs := testutils.NewMockFS()
-	// fs := afero.NewMemMapFs()
 	afs := afero.Afero{Fs: fs}
 
 	err := cfg.Save(afs.WriteFile)
