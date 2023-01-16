@@ -59,4 +59,3 @@ func FileContents(t *testing.T, afs afero.Afero, contents string, paths ...strin
 	expected := string(bs)
 	Equals(t, expected, contents)
 }
-

@@ -28,6 +28,7 @@ func FileExists(t *testing.T, paths ...string) {
 	t.Helper()
 
 	fullPath := filepath.Join(paths...)
+
 	_, err := os.Stat(fullPath)
 	if err == nil {
 		return

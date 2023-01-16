@@ -738,5 +738,4 @@ format: '{{.Body}}'
 			then.Equals(t, tc.output, w.String())
 		})
 	}
-
 }

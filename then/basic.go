@@ -94,12 +94,13 @@ func Err(t *testing.T, expected, actual error) {
 }
 
 func Panic(t *testing.T, f func()) {
-    defer func() {
-        recover()
-    }()
+	defer func() {
+		// we don't care what the value is, only that we had to recover
+		_ = recover()
+	}()
 
-    f()
-    t.Error("expected func to panic")
+	f()
+	t.Error("expected func to panic")
 }
 
 func True(t *testing.T, value bool) {
