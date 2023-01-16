@@ -37,3 +37,20 @@ func WithReadWritePipe(t *testing.T) (*os.File, *os.File) {
 
 	return reader, writer
 }
+
+func WithStdInOut(t *testing.T) (*os.File, *os.File, *os.File, *os.File) {
+	inReader, inWriter := WithReadWritePipe(t)
+	outReader, outWriter := WithReadWritePipe(t)
+
+	oldStdin := os.Stdin
+	oldStdout := os.Stdout
+	os.Stdin = inReader
+	os.Stdout = outWriter
+
+	t.Cleanup(func() {
+		os.Stdin = oldStdin
+		os.Stdout = oldStdout
+	})
+
+	return inReader, inWriter, outReader, outWriter
+}

@@ -141,6 +141,13 @@ func TestErrorMergeBadChangelogPath(t *testing.T) {
 	then.Err(t, badError, err)
 }
 
+func TestErrorMergeBadConfig(t *testing.T) {
+	_, afs := then.WithAferoFS()
+
+	err := mergePipeline(afs)
+	then.NotNil(t, err)
+}
+
 func TestErrorMergeUnableToReadChanges(t *testing.T) {
 	cfg := mergeTestConfig()
 	_, afs := then.WithAferoFSConfig(t, cfg)

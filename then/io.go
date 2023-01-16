@@ -42,6 +42,20 @@ func FileExists(t *testing.T, paths ...string) {
 	}
 }
 
+func FileContentsNoAfero(t *testing.T, contents string, paths ...string) {
+	t.Helper()
+
+	fullPath := filepath.Join(paths...)
+
+	bs, err := os.ReadFile(fullPath)
+	if err != nil {
+		t.Errorf("reading file: '%v'", fullPath)
+	}
+
+	expected := string(bs)
+	Equals(t, expected, contents)
+}
+
 type MockFileInfo struct {
 	MockName  string
 	MockIsDir bool
