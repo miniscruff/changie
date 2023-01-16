@@ -91,6 +91,8 @@ func TestErrorInitUnableToCheckIfFileExists(t *testing.T) {
 
 func TestErrorInitBadWriteFiles(t *testing.T) {
 	cfg := initConfig()
+	mockError := errors.New("bad write file")
+
 	for _, tc := range []struct {
 		name string
 		path []string
@@ -114,13 +116,13 @@ func TestErrorInitBadWriteFiles(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			_, afs := then.WithAferoFS()
-			mockError := errors.New("bad write file")
 			mockWriteFile := func(path string, data []byte, perm os.FileMode) error {
 				if path == filepath.Join(tc.path...) {
 					return mockError
 				}
 				return nil
 			}
+
 			err := initPipeline(afs.MkdirAll, mockWriteFile, afs.Exists, cfg)
 			then.Err(t, mockError, err)
 		})
