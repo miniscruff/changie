@@ -1,10 +1,8 @@
 package then
 
 import (
-	"os"
 	"path/filepath"
 	"testing"
-	"time"
 
 	"github.com/spf13/afero"
 
@@ -62,33 +60,3 @@ func FileContents(t *testing.T, afs afero.Afero, contents string, paths ...strin
 	Equals(t, expected, contents)
 }
 
-type MockFileInfo struct {
-	MockName  string
-	MockIsDir bool
-}
-
-var _ os.FileInfo = (*MockFileInfo)(nil)
-
-func (m *MockFileInfo) Name() string {
-	return m.MockName
-}
-
-func (m *MockFileInfo) IsDir() bool {
-	return m.MockIsDir
-}
-
-func (m *MockFileInfo) Size() int64 {
-	return 0
-}
-
-func (m *MockFileInfo) Mode() os.FileMode {
-	return os.ModeAppend
-}
-
-func (m *MockFileInfo) ModTime() time.Time {
-	return time.Now()
-}
-
-func (m *MockFileInfo) Sys() any {
-	return nil
-}

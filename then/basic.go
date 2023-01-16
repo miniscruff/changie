@@ -2,6 +2,7 @@ package then
 
 import (
 	"errors"
+	"strings"
 	"testing"
 )
 
@@ -92,11 +93,20 @@ func Err(t *testing.T, expected, actual error) {
 	}
 }
 
+func Panic(t *testing.T, f func()) {
+    defer func() {
+        recover()
+    }()
+
+    f()
+    t.Error("expected func to panic")
+}
+
 func True(t *testing.T, value bool) {
 	t.Helper()
 
 	if !value {
-		t.Errorf("expected value to be true")
+		t.Error("expected value to be true")
 	}
 }
 
@@ -104,6 +114,14 @@ func False(t *testing.T, value bool) {
 	t.Helper()
 
 	if value {
-		t.Errorf("expected value to be false")
+		t.Error("expected value to be false")
+	}
+}
+
+func Contains(t *testing.T, sub, full string) {
+	t.Helper()
+
+	if !strings.Contains(full, sub) {
+		t.Errorf("expected '%v' to be in '%v'", sub, full)
 	}
 }
