@@ -29,7 +29,7 @@ func latestConfig() *core.Config {
 func TestLatestVersionEchosLatestVersion(t *testing.T) {
 	cfg := latestConfig()
 	_, afs := then.WithAferoFSConfig(t, cfg)
-    w := strings.Builder{}
+	w := strings.Builder{}
 
 	then.CreateFile(t, afs, cfg.ChangesDir, "v0.0.1.md")
 	then.CreateFile(t, afs, cfg.ChangesDir, "v0.1.0.md")
@@ -44,7 +44,7 @@ func TestLatestVersionEchosLatestVersion(t *testing.T) {
 func TestLatestEchoLatestNonPrerelease(t *testing.T) {
 	cfg := latestConfig()
 	_, afs := then.WithAferoFSConfig(t, cfg)
-    w := strings.Builder{}
+	w := strings.Builder{}
 
 	then.CreateFile(t, afs, cfg.ChangesDir, "v0.0.1.md")
 	then.CreateFile(t, afs, cfg.ChangesDir, "v0.1.0.md")
@@ -59,7 +59,7 @@ func TestLatestEchoLatestNonPrerelease(t *testing.T) {
 func TestLatestWithoutPrefix(t *testing.T) {
 	cfg := latestConfig()
 	_, afs := then.WithAferoFSConfig(t, cfg)
-    w := strings.Builder{}
+	w := strings.Builder{}
 	removePrefix = true
 
 	t.Cleanup(latestCleanArgs)
@@ -74,7 +74,7 @@ func TestLatestWithoutPrefix(t *testing.T) {
 
 func TestErrorLatestBadConfig(t *testing.T) {
 	_, afs := then.WithAferoFS()
-    w := strings.Builder{}
+	w := strings.Builder{}
 
 	err := latestPipeline(afs, &w, false)
 	then.NotNil(t, err)
@@ -83,7 +83,7 @@ func TestErrorLatestBadConfig(t *testing.T) {
 func TestErrorLatestNoVersions(t *testing.T) {
 	cfg := latestConfig()
 	_, afs := then.WithAferoFSConfig(t, cfg)
-    w := strings.Builder{}
+	w := strings.Builder{}
 
 	// no files, means bad read for get versions
 	err := latestPipeline(afs, &w, false)
@@ -93,10 +93,10 @@ func TestErrorLatestNoVersions(t *testing.T) {
 func TestErrorLatestBadWrite(t *testing.T) {
 	cfg := latestConfig()
 	_, afs := then.WithAferoFSConfig(t, cfg)
-    w := then.NewErrWriter()
+	w := then.NewErrWriter()
 
 	then.CreateFile(t, afs, cfg.ChangesDir, "v0.0.1.md")
 	then.CreateFile(t, afs, cfg.ChangesDir, "v0.1.0.md")
 
-    w.Raised(t, latestPipeline(afs, w, false))
+	w.Raised(t, latestPipeline(afs, w, false))
 }

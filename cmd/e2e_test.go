@@ -13,8 +13,16 @@ import (
 func swapInReaderOutWriter(t *testing.T, inReader, outWriter *os.File) {
 	rootCmd.SetOut(outWriter)
 	rootCmd.SetIn(inReader)
+
 	batchDryRunOut = outWriter
 	mergeDryRunOut = outWriter
+
+	t.Cleanup(func() {
+		rootCmd.SetOut(nil)
+		rootCmd.SetIn(nil)
+		batchDryRunOut = rootCmd.OutOrStdout()
+		mergeDryRunOut = rootCmd.OutOrStdout()
+	})
 }
 
 func testEcho(t *testing.T, reader io.Reader, args []string, expect string) {

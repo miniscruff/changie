@@ -64,5 +64,6 @@ func latestPipeline(afs afero.Afero, w io.Writer, skipPrereleases bool) error {
 	}
 
 	_, err = w.Write([]byte(latestVer))
+
 	return err
 }
