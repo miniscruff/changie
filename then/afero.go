@@ -40,12 +40,23 @@ func CreateFile(t *testing.T, afs afero.Afero, paths ...string) {
 	Nil(t, err)
 }
 
-func FileContents(t *testing.T, afs afero.Afero, filepath, contents string) {
+func WriteFile(t *testing.T, afs afero.Afero, data []byte, paths ...string) {
+	fullPath := filepath.Join(paths...)
+	f, err := afs.Create(fullPath)
+	Nil(t, err)
+
+	_, err = f.Write(data)
+	Nil(t, err)
+}
+
+func FileContents(t *testing.T, afs afero.Afero, contents string, paths ...string) {
 	t.Helper()
 
-	bs, err := afs.ReadFile(filepath)
+	fullPath := filepath.Join(paths...)
+
+	bs, err := afs.ReadFile(fullPath)
 	if err != nil {
-		t.Errorf("reading file: '%v'", filepath)
+		t.Errorf("reading file: '%v'", fullPath)
 	}
 
 	expected := string(bs)

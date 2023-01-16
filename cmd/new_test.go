@@ -74,8 +74,7 @@ func TestNewCreatesNewFileAfterPrompts(t *testing.T) {
 		"kind: removed\nbody: a message\ntime: %s\n",
 		newMockTime().Format(time.RFC3339Nano),
 	)
-	changePath := filepath.Join(futurePath, fileInfos[0].Name())
-	then.FileContents(t, afs, changePath, changeContent)
+	then.FileContents(t, afs, changeContent, futurePath, fileInfos[0].Name())
 }
 
 func TestErrorNewBadCustomValues(t *testing.T) {

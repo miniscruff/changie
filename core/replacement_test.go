@@ -30,7 +30,7 @@ ignore me`
 	}
 	err = rep.Execute(afs.ReadFile, afs.WriteFile, ReplaceData{})
 	then.Nil(t, err)
-	then.FileContents(t, afs, filepath, endData)
+	then.FileContents(t, afs, endData, filepath)
 }
 
 func TestFindAndReplaceWithTemplate(t *testing.T) {
@@ -57,7 +57,7 @@ func TestFindAndReplaceWithTemplate(t *testing.T) {
 		VersionNoPrefix: "1.1.0",
 	})
 	then.Nil(t, err)
-	then.FileContents(t, afs, filepath, endData)
+	then.FileContents(t, afs, endData, filepath)
 }
 
 func TestFindAndReplaceStartOfLine(t *testing.T) {
@@ -88,7 +88,7 @@ level1:
 		VersionNoPrefix: "1.2.3",
 	})
 	then.Nil(t, err)
-	then.FileContents(t, afs, filepath, endData)
+	then.FileContents(t, afs, endData, filepath)
 }
 
 func TestFindAndReplaceCaseInsensitive(t *testing.T) {
@@ -120,7 +120,7 @@ level1:
 		VersionNoPrefix: "1.2.3",
 	})
 	then.Nil(t, err)
-	then.FileContents(t, afs, filepath, endData)
+	then.FileContents(t, afs, endData, filepath)
 }
 
 func TestErrorBadFileRead(t *testing.T) {

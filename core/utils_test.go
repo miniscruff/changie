@@ -30,7 +30,7 @@ func TestAppendFileAppendsTwoFiles(t *testing.T) {
 	then.Nil(t, err)
 
 	rootFile.Close()
-	then.FileContents(t, afs, rootPath, "root append")
+	then.FileContents(t, afs, "root append", rootPath)
 }
 
 func TestErrorAppendFileIfOpenFails(t *testing.T) {
