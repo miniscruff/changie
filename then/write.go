@@ -38,5 +38,6 @@ func (w *ErrWriter) Write(data []byte) (int, error) {
 }
 
 func (w *ErrWriter) Raised(t *testing.T, err error) {
+	t.Helper()
 	Err(t, w.err, err)
 }
