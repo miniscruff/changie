@@ -7,7 +7,6 @@ import (
 	"github.com/spf13/afero"
 
 	"github.com/miniscruff/changie/shared"
-	"github.com/miniscruff/changie/testutils"
 )
 
 func WithAferoFS() (afero.Fs, afero.Afero) {
@@ -21,8 +20,8 @@ type Saver interface {
 	Save(shared.WriteFiler) error
 }
 
-func WithAferoFSConfig(t *testing.T, cfg Saver) (*testutils.MockFS, afero.Afero) {
-	fs := testutils.NewMockFS()
+func WithAferoFSConfig(t *testing.T, cfg Saver) (*MockFS, afero.Afero) {
+	fs := NewMockFS()
 	afs := afero.Afero{Fs: fs}
 
 	err := cfg.Save(afs.WriteFile)
