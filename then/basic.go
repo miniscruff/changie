@@ -6,6 +6,8 @@ import (
 	"testing"
 )
 
+// Equals compares two values, in some rare cases due to generic limitations
+// you may have to use `reflect.DeepEquals` instead.
 func Equals[T comparable](t *testing.T, expected, actual T) {
 	t.Helper()
 
@@ -14,6 +16,7 @@ func Equals[T comparable](t *testing.T, expected, actual T) {
 	}
 }
 
+// NotEquals compares two values are not equal
 func NotEqual[T comparable](t *testing.T, expected, actual T) {
 	t.Helper()
 
@@ -22,6 +25,7 @@ func NotEqual[T comparable](t *testing.T, expected, actual T) {
 	}
 }
 
+// MapEquals compares two map values for same length and same key+value pairs.
 func MapEquals[M1, M2 ~map[K]V, K, V comparable](t *testing.T, expected M1, actual M2) {
 	t.Helper()
 
@@ -50,6 +54,7 @@ func MapEquals[M1, M2 ~map[K]V, K, V comparable](t *testing.T, expected M1, actu
 	}
 }
 
+// SliceEquals compares two slices for same length and same values at each index.
 func SliceEquals[T comparable](t *testing.T, expected, actual []T) {
 	t.Helper()
 
@@ -69,6 +74,7 @@ func SliceEquals[T comparable](t *testing.T, expected, actual []T) {
 	}
 }
 
+// Nil compares a value to nil, in some cases you may need to do `Equals(t, value, nil)`
 func Nil(t *testing.T, value any) {
 	t.Helper()
 
@@ -77,6 +83,7 @@ func Nil(t *testing.T, value any) {
 	}
 }
 
+// NotNil compares a value is not nil.
 func NotNil(t *testing.T, value any) {
 	t.Helper()
 
@@ -85,6 +92,7 @@ func NotNil(t *testing.T, value any) {
 	}
 }
 
+// Err checks if our actual error is the expected error or wrapped in the expected error.
 func Err(t *testing.T, expected, actual error) {
 	t.Helper()
 
@@ -93,6 +101,7 @@ func Err(t *testing.T, expected, actual error) {
 	}
 }
 
+// Panic checks if our func would panic.
 func Panic(t *testing.T, f func()) {
 	defer func() {
 		// we don't care what the value is, only that we had to recover
@@ -103,6 +112,7 @@ func Panic(t *testing.T, f func()) {
 	t.Error("expected func to panic")
 }
 
+// True checks if a value is true.
 func True(t *testing.T, value bool) {
 	t.Helper()
 
@@ -111,6 +121,7 @@ func True(t *testing.T, value bool) {
 	}
 }
 
+// False checks if a value is false.
 func False(t *testing.T, value bool) {
 	t.Helper()
 
@@ -119,6 +130,7 @@ func False(t *testing.T, value bool) {
 	}
 }
 
+// Contains checks if our substring is contained in the full string
 func Contains(t *testing.T, sub, full string) {
 	t.Helper()
 

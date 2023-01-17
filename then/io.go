@@ -7,6 +7,9 @@ import (
 	"time"
 )
 
+// WithTempDir creates a temporary directory and moves our working directory to it.
+// At the end of our test it will remove the directory and revert our working directory
+// to the original value.
 func WithTempDir(t *testing.T) {
 	t.Helper()
 
@@ -24,6 +27,8 @@ func WithTempDir(t *testing.T) {
 	})
 }
 
+// FileExists checks whether a file exists at the path defined.
+// Paths will be joined together using `filepath.Join`.
 func FileExists(t *testing.T, paths ...string) {
 	t.Helper()
 
@@ -42,6 +47,7 @@ func FileExists(t *testing.T, paths ...string) {
 	}
 }
 
+// FileContentsNoAfero will check the contents of a file.
 func FileContentsNoAfero(t *testing.T, contents string, paths ...string) {
 	t.Helper()
 
@@ -56,6 +62,7 @@ func FileContentsNoAfero(t *testing.T, contents string, paths ...string) {
 	Equals(t, expected, contents)
 }
 
+// MockFileInfo is a simple struct to fake the `os.FileInfo`
 type MockFileInfo struct {
 	MockName  string
 	MockIsDir bool

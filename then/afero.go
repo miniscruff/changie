@@ -1,5 +1,9 @@
 package then
 
+// this file is a temporary place to put assertions related to using
+// afero, afero is going to be removed in favor of plain IO/OS calls
+// so no docs are provided.
+
 import (
 	"path/filepath"
 	"testing"
