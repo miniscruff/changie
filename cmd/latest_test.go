@@ -1,95 +1,102 @@
 package cmd
 
 import (
-	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/gomega"
-	"github.com/spf13/afero"
+	"strings"
+	"testing"
 
 	"github.com/miniscruff/changie/core"
+	"github.com/miniscruff/changie/then"
 )
 
-var _ = Describe("Latest", func() {
-	var (
-		fs         afero.Fs
-		afs        afero.Afero
-		testConfig core.Config
-	)
+func latestCleanArgs() {
+	removePrefix = false
+}
 
-	BeforeEach(func() {
-		fs = afero.NewMemMapFs()
-		afs = afero.Afero{Fs: fs}
-		testConfig = core.Config{
-			ChangesDir:    "chgs",
-			UnreleasedDir: "unrel",
-			HeaderPath:    "head.tpl.md",
-			ChangelogPath: "changelog.md",
-			VersionExt:    "md",
-			VersionFormat: "",
-			KindFormat:    "",
-			ChangeFormat:  "",
-			Kinds:         []core.KindConfig{},
-		}
-		err := testConfig.Save(afs.WriteFile)
-		Expect(err).To(BeNil())
-	})
+func latestConfig() *core.Config {
+	return &core.Config{
+		ChangesDir:    "chgs",
+		UnreleasedDir: "unrel",
+		HeaderPath:    "head.tpl.md",
+		ChangelogPath: "changelog.md",
+		VersionExt:    "md",
+		VersionFormat: "",
+		KindFormat:    "",
+		ChangeFormat:  "",
+		Kinds:         []core.KindConfig{},
+	}
+}
 
-	It("echos latest version", func() {
-		_, err := afs.Create("chgs/v0.0.1.md")
-		Expect(err).To(BeNil())
-		_, err = afs.Create("chgs/v0.1.0.md")
-		Expect(err).To(BeNil())
-		_, err = afs.Create("chgs/v0.2.0-rc1.md")
-		Expect(err).To(BeNil())
-		_, err = afs.Create("chgs/head.tpl.md")
-		Expect(err).To(BeNil())
+func TestLatestVersionEchosLatestVersion(t *testing.T) {
+	cfg := latestConfig()
+	_, afs := then.WithAferoFSConfig(t, cfg)
+	w := strings.Builder{}
 
-		removePrefix = false
-		res, err := latestPipeline(afs, false)
-		Expect(err).To(BeNil())
-		Expect(res).To(Equal("v0.2.0-rc1"))
-	})
+	then.CreateFile(t, afs, cfg.ChangesDir, "v0.0.1.md")
+	then.CreateFile(t, afs, cfg.ChangesDir, "v0.1.0.md")
+	then.CreateFile(t, afs, cfg.ChangesDir, "v0.2.0-rc1.md")
+	then.CreateFile(t, afs, cfg.ChangesDir, "head.tpl.md")
 
-	It("echos latest version not a prerelease", func() {
-		_, err := afs.Create("chgs/v0.0.1.md")
-		Expect(err).To(BeNil())
-		_, err = afs.Create("chgs/v0.1.0.md")
-		Expect(err).To(BeNil())
-		_, err = afs.Create("chgs/v0.2.0-rc1.md")
-		Expect(err).To(BeNil())
-		_, err = afs.Create("chgs/head.tpl.md")
-		Expect(err).To(BeNil())
+	err := latestPipeline(afs, &w, false)
+	then.Nil(t, err)
+	then.Equals(t, "v0.2.0-rc1", w.String())
+}
 
-		removePrefix = false
-		res, err := latestPipeline(afs, true)
-		Expect(err).To(BeNil())
-		Expect(res).To(Equal("v0.1.0"))
-	})
+func TestLatestEchoLatestNonPrerelease(t *testing.T) {
+	cfg := latestConfig()
+	_, afs := then.WithAferoFSConfig(t, cfg)
+	w := strings.Builder{}
 
-	It("echos latest version without prefix", func() {
-		_, err := afs.Create("chgs/not-a-version.md")
-		Expect(err).To(BeNil())
-		_, err = afs.Create("chgs/v0.0.1.md")
-		Expect(err).To(BeNil())
-		_, err = afs.Create("chgs/v0.1.0.md")
-		Expect(err).To(BeNil())
+	then.CreateFile(t, afs, cfg.ChangesDir, "v0.0.1.md")
+	then.CreateFile(t, afs, cfg.ChangesDir, "v0.1.0.md")
+	then.CreateFile(t, afs, cfg.ChangesDir, "v0.2.0-rc1.md")
+	then.CreateFile(t, afs, cfg.ChangesDir, "head.tpl.md")
 
-		removePrefix = true
-		res, err := latestPipeline(afs, false)
-		Expect(err).To(BeNil())
-		Expect(res).To(Equal("0.1.0"))
-	})
+	err := latestPipeline(afs, &w, true)
+	then.Nil(t, err)
+	then.Equals(t, "v0.1.0", w.String())
+}
 
-	It("fails if bad config file", func() {
-		err := afs.Remove(core.ConfigPaths[0])
-		Expect(err).To(BeNil())
+func TestLatestWithoutPrefix(t *testing.T) {
+	cfg := latestConfig()
+	_, afs := then.WithAferoFSConfig(t, cfg)
+	w := strings.Builder{}
+	removePrefix = true
 
-		_, err = latestPipeline(afs, false)
-		Expect(err).NotTo(BeNil())
-	})
+	t.Cleanup(latestCleanArgs)
+	then.CreateFile(t, afs, cfg.ChangesDir, "v0.0.1.md")
+	then.CreateFile(t, afs, cfg.ChangesDir, "v0.1.0.md")
+	then.CreateFile(t, afs, cfg.ChangesDir, "head.tpl.md")
 
-	It("fails if unable to get versions", func() {
-		// no files, means bad read for get versions
-		_, err := latestPipeline(afs, false)
-		Expect(err).NotTo(BeNil())
-	})
-})
+	err := latestPipeline(afs, &w, false)
+	then.Nil(t, err)
+	then.Equals(t, "0.1.0", w.String())
+}
+
+func TestErrorLatestBadConfig(t *testing.T) {
+	_, afs := then.WithAferoFS()
+	w := strings.Builder{}
+
+	err := latestPipeline(afs, &w, false)
+	then.NotNil(t, err)
+}
+
+func TestErrorLatestNoVersions(t *testing.T) {
+	cfg := latestConfig()
+	_, afs := then.WithAferoFSConfig(t, cfg)
+	w := strings.Builder{}
+
+	// no files, means bad read for get versions
+	err := latestPipeline(afs, &w, false)
+	then.NotNil(t, err)
+}
+
+func TestErrorLatestBadWrite(t *testing.T) {
+	cfg := latestConfig()
+	_, afs := then.WithAferoFSConfig(t, cfg)
+	w := then.NewErrWriter()
+
+	then.CreateFile(t, afs, cfg.ChangesDir, "v0.0.1.md")
+	then.CreateFile(t, afs, cfg.ChangesDir, "v0.1.0.md")
+
+	w.Raised(t, latestPipeline(afs, w, false))
+}

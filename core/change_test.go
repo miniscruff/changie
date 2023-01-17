@@ -3,666 +3,676 @@ package core
 import (
 	"errors"
 	"fmt"
-	"os"
 	"strings"
+	"testing"
 	"time"
 
-	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/gomega"
-
-	. "github.com/miniscruff/changie/testutils"
+	"github.com/miniscruff/changie/then"
 )
 
-var _ = Describe("Change", func() {
-	mockTime := func() time.Time {
-		return time.Date(2016, 5, 24, 3, 30, 10, 5, time.Local)
-	}
-
-	orderedTimes := []time.Time{
+var (
+	orderedTimes = []time.Time{
 		time.Date(2018, 5, 24, 3, 30, 10, 5, time.Local),
 		time.Date(2017, 5, 24, 3, 30, 10, 5, time.Local),
 		time.Date(2016, 5, 24, 3, 30, 10, 5, time.Local),
 	}
+)
 
-	It("should write a change", func() {
-		change := Change{
-			Body: "some body message",
-			Time: mockTime(),
-		}
+func TestWriteChange(t *testing.T) {
+	mockTime := time.Date(2016, 5, 24, 3, 30, 10, 5, time.Local)
+	change := Change{
+		Body: "some body message",
+		Time: mockTime,
+	}
 
-		changesYaml := fmt.Sprintf(
-			"body: some body message\ntime: %s\n",
-			mockTime().Format(time.RFC3339Nano),
-		)
-
-		var builder strings.Builder
-		err := change.Write(&builder)
-
-		Expect(builder.String()).To(Equal(changesYaml))
-		Expect(err).To(BeNil())
-	})
-
-	It("should load change from path", func() {
-		mockRf := func(filepath string) ([]byte, error) {
-			Expect(filepath).To(Equal("some_file.yaml"))
-			return []byte("kind: A\nbody: hey\n"), nil
-		}
-
-		change, err := LoadChange("some_file.yaml", mockRf)
-		Expect(err).To(BeNil())
-		Expect(change.Kind).To(Equal("A"))
-		Expect(change.Body).To(Equal("hey"))
-	})
-
-	It("should return error from bad read", func() {
-		mockErr := errors.New("bad file")
-
-		mockRf := func(filepath string) ([]byte, error) {
-			Expect(filepath).To(Equal("some_file.yaml"))
-			return []byte(""), mockErr
-		}
-
-		_, err := LoadChange("some_file.yaml", mockRf)
-		Expect(err).To(Equal(mockErr))
-	})
-
-	It("should return error from bad file", func() {
-		mockRf := func(filepath string) ([]byte, error) {
-			Expect(filepath).To(Equal("some_file.yaml"))
-			return []byte("not a yaml file---"), nil
-		}
-
-		_, err := LoadChange("some_file.yaml", mockRf)
-		Expect(err).NotTo(BeNil())
-	})
-
-	It("should sort by time", func() {
-		changes := []Change{
-			{Body: "third", Time: orderedTimes[2]},
-			{Body: "second", Time: orderedTimes[1]},
-			{Body: "first", Time: orderedTimes[0]},
-		}
-		config := Config{}
-		SortByConfig(config).Sort(changes)
-
-		Expect(changes[0].Body).To(Equal("third"))
-		Expect(changes[1].Body).To(Equal("second"))
-		Expect(changes[2].Body).To(Equal("first"))
-	})
-
-	It("should sort by kind then time", func() {
-		config := Config{
-			Kinds: []KindConfig{
-				{Label: "A"},
-				{Label: "B"},
-			},
-		}
-		changes := []Change{
-			{Kind: "B", Body: "fourth", Time: orderedTimes[0]},
-			{Kind: "A", Body: "second", Time: orderedTimes[1]},
-			{Kind: "B", Body: "third", Time: orderedTimes[1]},
-			{Kind: "A", Body: "first", Time: orderedTimes[2]},
-		}
-		SortByConfig(config).Sort(changes)
-
-		Expect(changes[0].Body).To(Equal("first"))
-		Expect(changes[1].Body).To(Equal("second"))
-		Expect(changes[2].Body).To(Equal("third"))
-		Expect(changes[3].Body).To(Equal("fourth"))
-	})
-
-	It("should sort by component then kind", func() {
-		config := Config{
-			Kinds: []KindConfig{
-				{Label: "D"},
-				{Label: "E"},
-			},
-			Components: []string{"A", "B", "C"},
-		}
-		changes := []Change{
-			{Body: "fourth", Component: "B", Kind: "E"},
-			{Body: "second", Component: "A", Kind: "E"},
-			{Body: "third", Component: "B", Kind: "D"},
-			{Body: "first", Component: "A", Kind: "D"},
-		}
-		SortByConfig(config).Sort(changes)
-
-		Expect(changes[0].Body).To(Equal("first"))
-		Expect(changes[1].Body).To(Equal("second"))
-		Expect(changes[2].Body).To(Equal("third"))
-		Expect(changes[3].Body).To(Equal("fourth"))
-	})
-
-	It("can load env vars", func() {
-		config := Config{
-			EnvPrefix: "TEST_CHANGIE_",
-		}
-
-		Expect(os.Setenv("TEST_CHANGIE_ALPHA", "Beta")).To(Succeed())
-		Expect(os.Setenv("IGNORED", "Delta")).To(Succeed())
-
-		Expect(config.EnvVars()).To(Equal(map[string]string{
-			"ALPHA": "Beta",
-		}))
-
-		Expect(os.Unsetenv("TEST_CHANGIE_ALPHA")).To(Succeed())
-		Expect(os.Unsetenv("IGNORED")).To(Succeed())
-
-		// will use the cached results
-		Expect(config.EnvVars()).To(Equal(map[string]string{
-			"ALPHA": "Beta",
-		}))
-	})
-})
-
-var _ = Describe("Change ask prompts", func() {
-	var (
-		stdinReader *os.File
-		stdinWriter *os.File
+	changesYaml := fmt.Sprintf(
+		"body: some body message\ntime: %s\n",
+		mockTime.Format(time.RFC3339Nano),
 	)
 
-	BeforeEach(func() {
-		var pipeErr error
-		stdinReader, stdinWriter, pipeErr = os.Pipe()
-		Expect(pipeErr).To(BeNil())
-	})
+	var builder strings.Builder
+	err := change.Write(&builder)
 
-	AfterEach(func() {
-		stdinReader.Close()
-		stdinWriter.Close()
-	})
+	then.Equals(t, changesYaml, builder.String())
+	then.Nil(t, err)
+}
 
-	It("for only body", func() {
-		config := Config{}
-		go func() {
-			DelayWrite(stdinWriter, []byte("body stuff"))
-			DelayWrite(stdinWriter, []byte{13})
-		}()
+func TestLoadChangeFromPath(t *testing.T) {
+	mockRf := func(filepath string) ([]byte, error) {
+		then.Equals(t, "some_file.yaml", filepath)
+		return []byte("kind: A\nbody: hey\n"), nil
+	}
 
-		c := &Change{}
-		Expect(c.AskPrompts(config, stdinReader)).To(Succeed())
-		Expect(c.Component).To(BeEmpty())
-		Expect(c.Kind).To(BeEmpty())
-		Expect(c.Custom).To(BeEmpty())
-		Expect(c.Body).To(Equal("body stuff"))
-	})
+	change, err := LoadChange("some_file.yaml", mockRf)
 
-	It("for component, kind and body", func() {
-		config := Config{
-			Components: []string{"cli", "tests", "utils"},
-			Kinds: []KindConfig{
-				{Label: "added"},
-				{Label: "changed"},
-				{Label: "removed"},
-			},
-		}
-		go func() {
-			DelayWrite(stdinWriter, []byte{106, 13})
-			DelayWrite(stdinWriter, []byte{106, 106, 13})
-			DelayWrite(stdinWriter, []byte("body here"))
-			DelayWrite(stdinWriter, []byte{13})
-		}()
+	then.Nil(t, err)
+	then.Equals(t, "A", change.Kind)
+	then.Equals(t, "hey", change.Body)
+}
 
-		c := &Change{}
-		Expect(c.AskPrompts(config, stdinReader)).To(Succeed())
-		Expect(c.Component).To(Equal("tests"))
-		Expect(c.Kind).To(Equal("removed"))
-		Expect(c.Custom).To(BeEmpty())
-		Expect(c.Body).To(Equal("body here"))
-	})
+func TestBadRead(t *testing.T) {
+	mockErr := errors.New("bad file")
 
-	It("for body, kind and post process", func() {
-		config := Config{
-			Kinds: []KindConfig{
-				{
-					Label: "added",
-					Post: []PostProcessConfig{
-						{Key: "Post", Value: "{{.Body}}+{{.Custom.Issue}}"},
-					},
+	mockRf := func(filepath string) ([]byte, error) {
+		then.Equals(t, "some_file.yaml", filepath)
+		return []byte(""), mockErr
+	}
+
+	_, err := LoadChange("some_file.yaml", mockRf)
+	then.Err(t, mockErr, err)
+}
+
+func TestBadYamlFile(t *testing.T) {
+	mockRf := func(filepath string) ([]byte, error) {
+		then.Equals(t, "some_file.yaml", filepath)
+		return []byte("not a yaml file---"), nil
+	}
+
+	_, err := LoadChange("some_file.yaml", mockRf)
+	then.NotNil(t, err)
+}
+
+func TestSortByTime(t *testing.T) {
+	changes := []Change{
+		{Body: "third", Time: orderedTimes[2]},
+		{Body: "second", Time: orderedTimes[1]},
+		{Body: "first", Time: orderedTimes[0]},
+	}
+	config := Config{}
+	SortByConfig(config).Sort(changes)
+
+	then.Equals(t, "third", changes[0].Body)
+	then.Equals(t, "second", changes[1].Body)
+	then.Equals(t, "first", changes[2].Body)
+}
+
+func TestSortByKindThenTime(t *testing.T) {
+	config := Config{
+		Kinds: []KindConfig{
+			{Label: "A"},
+			{Label: "B"},
+		},
+	}
+	changes := []Change{
+		{Kind: "B", Body: "fourth", Time: orderedTimes[0]},
+		{Kind: "A", Body: "second", Time: orderedTimes[1]},
+		{Kind: "B", Body: "third", Time: orderedTimes[1]},
+		{Kind: "A", Body: "first", Time: orderedTimes[2]},
+	}
+	SortByConfig(config).Sort(changes)
+
+	then.Equals(t, "first", changes[0].Body)
+	then.Equals(t, "second", changes[1].Body)
+	then.Equals(t, "third", changes[2].Body)
+	then.Equals(t, "fourth", changes[3].Body)
+}
+
+func TestSortByComponentThenKind(t *testing.T) {
+	config := Config{
+		Kinds: []KindConfig{
+			{Label: "D"},
+			{Label: "E"},
+		},
+		Components: []string{"A", "B", "C"},
+	}
+	changes := []Change{
+		{Body: "fourth", Component: "B", Kind: "E"},
+		{Body: "second", Component: "A", Kind: "E"},
+		{Body: "third", Component: "B", Kind: "D"},
+		{Body: "first", Component: "A", Kind: "D"},
+	}
+	SortByConfig(config).Sort(changes)
+
+	then.Equals(t, "first", changes[0].Body)
+	then.Equals(t, "second", changes[1].Body)
+	then.Equals(t, "third", changes[2].Body)
+	then.Equals(t, "fourth", changes[3].Body)
+}
+
+func TestLoadEnvVars(t *testing.T) {
+	config := Config{
+		EnvPrefix: "TEST_CHANGIE_",
+	}
+
+	t.Setenv("TEST_CHANGIE_ALPHA", "Beta")
+	t.Setenv("IGNORE", "Delta")
+
+	expectedEnvVars := map[string]string{
+		"ALPHA": "Beta",
+	}
+
+	then.MapEquals(t, expectedEnvVars, config.EnvVars())
+
+	// will use the cached results
+	t.Setenv("TEST_CHANGIE_UNUSED", "NotRead")
+	then.MapEquals(t, expectedEnvVars, config.EnvVars())
+}
+
+func TestAskPromptsForBody(t *testing.T) {
+	reader, writer := then.WithReadWritePipe(t)
+	then.DelayWrite(
+		t, writer,
+		[]byte("body stuff"),
+		[]byte{13},
+	)
+
+	config := Config{}
+	c := &Change{}
+	then.Nil(t, c.AskPrompts(config, reader))
+
+	then.Equals(t, "", c.Component)
+	then.Equals(t, "", c.Kind)
+	then.Equals(t, 0, len(c.Custom))
+	then.Equals(t, "body stuff", c.Body)
+}
+
+func TestAskComponentKindBody(t *testing.T) {
+	reader, writer := then.WithReadWritePipe(t)
+	then.DelayWrite(
+		t, writer,
+		[]byte{106, 13},
+		[]byte{106, 106, 13},
+		[]byte("body here"),
+		[]byte{13},
+	)
+
+	config := Config{
+		Components: []string{"cli", "tests", "utils"},
+		Kinds: []KindConfig{
+			{Label: "added"},
+			{Label: "changed"},
+			{Label: "removed"},
+		},
+	}
+	c := &Change{}
+	then.Nil(t, c.AskPrompts(config, reader))
+
+	then.Equals(t, "tests", c.Component)
+	then.Equals(t, "removed", c.Kind)
+	then.Equals(t, len(c.Custom), 0)
+	then.Equals(t, "body here", c.Body)
+}
+
+func TestBodyKindPostProcess(t *testing.T) {
+	reader, _ := then.WithReadWritePipe(t)
+
+	config := Config{
+		Kinds: []KindConfig{
+			{
+				Label: "added",
+				Post: []PostProcessConfig{
+					{Key: "Post", Value: "{{.Body}}+{{.Custom.Issue}}"},
 				},
 			},
-			CustomChoices: []Custom{
-				{Key: "Issue", Type: CustomInt},
-			},
-		}
+		},
+		CustomChoices: []Custom{
+			{Key: "Issue", Type: CustomInt},
+		},
+	}
+	c := &Change{
+		Body: "our body",
+		Kind: "added",
+		Custom: map[string]string{
+			"Issue": "25",
+		},
+	}
 
-		c := &Change{
-			Body: "our body",
-			Kind: "added",
-			Custom: map[string]string{
-				"Issue": "25",
-			},
-		}
-		Expect(c.AskPrompts(config, stdinReader)).To(Succeed())
-		Expect(c.Component).To(BeEmpty())
-		Expect(c.Kind).To(Equal("added"))
-		Expect(c.Body).To(Equal("our body"))
-		Expect(c.Custom["Issue"]).To(Equal("25"))
-		Expect(c.Custom["Post"]).To(Equal("our body+25"))
-	})
+	then.Nil(t, c.AskPrompts(config, reader))
 
-	It("for body and custom", func() {
-		config := Config{
-			CustomChoices: []Custom{
-				{Key: "check", Type: CustomString},
-			},
-		}
-		go func() {
-			DelayWrite(stdinWriter, []byte("body again"))
-			DelayWrite(stdinWriter, []byte{13})
-			DelayWrite(stdinWriter, []byte("custom check value"))
-			DelayWrite(stdinWriter, []byte{13})
-		}()
+	then.Equals(t, "", c.Component)
+	then.Equals(t, "added", c.Kind)
+	then.Equals(t, "our body", c.Body)
+	then.Equals(t, "25", c.Custom["Issue"])
+	then.Equals(t, "our body+25", c.Custom["Post"])
+}
 
-		c := &Change{}
-		Expect(c.AskPrompts(config, stdinReader)).To(Succeed())
-		Expect(c.Component).To(BeEmpty())
-		Expect(c.Kind).To(BeEmpty())
-		Expect(c.Custom["check"]).To(Equal("custom check value"))
-		Expect(c.Body).To(Equal("body again"))
-	})
+func TestBodyCustom(t *testing.T) {
+	reader, writer := then.WithReadWritePipe(t)
+	then.DelayWrite(
+		t, writer,
+		[]byte("body again"),
+		[]byte{13},
+		[]byte("custom check value"),
+		[]byte{13},
+	)
 
-	It("for body and custom with existing custom value", func() {
-		config := Config{
-			CustomChoices: []Custom{
-				{Key: "Issue", Type: CustomString},
-				{Key: "Project", Label: "Custom Project Prompt", Type: CustomString},
-			},
-		}
-		go func() {
-			DelayWrite(stdinWriter, []byte("body again"))
-			DelayWrite(stdinWriter, []byte{13})
-			DelayWrite(stdinWriter, []byte("256"))
-			DelayWrite(stdinWriter, []byte{13})
-		}()
+	config := Config{
+		CustomChoices: []Custom{
+			{Key: "check", Type: CustomString},
+		},
+	}
+	c := &Change{}
+	then.Nil(t, c.AskPrompts(config, reader))
 
-		c := &Change{
-			Custom: map[string]string{
-				"Project": "Changie",
-			},
-		}
-		Expect(c.AskPrompts(config, stdinReader)).To(Succeed())
-		Expect(c.Component).To(BeEmpty())
-		Expect(c.Kind).To(BeEmpty())
-		Expect(c.Custom["Issue"]).To(Equal("256"))
-		Expect(c.Custom["Project"]).To(Equal("Changie"))
-		Expect(c.Body).To(Equal("body again"))
-	})
+	then.Equals(t, "", c.Component)
+	then.Equals(t, "", c.Kind)
+	then.Equals(t, "custom check value", c.Custom["check"])
+	then.Equals(t, "body again", c.Body)
+}
 
-	It("for skipped body, skipped global choices and kind choices", func() {
-		config := Config{
-			CustomChoices: []Custom{
-				{Key: "skipped", Type: CustomString, Label: "a"},
-			},
-			Kinds: []KindConfig{
-				{
-					Label:             "added",
-					SkipBody:          true,
-					SkipGlobalChoices: true,
-					AdditionalChoices: []Custom{
-						{Key: "break", Type: CustomString, Label: "b"},
-					},
-				},
-				{Label: "not used"},
-			},
-		}
-		go func() {
-			DelayWrite(stdinWriter, []byte{13})
-			DelayWrite(stdinWriter, []byte("breaking value"))
-			DelayWrite(stdinWriter, []byte{13})
-		}()
+func TestBodyCustomWithExistingCustomValue(t *testing.T) {
+	reader, writer := then.WithReadWritePipe(t)
+	then.DelayWrite(
+		t, writer,
+		[]byte("body again"),
+		[]byte{13},
+		[]byte("256"),
+		[]byte{13},
+	)
 
-		c := &Change{}
-		Expect(c.AskPrompts(config, stdinReader)).To(Succeed())
-		Expect(c.Component).To(BeEmpty())
-		Expect(c.Kind).To(Equal("added"))
-		Expect(c.Custom).NotTo(HaveKey("skipped"))
-		Expect(c.Custom).To(HaveKeyWithValue("break", "breaking value"))
-		Expect(c.Body).To(BeEmpty())
-	})
+	config := Config{
+		CustomChoices: []Custom{
+			{Key: "Issue", Type: CustomString},
+			{Key: "Project", Label: "Custom Project Prompt", Type: CustomString},
+		},
+	}
+	c := &Change{
+		Custom: map[string]string{
+			"Project": "Changie",
+		},
+	}
 
-	It("for body and post process", func() {
-		config := Config{
-			Post: []PostProcessConfig{
-				{Key: "Post", Value: "Body again {{.Body}}"},
-			},
-		}
+	then.Nil(t, c.AskPrompts(config, reader))
 
-		c := &Change{
-			Body: "our body",
-		}
-		Expect(c.AskPrompts(config, stdinReader)).To(Succeed())
-		Expect(c.Component).To(BeEmpty())
-		Expect(c.Kind).To(BeEmpty())
-		Expect(c.Body).To(Equal("our body"))
-		Expect(c.Custom["Post"]).To(Equal("Body again our body"))
-	})
+	then.Equals(t, "", c.Component)
+	then.Equals(t, "", c.Kind)
+	then.Equals(t, "256", c.Custom["Issue"])
+	then.Equals(t, "Changie", c.Custom["Project"])
+	then.Equals(t, "body again", c.Body)
+}
 
-	It("for body and post process skipping global post", func() {
-		config := Config{
-			Kinds: []KindConfig{
-				{
-					Label:          "added",
-					SkipGlobalPost: true,
-					Post: []PostProcessConfig{
-						{Key: "Post", Value: "{{.Body}}+{{.Custom.Issue}}"},
-					},
+func TestSkippedBodyGlobalChoicesKindWithAdditional(t *testing.T) {
+	reader, writer := then.WithReadWritePipe(t)
+	then.DelayWrite(
+		t, writer,
+		[]byte{13},
+		[]byte("breaking value"),
+		[]byte{13},
+	)
+
+	config := Config{
+		CustomChoices: []Custom{
+			{Key: "skipped", Type: CustomString, Label: "a"},
+		},
+		Kinds: []KindConfig{
+			{
+				Label:             "added",
+				SkipBody:          true,
+				SkipGlobalChoices: true,
+				AdditionalChoices: []Custom{
+					{Key: "break", Type: CustomString, Label: "b"},
 				},
 			},
-			CustomChoices: []Custom{
-				{Key: "Issue", Type: CustomInt},
+			{Label: "not used"},
+		},
+	}
+
+	c := &Change{}
+	then.Nil(t, c.AskPrompts(config, reader))
+
+	then.Equals(t, "", c.Component)
+	then.Equals(t, "", c.Custom["skipped"])
+	then.Equals(t, "breaking value", c.Custom["break"])
+	then.Equals(t, "", c.Body)
+}
+
+func TestBodyAndPostProcess(t *testing.T) {
+	reader, _ := then.WithReadWritePipe(t)
+
+	config := Config{
+		Post: []PostProcessConfig{
+			{Key: "Post", Value: "Body again {{.Body}}"},
+		},
+	}
+
+	c := &Change{
+		Body: "our body",
+	}
+
+	then.Nil(t, c.AskPrompts(config, reader))
+
+	then.Equals(t, "", c.Component)
+	then.Equals(t, "", c.Kind)
+	then.Equals(t, "Body again our body", c.Custom["Post"])
+	then.Equals(t, "our body", c.Body)
+}
+
+func TestBodyAndPostProcessSkipGlobalPost(t *testing.T) {
+	reader, _ := then.WithReadWritePipe(t)
+	config := Config{
+		Kinds: []KindConfig{
+			{
+				Label:          "added",
+				SkipGlobalPost: true,
+				Post: []PostProcessConfig{
+					{Key: "Post", Value: "{{.Body}}+{{.Custom.Issue}}"},
+				},
 			},
-			Post: []PostProcessConfig{
-				{Key: "GlobalPost", Value: "should be skipped"},
-			},
-		}
+		},
+		CustomChoices: []Custom{
+			{Key: "Issue", Type: CustomInt},
+		},
+		Post: []PostProcessConfig{
+			{Key: "GlobalPost", Value: "should be skipped"},
+		},
+	}
 
-		c := &Change{
-			Body: "our body",
-			Kind: "added",
-			Custom: map[string]string{
-				"Issue": "30",
-			},
-		}
+	c := &Change{
+		Body: "our body",
+		Kind: "added",
+		Custom: map[string]string{
+			"Issue": "30",
+		},
+	}
 
-		Expect(c.AskPrompts(config, stdinReader)).To(Succeed())
-		Expect(c.Component).To(BeEmpty())
-		Expect(c.Kind).To(Equal("added"))
-		Expect(c.Body).To(Equal("our body"))
-		Expect(c.Custom["GlobalPost"]).To(BeEmpty())
-		Expect(c.Custom["Post"]).To(Equal("our body+30"))
-	})
+	then.Nil(t, c.AskPrompts(config, reader))
 
-	It("gets error for invalid body", func() {
-		var min int64 = 5
-		submitFailed := false
-		config := Config{
-			Body: BodyConfig{
-				MinLength: &min,
-			},
-		}
-		go func() {
-			DelayWrite(stdinWriter, []byte("abc"))
-			DelayWrite(stdinWriter, []byte{13})
-			// we need to ctrl-c out of the prompt or it will stick
-			DelayWrite(stdinWriter, []byte{3})
-			// use this boolean to check the control-c was required
-			submitFailed = true
-		}()
+	then.Equals(t, "", c.Component)
+	then.Equals(t, "added", c.Kind)
+	then.Equals(t, "our body", c.Body)
+	then.Equals(t, "our body+30", c.Custom["Post"])
+	then.Equals(t, "", c.Custom["GlobalPost"])
+}
 
-		c := &Change{}
-		Expect(c.AskPrompts(config, stdinReader)).NotTo(Succeed())
-		Expect(submitFailed).To(BeTrue())
-	})
+func TestErrorInvalidBody(t *testing.T) {
+	reader, writer := then.WithReadWritePipe(t)
+	then.DelayWrite(
+		t, writer,
+		[]byte("abc"),
+		[]byte{13},
+		[]byte{3},
+	)
 
-	It("gets error for invalid post", func() {
-		config := Config{
-			Post: []PostProcessConfig{
-				{Key: "Post", Value: "invalid {{++...thing}}"},
-			},
-		}
+	var min int64 = 5
 
-		c := &Change{
-			Body: "our body",
-		}
-		Expect(c.AskPrompts(config, stdinReader)).NotTo(Succeed())
-	})
+	config := Config{
+		Body: BodyConfig{
+			MinLength: &min,
+		},
+	}
+	c := &Change{}
+	then.NotNil(t, c.AskPrompts(config, reader))
+}
 
-	It("gets error for invalid custom type", func() {
-		config := Config{
-			CustomChoices: []Custom{
-				{Key: "check", Type: "bad type", Label: "a"},
-			},
-		}
-		go func() {
-			DelayWrite(stdinWriter, []byte("body again"))
-			DelayWrite(stdinWriter, []byte{13})
-		}()
+func TestErrorInvalidPost(t *testing.T) {
+	reader, _ := then.WithReadWritePipe(t)
+	config := Config{
+		Post: []PostProcessConfig{
+			{Key: "Post", Value: "invalid {{++...thing}}"},
+		},
+	}
+	c := &Change{
+		Body: "our body",
+	}
+	then.NotNil(t, c.AskPrompts(config, reader))
+}
 
-		c := &Change{}
-		Expect(c.AskPrompts(config, stdinReader)).NotTo(Succeed())
-	})
+func TestErrorInvalidCustomType(t *testing.T) {
+	reader, writer := then.WithReadWritePipe(t)
+	then.DelayWrite(
+		t, writer,
+		[]byte("invalid custom type"),
+		[]byte{13},
+	)
 
-	It("gets error for invalid component", func() {
-		config := Config{
-			Components: []string{"a", "b"},
-		}
-		go func() {
-			DelayWrite(stdinWriter, []byte{3})
-		}()
+	config := Config{
+		CustomChoices: []Custom{
+			{Key: "check", Type: "bad type", Label: "a"},
+		},
+	}
 
-		c := &Change{}
-		Expect(c.AskPrompts(config, stdinReader)).NotTo(Succeed())
-	})
+	c := &Change{}
+	then.NotNil(t, c.AskPrompts(config, reader))
+}
 
-	It("gets error for invalid kind", func() {
-		config := Config{
-			Kinds: []KindConfig{
-				{Label: "a"},
-				{Label: "b"},
-			},
-		}
-		go func() {
-			DelayWrite(stdinWriter, []byte{3})
-		}()
+func TestErrorInvalidComponent(t *testing.T) {
+	reader, writer := then.WithReadWritePipe(t)
+	then.DelayWrite(
+		t, writer,
+		[]byte{3},
+	)
 
-		c := &Change{}
-		Expect(c.AskPrompts(config, stdinReader)).NotTo(Succeed())
-	})
+	config := Config{
+		Components: []string{"a", "b"},
+	}
+	c := &Change{}
+	then.NotNil(t, c.AskPrompts(config, reader))
+}
 
-	It("gets error for invalid body", func() {
-		config := Config{}
-		go func() {
-			DelayWrite(stdinWriter, []byte{3})
-		}()
+func TestErrorInvalidKind(t *testing.T) {
+	reader, writer := then.WithReadWritePipe(t)
+	then.DelayWrite(
+		t, writer,
+		[]byte{3},
+	)
 
-		c := &Change{}
-		Expect(c.AskPrompts(config, stdinReader)).NotTo(Succeed())
-	})
+	config := Config{
+		Kinds: []KindConfig{
+			{Label: "a"},
+			{Label: "b"},
+		},
+	}
+	c := &Change{}
+	then.NotNil(t, c.AskPrompts(config, reader))
+}
 
-	It("gets error for invalid custom value", func() {
-		config := Config{
-			CustomChoices: []Custom{
-				{Key: "check", Type: CustomString, Label: "a"},
-			},
-		}
-		go func() {
-			DelayWrite(stdinWriter, []byte("body again"))
-			DelayWrite(stdinWriter, []byte{13})
-			DelayWrite(stdinWriter, []byte("control C out"))
-			DelayWrite(stdinWriter, []byte{3})
-		}()
+func TestErrorFaultBody(t *testing.T) {
+	reader, writer := then.WithReadWritePipe(t)
+	then.DelayWrite(
+		t, writer,
+		[]byte{3},
+	)
 
-		c := &Change{}
-		Expect(c.AskPrompts(config, stdinReader)).NotTo(Succeed())
-	})
+	config := Config{}
+	c := &Change{}
+	then.NotNil(t, c.AskPrompts(config, reader))
+}
 
-	It("errors when trying to find kind from bad label", func() {
-		config := Config{
-			Kinds: []KindConfig{
-				{Label: "kind"},
-			},
-		}
+func TestErrorInvalidCustomValue(t *testing.T) {
+	reader, writer := then.WithReadWritePipe(t)
+	then.DelayWrite(
+		t, writer,
+		[]byte("custom body"),
+		[]byte{13},
+		[]byte("control C out"),
+		[]byte{3},
+	)
 
-		c := &Change{
-			Kind: "not kind",
-			Body: "body",
-		}
+	config := Config{
+		CustomChoices: []Custom{
+			{Key: "check", Type: CustomString, Label: "a"},
+		},
+	}
+	c := &Change{}
+	then.NotNil(t, c.AskPrompts(config, reader))
+}
 
-		err := c.AskPrompts(config, stdinReader)
-		Expect(err).NotTo(BeNil())
-		Expect(err).To(MatchError(errInvalidKind))
-	})
+func TestErrorBadKindLabel(t *testing.T) {
+	reader, _ := then.WithReadWritePipe(t)
+	config := Config{
+		Kinds: []KindConfig{
+			{Label: "kind"},
+		},
+	}
+	c := &Change{
+		Kind: "not kind",
+		Body: "body",
+	}
 
-	It("errors when trying to find component from bad input", func() {
-		config := Config{
-			Components: []string{"a", "b", "c"},
-		}
+	err := c.AskPrompts(config, reader)
+	then.Err(t, errInvalidKind, err)
+}
 
-		c := &Change{
-			Component: "d",
-			Body:      "body",
-		}
+func TestErrorBadComponentInput(t *testing.T) {
+	reader, _ := then.WithReadWritePipe(t)
+	config := Config{
+		Components: []string{"a", "b", "c"},
+	}
+	c := &Change{
+		Component: "d",
+		Body:      "body",
+	}
 
-		err := c.AskPrompts(config, stdinReader)
-		Expect(err).NotTo(BeNil())
-		Expect(err).To(MatchError(errInvalidComponent))
-	})
+	err := c.AskPrompts(config, reader)
+	then.Err(t, errInvalidComponent, err)
+}
 
-	It("doesn't prompt for component if it's already set", func() {
-		config := Config{
-			Components: []string{"a", "b"},
-		}
+func TestErrorComponentGivenWithNoConfiguration(t *testing.T) {
+	reader, _ := then.WithReadWritePipe(t)
+	config := Config{}
+	c := &Change{
+		Component: "we shouldn't have a component",
+		Body:      "body",
+	}
 
-		c := &Change{
-			Component: "a",
-		}
+	err := c.AskPrompts(config, reader)
+	then.Err(t, errComponentProvidedWhenNotConfigured, err)
+}
 
-		go func() {
-			DelayWrite(stdinWriter, []byte("body"))
-			DelayWrite(stdinWriter, []byte{13})
-		}()
+func TestErrorKindGivenWithNoConfiguration(t *testing.T) {
+	reader, _ := then.WithReadWritePipe(t)
+	config := Config{}
+	c := &Change{
+		Kind: "we shouldn't have a kind",
+		Body: "body",
+	}
 
-		Expect(c.AskPrompts(config, stdinReader)).To(Succeed())
-		Expect(c.Component).To(Equal("a"))
-		Expect(c.Body).To(Equal("body"))
-	})
+	err := c.AskPrompts(config, reader)
+	then.Err(t, errKindProvidedWhenNotConfigured, err)
+}
 
-	It("doesn't prompt for kind if it's already set", func() {
-		config := Config{
-			Kinds: []KindConfig{
-				{Label: "kind"},
-			},
-		}
+func TestErrorCustomGivenWithNoConfiguration(t *testing.T) {
+	reader, _ := then.WithReadWritePipe(t)
+	config := Config{
+		CustomChoices: []Custom{
+			{Key: "Issue", Type: CustomInt},
+		},
+	}
+	c := &Change{
+		Custom: map[string]string{
+			"MissingKey": "40",
+		},
+	}
 
-		c := &Change{
-			Kind: "kind",
-		}
+	err := c.AskPrompts(config, reader)
+	then.Err(t, errCustomProvidedNotConfigured, err)
+}
 
-		go func() {
-			DelayWrite(stdinWriter, []byte("body"))
-			DelayWrite(stdinWriter, []byte{13})
-		}()
+func TestErrorCustomGivenDoesNotPassValidation(t *testing.T) {
+	reader, _ := then.WithReadWritePipe(t)
+	minValue := int64(50)
+	config := Config{
+		CustomChoices: []Custom{
+			{Key: "Issue", Type: CustomInt, MinInt: &minValue},
+		},
+	}
+	c := &Change{
+		Custom: map[string]string{
+			"Issue": "40",
+		},
+	}
 
-		Expect(c.AskPrompts(config, stdinReader)).To(Succeed())
-		Expect(c.Kind).To(Equal("kind"))
-		Expect(c.Body).To(Equal("body"))
-	})
+	err := c.AskPrompts(config, reader)
+	then.Err(t, errIntTooLow, err)
+}
 
-	It("doesn't prompt for body if it's already set", func() {
-		config := Config{
-			Kinds: []KindConfig{
-				{Label: "kind"},
-			},
-		}
+func TestErrorBodyGivenWithNoConfiguration(t *testing.T) {
+	reader, _ := then.WithReadWritePipe(t)
+	config := Config{
+		Kinds: []KindConfig{
+			{Label: "kind", SkipBody: true},
+		},
+	}
+	c := &Change{
+		Body: "body",
+		Kind: "kind",
+	}
 
-		c := &Change{
-			Body: "body",
-		}
+	err := c.AskPrompts(config, reader)
+	then.Err(t, errKindDoesNotAcceptBody, err)
+}
 
-		go func() {
-			DelayWrite(stdinWriter, []byte("kind"))
-			DelayWrite(stdinWriter, []byte{13})
-		}()
+func TestErrorBodyGivenDoesNotPassValidation(t *testing.T) {
+	var min int64 = 10
 
-		Expect(c.AskPrompts(config, stdinReader)).To(Succeed())
-		Expect(c.Kind).To(Equal("kind"))
-		Expect(c.Body).To(Equal("body"))
-	})
+	reader, _ := then.WithReadWritePipe(t)
+	config := Config{
+		Kinds: []KindConfig{
+			{Label: "kind"},
+		},
+		Body: BodyConfig{
+			MinLength: &min,
+		},
+	}
+	c := &Change{
+		Kind: "kind",
+		Body: "body",
+	}
 
-	It("errors when component is given when no configuration is used", func() {
-		config := Config{}
+	err := c.AskPrompts(config, reader)
+	then.Err(t, errInputTooShort, err)
+}
 
-		c := &Change{
-			Component: "we shouldn't have a component",
-			Body:      "body",
-		}
+func TestSkipPromptForComponentIfSet(t *testing.T) {
+	reader, writer := then.WithReadWritePipe(t)
+	then.DelayWrite(
+		t, writer,
+		[]byte("skip component body"),
+		[]byte{13},
+	)
 
-		err := c.AskPrompts(config, stdinReader)
-		Expect(err).To(MatchError(errComponentProvidedWhenNotConfigured))
-	})
+	config := Config{
+		Components: []string{"a", "b"},
+	}
+	c := &Change{
+		Component: "a",
+	}
 
-	It("errors when kind is given when no configured is used", func() {
-		config := Config{}
+	then.Nil(t, c.AskPrompts(config, reader))
+	then.Equals(t, "a", c.Component)
+	then.Equals(t, "skip component body", c.Body)
+}
 
-		c := &Change{
-			Kind: "we shouldn't have a kind",
-			Body: "body",
-		}
+func TestSkipPromptForKindIfSet(t *testing.T) {
+	reader, writer := then.WithReadWritePipe(t)
+	then.DelayWrite(
+		t, writer,
+		[]byte("skip kind body"),
+		[]byte{13},
+	)
 
-		err := c.AskPrompts(config, stdinReader)
-		Expect(err).To(MatchError(errKindProvidedWhenNotConfigured))
-	})
+	config := Config{
+		Kinds: []KindConfig{
+			{Label: "kind"},
+		},
+	}
+	c := &Change{
+		Kind: "kind",
+	}
 
-	It("errors when custom is given when not present", func() {
-		config := Config{
-			CustomChoices: []Custom{
-				{Key: "Issue", Type: CustomInt},
-			},
-		}
+	then.Nil(t, c.AskPrompts(config, reader))
+	then.Equals(t, "kind", c.Kind)
+	then.Equals(t, "skip kind body", c.Body)
+}
 
-		c := &Change{
-			Custom: map[string]string{
-				"MissingKey": "40",
-			},
-		}
+func TestSkipPromptForBodyIfSet(t *testing.T) {
+	reader, writer := then.WithReadWritePipe(t)
+	then.DelayWrite(
+		t, writer,
+		[]byte("kind"),
+		[]byte{13},
+	)
 
-		err := c.AskPrompts(config, stdinReader)
-		Expect(err).NotTo(BeNil())
-	})
+	config := Config{
+		Kinds: []KindConfig{
+			{Label: "kind"},
+		},
+	}
+	c := &Change{
+		Body: "skip body body",
+	}
 
-	It("errors when custom is given that does not pass validation", func() {
-		minValue := int64(50)
-		config := Config{
-			CustomChoices: []Custom{
-				{Key: "Issue", Type: CustomInt, MinInt: &minValue},
-			},
-		}
-
-		c := &Change{
-			Custom: map[string]string{
-				"Issue": "40",
-			},
-		}
-
-		err := c.AskPrompts(config, stdinReader)
-		Expect(err).NotTo(BeNil())
-	})
-
-	It("errors when body is given for a kind that shouldn't have one", func() {
-		config := Config{
-			Kinds: []KindConfig{
-				{Label: "kind", SkipBody: true},
-			},
-		}
-
-		c := &Change{
-			Body: "body",
-			Kind: "kind",
-		}
-
-		err := c.AskPrompts(config, stdinReader)
-		Expect(err).To(MatchError(errKindDoesNotAcceptBody))
-	})
-
-	It("validates body without prompt", func() {
-		var min int64 = 10
-
-		config := Config{
-			Kinds: []KindConfig{
-				{Label: "kind"},
-			},
-			Body: BodyConfig{
-				MinLength: &min,
-			},
-		}
-
-		c := &Change{
-			Kind: "kind",
-			Body: "body",
-		}
-
-		err := c.AskPrompts(config, stdinReader)
-		Expect(err).To(MatchError(errInputTooShort))
-	})
-})
+	then.Nil(t, c.AskPrompts(config, reader))
+	then.Equals(t, "kind", c.Kind)
+	then.Equals(t, "skip body body", c.Body)
+}

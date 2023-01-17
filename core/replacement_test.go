@@ -3,172 +3,170 @@ package core
 import (
 	"errors"
 	"os"
+	"testing"
 
-	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/gomega"
-	"github.com/spf13/afero"
-
-	. "github.com/miniscruff/changie/testutils"
+	"github.com/miniscruff/changie/then"
 )
 
-var _ = Describe("Replacement", func() {
-	var (
-		fs  afero.Fs
-		afs afero.Afero
-	)
-	BeforeEach(func() {
-		fs = afero.NewMemMapFs()
-		afs = afero.Afero{Fs: fs}
-	})
-
-	It("can find and replace contents in a file", func() {
-		startData := `first line
+func TestFindAndReplaceContentsInAFile(t *testing.T) {
+	_, afs := then.WithAferoFS()
+	filepath := "file.txt"
+	startData := `first line
 second line
 third line
 ignore me`
-		endData := `first line
+	endData := `first line
 replaced here
 third line
 ignore me`
 
-		err := afs.WriteFile("file.txt", []byte(startData), os.ModeTemporary)
-		Expect(err).To(BeNil())
+	err := afs.WriteFile(filepath, []byte(startData), os.ModeTemporary)
+	then.Nil(t, err)
 
-		rep := Replacement{
-			Path:    "file.txt",
-			Find:    "second line",
-			Replace: "replaced here",
-		}
-		err = rep.Execute(afs.ReadFile, afs.WriteFile, ReplaceData{})
-		Expect(err).To(BeNil())
-		Expect("file.txt").To(HaveContents(afs, endData))
-	})
+	rep := Replacement{
+		Path:    filepath,
+		Find:    "second line",
+		Replace: "replaced here",
+	}
+	err = rep.Execute(afs.ReadFile, afs.WriteFile, ReplaceData{})
+	then.Nil(t, err)
+	then.FileContents(t, afs, endData, filepath)
+}
 
-	It("can find and replace with template", func() {
-		startData := `{
+func TestFindAndReplaceWithTemplate(t *testing.T) {
+	_, afs := then.WithAferoFS()
+	filepath := "template.txt"
+	startData := `{
   "name": "demo-project",
   "version": "1.0.0",
 }`
-		endData := `{
+	endData := `{
   "name": "demo-project",
   "version": "1.1.0",
 }`
 
-		err := afs.WriteFile("file.txt", []byte(startData), os.ModeTemporary)
-		Expect(err).To(BeNil())
+	err := afs.WriteFile(filepath, []byte(startData), os.ModeTemporary)
+	then.Nil(t, err)
 
-		rep := Replacement{
-			Path:    "file.txt",
-			Find:    `  "version": ".*",`,
-			Replace: `  "version": "{{.VersionNoPrefix}}",`,
-		}
-		err = rep.Execute(afs.ReadFile, afs.WriteFile, ReplaceData{
-			VersionNoPrefix: "1.1.0",
-		})
-		Expect(err).To(BeNil())
-		Expect("file.txt").To(HaveContents(afs, endData))
+	rep := Replacement{
+		Path:    filepath,
+		Find:    `  "version": ".*",`,
+		Replace: `  "version": "{{.VersionNoPrefix}}",`,
+	}
+	err = rep.Execute(afs.ReadFile, afs.WriteFile, ReplaceData{
+		VersionNoPrefix: "1.1.0",
 	})
+	then.Nil(t, err)
+	then.FileContents(t, afs, endData, filepath)
+}
 
-	It("can find and replace with template at start of line", func() {
-		startData := `# yaml file
+func TestFindAndReplaceStartOfLine(t *testing.T) {
+	_, afs := then.WithAferoFS()
+	filepath := "start.txt"
+	startData := `# yaml file
 version: 0.0.1
 level1:
 	level2:
 		version: 0.0.1
 `
-		endData := `# yaml file
+	endData := `# yaml file
 version: 1.2.3
 level1:
 	level2:
 		version: 0.0.1
 `
 
-		err := afs.WriteFile("file.txt", []byte(startData), os.ModeTemporary)
-		Expect(err).To(BeNil())
+	err := afs.WriteFile(filepath, []byte(startData), os.ModeTemporary)
+	then.Nil(t, err)
 
-		rep := Replacement{
-			Path:    "file.txt",
-			Find:    "^version: .*",
-			Replace: "version: {{.VersionNoPrefix}}",
-		}
-		err = rep.Execute(afs.ReadFile, afs.WriteFile, ReplaceData{
-			VersionNoPrefix: "1.2.3",
-		})
-		Expect(err).To(BeNil())
-		Expect("file.txt").To(HaveContents(afs, endData))
+	rep := Replacement{
+		Path:    filepath,
+		Find:    "^version: .*",
+		Replace: "version: {{.VersionNoPrefix}}",
+	}
+	err = rep.Execute(afs.ReadFile, afs.WriteFile, ReplaceData{
+		VersionNoPrefix: "1.2.3",
 	})
+	then.Nil(t, err)
+	then.FileContents(t, afs, endData, filepath)
+}
 
-	It("can find and replace with case insensitive flag", func() {
-		startData := `# yaml file
+func TestFindAndReplaceCaseInsensitive(t *testing.T) {
+	_, afs := then.WithAferoFS()
+	filepath := "insensitive.txt"
+	startData := `# yaml file
 Version: 0.0.1
 level1:
 	level2:
 		version: 0.0.1
 `
-		endData := `# yaml file
+	endData := `# yaml file
 version: 1.2.3
 level1:
 	level2:
 		version: 0.0.1
 `
 
-		err := afs.WriteFile("file.txt", []byte(startData), os.ModeTemporary)
-		Expect(err).To(BeNil())
+	err := afs.WriteFile(filepath, []byte(startData), os.ModeTemporary)
+	then.Nil(t, err)
 
-		rep := Replacement{
-			Path:    "file.txt",
-			Find:    "^version: .*",
-			Replace: "version: {{.VersionNoPrefix}}",
-			Flags:   "im",
-		}
-		err = rep.Execute(afs.ReadFile, afs.WriteFile, ReplaceData{
-			VersionNoPrefix: "1.2.3",
-		})
-		Expect(err).To(BeNil())
-		Expect("file.txt").To(HaveContents(afs, endData))
+	rep := Replacement{
+		Path:    filepath,
+		Find:    "^version: .*",
+		Replace: "version: {{.VersionNoPrefix}}",
+		Flags:   "im",
+	}
+	err = rep.Execute(afs.ReadFile, afs.WriteFile, ReplaceData{
+		VersionNoPrefix: "1.2.3",
 	})
+	then.Nil(t, err)
+	then.FileContents(t, afs, endData, filepath)
+}
 
-	It("returns error on bad file read", func() {
-		rep := Replacement{
-			Path: "does not exist",
-		}
-		err := rep.Execute(afs.ReadFile, afs.WriteFile, ReplaceData{})
-		Expect(err).NotTo(BeNil())
-	})
+func TestErrorBadFileRead(t *testing.T) {
+	_, afs := then.WithAferoFS()
+	rep := Replacement{
+		Path: "does not exist",
+	}
+	err := rep.Execute(afs.ReadFile, afs.WriteFile, ReplaceData{})
+	then.NotNil(t, err)
+}
 
-	It("returns error on bad template parsing", func() {
-		rep := Replacement{
-			Replace: "{{.bad..}}",
-		}
-		err := rep.Execute(afs.ReadFile, afs.WriteFile, ReplaceData{})
-		Expect(err).NotTo(BeNil())
-	})
+func TestErrorBadTemplateParse(t *testing.T) {
+	_, afs := then.WithAferoFS()
+	rep := Replacement{
+		Replace: "{{.bad..}}",
+	}
+	err := rep.Execute(afs.ReadFile, afs.WriteFile, ReplaceData{})
+	then.NotNil(t, err)
+}
 
-	It("returns error on bad template execute", func() {
-		rep := Replacement{
-			Replace: "{{.bad..}}",
-		}
-		err := rep.Execute(afs.ReadFile, afs.WriteFile, ReplaceData{})
-		Expect(err).NotTo(BeNil())
-	})
+func TestErrorBadTemplateExec(t *testing.T) {
+	_, afs := then.WithAferoFS()
+	rep := Replacement{
+		Replace: "{{.bad}}",
+	}
+	err := rep.Execute(afs.ReadFile, afs.WriteFile, ReplaceData{})
+	then.NotNil(t, err)
+}
 
-	It("returns error on bad write file", func() {
-		startData := "some data"
+func TestErrorBadWriteFile(t *testing.T) {
+	_, afs := then.WithAferoFS()
+	filepath := "err.txt"
+	startData := "some data"
+	mockError := errors.New("bad write")
+	badWrite := func(path string, data []byte, mode os.FileMode) error {
+		return mockError
+	}
 
-		err := afs.WriteFile("file.txt", []byte(startData), os.ModeTemporary)
-		Expect(err).To(BeNil())
+	err := afs.WriteFile(filepath, []byte(startData), os.ModeTemporary)
+	then.Nil(t, err)
 
-		mockError := errors.New("bad write")
-		badWrite := func(path string, data []byte, mode os.FileMode) error {
-			return mockError
-		}
-
-		rep := Replacement{
-			Path:    "file.txt",
-			Find:    "some",
-			Replace: "none",
-		}
-		err = rep.Execute(afs.ReadFile, badWrite, ReplaceData{})
-		Expect(err).To(Equal(mockError))
-	})
-})
+	rep := Replacement{
+		Path:    filepath,
+		Find:    "some",
+		Replace: "none",
+	}
+	err = rep.Execute(afs.ReadFile, badWrite, ReplaceData{})
+	then.Err(t, mockError, err)
+}

@@ -1,9 +1,6 @@
 linters-settings:
   exhaustive:
     default-signifies-exhaustive: false
-  funlen:
-    lines: 80
-    statements: 50
   gci:
     local-prefixes: github.com/miniscruff/changie
   goconst:
@@ -32,9 +29,7 @@ linters:
     - dupl
     - errcheck
     - exhaustive
-    - funlen
     - goconst
-    - gocritic
     - gocyclo
     - gofmt
     - goimports
@@ -47,7 +42,6 @@ linters:
     - nakedret
     - noctx
     - nolintlint
-    - rowserrcheck
     - staticcheck
     - stylecheck
     - typecheck

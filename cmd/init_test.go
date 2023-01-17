@@ -4,109 +4,127 @@ import (
 	"errors"
 	"os"
 	"path/filepath"
-
-	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/ginkgo/extensions/table"
-	. "github.com/onsi/gomega"
-	"github.com/spf13/afero"
+	"testing"
 
 	"github.com/miniscruff/changie/core"
-	. "github.com/miniscruff/changie/testutils"
+	"github.com/miniscruff/changie/then"
 )
 
-var _ = Describe("Init", func() {
-	var (
-		fs         afero.Fs
-		afs        afero.Afero
-		mockError  error
-		testConfig core.Config
-	)
+func initCleanArgs() {
+	initForce = false
+}
 
-	BeforeEach(func() {
-		fs = afero.NewMemMapFs()
-		afs = afero.Afero{Fs: fs}
-		mockError = errors.New("dummy mock error")
-		testConfig = core.Config{
-			ChangesDir:    "chgs",
-			UnreleasedDir: "unrel",
-			HeaderPath:    "head.tpl.md",
-			ChangelogPath: "changelog.md",
-			VersionExt:    "md",
-			VersionFormat: "",
-			KindFormat:    "",
-			ChangeFormat:  "",
-			Kinds:         []core.KindConfig{},
-		}
-		initForce = false
-	})
+func initConfig() core.Config {
+	return core.Config{
+		ChangesDir:    "chgs",
+		UnreleasedDir: "unrel",
+		HeaderPath:    "head.tpl.md",
+		ChangelogPath: "changelog.md",
+		VersionExt:    "md",
+		VersionFormat: "",
+		KindFormat:    "",
+		ChangeFormat:  "",
+		Kinds:         []core.KindConfig{},
+	}
+}
 
-	It("builds default skeleton", func() {
-		err := initPipeline(afs.MkdirAll, afs.WriteFile, afs.Exists, testConfig)
+func TestInitBuildsDefaultSkeleton(t *testing.T) {
+	cfg := initConfig()
+	_, afs := then.WithAferoFS()
 
-		Expect(err).To(BeNil())
-		Expect("chgs/").To(BeADir(afs))
-		Expect("chgs/unrel").To(BeADir(afs))
-		Expect("chgs/unrel/.gitkeep").To(BeAnEmptyFile(afs))
-		Expect("chgs/head.tpl.md").To(HaveContents(afs, defaultHeader))
-		Expect("changelog.md").To(HaveContents(afs, defaultChangelog))
-	})
+	err := initPipeline(afs.MkdirAll, afs.WriteFile, afs.Exists, cfg)
 
-	It("builds default skeleton if file exists but forced", func() {
-		initForce = true
-		fileExists := func(path string) (bool, error) {
-			return true, nil
-		}
+	then.Nil(t, err)
+	then.FileContents(t, afs, defaultHeader, cfg.ChangesDir, cfg.HeaderPath)
+	then.FileContents(t, afs, defaultChangelog, cfg.ChangelogPath)
+	then.FileContents(t, afs, "", cfg.ChangesDir, cfg.UnreleasedDir, ".gitkeep")
+}
 
-		err := initPipeline(afs.MkdirAll, afs.WriteFile, fileExists, testConfig)
+func TestInitBuildsConfigIfConfigExistsIfForced(t *testing.T) {
+	initForce = true
+	cfg := initConfig()
+	_, afs := then.WithAferoFSConfig(t, &cfg)
 
-		Expect(err).To(BeNil())
-		Expect("chgs/").To(BeADir(afs))
-		Expect("chgs/unrel").To(BeADir(afs))
-		Expect("chgs/unrel/.gitkeep").To(BeAnEmptyFile(afs))
-		Expect("chgs/head.tpl.md").To(HaveContents(afs, defaultHeader))
-		Expect("changelog.md").To(HaveContents(afs, defaultChangelog))
-	})
+	err := initPipeline(afs.MkdirAll, afs.WriteFile, afs.Exists, cfg)
 
-	It("returns error on bad mkdir for unreleased", func() {
-		badMkdir := func(path string, mode os.FileMode) error {
-			return mockError
-		}
-		err := initPipeline(badMkdir, afs.WriteFile, afs.Exists, testConfig)
-		Expect(err).To(Equal(mockError))
-	})
+	t.Cleanup(initCleanArgs)
+	then.Nil(t, err)
+	then.FileContents(t, afs, defaultHeader, cfg.ChangesDir, cfg.HeaderPath)
+	then.FileContents(t, afs, defaultChangelog, cfg.ChangelogPath)
+	then.FileContents(t, afs, "", cfg.ChangesDir, cfg.UnreleasedDir, ".gitkeep")
+}
 
-	It("returns error if file exisits", func() {
-		badFileExists := func(path string) (bool, error) {
-			return true, nil
-		}
+func TestErrorInitBadMkdir(t *testing.T) {
+	cfg := initConfig()
+	_, afs := then.WithAferoFS()
+	mockError := errors.New("bad mkdir")
+	badMkdir := func(path string, mode os.FileMode) error {
+		return mockError
+	}
 
-		err := initPipeline(afs.MkdirAll, afs.WriteFile, badFileExists, testConfig)
-		Expect(err).To(Equal(errConfigExists))
-	})
+	err := initPipeline(badMkdir, afs.WriteFile, afs.Exists, cfg)
+	then.Err(t, mockError, err)
+}
 
-	It("returns error if unable to check if file exists", func() {
-		badFileExists := func(path string) (bool, error) {
-			return false, errors.New("doesn't matter")
-		}
+func TestErrorInitFileExists(t *testing.T) {
+	cfg := initConfig()
+	_, afs := then.WithAferoFS()
+	badFileExists := func(path string) (bool, error) {
+		return true, nil
+	}
 
-		err := initPipeline(afs.MkdirAll, afs.WriteFile, badFileExists, testConfig)
-		Expect(err).To(Equal(errConfigExists))
-	})
+	err := initPipeline(afs.MkdirAll, afs.WriteFile, badFileExists, cfg)
+	then.Err(t, errConfigExists, err)
+}
 
-	DescribeTable("error creating file",
-		func(filename string) {
+func TestErrorInitUnableToCheckIfFileExists(t *testing.T) {
+	cfg := initConfig()
+	_, afs := then.WithAferoFS()
+
+	badFileExists := func(path string) (bool, error) {
+		return false, errors.New("doesn't matter")
+	}
+
+	err := initPipeline(afs.MkdirAll, afs.WriteFile, badFileExists, cfg)
+	then.Err(t, errConfigExists, err)
+}
+
+func TestErrorInitBadWriteFiles(t *testing.T) {
+	cfg := initConfig()
+	mockError := errors.New("bad write file")
+
+	for _, tc := range []struct {
+		name string
+		path []string
+	}{
+		{
+			name: "ChangelogPath",
+			path: []string{cfg.ChangelogPath},
+		},
+		{
+			name: "ConfigFile",
+			path: []string{core.ConfigPaths[0]},
+		},
+		{
+			name: "HeaderFile",
+			path: []string{cfg.ChangesDir, cfg.HeaderPath},
+		},
+		{
+			name: "GitKeep",
+			path: []string{cfg.ChangesDir, cfg.UnreleasedDir, ".gitkeep"},
+		},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			_, afs := then.WithAferoFS()
 			mockWriteFile := func(path string, data []byte, perm os.FileMode) error {
-				if path == filename {
+				if path == filepath.Join(tc.path...) {
 					return mockError
 				}
 				return nil
 			}
-			err := initPipeline(afs.MkdirAll, mockWriteFile, afs.Exists, testConfig)
-			Expect(err).To(Equal(mockError))
-		},
-		Entry("config file", ".changie.yaml"),
-		Entry("changelog", "changelog.md"),
-		Entry("header", filepath.Join("chgs", "head.tpl.md")),
-		Entry("git keep", filepath.Join("chgs", "unrel", ".gitkeep")),
-	)
-})
+
+			err := initPipeline(afs.MkdirAll, mockWriteFile, afs.Exists, cfg)
+			then.Err(t, mockError, err)
+		})
+	}
+}

@@ -69,8 +69,10 @@ func (r Replacement) Execute(
 
 	var buf bytes.Buffer
 
-	//nolint:errcheck
-	templ.Execute(&buf, data)
+	err = templ.Execute(&buf, data)
+	if err != nil {
+		return err
+	}
 
 	fileData, err := readFile(r.Path)
 	if err != nil {

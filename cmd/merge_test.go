@@ -2,276 +2,211 @@ package cmd
 
 import (
 	"errors"
-	"os"
 	"path/filepath"
-	"strings"
+	"testing"
 
-	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/gomega"
 	"github.com/spf13/afero"
 
 	"github.com/miniscruff/changie/core"
-	. "github.com/miniscruff/changie/testutils"
+	"github.com/miniscruff/changie/then"
 )
 
-var _ = Describe("Merge", func() {
-	var (
-		fs         *MockFS
-		afs        afero.Afero
-		testConfig core.Config
-		stdout     *os.File
-	)
-	BeforeEach(func() {
-		fs = NewMockFS()
-		afs = afero.Afero{Fs: fs}
-		stdout = os.Stdout
-		testConfig = core.Config{
-			ChangesDir:    "news",
-			UnreleasedDir: "future",
-			HeaderPath:    "header.rst",
-			ChangelogPath: "news.md",
-			VersionExt:    "md",
-			VersionFormat: "## {{.Version}}",
-			KindFormat:    "### {{.Kind}}",
-			ChangeFormat:  "* {{.Body}}",
-			Kinds: []core.KindConfig{
-				{Label: "added"},
-				{Label: "removed"},
-				{Label: "other"},
+func mergeTestConfig() *core.Config {
+	return &core.Config{
+		ChangesDir:    "news",
+		UnreleasedDir: "future",
+		HeaderPath:    "header.rst",
+		ChangelogPath: "news.md",
+		VersionExt:    "md",
+		VersionFormat: "## {{.Version}}",
+		KindFormat:    "### {{.Kind}}",
+		ChangeFormat:  "* {{.Body}}",
+		Kinds: []core.KindConfig{
+			{Label: "added"},
+			{Label: "removed"},
+			{Label: "other"},
+		},
+		Replacements: []core.Replacement{
+			{
+				Path:    "replace.json",
+				Find:    `  "version": ".*",`,
+				Replace: `  "version": "{{.VersionNoPrefix}}",`,
 			},
-			Replacements: []core.Replacement{
-				{
-					Path:    "replace.json",
-					Find:    `  "version": ".*",`,
-					Replace: `  "version": "{{.VersionNoPrefix}}",`,
-				},
-			},
-		}
-	})
-
-	AfterEach(func() {
-		// reset our cli vars
-		mergeDryRunOut = stdout
-		_mergeDryRun = false
-	})
-
-	saveAndCheckConfig := func() {
-		err := testConfig.Save(afs.WriteFile)
-		Expect(err).To(BeNil())
+		},
 	}
+}
 
-	It("can merge versions", func() {
-		testConfig.HeaderPath = ""
-		testConfig.Replacements = nil
-		saveAndCheckConfig()
+func mergeResetVars() {
+	_mergeDryRun = false
+}
 
-		onePath := filepath.Join("news", "v0.1.0.md")
-		twoPath := filepath.Join("news", "v0.2.0.md")
+func TestMergeVersionsSuccessfully(t *testing.T) {
+	cfg := mergeTestConfig()
+	cfg.HeaderPath = ""
+	cfg.Replacements = nil
+	_, afs := then.WithAferoFSConfig(t, cfg)
 
-		oneChanges := []byte("first version\n")
-		err := afs.WriteFile(onePath, oneChanges, core.CreateFileMode)
-		Expect(err).To(BeNil())
+	then.WriteFile(t, afs, []byte("first version\n"), cfg.ChangesDir, "v0.1.0.md")
+	then.WriteFile(t, afs, []byte("second version\n"), cfg.ChangesDir, "v0.2.0.md")
 
-		twoChanges := []byte("second version\n")
-		err = afs.WriteFile(twoPath, twoChanges, core.CreateFileMode)
-		Expect(err).To(BeNil())
+	err := mergePipeline(afs)
+	then.Nil(t, err)
 
-		err = mergePipeline(afs)
-		Expect(err).To(BeNil())
-
-		changeContents := `second version
+	changeContents := `second version
 first version
 `
+	then.FileContents(t, afs, changeContents, "news.md")
+}
 
-		Expect("news.md").To(HaveContents(afs, changeContents))
-	})
-
-	It("can merge versions with header and replacement", func() {
-		saveAndCheckConfig()
-		onePath := filepath.Join("news", "v0.1.0.md")
-		twoPath := filepath.Join("news", "v0.2.0.md")
-
-		oneChanges := []byte("first version\n")
-		err := afs.WriteFile(onePath, oneChanges, core.CreateFileMode)
-		Expect(err).To(BeNil())
-
-		twoChanges := []byte("second version\n")
-		err = afs.WriteFile(twoPath, twoChanges, core.CreateFileMode)
-		Expect(err).To(BeNil())
-
-		headerContents := []byte("a simple header\n")
-		err = afs.WriteFile(filepath.Join("news", "header.rst"), headerContents, core.CreateFileMode)
-		Expect(err).To(BeNil())
-
-		_, err = afs.Create(filepath.Join("news", "ignored.txt"))
-		Expect(err).To(BeNil())
-
-		jsonContents := `{
+func TestMergeVersionsWithHeaderAndReplacements(t *testing.T) {
+	cfg := mergeTestConfig()
+	_, afs := then.WithAferoFSConfig(t, cfg)
+	jsonContents := `{
   "key": "value",
   "version": "old-version",
 }`
-		newContents := `{
+
+	then.WriteFile(t, afs, []byte("first version\n"), cfg.ChangesDir, "v0.1.0.md")
+	then.WriteFile(t, afs, []byte("second version\n"), cfg.ChangesDir, "v0.2.0.md")
+	then.WriteFile(t, afs, []byte("ignored\n"), cfg.ChangesDir, "ignored.txt")
+	then.WriteFile(t, afs, []byte("a simple header\n"), cfg.ChangesDir, cfg.HeaderPath)
+	then.WriteFile(t, afs, []byte(jsonContents), "replace.json")
+
+	err := mergePipeline(afs)
+	then.Nil(t, err)
+
+	changeContents := `a simple header
+second version
+first version
+`
+	then.FileContents(t, afs, changeContents, cfg.ChangelogPath)
+
+	newContents := `{
   "key": "value",
   "version": "0.2.0",
 }`
-		err = afs.WriteFile("replace.json", []byte(jsonContents), core.CreateFileMode)
-		Expect(err).To(BeNil())
+	then.FileContents(t, afs, newContents, "replace.json")
+}
 
-		err = mergePipeline(afs)
-		Expect(err).To(BeNil())
-
-		changeContents := `a simple header
+func TestMergeDryRun(t *testing.T) {
+	cfg := mergeTestConfig()
+	_, afs := then.WithAferoFSConfig(t, cfg)
+	changeContents := `a simple header
 second version
 first version
 `
+	writer := then.WithStdout(t)
+	mergeDryRunOut = writer
+	_mergeDryRun = true
 
-		Expect("news.md").To(HaveContents(afs, changeContents))
-		Expect("replace.json").To(HaveContents(afs, newContents))
-	})
+	t.Cleanup(mergeResetVars)
+	then.WriteFile(t, afs, []byte("first version\n"), cfg.ChangesDir, "v0.1.0.md")
+	then.WriteFile(t, afs, []byte("second version\n"), cfg.ChangesDir, "v0.2.0.md")
+	then.WriteFile(t, afs, []byte("ignored\n"), cfg.ChangesDir, "ignored.txt")
+	then.WriteFile(t, afs, []byte("a simple header\n"), cfg.ChangesDir, cfg.HeaderPath)
 
-	It("returns new version with dry run", func() {
-		saveAndCheckConfig()
-		onePath := filepath.Join("news", "v0.1.0.md")
-		twoPath := filepath.Join("news", "v0.2.0.md")
+	err := mergePipeline(afs)
+	then.Nil(t, err)
+	then.Equals(t, changeContents, writer.String())
+}
 
-		oneChanges := []byte("first version\n")
-		err := afs.WriteFile(onePath, oneChanges, core.CreateFileMode)
-		Expect(err).To(BeNil())
+func TestMergeSkipsVersionsIfNoneFound(t *testing.T) {
+	cfg := mergeTestConfig()
+	_, afs := then.WithAferoFSConfig(t, cfg)
+	changeContents := "a simple header\n"
 
-		twoChanges := []byte("second version\n")
-		err = afs.WriteFile(twoPath, twoChanges, core.CreateFileMode)
-		Expect(err).To(BeNil())
+	writer := then.WithStdout(t)
+	mergeDryRunOut = writer
+	_mergeDryRun = true
 
-		headerContents := []byte("a simple header\n")
-		err = afs.WriteFile(filepath.Join("news", "header.rst"), headerContents, core.CreateFileMode)
-		Expect(err).To(BeNil())
+	then.WriteFile(t, afs, []byte("a simple header\n"), cfg.ChangesDir, cfg.HeaderPath)
+	t.Cleanup(mergeResetVars)
 
-		_, err = afs.Create(filepath.Join("news", "ignored.txt"))
-		Expect(err).To(BeNil())
+	err := mergePipeline(afs)
+	then.Nil(t, err)
+	then.Equals(t, changeContents, writer.String())
+}
 
-		changeContents := `a simple header
-second version
-first version
-`
+func TestErrorMergeBadChangelogPath(t *testing.T) {
+	cfg := mergeTestConfig()
+	fs, afs := then.WithAferoFSConfig(t, cfg)
 
-		var writer strings.Builder
-		mergeDryRunOut = &writer
-		_mergeDryRun = true
-		err = mergePipeline(afs)
-		Expect(writer.String()).To(Equal(changeContents))
-		Expect(err).To(BeNil())
-	})
+	badError := errors.New("bad create")
+	fs.MockCreate = func(filename string) (afero.File, error) {
+		var f afero.File
+		return f, badError
+	}
 
-	It("skips versions if none found", func() {
-		saveAndCheckConfig()
+	err := mergePipeline(afs)
+	then.Err(t, badError, err)
+}
 
-		headerContents := []byte("a simple header\n")
-		err := afs.WriteFile(filepath.Join("news", "header.rst"), headerContents, core.CreateFileMode)
-		Expect(err).To(BeNil())
+func TestErrorMergeBadConfig(t *testing.T) {
+	_, afs := then.WithAferoFS()
 
-		changeContents := "a simple header\n"
+	err := mergePipeline(afs)
+	then.NotNil(t, err)
+}
 
-		var writer strings.Builder
-		mergeDryRunOut = &writer
-		_mergeDryRun = true
-		err = mergePipeline(afs)
-		Expect(writer.String()).To(Equal(changeContents))
-		Expect(err).To(BeNil())
-	})
+func TestErrorMergeUnableToReadChanges(t *testing.T) {
+	cfg := mergeTestConfig()
+	_, afs := then.WithAferoFSConfig(t, cfg)
 
-	It("returns error on bad changelog path", func() {
-		saveAndCheckConfig()
-		_, err := afs.Create(filepath.Join("news", "ignored.txt"))
-		Expect(err).To(BeNil())
+	// no files, means bad read
+	err := mergePipeline(afs)
+	then.NotNil(t, err)
+}
 
-		mockFile := NewMockFile(fs, "header")
-		fs.MockOpen = func(filename string) (afero.File, error) {
-			if filename == filepath.Join("news", "header.rst") {
-				return mockFile, nil
-			}
+func TestErrorMergeBadHeaderFile(t *testing.T) {
+	cfg := mergeTestConfig()
+	fs, afs := then.WithAferoFSConfig(t, cfg)
+	mockError := errors.New("bad open")
 
-			return fs.MemFS.Open(filename)
+	fs.MockOpen = func(filename string) (afero.File, error) {
+		if filename == filepath.Join(cfg.ChangesDir, cfg.HeaderPath) {
+			return nil, mockError
 		}
 
-		badError := errors.New("bad create")
-		fs.MockCreate = func(filename string) (afero.File, error) {
-			var f afero.File
-			return f, badError
+		return fs.MemFS.Open(filename)
+	}
+
+	// need at least one change to exist
+	then.WriteFile(t, afs, []byte("first version\n"), cfg.ChangesDir, "v0.1.0.md")
+
+	err := mergePipeline(afs)
+	then.Err(t, mockError, err)
+}
+
+func TestErrorMergeBadAppend(t *testing.T) {
+	cfg := mergeTestConfig()
+	fs, afs := then.WithAferoFSConfig(t, cfg)
+	mockError := errors.New("bad write string")
+
+	// need at least one change to exist
+	then.WriteFile(t, afs, []byte("first version\n"), cfg.ChangesDir, "v0.1.0.md")
+	then.WriteFile(t, afs, []byte("a simple header\n"), cfg.ChangesDir, cfg.HeaderPath)
+
+	// create a version file, then fail to open it the second time
+	fs.MockOpen = func(filename string) (afero.File, error) {
+		if filename == filepath.Join(cfg.ChangesDir, "v0.1.0.md") {
+			return nil, mockError
 		}
 
-		err = mergePipeline(afs)
-		Expect(err).To(Equal(badError))
-	})
+		return fs.MemFS.Open(filename)
+	}
 
-	It("returns error if unable to read changes", func() {
-		saveAndCheckConfig()
-		// no files, means bad read
-		err := mergePipeline(afs)
-		Expect(err).NotTo(BeNil())
-	})
+	err := mergePipeline(afs)
+	then.Err(t, mockError, err)
+}
 
-	It("returns error on bad header file", func() {
-		saveAndCheckConfig()
-		mockError := errors.New("bad open")
-		fs.MockOpen = func(filename string) (afero.File, error) {
-			if filename == filepath.Join("news", "header.rst") {
-				return nil, mockError
-			}
+func TestErrorMergeBadReplacement(t *testing.T) {
+	cfg := mergeTestConfig()
+	cfg.Replacements[0].Replace = "{{bad....}}"
+	_, afs := then.WithAferoFSConfig(t, cfg)
 
-			return fs.MemFS.Open(filename)
-		}
+	then.WriteFile(t, afs, []byte("a simple header\n"), cfg.ChangesDir, cfg.HeaderPath)
+	then.WriteFile(t, afs, []byte("first version\n"), cfg.ChangesDir, "v0.1.0.md")
 
-		// need at least one change to exist
-		onePath := filepath.Join("news", "v0.1.0.md")
-		oneChanges := []byte("first version")
-		err := afs.WriteFile(onePath, oneChanges, core.CreateFileMode)
-		Expect(err).To(BeNil())
-
-		err = mergePipeline(afs)
-		Expect(err).NotTo(BeNil())
-	})
-
-	It("returns error on bad second append", func() {
-		saveAndCheckConfig()
-		badError := errors.New("bad write string")
-
-		headerContents := []byte("a simple header\n")
-		err := afs.WriteFile(filepath.Join("news", "header.rst"), headerContents, core.CreateFileMode)
-		Expect(err).To(BeNil())
-
-		onePath := filepath.Join("news", "v0.1.0.md")
-		oneChanges := []byte("first version")
-		err = afs.WriteFile(onePath, oneChanges, core.CreateFileMode)
-		Expect(err).To(BeNil())
-
-		// create a version file, then fail to open it the second time
-		fs.MockOpen = func(filename string) (afero.File, error) {
-			if filename == onePath {
-				return nil, badError
-			}
-
-			return fs.MemFS.Open(filename)
-		}
-
-		err = mergePipeline(afs)
-		Expect(err).To(Equal(badError))
-	})
-
-	It("returns error on bad replacement", func() {
-		testConfig.Replacements[0].Replace = "{{bad....}}"
-		saveAndCheckConfig()
-
-		headerContents := []byte("a simple header\n")
-		err := afs.WriteFile(filepath.Join("news", "header.rst"), headerContents, core.CreateFileMode)
-		Expect(err).To(BeNil())
-
-		onePath := filepath.Join("news", "v0.1.0.md")
-
-		oneChanges := []byte("first version")
-		err = afs.WriteFile(onePath, oneChanges, core.CreateFileMode)
-		Expect(err).To(BeNil())
-
-		err = mergePipeline(afs)
-		Expect(err).NotTo(BeNil())
-	})
-})
+	err := mergePipeline(afs)
+	then.NotNil(t, err)
+}

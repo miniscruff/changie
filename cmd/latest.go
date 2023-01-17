@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"io"
 	"strings"
 
 	"github.com/spf13/afero"
@@ -43,30 +44,26 @@ func runLatest(cmd *cobra.Command, args []string) error {
 	fs := afero.NewOsFs()
 	afs := afero.Afero{Fs: fs}
 
-	result, err := latestPipeline(afs, latestSkipPrereleases)
+	return latestPipeline(afs, cmd.OutOrStdout(), latestSkipPrereleases)
+}
+
+func latestPipeline(afs afero.Afero, w io.Writer, skipPrereleases bool) error {
+	config, err := core.LoadConfig(afs.ReadFile)
 	if err != nil {
 		return err
 	}
 
-	_, err = cmd.OutOrStdout().Write([]byte(result))
-
-	return err
-}
-
-func latestPipeline(afs afero.Afero, skipPrereleases bool) (string, error) {
-	config, err := core.LoadConfig(afs.ReadFile)
-	if err != nil {
-		return "", err
-	}
-
 	ver, err := core.GetLatestVersion(afs.ReadDir, config, skipPrereleases)
 	if err != nil {
-		return "", err
+		return err
 	}
 
+	latestVer := ver.Original()
 	if removePrefix {
-		return strings.TrimPrefix(ver.Original(), "v"), nil
+		latestVer = strings.TrimPrefix(latestVer, "v")
 	}
 
-	return ver.Original(), nil
+	_, err = w.Write([]byte(latestVer))
+
+	return err
 }

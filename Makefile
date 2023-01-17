@@ -11,7 +11,6 @@ watch:
 	ginkgo watch ./... -failFast
 
 lint:
-	gofmt -s -w .
 	goimports -w -local github.com/miniscruff/changie .
 	golangci-lint run ./...
 

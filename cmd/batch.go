@@ -336,14 +336,16 @@ func batchPipeline(batcher BatchPipeliner, afs afero.Afero, version string) erro
 		allVers, _ := core.GetAllVersions(afs.ReadDir, config, false)
 
 		for _, v := range allVers {
-			if v.Prerelease() != "" {
-				err = afs.Remove(filepath.Join(
-					config.ChangesDir,
-					v.Original()+"."+config.VersionExt,
-				))
-				if err != nil {
-					return err
-				}
+			if v.Prerelease() == "" {
+				continue
+			}
+
+			err = afs.Remove(filepath.Join(
+				config.ChangesDir,
+				v.Original()+"."+config.VersionExt,
+			))
+			if err != nil {
+				return err
 			}
 		}
 	}

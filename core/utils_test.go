@@ -5,385 +5,393 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"testing"
 
-	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/gomega"
 	"github.com/spf13/afero"
-	"github.com/spf13/afero/mem"
 
-	"github.com/miniscruff/changie/shared"
-	. "github.com/miniscruff/changie/testutils"
+	"github.com/miniscruff/changie/then"
 )
 
-var _ = Describe("Utils", func() {
-	It("append file appends two files", func() {
-		memFs := afero.NewMemMapFs()
-		afs := afero.Afero{Fs: memFs}
-		rootFile, err := memFs.Create("root.txt")
-		Expect(err).To(BeNil())
+func TestAppendFileAppendsTwoFiles(t *testing.T) {
+	fs, afs := then.WithAferoFS()
+	rootPath := "root.txt"
+	appendPath := "append.txt"
 
-		_, err = rootFile.WriteString("root")
-		Expect(err).To(BeNil())
+	rootFile, err := fs.Create(rootPath)
+	then.Nil(t, err)
 
-		err = afs.WriteFile("append.txt", []byte(" append"), CreateFileMode)
-		Expect(err).To(BeNil())
+	_, err = rootFile.WriteString("root")
+	then.Nil(t, err)
 
-		err = AppendFile(afs.Open, rootFile, "append.txt")
-		Expect(err).To(BeNil())
+	err = afs.WriteFile(appendPath, []byte(" append"), CreateFileMode)
+	then.Nil(t, err)
 
-		rootFile.Close()
+	err = AppendFile(afs.Open, rootFile, appendPath)
+	then.Nil(t, err)
 
-		bytes, err := afero.ReadFile(memFs, "root.txt")
-		Expect(err).To(BeNil())
-		Expect(string(bytes)).To(Equal("root append"))
-	})
+	rootFile.Close()
+	then.FileContents(t, afs, "root append", rootPath)
+}
 
-	It("append file fails if open fails", func() {
-		mockError := errors.New("bad open")
-		mockFs := NewMockFS()
-		mockFs.MockOpen = func(filename string) (afero.File, error) {
-			return nil, mockError
-		}
-
-		rootFile := NewMockFile(mockFs, "root.txt")
-		defer rootFile.Close()
-
-		err := AppendFile(mockFs.Open, rootFile, "dummy.txt")
-		Expect(err).To(Equal(mockError))
-	})
-
-	It("get all versions returns all versions", func() {
-		config := Config{
-			ChangesDir: "changes",
-			HeaderPath: "header.md",
-		}
-		fs := NewMockFS()
-		afs := afero.Afero{Fs: fs}
-
-		headerFile, err := afs.Create(filepath.Join("changes", "header.md"))
-		Expect(err).To(BeNil())
-		file1, err := afs.Create(filepath.Join("changes", "v0.1.0.md"))
-		Expect(err).To(BeNil())
-		file2, err := afs.Create(filepath.Join("changes", "v0.2.0.md"))
-		Expect(err).To(BeNil())
-		file3, err := afs.Create(filepath.Join("changes", "not-sem-ver.md"))
-		Expect(err).To(BeNil())
-
-		mockRead := func(dirname string) ([]os.FileInfo, error) {
-			return []os.FileInfo{
-				headerFile.(*mem.File).Info(),
-				file1.(*mem.File).Info(),
-				file2.(*mem.File).Info(),
-				file3.(*mem.File).Info(),
-			}, nil
-		}
-
-		vers, err := GetAllVersions(mockRead, config, false)
-		Expect(err).To(BeNil())
-		Expect(vers[0].Original()).To(Equal("v0.2.0"))
-		Expect(vers[1].Original()).To(Equal("v0.1.0"))
-	})
-
-	It("get all versions returns error on bad read dir", func() {
-		config := Config{}
-		mockError := errors.New("bad stuff")
-		mockRead := func(dirname string) ([]os.FileInfo, error) {
-			return []os.FileInfo{}, mockError
-		}
-
-		vers, err := GetAllVersions(mockRead, config, false)
-		Expect(vers).To(BeEmpty())
-		Expect(err).To(Equal(mockError))
-	})
-
-	createVersions := func(latestVersion string) (shared.ReadDirer, Config) {
-		config := Config{
-			ChangesDir: "changes",
-			HeaderPath: "header.md",
-		}
-		fs := NewMockFS()
-		afs := afero.Afero{Fs: fs}
-
-		headerFile, err := afs.Create(filepath.Join("changes", "header.md"))
-		Expect(err).To(BeNil())
-		file1, err := afs.Create(filepath.Join("changes", "v0.1.0.md"))
-		Expect(err).To(BeNil())
-		file2, err := afs.Create(filepath.Join("changes", latestVersion+".md"))
-		Expect(err).To(BeNil())
-		file3, err := afs.Create(filepath.Join("changes", "not-sem-ver.md"))
-		Expect(err).To(BeNil())
-
-		mockRead := func(dirname string) ([]os.FileInfo, error) {
-			return []os.FileInfo{
-				headerFile.(*mem.File).Info(),
-				file1.(*mem.File).Info(),
-				file2.(*mem.File).Info(),
-				file3.(*mem.File).Info(),
-			}, nil
-		}
-		return mockRead, config
+func TestErrorAppendFileIfOpenFails(t *testing.T) {
+	mockError := errors.New("bad open")
+	builder := &strings.Builder{}
+	badOpen := func(filename string) (afero.File, error) {
+		return nil, mockError
 	}
 
-	It("get latest version returns most recent version", func() {
-		mockRead, config := createVersions("v0.2.0")
+	err := AppendFile(badOpen, builder, "dummy.txt")
+	then.Err(t, mockError, err)
+}
 
-		ver, err := GetLatestVersion(mockRead, config, false)
-		Expect(err).To(BeNil())
-		Expect(ver.Original()).To(Equal("v0.2.0"))
-	})
+func TestGetAllVersionsReturnsAllVersions(t *testing.T) {
+	config := Config{
+		HeaderPath: "header.md",
+	}
+	mockRead := func(dirname string) ([]os.FileInfo, error) {
+		return []os.FileInfo{
+			&then.MockFileInfo{MockIsDir: true, MockName: "dir"},
+			&then.MockFileInfo{MockName: "header.md"},
+			&then.MockFileInfo{MockName: "v0.1.0.md"},
+			&then.MockFileInfo{MockName: "v0.2.0.md"},
+			&then.MockFileInfo{MockName: "not-sem-ver.md"},
+		}, nil
+	}
 
-	It("get latest version with prerelease", func() {
-		mockRead, config := createVersions("v0.2.0-rc1")
+	vers, err := GetAllVersions(mockRead, config, false)
+	then.Nil(t, err)
+	then.Equals(t, "v0.2.0", vers[0].Original())
+	then.Equals(t, "v0.1.0", vers[1].Original())
+}
 
-		vers, err := GetLatestVersion(mockRead, config, false)
-		Expect(err).To(BeNil())
-		Expect(vers.Original()).To(Equal("v0.2.0-rc1"))
-	})
+func TestGetLatestVersionReturnsMostRecent(t *testing.T) {
+	config := Config{}
+	mockRead := func(dirname string) ([]os.FileInfo, error) {
+		return []os.FileInfo{
+			&then.MockFileInfo{MockName: "v0.1.0.md"},
+			&then.MockFileInfo{MockName: "v0.2.0.md"},
+		}, nil
+	}
 
-	It("get latest version with prerelease skipped", func() {
-		mockRead, config := createVersions("v0.2.0-rc1")
+	ver, err := GetLatestVersion(mockRead, config, false)
+	then.Nil(t, err)
+	then.Equals(t, "v0.2.0", ver.Original())
+}
 
-		vers, err := GetLatestVersion(mockRead, config, true)
-		Expect(err).To(BeNil())
-		Expect(vers.Original()).To(Equal("v0.1.0"))
-	})
+func TestGetLatestReturnsRC(t *testing.T) {
+	config := Config{}
+	mockRead := func(dirname string) ([]os.FileInfo, error) {
+		return []os.FileInfo{
+			&then.MockFileInfo{MockName: "v0.1.0.md"},
+			&then.MockFileInfo{MockName: "v0.2.0-rc1.md"},
+		}, nil
+	}
 
-	It("get latest version returns v0.0.0 if no versions exist", func() {
-		config := Config{
-			ChangesDir: "changes",
-			HeaderPath: "header.md",
+	ver, err := GetLatestVersion(mockRead, config, false)
+	then.Nil(t, err)
+	then.Equals(t, "v0.2.0-rc1", ver.Original())
+}
+
+func TestGetLatestCanSkipRC(t *testing.T) {
+	config := Config{}
+	mockRead := func(dirname string) ([]os.FileInfo, error) {
+		return []os.FileInfo{
+			&then.MockFileInfo{MockName: "v0.1.0.md"},
+			&then.MockFileInfo{MockName: "v0.2.0-rc1.md"},
+		}, nil
+	}
+
+	ver, err := GetLatestVersion(mockRead, config, true)
+	then.Nil(t, err)
+	then.Equals(t, "v0.1.0", ver.Original())
+}
+
+func TestGetLatestReturnsZerosIfNoVersionsExist(t *testing.T) {
+	config := Config{}
+	mockRead := func(dirname string) ([]os.FileInfo, error) {
+		return []os.FileInfo{}, nil
+	}
+
+	ver, err := GetLatestVersion(mockRead, config, false)
+	then.Nil(t, err)
+	then.Equals(t, "v0.0.0", ver.Original())
+}
+
+func TestErrorAllVersionsBadReadDir(t *testing.T) {
+	config := Config{}
+	mockError := errors.New("bad stuff")
+	mockRead := func(dirname string) ([]os.FileInfo, error) {
+		return []os.FileInfo{}, mockError
+	}
+
+	vers, err := GetAllVersions(mockRead, config, false)
+	then.Equals(t, len(vers), 0)
+	then.Err(t, mockError, err)
+}
+
+func TestErrorLatestVersionBadReadDir(t *testing.T) {
+	config := Config{}
+	mockError := errors.New("bad stuff")
+	mockRead := func(dirname string) ([]os.FileInfo, error) {
+		return []os.FileInfo{}, mockError
+	}
+
+	ver, err := GetLatestVersion(mockRead, config, false)
+	then.Equals(t, nil, ver)
+	then.Err(t, mockError, err)
+}
+
+func TestErrorNextVersionBadReadDir(t *testing.T) {
+	config := Config{}
+	mockError := errors.New("bad stuff")
+	mockRead := func(dirname string) ([]os.FileInfo, error) {
+		return []os.FileInfo{}, mockError
+	}
+
+	ver, err := GetNextVersion(mockRead, config, "major", nil, nil)
+	then.Equals(t, nil, ver)
+	then.Err(t, mockError, err)
+}
+
+func TestErrorNextVersionBadVersion(t *testing.T) {
+	config := Config{}
+	mockRead := func(dirname string) ([]os.FileInfo, error) {
+		return []os.FileInfo{
+			&then.MockFileInfo{MockName: "v0.1.0.md"},
+		}, nil
+	}
+
+	ver, err := GetNextVersion(mockRead, config, "a", []string{}, []string{})
+	then.Equals(t, ver, nil)
+	then.Err(t, ErrBadVersionOrPart, err)
+}
+
+func TestNextVersionOptions(t *testing.T) {
+	for _, tc := range []struct {
+		name          string
+		latestVersion string
+		partOrVersion string
+		prerelease    []string
+		meta          []string
+		expected      string
+	}{
+		{
+			name:          "BrandNewVersion",
+			latestVersion: "v0.2.0",
+			partOrVersion: "v0.4.0",
+			expected:      "v0.4.0",
+		},
+		{
+			name:          "OnlyMajorVersion",
+			latestVersion: "v0.1.5",
+			partOrVersion: "v1",
+			expected:      "v1",
+		},
+		{
+			name:          "MajorAndMinor",
+			latestVersion: "v0.1.5",
+			partOrVersion: "v1.2",
+			expected:      "v1.2",
+		},
+		{
+			name:          "ShortSemVerPrerelease",
+			latestVersion: "v0.1.5",
+			partOrVersion: "v1.5",
+			prerelease:    []string{"rc2"},
+			expected:      "v1.5.0-rc2",
+		},
+		{
+			name:          "MajorPart",
+			latestVersion: "v0.1.5",
+			partOrVersion: "major",
+			expected:      "v1.0.0",
+		},
+		{
+			name:          "MinorPart",
+			latestVersion: "v1.1.5",
+			partOrVersion: "minor",
+			expected:      "v1.2.0",
+		},
+		{
+			name:          "PatchPart",
+			latestVersion: "v2.4.2",
+			partOrVersion: "patch",
+			expected:      "v2.4.3",
+		},
+		{
+			name:          "WithPrerelease",
+			latestVersion: "v0.3.5",
+			partOrVersion: "patch",
+			prerelease:    []string{"b1", "amd64"},
+			expected:      "v0.3.6-b1.amd64",
+		},
+		{
+			name:          "WithMeta",
+			latestVersion: "v2.4.2",
+			partOrVersion: "patch",
+			meta:          []string{"20230507", "githash"},
+			expected:      "v2.4.3+20230507.githash",
+		},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			config := Config{}
+			mockRead := func(dirname string) ([]os.FileInfo, error) {
+				return []os.FileInfo{
+					&then.MockFileInfo{MockName: tc.latestVersion + ".md"},
+				}, nil
+			}
+
+			ver, err := GetNextVersion(mockRead, config, tc.partOrVersion, tc.prerelease, tc.meta)
+			then.Nil(t, err)
+			then.Equals(t, tc.expected, ver.Original())
+		})
+	}
+}
+
+func TestErrorNextVersionBadPrerelease(t *testing.T) {
+	config := Config{}
+	mockRead := func(dirname string) ([]os.FileInfo, error) {
+		return []os.FileInfo{
+			&then.MockFileInfo{MockName: "v0.2.5.md"},
+		}, nil
+	}
+
+	_, err := GetNextVersion(mockRead, config, "patch", []string{"0005"}, nil)
+	then.NotNil(t, err)
+}
+
+func TestErrorNextVersionBadMeta(t *testing.T) {
+	config := Config{}
+	mockRead := func(dirname string) ([]os.FileInfo, error) {
+		return []os.FileInfo{
+			&then.MockFileInfo{MockName: "v0.2.5.md"},
+		}, nil
+	}
+
+	_, err := GetNextVersion(mockRead, config, "patch", nil, []string{"&&*&"})
+	then.NotNil(t, err)
+}
+
+func TestCanFindChangeFiles(t *testing.T) {
+	config := Config{
+		ChangesDir:    ".chng",
+		UnreleasedDir: "unrel",
+	}
+	mockRead := func(dirname string) ([]os.FileInfo, error) {
+		switch dirname {
+		case ".chng/alpha":
+			return []os.FileInfo{
+				&then.MockFileInfo{MockName: "c.yaml"},
+				&then.MockFileInfo{MockName: "d.yaml"},
+			}, nil
+		case ".chng/beta":
+			return []os.FileInfo{
+				&then.MockFileInfo{MockName: "e.yaml"},
+				&then.MockFileInfo{MockName: "f.yaml"},
+				&then.MockFileInfo{MockName: "ignored.md"},
+			}, nil
+		case ".chng/unrel":
+			return []os.FileInfo{
+				&then.MockFileInfo{MockName: "a.yaml"},
+				&then.MockFileInfo{MockName: "b.yaml"},
+			}, nil
+		case ".chng/ignored":
+			return []os.FileInfo{
+				&then.MockFileInfo{MockName: "g.yaml"},
+			}, nil
+		case ".chng":
+			return []os.FileInfo{
+				&then.MockFileInfo{MockName: "h.md"},
+			}, nil
 		}
-		mockRead := func(dirname string) ([]os.FileInfo, error) {
-			return []os.FileInfo{}, nil
-		}
 
-		ver, err := GetLatestVersion(mockRead, config, false)
-		Expect(err).To(BeNil())
-		Expect(ver.Original()).To(Equal("v0.0.0"))
-	})
+		return nil, nil
+	}
 
-	It("get latest version returns error if get all version errors", func() {
-		config := Config{}
-		mockError := errors.New("bad stuff")
-		mockRead := func(dirname string) ([]os.FileInfo, error) {
-			return []os.FileInfo{}, mockError
-		}
+	expected := []string{
+		filepath.Join(".chng", "alpha", "c.yaml"),
+		filepath.Join(".chng", "alpha", "d.yaml"),
+		filepath.Join(".chng", "beta", "e.yaml"),
+		filepath.Join(".chng", "beta", "f.yaml"),
+		filepath.Join(".chng", "unrel", "a.yaml"),
+		filepath.Join(".chng", "unrel", "b.yaml"),
+	}
 
-		vers, err := GetLatestVersion(mockRead, config, false)
-		Expect(vers).To(BeNil())
-		Expect(err).To(Equal(mockError))
-	})
+	files, err := FindChangeFiles(config, mockRead, []string{"alpha", "beta"})
+	then.Nil(t, err)
+	then.SliceEquals(t, expected, files)
+}
 
-	It("get next version returns error if get next version errors", func() {
-		config := Config{}
-		mockError := errors.New("bad stuff")
-		mockRead := func(dirname string) ([]os.FileInfo, error) {
-			return []os.FileInfo{}, mockError
-		}
+func TestErrorOnFindChangeFilesIfBadRead(t *testing.T) {
+	mockErr := errors.New("bad read")
+	config := Config{}
+	mockRead := func(dirname string) ([]os.FileInfo, error) {
+		return nil, mockErr
+	}
 
-		vers, err := GetNextVersion(mockRead, config, "major", nil, nil)
-		Expect(vers).To(BeNil())
-		Expect(err).To(Equal(mockError))
-	})
+	_, err := FindChangeFiles(config, mockRead, []string{"alpha", "beta"})
+	then.Err(t, mockErr, err)
+}
 
-	It("get next version returns error if invalid version", func() {
-		mockRead, config := createVersions("v0.2.0")
+func TestCanWriteNewLines(t *testing.T) {
+	var writer strings.Builder
+	err := WriteNewlines(&writer, 3)
+	then.Nil(t, err)
+	then.Equals(t, "\n\n\n", writer.String())
+}
 
-		vers, err := GetNextVersion(mockRead, config, "a", []string{}, []string{})
-		Expect(vers).To(BeNil())
-		Expect(err).To(Equal(ErrBadVersionOrPart))
-	})
+func TestSkipNewLinesIfCountIsZero(t *testing.T) {
+	var writer strings.Builder
+	err := WriteNewlines(&writer, 0)
+	then.Nil(t, err)
+	then.Equals(t, "", writer.String())
+}
 
-	It("get next version works on brand new version", func() {
-		mockRead, config := createVersions("v0.2.0")
+func TestErrorNewLinesOnBadWriter(t *testing.T) {
+	writer := then.NewErrWriter()
+	writer.Raised(t, WriteNewlines(writer, 3))
+}
 
-		ver, err := GetNextVersion(mockRead, config, "v0.4.0", nil, nil)
-		Expect(err).To(BeNil())
-		Expect(ver.Original()).To(Equal("v0.4.0"))
-	})
+func TestCanSplitEnvVars(t *testing.T) {
+	vars := []string{
+		"A=b",
+		"B=5+5=10",
+		"CHANGIE_NAME=some_name",
+	}
+	expected := map[string]string{
+		"A":            "b",
+		"B":            "5+5=10",
+		"CHANGIE_NAME": "some_name",
+	}
 
-	It("get next version works on only major version", func() {
-		mockRead, config := createVersions("v0.2.0")
+	then.MapEquals(t, expected, EnvVarMap(vars))
+}
 
-		ver, err := GetNextVersion(mockRead, config, "v2", nil, nil)
-		Expect(err).To(BeNil())
-		Expect(ver.Original()).To(Equal("v2"))
-	})
+func TestDoesNotLoadEnvVarsIfNotConfigured(t *testing.T) {
+	cfg := Config{}
+	vars := []string{
+		"A=b",
+		"B=5+5=10",
+		"CHANGIE_NAME=some_name",
+	}
 
-	It("get next version works on major and minor versions", func() {
-		mockRead, config := createVersions("v0.2.0")
+	envs := LoadEnvVars(&cfg, vars)
+	then.Equals(t, len(envs), 0)
+}
 
-		ver, err := GetNextVersion(mockRead, config, "v1.2", nil, nil)
-		Expect(err).To(BeNil())
-		Expect(ver.Original()).To(Equal("v1.2"))
-	})
+func TestLoadEnvsWithPrefix(t *testing.T) {
+	cfg := Config{
+		EnvPrefix: "CHANGIE_",
+	}
+	vars := []string{
+		"A=b",
+		"B=5+5=10",
+		"CHANGIE_NAME=some_name",
+	}
+	expected := map[string]string{
+		"NAME": "some_name",
+	}
 
-	It("get next version with short semver and prerelease", func() {
-		mockRead, config := createVersions("v0.2.0")
-
-		ver, err := GetNextVersion(mockRead, config, "v1.5", []string{"rc2"}, nil)
-		Expect(err).To(BeNil())
-		Expect(ver.Original()).To(Equal("v1.5.0-rc2"))
-	})
-
-	It("get next version works on major version", func() {
-		mockRead, config := createVersions("v0.2.0")
-
-		ver, err := GetNextVersion(mockRead, config, "major", nil, nil)
-		Expect(err).To(BeNil())
-		Expect(ver.Original()).To(Equal("v1.0.0"))
-	})
-
-	It("get next version works on minor version", func() {
-		mockRead, config := createVersions("v0.2.2")
-
-		ver, err := GetNextVersion(mockRead, config, "minor", nil, nil)
-		Expect(err).To(BeNil())
-		Expect(ver.Original()).To(Equal("v0.3.0"))
-	})
-
-	It("get next version works on patch version", func() {
-		mockRead, config := createVersions("v0.2.5")
-
-		ver, err := GetNextVersion(mockRead, config, "patch", nil, nil)
-		Expect(err).To(BeNil())
-		Expect(ver.Original()).To(Equal("v0.2.6"))
-	})
-
-	It("get next version with prerelease", func() {
-		mockRead, config := createVersions("v0.2.5")
-
-		ver, err := GetNextVersion(mockRead, config, "patch", []string{"b1", "amd64"}, nil)
-		Expect(err).To(BeNil())
-		Expect(ver.Original()).To(Equal("v0.2.6-b1.amd64"))
-	})
-
-	It("get next version with meta", func() {
-		mockRead, config := createVersions("v0.2.5")
-
-		ver, err := GetNextVersion(mockRead, config, "patch", nil, []string{"githash", "amd64"})
-		Expect(err).To(BeNil())
-		Expect(ver.Original()).To(Equal("v0.2.6+githash.amd64"))
-	})
-
-	It("get next version error with bad prerelease", func() {
-		mockRead, config := createVersions("v0.2.5")
-
-		_, err := GetNextVersion(mockRead, config, "patch", []string{"0005"}, nil)
-		Expect(err).NotTo(BeNil())
-	})
-
-	It("get next version error with bad meta", func() {
-		mockRead, config := createVersions("v0.2.5")
-
-		_, err := GetNextVersion(mockRead, config, "patch", nil, []string{"&*(&*(&"})
-		Expect(err).NotTo(BeNil())
-	})
-
-	It("can find change files", func() {
-		memFs := afero.NewMemMapFs()
-		afs := afero.Afero{Fs: memFs}
-
-		config := Config{
-			ChangesDir:    ".chng",
-			UnreleasedDir: "unrel",
-		}
-
-		_, _ = memFs.Create(".chng/unrel/a.yaml")
-		_, _ = memFs.Create(".chng/unrel/b.yaml")
-		_, _ = memFs.Create(".chng/alpha/c.yaml")
-		_, _ = memFs.Create(".chng/alpha/d.yaml")
-		_, _ = memFs.Create(".chng/beta/e.yaml")
-		_, _ = memFs.Create(".chng/beta/f.yaml")
-		_, _ = memFs.Create(".chng/beta/ignored.md")
-		_, _ = memFs.Create(".chng/ignored/g.yaml")
-		_, _ = memFs.Create(".chng/h.md") // ignored
-
-		files, err := FindChangeFiles(config, afs.ReadDir, []string{"alpha", "beta"})
-		Expect(err).To(BeNil())
-		Expect(files).To(Equal([]string{
-			filepath.Join(".chng", "alpha", "c.yaml"),
-			filepath.Join(".chng", "alpha", "d.yaml"),
-			filepath.Join(".chng", "beta", "e.yaml"),
-			filepath.Join(".chng", "beta", "f.yaml"),
-			filepath.Join(".chng", "unrel", "a.yaml"),
-			filepath.Join(".chng", "unrel", "b.yaml"),
-		}))
-	})
-
-	It("change files fails if dir is not accessible", func() {
-		memFs := afero.NewMemMapFs()
-		afs := afero.Afero{Fs: memFs}
-
-		config := Config{
-			ChangesDir:    ".chng",
-			UnreleasedDir: "unrel",
-		}
-
-		_, _ = memFs.Create(".chng/unrel/a.yaml")
-
-		_, err := FindChangeFiles(config, afs.ReadDir, []string{"../../invalid"})
-		Expect(err).NotTo(BeNil())
-	})
-
-	It("can write newlines", func() {
-		var writer strings.Builder
-		err := WriteNewlines(&writer, 3)
-		Expect(err).To(BeNil())
-		Expect(writer.String()).To(Equal("\n\n\n"))
-	})
-
-	It("skips newlines if lines is 0", func() {
-		var writer strings.Builder
-		err := WriteNewlines(&writer, 0)
-		Expect(err).To(BeNil())
-		Expect(writer.String()).To(Equal(""))
-	})
-
-	It("returns error on bad write newlines", func() {
-		errMock := errors.New("mock error")
-		writer := BadWriter{Err: errMock}
-
-		err := WriteNewlines(&writer, 3)
-		Expect(err).To(Equal(errMock))
-	})
-
-	It("can split env vars", func() {
-		vars := []string{
-			"A=b",
-			"B=5+5=10",
-			"CHANGIE_NAME=some_name",
-		}
-		Expect(EnvVarMap(vars)).To(Equal(map[string]string{
-			"A":            "b",
-			"B":            "5+5=10",
-			"CHANGIE_NAME": "some_name",
-		}))
-	})
-
-	It("does not load any env vars if no config", func() {
-		cfg := Config{}
-		vars := []string{
-			"A=b",
-			"B=5+5=10",
-			"CHANGIE_NAME=some_name",
-		}
-		envs := LoadEnvVars(&cfg, vars)
-		Expect(envs).To(BeEmpty())
-	})
-
-	It("loads envs with prefix", func() {
-		cfg := Config{
-			EnvPrefix: "CHANGIE_",
-		}
-		vars := []string{
-			"A=b",
-			"B=5+5=10",
-			"CHANGIE_NAME=some_name",
-		}
-		envs := LoadEnvVars(&cfg, vars)
-		Expect(envs).To(Equal(map[string]string{
-			"NAME": "some_name",
-		}))
-	})
-})
+	envs := LoadEnvVars(&cfg, vars)
+	then.MapEquals(t, expected, envs)
+}

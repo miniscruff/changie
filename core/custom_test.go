@@ -1,256 +1,313 @@
 package core
 
 import (
-	"errors"
 	"os"
+	"testing"
 
 	"github.com/manifoldco/promptui"
-	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/gomega"
 
-	. "github.com/miniscruff/changie/testutils"
+	"github.com/miniscruff/changie/then"
 )
 
-var _ = Describe("Custom", func() {
-	It("display label defaults to Key", func() {
-		Expect(Custom{Key: "key"}.DisplayLabel()).To(Equal("key"))
-	})
+type ValidationSpecs struct {
+	Name   string
+	Custom Custom
+	Specs  []ValidationSpec
+}
 
-	It("display label uses Label if defined", func() {
-		Expect(Custom{Key: "key", Label: "Lab"}.DisplayLabel()).To(Equal("Lab"))
-	})
+func (s *ValidationSpecs) Run(t *testing.T) {
+	for _, spec := range s.Specs {
+		t.Run(s.Name+spec.Name, func(t *testing.T) {
+			spec.Run(t, s.Custom)
+		})
+	}
+}
 
-	It("returns error on invalid prompt type", func() {
-		_, err := Custom{
-			Type: "invalid type",
-		}.CreatePrompt(os.Stdin)
-		Expect(errors.Is(err, errInvalidPromptType)).To(BeTrue())
-	})
+type ValidationSpec struct {
+	Name  string
+	Input string
+	Error error
+}
 
-	It("validate returns error on invalid prompt type", func() {
-		err := Custom{
-			Type: "invalid type",
-		}.Validate("blah")
-		Expect(errors.Is(err, errInvalidPromptType)).To(BeTrue())
-	})
+func (s *ValidationSpec) Run(t *testing.T, custom Custom) {
+	prompt, err := custom.CreatePrompt(os.Stdin)
+	then.Nil(t, err)
 
-	It("can create custom string prompt", func() {
-		prompt, err := Custom{
-			Type:  CustomString,
-			Label: "a label",
-		}.CreatePrompt(os.Stdin)
-		Expect(err).To(BeNil())
+	underPrompt, ok := prompt.(*promptui.Prompt)
+	then.True(t, ok)
 
-		underPrompt, ok := prompt.(*promptui.Prompt)
-		Expect(ok).To(BeTrue())
-		Expect(underPrompt.Label).To(Equal("a label"))
-	})
+	if s.Error == nil {
+		err = underPrompt.Validate(s.Input)
+		then.Nil(t, err)
 
-	It("can create custom string prompt with min and max length", func() {
-		var min int64 = 3
-		var max int64 = 15
-		longInput := "longer string than is allowed by rule"
-		prompt, err := Custom{
+		err = custom.Validate(s.Input)
+		then.Nil(t, err)
+	} else {
+		err = underPrompt.Validate(s.Input)
+		then.Err(t, s.Error, err)
+
+		err = custom.Validate(s.Input)
+		then.Err(t, s.Error, err)
+	}
+}
+
+func PtrInt64(value int64) *int64 {
+	return &value
+}
+
+func TestDisplayLabelDefaultsToKey(t *testing.T) {
+	custom := Custom{Key: "key"}
+	then.Equals(t, "key", custom.DisplayLabel())
+}
+
+func TestDisplayLabelUsesLabelIfDefined(t *testing.T) {
+	custom := Custom{Key: "key", Label: "Lab"}
+	then.Equals(t, "Lab", custom.DisplayLabel())
+}
+
+func TestErrorInvalidPromptType(t *testing.T) {
+	custom := Custom{Type: "invalid-type"}
+	_, err := custom.CreatePrompt(os.Stdin)
+	then.Err(t, errInvalidPromptType, err)
+}
+
+func TestErrorInvalidPromptTypeWhenValidating(t *testing.T) {
+	custom := Custom{Type: "invalid-type"}
+	err := custom.Validate("ignored")
+	then.Err(t, errInvalidPromptType, err)
+}
+
+func TestCreateCustomStringPrompt(t *testing.T) {
+	custom := Custom{Type: CustomString, Label: "a label"}
+	prompt, err := custom.CreatePrompt(os.Stdin)
+
+	then.Nil(t, err)
+
+	underPrompt, ok := prompt.(*promptui.Prompt)
+	then.True(t, ok)
+	then.Equals(t, "a label", underPrompt.Label.(string))
+}
+
+func TestCreateCustomIntPrompt(t *testing.T) {
+	custom := Custom{Type: CustomInt, Key: "name"}
+	prompt, err := custom.CreatePrompt(os.Stdin)
+	then.Nil(t, err)
+
+	underPrompt, ok := prompt.(*promptui.Prompt)
+	then.True(t, ok)
+	then.Equals(t, "name", underPrompt.Label.(string))
+}
+
+func TestCreateCustomEnumPrompt(t *testing.T) {
+	opts := []string{"a", "b", "c"}
+	custom := Custom{Type: CustomEnum, EnumOptions: opts}
+	prompt, err := custom.CreatePrompt(os.Stdin)
+	then.Nil(t, err)
+
+	underPrompt, ok := prompt.(*enumWrapper)
+	then.True(t, ok)
+	then.SliceEquals(t, opts, underPrompt.Select.Items.([]string))
+}
+
+func TestCanRunEnumPrompt(t *testing.T) {
+	reader, writer := then.WithReadWritePipe(t)
+	then.DelayWrite(
+		t, writer,
+		[]byte{106, 13}, // 106 = down, 13 = enter
+	)
+
+	opts := []string{"a", "b", "c"}
+	custom := Custom{Type: CustomEnum, EnumOptions: opts}
+
+	prompt, err := custom.CreatePrompt(reader)
+	then.Nil(t, err)
+
+	out, err := prompt.Run()
+	then.Nil(t, err)
+	then.Equals(t, "b", out)
+}
+
+var validationSpecs = []ValidationSpecs{
+	{
+		Name: "String",
+		Custom: Custom{
 			Type:      CustomString,
-			Label:     "a label",
-			MinLength: &min,
-			MaxLength: &max,
-		}.CreatePrompt(os.Stdin)
-		Expect(err).To(BeNil())
-
-		underPrompt, ok := prompt.(*promptui.Prompt)
-		Expect(ok).To(BeTrue())
-		Expect(underPrompt.Validate("average")).To(BeNil())
-		Expect(errors.Is(underPrompt.Validate(""), errInputTooShort)).To(BeTrue())
-		Expect(errors.Is(underPrompt.Validate("a"), errInputTooShort)).To(BeTrue())
-		Expect(errors.Is(underPrompt.Validate(longInput), errInputTooLong)).To(BeTrue())
-	})
-
-	It("can create optional custom string prompt with min and max length", func() {
-		var min int64 = 3
-		var max int64 = 15
-		longInput := "longer string than is allowed by rule"
-		prompt, err := Custom{
+			Key:       "string",
+			MinLength: PtrInt64(3),
+			MaxLength: PtrInt64(15),
+		},
+		Specs: []ValidationSpec{
+			{
+				Name:  "Empty",
+				Input: "",
+				Error: errInputTooShort,
+			},
+			{
+				Name:  "TooShort",
+				Input: "0",
+				Error: errInputTooShort,
+			},
+			{
+				Name:  "TooLong",
+				Input: "01234567890123456789",
+				Error: errInputTooLong,
+			},
+			{
+				Name:  "Valid",
+				Input: "normal",
+			},
+		},
+	},
+	{
+		Name: "OptionalString",
+		Custom: Custom{
 			Type:      CustomString,
-			Label:     "a label",
+			Label:     "OptString",
 			Optional:  true,
-			MinLength: &min,
-			MaxLength: &max,
-		}.CreatePrompt(os.Stdin)
-		Expect(err).To(BeNil())
-
-		underPrompt, ok := prompt.(*promptui.Prompt)
-		Expect(ok).To(BeTrue())
-		Expect(underPrompt.Validate("average")).To(BeNil())
-		Expect(underPrompt.Validate("")).To(BeNil())
-		Expect(errors.Is(underPrompt.Validate("a"), errInputTooShort)).To(BeTrue())
-		Expect(errors.Is(underPrompt.Validate(longInput), errInputTooLong)).To(BeTrue())
-	})
-
-	It("can create custom int prompt", func() {
-		prompt, err := Custom{
-			Key:  "name",
-			Type: CustomInt,
-		}.CreatePrompt(os.Stdin)
-		Expect(err).To(BeNil())
-
-		underPrompt, ok := prompt.(*promptui.Prompt)
-		Expect(ok).To(BeTrue())
-		Expect(underPrompt.Validate("12")).To(BeNil())
-		Expect(underPrompt.Label).To(Equal("name"))
-	})
-
-	It("can create custom int prompt with a min and max", func() {
-		var min int64 = 5
-		var max int64 = 10
-		prompt, err := Custom{
+			MinLength: PtrInt64(3),
+			MaxLength: PtrInt64(15),
+		},
+		Specs: []ValidationSpec{
+			{
+				Name: "Empty",
+			},
+			{
+				Name:  "TooShort",
+				Input: "0",
+				Error: errInputTooShort,
+			},
+			{
+				Name:  "TooLong",
+				Input: "01234567890123456789",
+				Error: errInputTooLong,
+			},
+			{
+				Name:  "Valid",
+				Input: "normal",
+			},
+		},
+	},
+	{
+		Name: "Int",
+		Custom: Custom{
 			Type:   CustomInt,
-			MinInt: &min,
-			MaxInt: &max,
-		}.CreatePrompt(os.Stdin)
-		Expect(err).To(BeNil())
-
-		underPrompt, ok := prompt.(*promptui.Prompt)
-		Expect(ok).To(BeTrue())
-		Expect(underPrompt.Validate("7")).To(BeNil())
-		Expect(errors.Is(underPrompt.Validate(""), errInvalidIntInput)).To(BeTrue())
-		Expect(errors.Is(underPrompt.Validate("not an int"), errInvalidIntInput)).To(BeTrue())
-		Expect(errors.Is(underPrompt.Validate("12.5"), errInvalidIntInput)).To(BeTrue())
-		Expect(errors.Is(underPrompt.Validate("3"), errIntTooLow)).To(BeTrue())
-		Expect(errors.Is(underPrompt.Validate("25"), errIntTooHigh)).To(BeTrue())
-	})
-
-	It("can create custom optional int prompt", func() {
-		var min int64 = 5
-		var max int64 = 10
-		prompt, err := Custom{
+			Label:  "Int",
+			MinInt: PtrInt64(10),
+			MaxInt: PtrInt64(100),
+		},
+		Specs: []ValidationSpec{
+			{
+				Name:  "Empty",
+				Input: "",
+				Error: errInvalidIntInput,
+			},
+			{
+				Name:  "Text",
+				Input: "random text",
+				Error: errInvalidIntInput,
+			},
+			{
+				Name:  "Float Value",
+				Input: "13.66",
+				Error: errInvalidIntInput,
+			},
+			{
+				Name:  "TooLow",
+				Input: "5",
+				Error: errIntTooLow,
+			},
+			{
+				Name:  "TooHigh",
+				Input: "500",
+				Error: errIntTooHigh,
+			},
+			{
+				Name:  "Valid",
+				Input: "52",
+			},
+		},
+	},
+	{
+		Name: "OptionalInt",
+		Custom: Custom{
 			Type:     CustomInt,
+			Label:    "Int",
 			Optional: true,
-			MinInt:   &min,
-			MaxInt:   &max,
-		}.CreatePrompt(os.Stdin)
-		Expect(err).To(BeNil())
+			MinInt:   PtrInt64(10),
+			MaxInt:   PtrInt64(100),
+		},
+		Specs: []ValidationSpec{
+			{
+				Name:  "Empty",
+				Input: "",
+			},
+			{
+				Name:  "Text",
+				Input: "random text",
+				Error: errInvalidIntInput,
+			},
+			{
+				Name:  "Float Value",
+				Input: "13.66",
+				Error: errInvalidIntInput,
+			},
+			{
+				Name:  "TooLow",
+				Input: "5",
+				Error: errIntTooLow,
+			},
+			{
+				Name:  "TooHigh",
+				Input: "500",
+				Error: errIntTooHigh,
+			},
+			{
+				Name:  "Valid",
+				Input: "52",
+			},
+		},
+	},
+}
 
-		underPrompt, ok := prompt.(*promptui.Prompt)
-		Expect(ok).To(BeTrue())
-		Expect(underPrompt.Validate("7")).To(BeNil())
-		Expect(underPrompt.Validate("")).To(BeNil())
-		Expect(errors.Is(underPrompt.Validate("not an int"), errInvalidIntInput)).To(BeTrue())
-		Expect(errors.Is(underPrompt.Validate("12.5"), errInvalidIntInput)).To(BeTrue())
-		Expect(errors.Is(underPrompt.Validate("3"), errIntTooLow)).To(BeTrue())
-		Expect(errors.Is(underPrompt.Validate("25"), errIntTooHigh)).To(BeTrue())
-	})
+func TestValidators(t *testing.T) {
+	for _, specs := range validationSpecs {
+		specs.Run(t)
+	}
+}
 
-	It("can create custom enum prompt", func() {
-		prompt, err := Custom{
-			Type:        CustomEnum,
-			EnumOptions: []string{"a", "b", "c"},
-		}.CreatePrompt(os.Stdin)
-		Expect(err).To(BeNil())
+func TestValidEnum(t *testing.T) {
+	custom := Custom{
+		Type:        CustomEnum,
+		EnumOptions: []string{"north", "south", "east", "west"},
+	}
+	err := custom.Validate("south")
+	then.Nil(t, err)
+}
 
-		underPrompt, ok := prompt.(*enumWrapper)
-		Expect(ok).To(BeTrue())
-		Expect(underPrompt.Select.Items).To(Equal([]string{"a", "b", "c"}))
-	})
+func TestInvalidEnum(t *testing.T) {
+	custom := Custom{
+		Type:        CustomEnum,
+		EnumOptions: []string{"north", "south", "east", "west"},
+	}
+	err := custom.Validate("north-south")
+	then.Err(t, errInvalidEnum, err)
+}
 
-	It("can run enum prompt", func() {
-		stdinReader, stdinWriter, err := os.Pipe()
-		Expect(err).To(BeNil())
+func TestCustomMapFromStrings(t *testing.T) {
+	expected := map[string]string{
+		"Issue": "15",
+		"Tag":   "alpha",
+		"Owner": "team-name",
+	}
 
-		defer stdinReader.Close()
-		defer stdinWriter.Close()
+	inputs := []string{"Issue=15", "Tag=alpha", "Owner=team-name"}
+	customValues, err := CustomMapFromStrings(inputs)
+	then.Nil(t, err)
+	then.MapEquals(t, expected, customValues)
+}
 
-		prompt, err := Custom{
-			Type:        CustomEnum,
-			EnumOptions: []string{"a", "b", "c"},
-		}.CreatePrompt(stdinReader)
-		Expect(err).To(BeNil())
-
-		go func() {
-			DelayWrite(stdinWriter, []byte{106, 13})
-		}()
-
-		out, err := prompt.Run()
-		Expect(err).To(BeNil())
-		Expect(out).To(Equal("b"))
-	})
-
-	It("validates strings", func() {
-		var minLength int64 = 4
-		var maxLength int64 = 5
-
-		c := Custom{
-			Type:      CustomString,
-			MinLength: &minLength,
-			MaxLength: &maxLength,
-		}
-
-		var err error
-
-		err = c.Validate("bad")
-		Expect(err).ToNot(BeNil())
-		Expect(errors.Unwrap(err)).To(Equal(errInputTooShort))
-
-		err = c.Validate("good")
-		Expect(err).To(BeNil())
-
-		err = c.Validate("bad-again")
-		Expect(err).ToNot(BeNil())
-		Expect(errors.Unwrap(err)).To(Equal(errInputTooLong))
-	})
-
-	It("validates ints", func() {
-		var minInt int64 = 4
-		var maxInt int64 = 5
-
-		c := Custom{
-			Type:   CustomInt,
-			MinInt: &minInt,
-			MaxInt: &maxInt,
-		}
-
-		var err error
-
-		err = c.Validate("3")
-		Expect(err).ToNot(BeNil())
-		Expect(errors.Unwrap(err)).To(Equal(errIntTooLow))
-
-		Expect(c.Validate("4")).To(BeNil())
-		Expect(c.Validate("5")).To(BeNil())
-
-		err = c.Validate("6")
-		Expect(err).ToNot(BeNil())
-		Expect(errors.Unwrap(err)).To(Equal(errIntTooHigh))
-	})
-
-	It("validates enums", func() {
-		c := Custom{
-			Type:        CustomEnum,
-			EnumOptions: []string{"good"},
-		}
-
-		Expect(c.Validate("good")).To(BeNil())
-
-		err := c.Validate("bad")
-		Expect(err).ToNot(BeNil())
-		Expect(errors.Unwrap(err)).To(Equal(errInvalidEnum))
-	})
-
-})
-
-var _ = Describe("CustomMapFromStrings", func() {
-	It("splits multiple strings", func() {
-		inputs := []string{"Issue=15", "Tag=alpha", "Owner=team-name"}
-		customValues, err := CustomMapFromStrings(inputs)
-		Expect(err).To(BeNil())
-		Expect(customValues["Issue"]).To(Equal("15"))
-		Expect(customValues["Tag"]).To(Equal("alpha"))
-		Expect(customValues["Owner"]).To(Equal("team-name"))
-	})
-
-	It("returns error on bad format", func() {
-		inputs := []string{"Issue=15", "Tag=alpha", "Ownerteam-name"}
-		_, err := CustomMapFromStrings(inputs)
-		Expect(err).To(MatchError(errInvalidCustomFormat))
-	})
-})
+func TestErrorBadMapFormat(t *testing.T) {
+	inputs := []string{"Issue=15", "Tag=alpha", "Ownerteam-name"}
+	_, err := CustomMapFromStrings(inputs)
+	then.Err(t, errInvalidCustomFormat, err)
+}
