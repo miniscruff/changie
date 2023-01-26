@@ -58,7 +58,7 @@ type KindConfig struct {
 	SkipGlobalPost bool `yaml:"skipGlobalPost,omitempty" default:"false"`
 	// Auto determines what value to bump when using `batch auto` or `next auto`.
 	// Possible values are major, minor or patch and the highest one is used if
-    // multiple changes are found.
+	// multiple changes are found.
 	// example: yaml
 	// auto: minor
 	AutoLevel string `yaml:"auto,omitempty"`
