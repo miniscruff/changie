@@ -17,7 +17,7 @@ import (
 
 type BatchPipeliner interface {
 	// afs afero.Afero should be part of struct
-	GetChanges(config core.Config, searchPaths []string) ([]core.Change, error)
+	// GetChanges(config core.Config, searchPaths []string) ([]core.Change, error)
 	WriteTemplate(
 		writer io.Writer,
 		template string,
@@ -65,11 +65,14 @@ var (
 )
 
 var batchCmd = &cobra.Command{
-	Use:   "batch version|major|minor|patch",
+	Use:   "batch version|major|minor|patch|auto",
 	Short: "Batch unreleased changes into a single changelog",
 	Long: `Merges all unreleased changes into one version changelog.
 
-Can use major, minor or patch as version to use the latest release and bump.
+Batch takes one argument for the next version to use, below are possible options.
+* A specific semantic version value, with optional prefix
+* Major, minor or patch to bump one level by one
+* Auto which will automatically bump based on what changes were found
 
 The new version changelog can then be modified with extra descriptions,
 context or with custom tweaks before merging into the main file.
@@ -173,9 +176,13 @@ func getBatchData(
 	afs afero.Afero,
 	version string,
 	changePaths []string,
-	batcher BatchPipeliner,
 ) (*core.BatchData, error) {
 	previousVersion, err := core.GetLatestVersion(afs.ReadDir, config, false)
+	if err != nil {
+		return nil, err
+	}
+
+	allChanges, err := core.GetChanges(config, changePaths, afs.ReadDir, afs.ReadFile)
 	if err != nil {
 		return nil, err
 	}
@@ -186,12 +193,8 @@ func getBatchData(
 		version,
 		batchPrereleaseFlag,
 		batchMetaFlag,
+		allChanges,
 	)
-	if err != nil {
-		return nil, err
-	}
-
-	allChanges, err := batcher.GetChanges(config, changePaths)
 	if err != nil {
 		return nil, err
 	}
@@ -217,7 +220,7 @@ func batchPipeline(batcher BatchPipeliner, afs afero.Afero, version string) erro
 		return err
 	}
 
-	data, err := getBatchData(config, afs, version, batchIncludeDirs, batcher)
+	data, err := getBatchData(config, afs, version, batchIncludeDirs)
 	if err != nil {
 		return err
 	}
@@ -353,6 +356,7 @@ func batchPipeline(batcher BatchPipeliner, afs afero.Afero, version string) erro
 	return nil
 }
 
+/*
 func (b *standardBatchPipeline) GetChanges(
 	config core.Config,
 	searchPaths []string,
@@ -378,6 +382,7 @@ func (b *standardBatchPipeline) GetChanges(
 
 	return changes, nil
 }
+*/
 
 func (b *standardBatchPipeline) WriteTemplate(
 	writer io.Writer,

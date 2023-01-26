@@ -12,7 +12,10 @@ import (
 	"github.com/miniscruff/changie/shared"
 )
 
-var ErrBadVersionOrPart = errors.New("part string is not a supported version or version increment")
+var (
+	ErrBadVersionOrPart = errors.New("part string is not a supported version or version increment")
+	ErrMissingAutoLevel = errors.New("kind config missing auto level value for auto bumping")
+)
 
 func AppendFile(opener shared.OpenFiler, rootFile io.Writer, path string) error {
 	otherFile, err := opener(path)
@@ -82,8 +85,48 @@ func GetLatestVersion(
 	return allVersions[0], nil
 }
 
+func ValidBumpLevel(level string) bool {
+	return level == MajorLevel ||
+		level == MinorLevel ||
+		level == PatchLevel ||
+		level == AutoLevel
+}
+
+func HighestAutoLevel(config Config, allChanges []Change) (string, error) {
+	highestLevel := PatchLevel
+
+	for _, change := range allChanges {
+		for _, kc := range config.Kinds {
+			if kc.Label != change.Kind {
+				continue
+			}
+
+			if kc.AutoLevel == "" {
+				return "", ErrMissingAutoLevel
+			}
+
+			// major is the highest one, so we can just return it
+			if kc.AutoLevel == MajorLevel {
+				return MajorLevel, nil
+			}
+
+			// we default to patch level, so just bump to minor if we
+			// were on patch before and the kind is now minor
+			if kc.AutoLevel == MinorLevel && highestLevel == PatchLevel {
+				highestLevel = MinorLevel
+			}
+		}
+	}
+
+	return highestLevel, nil
+}
+
 func GetNextVersion(
-	readDir shared.ReadDirer, config Config, partOrVersion string, prerelease, meta []string,
+	readDir shared.ReadDirer,
+	config Config,
+	partOrVersion string,
+	prerelease, meta []string,
+	allChanges []Change,
 ) (*semver.Version, error) {
 	var (
 		err  error
@@ -94,21 +137,30 @@ func GetNextVersion(
 	// if part or version is a valid version, then return it
 	next, err = semver.NewVersion(partOrVersion)
 	if err != nil {
+		if !ValidBumpLevel(partOrVersion) {
+			return nil, ErrBadVersionOrPart
+		}
+
 		// otherwise use a bump type command
 		next, err = GetLatestVersion(readDir, config, false)
 		if err != nil {
 			return nil, err
 		}
 
+		if partOrVersion == AutoLevel {
+			partOrVersion, err = HighestAutoLevel(config, allChanges)
+			if err != nil {
+				return nil, err
+			}
+		}
+
 		switch partOrVersion {
-		case "major":
+		case MajorLevel:
 			ver = next.IncMajor()
-		case "minor":
+		case MinorLevel:
 			ver = next.IncMinor()
-		case "patch":
+		case PatchLevel:
 			ver = next.IncPatch()
-		default:
-			return nil, ErrBadVersionOrPart
 		}
 
 		next = &ver
@@ -148,8 +200,8 @@ func FindChangeFiles(
 	// read all yaml files from our search paths
 	for _, searchPath := range searchPaths {
 		rootPath := filepath.Join(config.ChangesDir, searchPath)
-		fileInfos, err := readDir(rootPath)
 
+		fileInfos, err := readDir(rootPath)
 		if err != nil {
 			return yamlFiles, err
 		}
@@ -201,4 +253,32 @@ func LoadEnvVars(config *Config, envs []string) map[string]string {
 	}
 
 	return ret
+}
+
+func GetChanges(
+	config Config,
+	searchPaths []string,
+	readDir shared.ReadDirer,
+	readFile shared.ReadFiler,
+) ([]Change, error) {
+	var changes []Change
+
+	changeFiles, err := FindChangeFiles(config, readDir, searchPaths)
+	if err != nil {
+		return changes, err
+	}
+
+	for _, cf := range changeFiles {
+		c, err := LoadChange(cf, readFile)
+		if err != nil {
+			return changes, err
+		}
+
+		c.Env = config.EnvVars()
+		changes = append(changes, c)
+	}
+
+	SortByConfig(config).Sort(changes)
+
+	return changes, nil
 }

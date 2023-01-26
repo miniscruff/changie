@@ -6,11 +6,32 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/spf13/afero"
+	"gopkg.in/yaml.v2"
 
 	"github.com/miniscruff/changie/then"
 )
+
+func utilsTestConfig() *Config {
+	return &Config{
+		ChangesDir:         "news",
+		UnreleasedDir:      "future",
+		HeaderPath:         "",
+		ChangelogPath:      "news.md",
+		VersionExt:         "md",
+		VersionFormat:      "## {{.Version}}",
+		KindFormat:         "### {{.Kind}}",
+		ChangeFormat:       "* {{.Body}}",
+		FragmentFileFormat: "",
+		Kinds: []KindConfig{
+			{Label: "added"},
+			{Label: "removed"},
+			{Label: "other"},
+		},
+	}
+}
 
 func TestAppendFileAppendsTwoFiles(t *testing.T) {
 	fs, afs := then.WithAferoFS()
@@ -148,7 +169,7 @@ func TestErrorNextVersionBadReadDir(t *testing.T) {
 		return []os.FileInfo{}, mockError
 	}
 
-	ver, err := GetNextVersion(mockRead, config, "major", nil, nil)
+	ver, err := GetNextVersion(mockRead, config, "major", nil, nil, nil)
 	then.Equals(t, nil, ver)
 	then.Err(t, mockError, err)
 }
@@ -161,7 +182,7 @@ func TestErrorNextVersionBadVersion(t *testing.T) {
 		}, nil
 	}
 
-	ver, err := GetNextVersion(mockRead, config, "a", []string{}, []string{})
+	ver, err := GetNextVersion(mockRead, config, "a", []string{}, []string{}, nil)
 	then.Equals(t, ver, nil)
 	then.Err(t, ErrBadVersionOrPart, err)
 }
@@ -241,11 +262,69 @@ func TestNextVersionOptions(t *testing.T) {
 				}, nil
 			}
 
-			ver, err := GetNextVersion(mockRead, config, tc.partOrVersion, tc.prerelease, tc.meta)
+			ver, err := GetNextVersion(mockRead, config, tc.partOrVersion, tc.prerelease, tc.meta, nil)
 			then.Nil(t, err)
 			then.Equals(t, tc.expected, ver.Original())
 		})
 	}
+}
+
+func TestNextVersionOptionsWithAuto(t *testing.T) {
+	config := Config{
+		Kinds: []KindConfig{
+			{
+				Label:     "patch",
+				AutoLevel: PatchLevel,
+			},
+			{
+				Label:     "minor",
+				AutoLevel: MinorLevel,
+			},
+			{
+				Label:     "major",
+				AutoLevel: MajorLevel,
+			},
+		},
+	}
+	latestVersion := "v0.2.3"
+	mockRead := func(dirname string) ([]os.FileInfo, error) {
+		return []os.FileInfo{
+			&then.MockFileInfo{MockName: latestVersion + ".md"},
+		}, nil
+	}
+	changes := []Change{
+		{
+			Kind: "minor",
+		},
+	}
+
+	ver, err := GetNextVersion(mockRead, config, "auto", nil, nil, changes)
+	then.Nil(t, err)
+	then.Equals(t, "v0.3.0", ver.Original())
+}
+
+func TestErrorNextVersionAutoMissingKind(t *testing.T) {
+	config := Config{
+		Kinds: []KindConfig{
+			{
+				Label: "missing",
+			},
+		},
+	}
+	latestVersion := "v0.2.3"
+	mockRead := func(dirname string) ([]os.FileInfo, error) {
+		return []os.FileInfo{
+			&then.MockFileInfo{MockName: latestVersion + ".md"},
+		}, nil
+	}
+	changes := []Change{
+		{
+			Kind: "missing",
+		},
+	}
+
+	_, err := GetNextVersion(mockRead, config, "auto", nil, nil, changes)
+	then.Err(t, ErrMissingAutoLevel, err)
 }
 
 func TestErrorNextVersionBadPrerelease(t *testing.T) {
@@ -256,7 +335,7 @@ func TestErrorNextVersionBadPrerelease(t *testing.T) {
 		}, nil
 	}
 
-	_, err := GetNextVersion(mockRead, config, "patch", []string{"0005"}, nil)
+	_, err := GetNextVersion(mockRead, config, "patch", []string{"0005"}, nil, nil)
 	then.NotNil(t, err)
 }
 
@@ -268,7 +347,7 @@ func TestErrorNextVersionBadMeta(t *testing.T) {
 		}, nil
 	}
 
-	_, err := GetNextVersion(mockRead, config, "patch", nil, []string{"&&*&"})
+	_, err := GetNextVersion(mockRead, config, "patch", nil, []string{"&&*&"}, nil)
 	then.NotNil(t, err)
 }
 
@@ -279,23 +358,23 @@ func TestCanFindChangeFiles(t *testing.T) {
 	}
 	mockRead := func(dirname string) ([]os.FileInfo, error) {
 		switch dirname {
-		case ".chng/alpha":
+		case filepath.Join(".chng", "alpha"):
 			return []os.FileInfo{
 				&then.MockFileInfo{MockName: "c.yaml"},
 				&then.MockFileInfo{MockName: "d.yaml"},
 			}, nil
-		case ".chng/beta":
+		case filepath.Join(".chng", "beta"):
 			return []os.FileInfo{
 				&then.MockFileInfo{MockName: "e.yaml"},
 				&then.MockFileInfo{MockName: "f.yaml"},
 				&then.MockFileInfo{MockName: "ignored.md"},
 			}, nil
-		case ".chng/unrel":
+		case filepath.Join(".chng", "unrel"):
 			return []os.FileInfo{
 				&then.MockFileInfo{MockName: "a.yaml"},
 				&then.MockFileInfo{MockName: "b.yaml"},
 			}, nil
-		case ".chng/ignored":
+		case filepath.Join(".chng", "ignored"):
 			return []os.FileInfo{
 				&then.MockFileInfo{MockName: "g.yaml"},
 			}, nil
@@ -394,4 +473,185 @@ func TestLoadEnvsWithPrefix(t *testing.T) {
 
 	envs := LoadEnvVars(&cfg, vars)
 	then.MapEquals(t, expected, envs)
+}
+
+func TestValidBumpLevel(t *testing.T) {
+	for _, lvl := range []string{
+		MajorLevel,
+		MinorLevel,
+		PatchLevel,
+		AutoLevel,
+	} {
+		then.True(t, ValidBumpLevel(lvl))
+	}
+}
+
+func TestInvalidBumpLevel(t *testing.T) {
+	then.False(t, ValidBumpLevel("invalid"))
+}
+
+func TestHighestAutoLevel(t *testing.T) {
+	cfg := Config{
+		Kinds: []KindConfig{
+			{
+				Label:     "patch",
+				AutoLevel: PatchLevel,
+			},
+			{
+				Label:     "minor",
+				AutoLevel: MinorLevel,
+			},
+			{
+				Label:     "major",
+				AutoLevel: MajorLevel,
+			},
+		},
+	}
+
+	for _, tc := range []struct {
+		name     string
+		changes  []Change
+		expected string
+	}{
+		{
+			name:     "single patch",
+			expected: PatchLevel,
+			changes: []Change{
+				{
+					Kind: "patch",
+				},
+			},
+		},
+		{
+			name:     "patch and minor",
+			expected: MinorLevel,
+			changes: []Change{
+				{
+					Kind: "patch",
+				},
+				{
+					Kind: "minor",
+				},
+			},
+		},
+		{
+			name:     "major, minor and patch",
+			expected: MajorLevel,
+			changes: []Change{
+				{
+					Kind: "patch",
+				},
+				{
+					Kind: "minor",
+				},
+				{
+					Kind: "major",
+				},
+			},
+		},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			res, err := HighestAutoLevel(cfg, tc.changes)
+			then.Nil(t, err)
+			then.Equals(t, tc.expected, res)
+		})
+	}
+}
+
+func TestErrorHighestAutoLevelMissingKindConfig(t *testing.T) {
+	cfg := Config{
+		Kinds: []KindConfig{
+			{
+				Label: "missing",
+			},
+		},
+	}
+	changes := []Change{
+		{
+			Kind: "missing",
+		},
+	}
+	_, err := HighestAutoLevel(cfg, changes)
+	then.Err(t, ErrMissingAutoLevel, err)
+}
+
+func TestGetAllChanges(t *testing.T) {
+	cfg := utilsTestConfig()
+	_, afs := then.WithAferoFSConfig(t, cfg)
+	orderedTimes := []time.Time{
+		time.Date(2019, 5, 25, 20, 45, 0, 0, time.UTC),
+		time.Date(2017, 4, 25, 15, 20, 0, 0, time.UTC),
+		time.Date(2015, 3, 25, 10, 5, 0, 0, time.UTC),
+	}
+	aPath := filepath.Join(cfg.ChangesDir, cfg.UnreleasedDir, "a.yaml")
+	bPath := filepath.Join(cfg.ChangesDir, cfg.UnreleasedDir, "b.yaml")
+	cPath := filepath.Join(cfg.ChangesDir, cfg.UnreleasedDir, "c.yaml")
+
+	readDir := func(dirname string) ([]os.FileInfo, error) {
+		return []os.FileInfo{
+			&then.MockFileInfo{MockName: "a.yaml"},
+			&then.MockFileInfo{MockName: "b.yaml"},
+			&then.MockFileInfo{MockName: "c.yaml"},
+		}, nil
+	}
+	readFile := func(filename string) ([]byte, error) {
+		var c Change
+
+		switch filename {
+		case aPath:
+			c = Change{Kind: "removed", Body: "third", Time: orderedTimes[2]}
+		case bPath:
+			c = Change{Kind: "added", Body: "first", Time: orderedTimes[0]}
+		case cPath:
+			c = Change{Kind: "added", Body: "second", Time: orderedTimes[1]}
+		}
+
+		return yaml.Marshal(&c)
+	}
+
+	then.CreateFile(t, afs, cfg.ChangesDir, cfg.UnreleasedDir, "ignored.txt")
+
+	changes, err := GetChanges(*cfg, nil, readDir, readFile)
+	then.Nil(t, err)
+	then.Equals(t, "second", changes[0].Body)
+	then.Equals(t, "first", changes[1].Body)
+	then.Equals(t, "third", changes[2].Body)
+}
+
+func TestBatchErrorIfUnableToReadDir(t *testing.T) {
+	cfg := utilsTestConfig()
+	_, afs := then.WithAferoFSConfig(t, cfg)
+
+	mockErr := errors.New("bad mock open")
+	readDir := func(dirname string) ([]os.FileInfo, error) {
+		return nil, mockErr
+	}
+	readFile := func(filename string) ([]byte, error) {
+		return nil, nil
+	}
+
+	then.CreateFile(t, afs, cfg.ChangesDir, cfg.UnreleasedDir, "ignored.txt")
+
+	_, err := GetChanges(*cfg, nil, readDir, readFile)
+	then.Err(t, mockErr, err)
+}
+
+func TestBatchErrorBadChangesFile(t *testing.T) {
+	cfg := utilsTestConfig()
+	_, afs := then.WithAferoFSConfig(t, cfg)
+
+	readDir := func(dirname string) ([]os.FileInfo, error) {
+		return []os.FileInfo{
+			&then.MockFileInfo{MockName: "a.yaml"},
+		}, nil
+	}
+	mockErr := errors.New("bad mock open")
+	readFile := func(filename string) ([]byte, error) {
+		return nil, mockErr
+	}
+
+	then.CreateFile(t, afs, cfg.ChangesDir, cfg.UnreleasedDir, "ignored.txt")
+
+	_, err := GetChanges(*cfg, nil, readDir, readFile)
+	then.Err(t, mockErr, err)
 }

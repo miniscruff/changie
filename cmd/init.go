@@ -60,12 +60,30 @@ func runInit(cmd *cobra.Command, args []string) error {
 		KindFormat:    "### {{.Kind}}",
 		ChangeFormat:  "* {{.Body}}",
 		Kinds: []core.KindConfig{
-			{Label: "Added"},
-			{Label: "Changed"},
-			{Label: "Deprecated"},
-			{Label: "Removed"},
-			{Label: "Fixed"},
-			{Label: "Security"},
+			{
+				Label:     "Added",
+				AutoLevel: core.MinorLevel,
+			},
+			{
+				Label:     "Changed",
+				AutoLevel: core.MajorLevel,
+			},
+			{
+				Label:     "Deprecated",
+				AutoLevel: core.PatchLevel,
+			},
+			{
+				Label:     "Removed",
+				AutoLevel: core.MajorLevel,
+			},
+			{
+				Label:     "Fixed",
+				AutoLevel: core.PatchLevel,
+			},
+			{
+				Label:     "Security",
+				AutoLevel: core.PatchLevel,
+			},
 		},
 		Newlines: core.NewlinesConfig{
 			AfterChangelogHeader:   1,
