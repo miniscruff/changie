@@ -13,8 +13,9 @@ import (
 )
 
 var (
-	ErrBadVersionOrPart = errors.New("part string is not a supported version or version increment")
-	ErrMissingAutoLevel = errors.New("kind config missing auto level value for auto bumping")
+	ErrBadVersionOrPart      = errors.New("part string is not a supported version or version increment")
+	ErrMissingAutoLevel      = errors.New("kind config missing auto level value for auto bumping")
+	ErrNoChangesFoundForAuto = errors.New("no unreleased changes found for automatic bumping")
 )
 
 func AppendFile(opener shared.OpenFiler, rootFile io.Writer, path string) error {
@@ -93,6 +94,10 @@ func ValidBumpLevel(level string) bool {
 }
 
 func HighestAutoLevel(config Config, allChanges []Change) (string, error) {
+	if len(allChanges) == 0 {
+		return "", ErrNoChangesFoundForAuto
+	}
+
 	highestLevel := PatchLevel
 
 	for _, change := range allChanges {

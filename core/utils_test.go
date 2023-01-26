@@ -575,6 +575,19 @@ func TestErrorHighestAutoLevelMissingKindConfig(t *testing.T) {
 	then.Err(t, ErrMissingAutoLevel, err)
 }
 
+func TestErrorHighestAutoLevelWithNoChanges(t *testing.T) {
+	cfg := Config{
+		Kinds: []KindConfig{
+			{
+				Label: "missing",
+			},
+		},
+	}
+	changes := []Change{}
+	_, err := HighestAutoLevel(cfg, changes)
+	then.Err(t, ErrNoChangesFoundForAuto, err)
+}
+
 func TestGetAllChanges(t *testing.T) {
 	cfg := utilsTestConfig()
 	_, afs := then.WithAferoFSConfig(t, cfg)

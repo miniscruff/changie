@@ -24,6 +24,7 @@
 ## Getting Started
 * User documentation is available on the [website](https://changie.dev/).
 * Specifically, the [guide](https://changie.dev/guide/) is a good place to start.
+* There is also a [Changie GitHub Action](https://github.com/miniscruff/changie-action) you can use
 * View Changie's [Changelog](CHANGELOG.md) for an example.
 
 ## Need help?
