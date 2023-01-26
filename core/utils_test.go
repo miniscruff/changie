@@ -5,8 +5,8 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
-    "time"
 	"testing"
+	"time"
 
 	"github.com/spf13/afero"
 	"gopkg.in/yaml.v2"
@@ -507,6 +507,7 @@ func TestHighestAutoLevel(t *testing.T) {
 			},
 		},
 	}
+
 	for _, tc := range []struct {
 		name     string
 		changes  []Change
@@ -582,30 +583,32 @@ func TestGetAllChanges(t *testing.T) {
 		time.Date(2017, 4, 25, 15, 20, 0, 0, time.UTC),
 		time.Date(2015, 3, 25, 10, 5, 0, 0, time.UTC),
 	}
-    aPath := filepath.Join(cfg.ChangesDir, cfg.UnreleasedDir, "a.yaml")
-    bPath := filepath.Join(cfg.ChangesDir, cfg.UnreleasedDir, "b.yaml")
-    cPath := filepath.Join(cfg.ChangesDir, cfg.UnreleasedDir, "c.yaml")
+	aPath := filepath.Join(cfg.ChangesDir, cfg.UnreleasedDir, "a.yaml")
+	bPath := filepath.Join(cfg.ChangesDir, cfg.UnreleasedDir, "b.yaml")
+	cPath := filepath.Join(cfg.ChangesDir, cfg.UnreleasedDir, "c.yaml")
 
-    readDir := func(dirname string) ([]os.FileInfo, error) {
-        return []os.FileInfo{
-            &then.MockFileInfo{MockName: "a.yaml"},
-            &then.MockFileInfo{MockName: "b.yaml"},
-            &then.MockFileInfo{MockName: "c.yaml"},
-        }, nil
-    }
-    readFile := func(filename string) ([]byte, error) {
-        t.Log(filename)
-        var c Change
-        switch filename {
-        case aPath:
-            c = Change{Kind: "removed", Body: "third", Time: orderedTimes[2]}
-        case bPath:
-            c = Change{Kind: "added", Body: "first", Time: orderedTimes[0]}
-        case cPath:
-            c = Change{Kind: "added", Body: "second", Time: orderedTimes[1]}
-        }
-        return yaml.Marshal(&c)
-    }
+	readDir := func(dirname string) ([]os.FileInfo, error) {
+		return []os.FileInfo{
+			&then.MockFileInfo{MockName: "a.yaml"},
+			&then.MockFileInfo{MockName: "b.yaml"},
+			&then.MockFileInfo{MockName: "c.yaml"},
+		}, nil
+	}
+	readFile := func(filename string) ([]byte, error) {
+		var c Change
+
+		switch filename {
+		case aPath:
+			c = Change{Kind: "removed", Body: "third", Time: orderedTimes[2]}
+		case bPath:
+			c = Change{Kind: "added", Body: "first", Time: orderedTimes[0]}
+		case cPath:
+			c = Change{Kind: "added", Body: "second", Time: orderedTimes[1]}
+		}
+
+		return yaml.Marshal(&c)
+	}
+
 	then.CreateFile(t, afs, cfg.ChangesDir, cfg.UnreleasedDir, "ignored.txt")
 
 	changes, err := GetChanges(*cfg, nil, readDir, readFile)
@@ -620,15 +623,16 @@ func TestBatchErrorIfUnableToReadDir(t *testing.T) {
 	_, afs := then.WithAferoFSConfig(t, cfg)
 
 	mockErr := errors.New("bad mock open")
-    readDir := func(dirname string) ([]os.FileInfo, error) {
-        return nil, mockErr
-    }
-    readFile := func(filename string) ([]byte, error) {
-        return nil, nil
-    }
+	readDir := func(dirname string) ([]os.FileInfo, error) {
+		return nil, mockErr
+	}
+	readFile := func(filename string) ([]byte, error) {
+		return nil, nil
+	}
+
 	then.CreateFile(t, afs, cfg.ChangesDir, cfg.UnreleasedDir, "ignored.txt")
 
-    _, err := GetChanges(*cfg, nil, readDir, readFile)
+	_, err := GetChanges(*cfg, nil, readDir, readFile)
 	then.Err(t, mockErr, err)
 }
 
@@ -636,17 +640,18 @@ func TestBatchErrorBadChangesFile(t *testing.T) {
 	cfg := utilsTestConfig()
 	_, afs := then.WithAferoFSConfig(t, cfg)
 
-    readDir := func(dirname string) ([]os.FileInfo, error) {
-        return []os.FileInfo{
-            &then.MockFileInfo{MockName: "a.yaml"},
-        }, nil
-    }
+	readDir := func(dirname string) ([]os.FileInfo, error) {
+		return []os.FileInfo{
+			&then.MockFileInfo{MockName: "a.yaml"},
+		}, nil
+	}
 	mockErr := errors.New("bad mock open")
-    readFile := func(filename string) ([]byte, error) {
-        return nil, mockErr
-    }
+	readFile := func(filename string) ([]byte, error) {
+		return nil, mockErr
+	}
+
 	then.CreateFile(t, afs, cfg.ChangesDir, cfg.UnreleasedDir, "ignored.txt")
 
-    _, err := GetChanges(*cfg, nil, readDir, readFile)
+	_, err := GetChanges(*cfg, nil, readDir, readFile)
 	then.Err(t, mockErr, err)
 }

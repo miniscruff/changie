@@ -40,12 +40,12 @@ func TestNextVersionWithPatch(t *testing.T) {
 
 func TestNextVersionWithAuto(t *testing.T) {
 	cfg := nextTestConfig()
-    cfg.Kinds = []core.KindConfig{
-        {
-            Label: "Feature",
-            AutoLevel: core.MinorLevel,
-        },
-    }
+	cfg.Kinds = []core.KindConfig{
+		{
+			Label:     "Feature",
+			AutoLevel: core.MinorLevel,
+		},
+	}
 
 	builder := strings.Builder{}
 	_, afs := then.WithAferoFSConfig(t, cfg)
@@ -54,16 +54,17 @@ func TestNextVersionWithAuto(t *testing.T) {
 	then.CreateFile(t, afs, "chgs", "v0.1.0.md")
 	then.CreateFile(t, afs, "chgs", "head.tpl.md")
 
-    minorChange := core.Change{
-        Kind: "Feature",
-    }
-    var changeBytes bytes.Buffer
-    minorChange.Write(&changeBytes)
-    then.WriteFile(t, afs, changeBytes.Bytes(), cfg.ChangesDir, cfg.UnreleasedDir, "a.yaml")
+	var changeBytes bytes.Buffer
+
+	minorChange := core.Change{
+		Kind: "Feature",
+	}
+	then.Nil(t, minorChange.Write(&changeBytes))
+	then.WriteFile(t, afs, changeBytes.Bytes(), cfg.ChangesDir, cfg.UnreleasedDir, "a.yaml")
 
 	err := nextPipeline(afs, &builder, "auto", nil, nil, nil)
 	then.Nil(t, err)
-    then.Equals(t, "v0.2.0", builder.String())
+	then.Equals(t, "v0.2.0", builder.String())
 }
 
 func TestNextVersionWithPrereleaseAndMeta(t *testing.T) {
@@ -98,7 +99,7 @@ func TestErrorNextPartNotSupported(t *testing.T) {
 }
 
 func TestErrorNextUnableToGetChanges(t *testing.T) {
-    cfg := nextTestConfig()
+	cfg := nextTestConfig()
 	builder := strings.Builder{}
 	_, afs := then.WithAferoFSConfig(t, cfg)
 

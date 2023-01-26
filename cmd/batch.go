@@ -176,7 +176,6 @@ func getBatchData(
 	afs afero.Afero,
 	version string,
 	changePaths []string,
-	batcher BatchPipeliner,
 ) (*core.BatchData, error) {
 	previousVersion, err := core.GetLatestVersion(afs.ReadDir, config, false)
 	if err != nil {
@@ -194,7 +193,7 @@ func getBatchData(
 		version,
 		batchPrereleaseFlag,
 		batchMetaFlag,
-        allChanges,
+		allChanges,
 	)
 	if err != nil {
 		return nil, err
@@ -221,7 +220,7 @@ func batchPipeline(batcher BatchPipeliner, afs afero.Afero, version string) erro
 		return err
 	}
 
-	data, err := getBatchData(config, afs, version, batchIncludeDirs, batcher)
+	data, err := getBatchData(config, afs, version, batchIncludeDirs)
 	if err != nil {
 		return err
 	}

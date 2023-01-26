@@ -76,8 +76,8 @@ func nextPipeline(
 		return err
 	}
 
-    var changes []core.Change
-    // only worry about loading changes, if we are in auto mode
+	var changes []core.Change
+	// only worry about loading changes, if we are in auto mode
 	if part == core.AutoLevel {
 		changes, err = core.GetChanges(config, includeDirs, afs.ReadDir, afs.ReadFile)
 		if err != nil {
