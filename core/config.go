@@ -56,7 +56,7 @@ type KindConfig struct {
 	SkipBody bool `yaml:"skipBody,omitempty" default:"false"`
 	// Skip global post allows skipping the parent post processing.
 	SkipGlobalPost bool `yaml:"skipGlobalPost,omitempty" default:"false"`
-	// Auto level determines what value to bump when using `batch auto`.
+	// Auto level determines what value to bump when using `batch auto` or `next auto`.
 	// Possible values are major, minor or patch.
 	// example: yaml
 	// auto: minor

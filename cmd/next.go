@@ -17,10 +17,12 @@ var (
 )
 
 var nextCmd = &cobra.Command{
-	Use:   "next major|minor|patch",
+	Use:   "next major|minor|patch|auto",
 	Short: "Next echos the next version based on semantic versioning",
 	Long: `Next increments version based on semantic versioning.
 Check latest version and increment part (major, minor, patch).
+If auto is used, it will try and find the next version based on what kinds of changes are
+currently unreleased.
 Echo the next release version number to be used by CI tools or other commands like batch.`,
 	ValidArgs: []string{"major", "minor", "patch", "auto"},
 	Args:      cobra.MatchAll(cobra.ExactArgs(1), cobra.OnlyValidArgs),
