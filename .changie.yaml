@@ -8,11 +8,17 @@ kindFormat: '### {{.Kind}}'
 changeFormat: '* [#{{.Custom.Issue}}](https://github.com/miniscruff/changie/issues/{{.Custom.Issue}}) {{.Body}}'
 kinds:
   - label: Added
+    auto: minor
   - label: Changed
+    auto: major
   - label: Deprecated
+    auto: patch
   - label: Removed
+    auto: major
   - label: Fixed
+    auto: patch
   - label: Security
+    auto: patch
 newlines:
   afterChangelogHeader: 1
   afterKind: 1

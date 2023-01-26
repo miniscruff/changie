@@ -11,10 +11,18 @@ import (
 	"github.com/miniscruff/changie/shared"
 )
 
-const configEnvVar = "CHANGIE_CONFIG_PATH"
-const CreateFileMode os.FileMode = 0644
-const CreateDirMode os.FileMode = 0755
-const timeFormat string = "20060102-150405"
+const (
+	configEnvVar        = "CHANGIE_CONFIG_PATH"
+	timeFormat   string = "20060102-150405"
+
+	CreateFileMode os.FileMode = 0644
+	CreateDirMode  os.FileMode = 0755
+
+	AutoLevel  = "auto"
+	MajorLevel = "major"
+	MinorLevel = "minor"
+	PatchLevel = "patch"
+)
 
 var ConfigPaths []string = []string{
 	".changie.yaml",
@@ -48,6 +56,11 @@ type KindConfig struct {
 	SkipBody bool `yaml:"skipBody,omitempty" default:"false"`
 	// Skip global post allows skipping the parent post processing.
 	SkipGlobalPost bool `yaml:"skipGlobalPost,omitempty" default:"false"`
+	// Auto level determines what value to bump when using `batch auto`.
+	// Possible values are major, minor or patch.
+	// example: yaml
+	// auto: minor
+	AutoLevel string `yaml:"auto,omitempty"`
 }
 
 func (kc KindConfig) String() string {

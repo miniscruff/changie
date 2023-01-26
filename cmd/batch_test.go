@@ -358,16 +358,11 @@ func TestBatchErrorBadChanges(t *testing.T) {
 	_, afs := then.WithAferoFSConfig(t, cfg)
 	_, mockPipeline := withPipelines(afs)
 
-	mockError := errors.New("bad get changes")
-	mockPipeline.MockGetChanges = func(cfg core.Config, search []string) ([]core.Change, error) {
-		return nil, mockError
-	}
-
 	aVer := []byte("not a valid change")
 	then.WriteFile(t, afs, aVer, cfg.ChangesDir, cfg.UnreleasedDir, "a.yaml")
 
 	err := batchPipeline(mockPipeline, afs, "v0.1.1")
-	then.Err(t, mockError, err)
+	then.NotNil(t, err)
 }
 
 func TestBatchOverrideIfForced(t *testing.T) {
@@ -711,54 +706,6 @@ func TestBatchErrorBadWrite(t *testing.T) {
 	then.Err(t, mockErr, err)
 }
 
-func TestBatchGetAllChanges(t *testing.T) {
-	cfg := batchTestConfig()
-	_, afs := then.WithAferoFSConfig(t, cfg)
-	standard, _ := withPipelines(afs)
-	orderedTimes := []time.Time{
-		time.Date(2019, 5, 25, 20, 45, 0, 0, time.UTC),
-		time.Date(2017, 4, 25, 15, 20, 0, 0, time.UTC),
-		time.Date(2015, 3, 25, 10, 5, 0, 0, time.UTC),
-	}
-
-	writeChangeFile(t, afs, cfg, core.Change{Kind: "removed", Body: "third", Time: orderedTimes[2]})
-	writeChangeFile(t, afs, cfg, core.Change{Kind: "added", Body: "first", Time: orderedTimes[0]})
-	writeChangeFile(t, afs, cfg, core.Change{Kind: "added", Body: "second", Time: orderedTimes[1]})
-	then.CreateFile(t, afs, cfg.ChangesDir, cfg.UnreleasedDir, "ignored.txt")
-
-	changes, err := standard.GetChanges(*cfg, nil)
-	then.Nil(t, err)
-	then.Equals(t, "second", changes[0].Body)
-	then.Equals(t, "first", changes[1].Body)
-	then.Equals(t, "third", changes[2].Body)
-}
-
-func TestBatchErrorIfUnableToReadDir(t *testing.T) {
-	cfg := batchTestConfig()
-	fs, afs := then.WithAferoFSConfig(t, cfg)
-	standard, _ := withPipelines(afs)
-	mockErr := errors.New("bad mock open")
-	fs.MockOpen = func(path string) (afero.File, error) {
-		var f afero.File
-		return f, mockErr
-	}
-
-	_, err := standard.GetChanges(*cfg, nil)
-	then.Err(t, mockErr, err)
-}
-
-func TestBatchErrorBadChangesFile(t *testing.T) {
-	cfg := batchTestConfig()
-	_, afs := then.WithAferoFSConfig(t, cfg)
-	standard, _ := withPipelines(afs)
-
-	badYaml := []byte("not a valid yaml:::::file---___")
-	then.WriteFile(t, afs, badYaml, cfg.ChangesDir, cfg.UnreleasedDir, "a.yaml")
-
-	_, err := standard.GetChanges(*cfg, nil)
-	then.NotNil(t, err)
-}
-
 func TestBatchSkipWritingUnreleasedIfPathIsEmpty(t *testing.T) {
 	var builder strings.Builder
 
@@ -1096,7 +1043,6 @@ func TestBatchUnreleasedFailsIfUnableToFindFiles(t *testing.T) {
 }
 
 type MockBatchPipeline struct {
-	MockGetChanges    func(config core.Config, searchPaths []string) ([]core.Change, error)
 	MockWriteTemplate func(
 		writer io.Writer,
 		template string,
@@ -1124,17 +1070,6 @@ type MockBatchPipeline struct {
 		otherFiles ...string,
 	) error
 	standard *standardBatchPipeline
-}
-
-func (m *MockBatchPipeline) GetChanges(
-	config core.Config,
-	searchPaths []string,
-) ([]core.Change, error) {
-	if m.MockGetChanges != nil {
-		return m.MockGetChanges(config, searchPaths)
-	}
-
-	return m.standard.GetChanges(config, searchPaths)
 }
 
 func (m *MockBatchPipeline) WriteTemplate(

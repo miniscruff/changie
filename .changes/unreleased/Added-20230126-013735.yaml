@@ -1,0 +1,6 @@
+kind: Added
+body: Auto mode to batch and new which uses kind configs to automatically determine
+  the next bump level
+time: 2023-01-26T01:37:35.7290684-08:00
+custom:
+  Issue: "439"

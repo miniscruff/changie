@@ -2,11 +2,6 @@ name: Generate release pull request
 
 on:
   workflow_dispatch:
-    inputs:
-      next-version:
-        description: 'Next version use vX.Y.Z, patch, minor or major'
-        default: 'patch'
-        required: true
 
 jobs:
   generate-pr:
@@ -18,11 +13,11 @@ jobs:
     - name: Setup Go
       uses: actions/setup-go@v3
       with:
-        go-version: 1.18
+        go-version: 1.19
 
     - name: Batch and merge
       run: |
-        go run main.go batch ${{ github.event.inputs.next-version }}
+        go run main.go batch auto
         go run main.go merge
         echo RELEASE_VERSION=$(go run main.go latest) >> $GITHUB_ENV
 
