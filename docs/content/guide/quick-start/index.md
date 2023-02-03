@@ -28,10 +28,12 @@ changie new
 When it is time to prepare your next release, batch all unreleased changes into one using the batch command.
 
 ```shell
-# changie supports semver bump values for batch
+# changie supports semver bump values
 changie batch <major|minor|patch>
-# as well as an explicit version
+# using an explicit version
 changie batch <version>
+# or using auto if you have kinds configured for auto bumps
+changie batch auto
 ```
 
 After you have batched a new version you can merge it into the parent changelog using the merge command.
