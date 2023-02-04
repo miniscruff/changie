@@ -33,3 +33,6 @@ replacements:
 - path: 'docs/config.toml'
   find: "  version = '.*"
   replace: "  version = '{{.Version}}'"
+- path: 'docs/static/version.json'
+  find: '    "latest": ".*"'
+  replace: '    "latest": "{{.Version}}"'
