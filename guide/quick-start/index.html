@@ -3,13 +3,15 @@
 <a href=/guide/backup>backup guide</a> first.</p></blockquote><p>Run <code>init</code> to bootstrap your project with a sample config, header and empty changelog.</p><div class=highlight><pre tabindex=0 class=chroma><code class=language-shell data-lang=shell><span class=line><span class=cl>changie init
 </span></span></code></pre></div><p>You can <a href=/config>configure</a> changie by editing the generated <code>.changie.yaml</code> file.</p><p>When completing work on a feature, bugfix or user impacting change use the new command
 to generate your change file.</p><div class=highlight><pre tabindex=0 class=chroma><code class=language-shell data-lang=shell><span class=line><span class=cl>changie new
-</span></span></code></pre></div><p>When it is time to prepare your next release, batch all unreleased changes into one using the batch command.</p><div class=highlight><pre tabindex=0 class=chroma><code class=language-shell data-lang=shell><span class=line><span class=cl><span class=c1># changie supports semver bump values for batch</span>
+</span></span></code></pre></div><p>When it is time to prepare your next release, batch all unreleased changes into one using the batch command.</p><div class=highlight><pre tabindex=0 class=chroma><code class=language-shell data-lang=shell><span class=line><span class=cl><span class=c1># changie supports semver bump values</span>
 </span></span><span class=line><span class=cl>changie batch &lt;major<span class=p>|</span>minor<span class=p>|</span>patch&gt;
-</span></span><span class=line><span class=cl><span class=c1># as well as an explicit version</span>
+</span></span><span class=line><span class=cl><span class=c1># using an explicit version</span>
 </span></span><span class=line><span class=cl>changie batch &lt;version&gt;
+</span></span><span class=line><span class=cl><span class=c1># or using auto if you have kinds configured for auto bumps</span>
+</span></span><span class=line><span class=cl>changie batch auto
 </span></span></code></pre></div><p>After you have batched a new version you can merge it into the parent changelog using the merge command.</p><div class=highlight><pre tabindex=0 class=chroma><code class=language-shell data-lang=shell><span class=line><span class=cl>changie merge
 </span></span></code></pre></div><asciinema-player src=/recordings/quick-start.cast cols=640 rows=10 preload=1 start-at=0 speed=1 author=miniscruff></asciinema-player></div></div></div></div></div></div><footer class="mx-auto text-center border-top"><div class=pt-1><span pr-1>Help make the documentation better by</span>
-<span pr-1><a href=https://github.com/miniscruff/changie/edit/main/website/content/guide/quick-start/index.md>editing this page</a></span>
+<span pr-1><a href=https://github.com/miniscruff/changie/edit/main/docs/content/guide/quick-start/index.md>editing this page</a></span>
 <span pr-1>or by</span>
 <span pr-1><a href="https://github.com/miniscruff/changie/issues/new?title=Documentation+issue+in+guide%2Fquick-start%2Findex.md">reporting an issue.</a></span></div><div class=p-1><span pr-1><a href=https://github.com/zerostaticthemes/hugo-whisper-theme>Base Theme</a></span>
 <span pr-1>by</span>
