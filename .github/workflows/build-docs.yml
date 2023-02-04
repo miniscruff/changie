@@ -8,9 +8,15 @@ on:
     - 'cmd/**'
     - 'core/**'
     - '*/CHANGELOG.md'
+  workflow_dispatch:
+    inputs:
+      deploy:
+        description: 'deploy the built docs'
+        type: boolean
+        default: false
+        required: false
 
 jobs:
-
   build:
     name: Build Docs
     runs-on: ubuntu-20.04
@@ -31,7 +37,12 @@ jobs:
         extended: true
 
     - name: Build docs
-      run: |
-        awk 'NR > 1' CHANGELOG.md >> docs/content/guide/changelog/index.md
-        go run main.go gen
-        hugo --minify -s docs -b https://changie.dev/
+      run: make docs-release
+
+    - name: Deploy Docs
+      if: "${{ github.event.inputs.deploy }}"
+      uses: peaceiris/actions-gh-pages@v3.9.2
+      with:
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+        publish_dir: ./docs/public
+        cname: changie.dev
