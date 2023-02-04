@@ -39,12 +39,10 @@ This [GitHub action](https://github.com/miniscruff/changie-action) can be used.
 
 ```yaml
 - name: Batch a new minor version
-  uses: miniscruff/changie-action@version # view action repo for latest version
+  uses: miniscruff/changie-action@VERSION # view action repo for latest version
   with:
-    version: latest # download the latest changie version
+    version: latest # use the latest changie version
     args: batch minor
-  env:
-    GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 ```
 
 ## Docker
