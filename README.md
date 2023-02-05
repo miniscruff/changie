@@ -41,6 +41,8 @@ File an issue before creating a pull request, unless it is something simple like
 * [Choices and Replacements](https://dev.to/miniscruff/changie-choices-and-replacements-40p5)
 * [Auto mode and GitHub action](https://dev.to/miniscruff/changie-auto-mode-and-github-action-1279)
 
+_pull requests encouraged to add your own media here_
+
 ## Want to Contribute?
 If you want to contribute through code or documentation, the [Contributing guide](CONTRIBUTING.md) is the place to start.
 If you need additional help create an issue or post on discussions.
