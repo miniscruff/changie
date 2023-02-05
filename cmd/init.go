@@ -70,7 +70,7 @@ func runInit(cmd *cobra.Command, args []string) error {
 			},
 			{
 				Label:     "Deprecated",
-				AutoLevel: core.PatchLevel,
+				AutoLevel: core.MinorLevel,
 			},
 			{
 				Label:     "Removed",
