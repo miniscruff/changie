@@ -12,7 +12,7 @@ kinds:
   - label: Changed
     auto: major
   - label: Deprecated
-    auto: patch
+    auto: minor
   - label: Removed
     auto: major
   - label: Fixed
