@@ -39,6 +39,7 @@ File an issue before creating a pull request, unless it is something simple like
 * [Headers, footers, bumping, latest, dry run](https://dev.to/miniscruff/changie-automated-changelog-generation-for-any-project-1b52)
 * [Prereleases and metadata](https://dev.to/miniscruff/changie-automated-changelog-generation-for-large-projects-41hm)
 * [Choices and Replacements](https://dev.to/miniscruff/changie-choices-and-replacements-40p5)
+* [Auto mode and GitHub action](https://dev.to/miniscruff/changie-auto-mode-and-github-action-1279)
 
 ## Want to Contribute?
 If you want to contribute through code or documentation, the [Contributing guide](CONTRIBUTING.md) is the place to start.
