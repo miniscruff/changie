@@ -9,7 +9,7 @@ require (
 	github.com/manifoldco/promptui v0.9.0
 	github.com/spf13/afero v1.9.3
 	github.com/spf13/cobra v1.6.1
-	golang.org/x/text v0.6.0
+	golang.org/x/text v0.7.0
 	gopkg.in/yaml.v2 v2.4.0
 )
 
