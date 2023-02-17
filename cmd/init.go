@@ -36,8 +36,6 @@ var (
 )
 
 func init() {
-	rootCmd.AddCommand(initCmd)
-
 	initCmd.Flags().StringVarP(&changesDir, "dir", "d", ".changes", "directory for all changes")
 	initCmd.Flags().StringVarP(
 		&changelogPath,

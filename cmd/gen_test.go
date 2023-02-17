@@ -61,8 +61,9 @@ func TestCanGetFiles(t *testing.T) {
 	}
 
 	// run the gen command
-	rootCmd.SetArgs([]string{"gen"})
-	then.Nil(t, Execute(""))
+    cmd := RootCmd()
+	cmd.SetArgs([]string{"gen"})
+	then.Nil(t, cmd.Execute())
 
 	// test a few files exist
 	then.FileExists(t, cliDocsPath, "changie.md")
@@ -73,10 +74,11 @@ func TestCanGetFiles(t *testing.T) {
 }
 
 func TestErrorGenIfContentPathIsMissing(t *testing.T) {
+    cmd := RootCmd()
 	then.WithTempDir(t)
 
-	rootCmd.SetArgs([]string{"gen"})
-	then.NotNil(t, Execute(""))
+	cmd.SetArgs([]string{"gen"})
+	then.NotNil(t, cmd.Execute())
 }
 
 func TestErrorGenBadWriteTypesWriter(t *testing.T) {

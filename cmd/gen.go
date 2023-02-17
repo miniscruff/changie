@@ -75,13 +75,9 @@ var genCmd = &cobra.Command{
 		writeConfigFrontMatter(file, time.Now)
 		genConfigDocs(fset, file, corePackages)
 
-		return doc.GenMarkdownTreeCustom(rootCmd, "docs/content/cli", filePrepender, linkHandler)
+		return doc.GenMarkdownTreeCustom(cmd.Root(), "docs/content/cli", filePrepender, linkHandler)
 	},
 	Hidden: true,
-}
-
-func init() {
-	rootCmd.AddCommand(genCmd)
 }
 
 func filePrepender(filename string) string {

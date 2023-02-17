@@ -24,8 +24,6 @@ var (
 )
 
 func init() {
-	rootCmd.AddCommand(latestCmd)
-
 	latestCmd.Flags().BoolVarP(
 		&removePrefix,
 		"remove-prefix", "r",

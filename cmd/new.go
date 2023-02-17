@@ -70,7 +70,6 @@ func init() {
 		nil,
 		"Set custom values without a prompt",
 	)
-	rootCmd.AddCommand(newCmd)
 }
 
 func runNew(cmd *cobra.Command, args []string) error {
