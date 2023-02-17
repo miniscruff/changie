@@ -32,7 +32,6 @@ func init() {
 		false,
 		"Print merged changelog instead of writing to disk, will not run replacements",
 	)
-	rootCmd.AddCommand(mergeCmd)
 }
 
 func runMerge(cmd *cobra.Command, args []string) error {

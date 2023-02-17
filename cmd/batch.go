@@ -154,7 +154,6 @@ func init() {
 		false,
 		"Force a new version file even if one already exists",
 	)
-	rootCmd.AddCommand(batchCmd)
 }
 
 func runBatch(cmd *cobra.Command, args []string) error {
