@@ -10,13 +10,12 @@ import (
 )
 
 type Next struct {
-    *cobra.Command
+	*cobra.Command
 
 	// cli args
 	IncludeDirs []string
 	Prerelease  []string
 	Meta        []string
-
 
 	ReadDir  shared.ReadDirer
 	ReadFile shared.ReadFiler
@@ -59,7 +58,8 @@ Echo the next release version number to be used by CI tools or other commands li
 		nil,
 		"Metadata values to append to version",
 	)
-    next.Command = cmd
+
+	next.Command = cmd
 
 	return next
 }

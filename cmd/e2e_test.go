@@ -7,8 +7,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/miniscruff/changie/then"
 	"github.com/spf13/cobra"
+
+	"github.com/miniscruff/changie/then"
 )
 
 func swapInReaderOutWriter(t *testing.T, cmd *cobra.Command, inReader, outWriter *os.File) {
@@ -84,7 +85,7 @@ func testMerge(t *testing.T, cmd *cobra.Command) {
 }
 
 func TestFullRun(t *testing.T) {
-    cmd := RootCmd()
+	cmd := RootCmd()
 
 	then.WithTempDir(t)
 	inReader, inWriter, outReader, outWriter := then.WithStdInOut(t)
@@ -102,7 +103,7 @@ func TestFullRun(t *testing.T) {
 }
 
 func TestErrorNextBadInput(t *testing.T) {
-    cmd := RootCmd()
+	cmd := RootCmd()
 
 	then.WithTempDir(t)
 	testInit(t, cmd)
@@ -112,7 +113,7 @@ func TestErrorNextBadInput(t *testing.T) {
 }
 
 func TestErrorNextExactVersion(t *testing.T) {
-    cmd := RootCmd()
+	cmd := RootCmd()
 
 	then.WithTempDir(t)
 	testInit(t, cmd)

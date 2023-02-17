@@ -61,7 +61,7 @@ func TestCanGetFiles(t *testing.T) {
 	}
 
 	// run the gen command
-    cmd := RootCmd()
+	cmd := RootCmd()
 	cmd.SetArgs([]string{"gen"})
 	then.Nil(t, cmd.Execute())
 
@@ -74,7 +74,8 @@ func TestCanGetFiles(t *testing.T) {
 }
 
 func TestErrorGenIfContentPathIsMissing(t *testing.T) {
-    cmd := RootCmd()
+	cmd := RootCmd()
+
 	then.WithTempDir(t)
 
 	cmd.SetArgs([]string{"gen"})
