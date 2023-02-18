@@ -17,6 +17,7 @@ type Next struct {
 	Prerelease  []string
 	Meta        []string
 
+    // dependencies
 	ReadDir  shared.ReadDirer
 	ReadFile shared.ReadFiler
 }
