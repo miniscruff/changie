@@ -37,7 +37,9 @@ jobs:
         extended: true
 
     - name: Build docs
-      run: make docs-release
+      run: |
+        awk 'NR > 1' CHANGELOG.md >> docs/content/guide/changelog/index.md
+        hugo --minify -s docs -b https://changie.dev/
 
     - name: Deploy Docs
       if: "${{ github.event.inputs.deploy }}"
