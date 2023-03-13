@@ -242,6 +242,7 @@ func (change *Change) promptForKind(ctx *PromptContext) error {
 			Label:       "Kind",
 			EnumOptions: kindLabels,
 		}.AskPrompt(ctx.stdinReader)
+
 		if err != nil {
 			return err
 		}

@@ -6,9 +6,8 @@ require (
 	github.com/Masterminds/semver/v3 v3.2.0
 	github.com/Masterminds/sprig/v3 v3.2.3
 	github.com/charmbracelet/bubbletea v0.23.2
-	github.com/cqroot/prompt v0.8.5
+	github.com/cqroot/prompt v0.8.6
 	github.com/icholy/replace v0.6.0
-	github.com/manifoldco/promptui v0.9.0
 	github.com/spf13/afero v1.9.5
 	github.com/spf13/cobra v1.6.1
 	golang.org/x/text v0.8.0
@@ -21,7 +20,6 @@ require (
 	github.com/aymanbagabas/go-osc52 v1.2.1 // indirect
 	github.com/charmbracelet/bubbles v0.15.0 // indirect
 	github.com/charmbracelet/lipgloss v0.6.0 // indirect
-	github.com/chzyer/readline v0.0.0-20180603132655-2972be24d48e // indirect
 	github.com/containerd/console v1.0.3 // indirect
 	github.com/cpuguy83/go-md2man/v2 v2.0.2 // indirect
 	github.com/cqroot/multichoose v0.1.0 // indirect

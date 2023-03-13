@@ -380,7 +380,6 @@ func TestErrorInvalidBody(t *testing.T) {
 		t, writer,
 		[]byte("abc"),
 		[]byte{13},
-		[]byte{3},
 	)
 
 	var min int64 = 5

@@ -321,5 +321,5 @@ func TestBodyConfigWithMinAndMax(t *testing.T) {
 	var max int64 = 10
 
 	cust := BodyConfig{MaxLength: &max}.CreateCustom()
-    then.Equals(t, 10, *cust.MaxLength)
+	then.Equals(t, 10, *cust.MaxLength)
 }

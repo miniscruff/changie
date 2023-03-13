@@ -121,7 +121,7 @@ func (c Custom) askInt(stdinReader io.ReadCloser) (string, error) {
 		Input(
 			"",
 			input.WithHelp(true),
-            input.WithInputMode(input.InputInteger),
+			input.WithInputMode(input.InputInteger),
 			input.WithValidateFunc(c.validateInt),
 			input.WithTeaProgramOpts(tea.WithInput(stdinReader)),
 		)

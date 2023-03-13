@@ -63,10 +63,6 @@ type KindConfig struct {
 	AutoLevel string `yaml:"auto,omitempty"`
 }
 
-func (kc KindConfig) String() string {
-	return kc.Label
-}
-
 // Body config allows you to customize the default body prompt
 type BodyConfig struct {
 	// Min length specifies the minimum body length

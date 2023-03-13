@@ -28,24 +28,13 @@ type ValidationSpec struct {
 }
 
 func (s *ValidationSpec) Run(t *testing.T, custom Custom) {
-    /*
-	value, err := custom.AskPrompt(os.Stdin)
-	then.Nil(t, err)
+	err := custom.Validate(s.Input)
 
 	if s.Error == nil {
-		err = underPrompt.Validate(s.Input)
-		then.Nil(t, err)
-
-		err = custom.Validate(s.Input)
 		then.Nil(t, err)
 	} else {
-		err = underPrompt.Validate(s.Input)
-		then.Err(t, s.Error, err)
-
-		err = custom.Validate(s.Input)
 		then.Err(t, s.Error, err)
 	}
-    */
 }
 
 func PtrInt64(value int64) *int64 {
@@ -74,45 +63,21 @@ func TestErrorInvalidPromptTypeWhenValidating(t *testing.T) {
 	then.Err(t, errInvalidPromptType, err)
 }
 
-/*
-func TestCreateCustomStringPrompt(t *testing.T) {
-	custom := Custom{Type: CustomString, Label: "a label"}
-	prompt, err := custom.CreatePrompt(os.Stdin)
-
-	then.Nil(t, err)
-
-	underPrompt, ok := prompt.(*promptui.Prompt)
-	then.True(t, ok)
-	then.Equals(t, "a label", underPrompt.Label.(string))
-}
-*/
-
-/*
 func TestCreateCustomIntPrompt(t *testing.T) {
+	reader, writer := then.WithReadWritePipe(t)
+	then.DelayWrite(
+		t, writer,
+		[]byte("15"),
+		[]byte{13}, // 106 = down, 13 = enter
+	)
+
 	custom := Custom{Type: CustomInt, Key: "name"}
-	prompt, err := custom.CreatePrompt(os.Stdin)
+	value, err := custom.AskPrompt(reader)
+
 	then.Nil(t, err)
-
-	underPrompt, ok := prompt.(*promptui.Prompt)
-	then.True(t, ok)
-	then.Equals(t, "name", underPrompt.Label.(string))
+	then.Equals(t, value, "15")
 }
-*/
 
-/*
-func TestCreateCustomEnumPrompt(t *testing.T) {
-	opts := []string{"a", "b", "c"}
-	custom := Custom{Type: CustomEnum, EnumOptions: opts}
-	prompt, err := custom.CreatePrompt(os.Stdin)
-	then.Nil(t, err)
-
-	underPrompt, ok := prompt.(*enumWrapper)
-	then.True(t, ok)
-	then.SliceEquals(t, opts, underPrompt.Select.Items.([]string))
-}
-*/
-
-/*
 func TestCanRunEnumPrompt(t *testing.T) {
 	reader, writer := then.WithReadWritePipe(t)
 	then.DelayWrite(
@@ -123,14 +88,10 @@ func TestCanRunEnumPrompt(t *testing.T) {
 	opts := []string{"a", "b", "c"}
 	custom := Custom{Type: CustomEnum, EnumOptions: opts}
 
-	prompt, err := custom.CreatePrompt(reader)
+	value, err := custom.AskPrompt(reader)
 	then.Nil(t, err)
-
-	out, err := prompt.Run()
-	then.Nil(t, err)
-	then.Equals(t, "b", out)
+	then.Equals(t, "b", value)
 }
-*/
 
 var validationSpecs = []ValidationSpecs{
 	{
