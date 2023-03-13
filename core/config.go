@@ -69,12 +69,19 @@ type BodyConfig struct {
 	MinLength *int64 `yaml:"minLength,omitempty" default:"no min"`
 	// Max length specifies the maximum body length
 	MaxLength *int64 `yaml:"maxLength,omitempty" default:"no max"`
+    // Block allows multiline text inputs for body messages
+    UseBlock bool `yaml:"block,omitempty" default:"false"`
 }
 
 func (b BodyConfig) CreateCustom() *Custom {
+    customType := CustomString
+    if b.UseBlock {
+        customType = CustomBlock
+    }
+
 	return &Custom{
 		Label:     "Body",
-		Type:      CustomString,
+		Type:      customType,
 		MinLength: b.MinLength,
 		MaxLength: b.MaxLength,
 	}
