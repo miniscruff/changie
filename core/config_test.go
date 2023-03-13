@@ -6,8 +6,6 @@ import (
 	"os"
 	"testing"
 
-	"github.com/manifoldco/promptui"
-
 	"github.com/miniscruff/changie/then"
 )
 
@@ -314,22 +312,14 @@ func TestGetDefaultChangeFormatIfNoCustomOnesExist(t *testing.T) {
 }
 
 func TestBodyConfigCreatePrompt(t *testing.T) {
-	p := BodyConfig{}.CreatePrompt(os.Stdin)
-	underPrompt, ok := p.(*promptui.Prompt)
+	cust := BodyConfig{}.CreateCustom()
 
-	then.True(t, ok)
-	then.Equals(t, "Body", underPrompt.Label.(string))
-	then.Nil(t, underPrompt.Validate("anything"))
+	then.Equals(t, "Body", cust.Label)
 }
 
 func TestBodyConfigWithMinAndMax(t *testing.T) {
 	var max int64 = 10
 
-	longInput := "jas dklfjaklsd fjklasjd flkasjdfkl sd"
-	p := BodyConfig{MaxLength: &max}.CreatePrompt(os.Stdin)
-	underPrompt, ok := p.(*promptui.Prompt)
-
-	then.True(t, ok)
-	then.Equals(t, "Body", underPrompt.Label.(string))
-	then.Err(t, errInputTooLong, underPrompt.Validate(longInput))
+	cust := BodyConfig{MaxLength: &max}.CreateCustom()
+    then.Equals(t, 10, *cust.MaxLength)
 }

@@ -2,7 +2,6 @@ package core
 
 import (
 	"fmt"
-	"io"
 	"os"
 
 	"github.com/Masterminds/semver/v3"
@@ -76,15 +75,13 @@ type BodyConfig struct {
 	MaxLength *int64 `yaml:"maxLength,omitempty" default:"no max"`
 }
 
-func (b BodyConfig) CreatePrompt(stdinReader io.ReadCloser) Prompt {
-	p, _ := Custom{
+func (b BodyConfig) CreateCustom() *Custom {
+	return &Custom{
 		Label:     "Body",
 		Type:      CustomString,
 		MinLength: b.MinLength,
 		MaxLength: b.MaxLength,
-	}.CreatePrompt(stdinReader)
-
-	return p
+	}
 }
 
 func (b BodyConfig) Validate(input string) error {

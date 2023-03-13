@@ -8,8 +8,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/manifoldco/promptui"
-
 	"gopkg.in/yaml.v2"
 
 	"github.com/miniscruff/changie/shared"
@@ -110,7 +108,7 @@ type Change struct {
 	Env map[string]string `yaml:"-" default:"nil"`
 }
 
-// SaveUnreleased will save an unreleased change to the unreleased directory
+// Write will write a change to the writer as YAML
 func (change Change) Write(writer io.Writer) error {
 	bs, _ := yaml.Marshal(&change)
 	_, err := writer.Write(bs)
@@ -204,15 +202,13 @@ func (change *Change) promptForComponent(ctx *PromptContext) error {
 	}
 
 	if len(change.Component) == 0 {
-		compPrompt := promptui.Select{
-			Label: "Component",
-			Items: ctx.config.Components,
-			Stdin: ctx.stdinReader,
-		}
-
 		var err error
 
-		_, change.Component, err = compPrompt.Run()
+		change.Component, err = Custom{
+			Type:        CustomEnum,
+			Label:       "Component",
+			EnumOptions: ctx.config.Components,
+		}.AskPrompt(ctx.stdinReader)
 		if err != nil {
 			return err
 		}
@@ -235,15 +231,17 @@ func (change *Change) promptForKind(ctx *PromptContext) error {
 	}
 
 	if len(change.Kind) == 0 {
-		kindPrompt := promptui.Select{
-			Label: "Kind",
-			Items: ctx.config.Kinds,
-			Stdin: ctx.stdinReader,
+		kindLabels := make([]string, len(ctx.config.Kinds))
+		for i, kc := range ctx.config.Kinds {
+			kindLabels[i] = kc.Label
 		}
 
 		var err error
-
-		_, change.Kind, err = kindPrompt.Run()
+		change.Kind, err = Custom{
+			Type:        CustomEnum,
+			Label:       "Kind",
+			EnumOptions: kindLabels,
+		}.AskPrompt(ctx.stdinReader)
 		if err != nil {
 			return err
 		}
@@ -267,10 +265,10 @@ func (change *Change) promptForBody(ctx *PromptContext) error {
 	}
 
 	if ctx.expectsBody() && len(change.Body) == 0 {
-		bodyPrompt := ctx.config.Body.CreatePrompt(ctx.stdinReader)
+		bodyCustom := ctx.config.Body.CreateCustom()
 
 		var err error
-		change.Body, err = bodyPrompt.Run()
+		change.Body, err = bodyCustom.AskPrompt(ctx.stdinReader)
 
 		return err
 	}
@@ -313,14 +311,9 @@ func (change *Change) promptForUserChoices(ctx *PromptContext) error {
 			continue
 		}
 
-		prompt, err := custom.CreatePrompt(ctx.stdinReader)
+		var err error
 
-		if err != nil {
-			return err
-		}
-
-		change.Custom[custom.Key], err = prompt.Run()
-
+		change.Custom[custom.Key], err = custom.AskPrompt(ctx.stdinReader)
 		if err != nil {
 			return err
 		}
