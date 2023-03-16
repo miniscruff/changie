@@ -7,15 +7,21 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/manifoldco/promptui"
+	tea "github.com/charmbracelet/bubbletea"
+
+	"github.com/cqroot/prompt"
+	"github.com/cqroot/prompt/choose"
+	"github.com/cqroot/prompt/input"
+	"github.com/cqroot/prompt/write"
 )
 
 // CustomType determines the possible custom choice types.
-// Current values are: `string`, `int` and `enum`.
+// Current values are: `string`, `block`, `int` and `enum`.
 type CustomType string
 
 const (
 	CustomString CustomType = "string"
+	CustomBlock  CustomType = "block"
 	CustomInt    CustomType = "int"
 	CustomEnum   CustomType = "enum"
 )
@@ -32,20 +38,6 @@ var (
 	base10                 = 10
 	bit64                  = 64
 )
-
-type enumWrapper struct {
-	*promptui.Select
-}
-
-func (e *enumWrapper) Run() (string, error) {
-	_, value, err := e.Select.Run()
-	return value, err
-}
-
-// Prompt is a small wrapper around the promptui Run method
-type Prompt interface {
-	Run() (string, error)
-}
 
 // Custom defines a custom choice that is asked when using 'changie new'.
 // The result is an additional custom value in the change file for including in the change line.
@@ -68,6 +60,7 @@ type Custom struct {
 	// | value | description | options
 	// | -- | -- | -- |
 	// string | Freeform text | [minLength](#custom-minlength) and [maxLength](#custom-maxlength)
+	// block | Multiline text | [minLength](#custom-minlength) and [maxLength](#custom-maxlength)
 	// int | Whole numbers | [minInt](#custom-minint) and [maxInt](#custom-maxint)
 	// enum | Limited set of strings | [enumOptions](#custom-enumoptions) is used to specify values
 	Type CustomType `yaml:"" required:"true"`
@@ -116,48 +109,65 @@ func (c Custom) DisplayLabel() string {
 	return c.Label
 }
 
-func (c Custom) createStringPrompt(stdinReader io.ReadCloser) (Prompt, error) {
-	return &promptui.Prompt{
-		Label:    c.DisplayLabel(),
-		Stdin:    stdinReader,
-		Validate: c.validateString,
-	}, nil
+func (c Custom) askString(stdinReader io.ReadCloser) (string, error) {
+	return prompt.New().Ask(c.DisplayLabel()).
+		Input(
+			"",
+			input.WithHelp(true),
+			input.WithValidateFunc(c.validateString),
+			input.WithTeaProgramOpts(tea.WithInput(stdinReader)),
+		)
 }
 
-func (c Custom) createIntPrompt(stdinReader io.ReadCloser) (Prompt, error) {
-	return &promptui.Prompt{
-		Label:    c.DisplayLabel(),
-		Stdin:    stdinReader,
-		Validate: c.validateInt,
-	}, nil
+func (c Custom) askBlock(stdinReader io.ReadCloser) (string, error) {
+	return prompt.New().Ask(c.DisplayLabel()).
+		Write(
+			"",
+			write.WithHelp(true),
+			write.WithValidateFunc(c.validateString),
+			write.WithTeaProgramOpts(tea.WithInput(stdinReader)),
+		)
 }
 
-func (c Custom) createEnumPrompt(stdinReader io.ReadCloser) (Prompt, error) {
-	return &enumWrapper{
-		Select: &promptui.Select{
-			Label: c.DisplayLabel(),
-			Stdin: stdinReader,
-			Items: c.EnumOptions,
-		}}, nil
+func (c Custom) askInt(stdinReader io.ReadCloser) (string, error) {
+	return prompt.New().Ask(c.DisplayLabel()).
+		Input(
+			"",
+			input.WithHelp(true),
+			input.WithInputMode(input.InputInteger),
+			input.WithValidateFunc(c.validateInt),
+			input.WithTeaProgramOpts(tea.WithInput(stdinReader)),
+		)
+}
+
+func (c Custom) askEnum(stdinReader io.ReadCloser) (string, error) {
+	return prompt.New().Ask(c.DisplayLabel()).
+		Choose(
+			c.EnumOptions,
+			choose.WithHelp(true),
+			choose.WithTeaProgramOpts(tea.WithInput(stdinReader)),
+		)
 }
 
 // CreatePrompt will create a promptui select or prompt from a custom choice
-func (c Custom) CreatePrompt(stdinReader io.ReadCloser) (Prompt, error) {
+func (c Custom) AskPrompt(stdinReader io.ReadCloser) (string, error) {
 	switch c.Type {
 	case CustomString:
-		return c.createStringPrompt(stdinReader)
+		return c.askString(stdinReader)
+	case CustomBlock:
+		return c.askBlock(stdinReader)
 	case CustomInt:
-		return c.createIntPrompt(stdinReader)
+		return c.askInt(stdinReader)
 	case CustomEnum:
-		return c.createEnumPrompt(stdinReader)
+		return c.askEnum(stdinReader)
 	}
 
-	return nil, errInvalidPromptType
+	return "", errInvalidPromptType
 }
 
 func (c Custom) Validate(input string) error {
 	switch c.Type {
-	case CustomString:
+	case CustomString, CustomBlock:
 		return c.validateString(input)
 	case CustomInt:
 		return c.validateInt(input)

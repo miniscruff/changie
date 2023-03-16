@@ -2,7 +2,6 @@ package core
 
 import (
 	"fmt"
-	"io"
 	"os"
 
 	"github.com/Masterminds/semver/v3"
@@ -64,27 +63,28 @@ type KindConfig struct {
 	AutoLevel string `yaml:"auto,omitempty"`
 }
 
-func (kc KindConfig) String() string {
-	return kc.Label
-}
-
 // Body config allows you to customize the default body prompt
 type BodyConfig struct {
 	// Min length specifies the minimum body length
 	MinLength *int64 `yaml:"minLength,omitempty" default:"no min"`
 	// Max length specifies the maximum body length
 	MaxLength *int64 `yaml:"maxLength,omitempty" default:"no max"`
+	// Block allows multiline text inputs for body messages
+	UseBlock bool `yaml:"block,omitempty" default:"false"`
 }
 
-func (b BodyConfig) CreatePrompt(stdinReader io.ReadCloser) Prompt {
-	p, _ := Custom{
+func (b BodyConfig) CreateCustom() *Custom {
+	customType := CustomString
+	if b.UseBlock {
+		customType = CustomBlock
+	}
+
+	return &Custom{
 		Label:     "Body",
-		Type:      CustomString,
+		Type:      customType,
 		MinLength: b.MinLength,
 		MaxLength: b.MaxLength,
-	}.CreatePrompt(stdinReader)
-
-	return p
+	}
 }
 
 func (b BodyConfig) Validate(input string) error {

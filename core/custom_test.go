@@ -4,8 +4,6 @@ import (
 	"os"
 	"testing"
 
-	"github.com/manifoldco/promptui"
-
 	"github.com/miniscruff/changie/then"
 )
 
@@ -30,23 +28,11 @@ type ValidationSpec struct {
 }
 
 func (s *ValidationSpec) Run(t *testing.T, custom Custom) {
-	prompt, err := custom.CreatePrompt(os.Stdin)
-	then.Nil(t, err)
-
-	underPrompt, ok := prompt.(*promptui.Prompt)
-	then.True(t, ok)
+	err := custom.Validate(s.Input)
 
 	if s.Error == nil {
-		err = underPrompt.Validate(s.Input)
-		then.Nil(t, err)
-
-		err = custom.Validate(s.Input)
 		then.Nil(t, err)
 	} else {
-		err = underPrompt.Validate(s.Input)
-		then.Err(t, s.Error, err)
-
-		err = custom.Validate(s.Input)
 		then.Err(t, s.Error, err)
 	}
 }
@@ -67,7 +53,7 @@ func TestDisplayLabelUsesLabelIfDefined(t *testing.T) {
 
 func TestErrorInvalidPromptType(t *testing.T) {
 	custom := Custom{Type: "invalid-type"}
-	_, err := custom.CreatePrompt(os.Stdin)
+	_, err := custom.AskPrompt(os.Stdin)
 	then.Err(t, errInvalidPromptType, err)
 }
 
@@ -77,36 +63,36 @@ func TestErrorInvalidPromptTypeWhenValidating(t *testing.T) {
 	then.Err(t, errInvalidPromptType, err)
 }
 
-func TestCreateCustomStringPrompt(t *testing.T) {
-	custom := Custom{Type: CustomString, Label: "a label"}
-	prompt, err := custom.CreatePrompt(os.Stdin)
-
-	then.Nil(t, err)
-
-	underPrompt, ok := prompt.(*promptui.Prompt)
-	then.True(t, ok)
-	then.Equals(t, "a label", underPrompt.Label.(string))
-}
-
 func TestCreateCustomIntPrompt(t *testing.T) {
-	custom := Custom{Type: CustomInt, Key: "name"}
-	prompt, err := custom.CreatePrompt(os.Stdin)
-	then.Nil(t, err)
+	reader, writer := then.WithReadWritePipe(t)
+	then.DelayWrite(
+		t, writer,
+		[]byte("15"),
+		[]byte{13}, // 13=enter
+	)
 
-	underPrompt, ok := prompt.(*promptui.Prompt)
-	then.True(t, ok)
-	then.Equals(t, "name", underPrompt.Label.(string))
+	custom := Custom{Type: CustomInt, Key: "name"}
+	value, err := custom.AskPrompt(reader)
+
+	then.Nil(t, err)
+	then.Equals(t, value, "15")
 }
 
-func TestCreateCustomEnumPrompt(t *testing.T) {
-	opts := []string{"a", "b", "c"}
-	custom := Custom{Type: CustomEnum, EnumOptions: opts}
-	prompt, err := custom.CreatePrompt(os.Stdin)
-	then.Nil(t, err)
+func TestCanRunBlockPrompt(t *testing.T) {
+	reader, writer := then.WithReadWritePipe(t)
+	then.DelayWrite(
+		t, writer,
+		[]byte("I can write multiple lines"),
+		[]byte{13},
+		[]byte("In a block prompt"),
+		[]byte{4}, // 4=EOT or ctrl+d
+	)
 
-	underPrompt, ok := prompt.(*enumWrapper)
-	then.True(t, ok)
-	then.SliceEquals(t, opts, underPrompt.Select.Items.([]string))
+	custom := Custom{Type: CustomBlock, Key: "block"}
+	value, err := custom.AskPrompt(reader)
+
+	then.Nil(t, err)
+	then.Equals(t, value, "I can write multiple lines\nIn a block prompt")
 }
 
 func TestCanRunEnumPrompt(t *testing.T) {
@@ -119,12 +105,9 @@ func TestCanRunEnumPrompt(t *testing.T) {
 	opts := []string{"a", "b", "c"}
 	custom := Custom{Type: CustomEnum, EnumOptions: opts}
 
-	prompt, err := custom.CreatePrompt(reader)
+	value, err := custom.AskPrompt(reader)
 	then.Nil(t, err)
-
-	out, err := prompt.Run()
-	then.Nil(t, err)
-	then.Equals(t, "b", out)
+	then.Equals(t, "b", value)
 }
 
 var validationSpecs = []ValidationSpecs{
@@ -162,6 +145,65 @@ var validationSpecs = []ValidationSpecs{
 		Name: "OptionalString",
 		Custom: Custom{
 			Type:      CustomString,
+			Label:     "OptString",
+			Optional:  true,
+			MinLength: PtrInt64(3),
+			MaxLength: PtrInt64(15),
+		},
+		Specs: []ValidationSpec{
+			{
+				Name: "Empty",
+			},
+			{
+				Name:  "TooShort",
+				Input: "0",
+				Error: errInputTooShort,
+			},
+			{
+				Name:  "TooLong",
+				Input: "01234567890123456789",
+				Error: errInputTooLong,
+			},
+			{
+				Name:  "Valid",
+				Input: "normal",
+			},
+		},
+	},
+	{
+		Name: "Block",
+		Custom: Custom{
+			Type:      CustomBlock,
+			Key:       "string",
+			MinLength: PtrInt64(3),
+			MaxLength: PtrInt64(15),
+		},
+		Specs: []ValidationSpec{
+			{
+				Name:  "Empty",
+				Input: "",
+				Error: errInputTooShort,
+			},
+			{
+				Name:  "TooShort",
+				Input: "0",
+				Error: errInputTooShort,
+			},
+			{
+				Name:  "TooLong",
+				Input: "01234567890123456789",
+				Error: errInputTooLong,
+			},
+			{
+				Name:  "Valid",
+				Input: "normal",
+			},
+		},
+	},
+	{
+		Name: "OptionalBlock",
+		Custom: Custom{
+			Type:      CustomBlock,
 			Label:     "OptString",
 			Optional:  true,
 			MinLength: PtrInt64(3),

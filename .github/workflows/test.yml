@@ -39,10 +39,10 @@ jobs:
         version: v1.50
 
     - name: Gen
-      run: make gen
+      run: go run main.go gen
 
     - name: Test
-      run: make test
+      run: go test -coverprofile=c.out ./...
 
     - name: Coverage
       uses: codecov/codecov-action@v3
