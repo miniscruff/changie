@@ -1,19 +1,19 @@
 {
-    "version": "1.11.1",
+    "version": "1.12.0",
     "architecture": {
         "32bit": {
-            "url": "https://github.com/miniscruff/changie/releases/download/v1.11.1/changie_1.11.1_windows_386.zip",
+            "url": "https://github.com/miniscruff/changie/releases/download/v1.12.0/changie_1.12.0_windows_386.zip",
             "bin": [
                 "changie.exe"
             ],
-            "hash": "7bc4e42743605ed6c5a4622823b0c8ea432dabbd2dd948b95dd809ab370e33df"
+            "hash": "8cf5777e5e5b10afdcb9ad99c153245a7e9d0ecaed6928d343970cd0571bc163"
         },
         "64bit": {
-            "url": "https://github.com/miniscruff/changie/releases/download/v1.11.1/changie_1.11.1_windows_amd64.zip",
+            "url": "https://github.com/miniscruff/changie/releases/download/v1.12.0/changie_1.12.0_windows_amd64.zip",
             "bin": [
                 "changie.exe"
             ],
-            "hash": "178984f5b57d9a99ea66ead0cbcf4bb3989c6511a880d064eb4d730913c8b8a7"
+            "hash": "d5678c3289c2baa63d770850b8e18c6e500908362e74ff76602666a950b69a45"
         }
     },
     "homepage": "https://changie.dev",
