@@ -315,6 +315,16 @@ func TestBodyConfigCreatePrompt(t *testing.T) {
 	cust := BodyConfig{}.CreateCustom()
 
 	then.Equals(t, "Body", cust.Label)
+	then.Equals(t, CustomString, cust.Type)
+}
+
+func TestBodyConfigCreateBlockPrompt(t *testing.T) {
+	cust := BodyConfig{
+		UseBlock: true,
+	}.CreateCustom()
+
+	then.Equals(t, "Body", cust.Label)
+	then.Equals(t, CustomBlock, cust.Type)
 }
 
 func TestBodyConfigWithMinAndMax(t *testing.T) {

@@ -12,14 +12,16 @@ import (
 	"github.com/cqroot/prompt"
 	"github.com/cqroot/prompt/choose"
 	"github.com/cqroot/prompt/input"
+	"github.com/cqroot/prompt/write"
 )
 
 // CustomType determines the possible custom choice types.
-// Current values are: `string`, `int` and `enum`.
+// Current values are: `string`, `block`, `int` and `enum`.
 type CustomType string
 
 const (
 	CustomString CustomType = "string"
+	CustomBlock  CustomType = "block"
 	CustomInt    CustomType = "int"
 	CustomEnum   CustomType = "enum"
 )
@@ -58,6 +60,7 @@ type Custom struct {
 	// | value | description | options
 	// | -- | -- | -- |
 	// string | Freeform text | [minLength](#custom-minlength) and [maxLength](#custom-maxlength)
+	// block | Multiline text | [minLength](#custom-minlength) and [maxLength](#custom-maxlength)
 	// int | Whole numbers | [minInt](#custom-minint) and [maxInt](#custom-maxint)
 	// enum | Limited set of strings | [enumOptions](#custom-enumoptions) is used to specify values
 	Type CustomType `yaml:"" required:"true"`
@@ -116,6 +119,16 @@ func (c Custom) askString(stdinReader io.ReadCloser) (string, error) {
 		)
 }
 
+func (c Custom) askBlock(stdinReader io.ReadCloser) (string, error) {
+	return prompt.New().Ask(c.DisplayLabel()).
+		Write(
+			"",
+			write.WithHelp(true),
+			write.WithValidateFunc(c.validateString),
+			write.WithTeaProgramOpts(tea.WithInput(stdinReader)),
+		)
+}
+
 func (c Custom) askInt(stdinReader io.ReadCloser) (string, error) {
 	return prompt.New().Ask(c.DisplayLabel()).
 		Input(
@@ -141,6 +154,8 @@ func (c Custom) AskPrompt(stdinReader io.ReadCloser) (string, error) {
 	switch c.Type {
 	case CustomString:
 		return c.askString(stdinReader)
+	case CustomBlock:
+		return c.askBlock(stdinReader)
 	case CustomInt:
 		return c.askInt(stdinReader)
 	case CustomEnum:
@@ -152,7 +167,7 @@ func (c Custom) AskPrompt(stdinReader io.ReadCloser) (string, error) {
 
 func (c Custom) Validate(input string) error {
 	switch c.Type {
-	case CustomString:
+	case CustomString, CustomBlock:
 		return c.validateString(input)
 	case CustomInt:
 		return c.validateInt(input)

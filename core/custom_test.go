@@ -68,7 +68,7 @@ func TestCreateCustomIntPrompt(t *testing.T) {
 	then.DelayWrite(
 		t, writer,
 		[]byte("15"),
-		[]byte{13}, // 106 = down, 13 = enter
+		[]byte{13}, // 13=enter
 	)
 
 	custom := Custom{Type: CustomInt, Key: "name"}
@@ -76,6 +76,23 @@ func TestCreateCustomIntPrompt(t *testing.T) {
 
 	then.Nil(t, err)
 	then.Equals(t, value, "15")
+}
+
+func TestCanRunBlockPrompt(t *testing.T) {
+	reader, writer := then.WithReadWritePipe(t)
+	then.DelayWrite(
+		t, writer,
+		[]byte("I can write multiple lines"),
+		[]byte{13},
+		[]byte("In a block prompt"),
+		[]byte{4}, // 4=EOT or ctrl+d
+	)
+
+	custom := Custom{Type: CustomBlock, Key: "block"}
+	value, err := custom.AskPrompt(reader)
+
+	then.Nil(t, err)
+	then.Equals(t, value, "I can write multiple lines\nIn a block prompt")
 }
 
 func TestCanRunEnumPrompt(t *testing.T) {
@@ -128,6 +145,65 @@ var validationSpecs = []ValidationSpecs{
 		Name: "OptionalString",
 		Custom: Custom{
 			Type:      CustomString,
+			Label:     "OptString",
+			Optional:  true,
+			MinLength: PtrInt64(3),
+			MaxLength: PtrInt64(15),
+		},
+		Specs: []ValidationSpec{
+			{
+				Name: "Empty",
+			},
+			{
+				Name:  "TooShort",
+				Input: "0",
+				Error: errInputTooShort,
+			},
+			{
+				Name:  "TooLong",
+				Input: "01234567890123456789",
+				Error: errInputTooLong,
+			},
+			{
+				Name:  "Valid",
+				Input: "normal",
+			},
+		},
+	},
+	{
+		Name: "Block",
+		Custom: Custom{
+			Type:      CustomBlock,
+			Key:       "string",
+			MinLength: PtrInt64(3),
+			MaxLength: PtrInt64(15),
+		},
+		Specs: []ValidationSpec{
+			{
+				Name:  "Empty",
+				Input: "",
+				Error: errInputTooShort,
+			},
+			{
+				Name:  "TooShort",
+				Input: "0",
+				Error: errInputTooShort,
+			},
+			{
+				Name:  "TooLong",
+				Input: "01234567890123456789",
+				Error: errInputTooLong,
+			},
+			{
+				Name:  "Valid",
+				Input: "normal",
+			},
+		},
+	},
+	{
+		Name: "OptionalBlock",
+		Custom: Custom{
+			Type:      CustomBlock,
 			Label:     "OptString",
 			Optional:  true,
 			MinLength: PtrInt64(3),
