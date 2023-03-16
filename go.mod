@@ -6,7 +6,7 @@ require (
 	github.com/Masterminds/semver/v3 v3.2.0
 	github.com/Masterminds/sprig/v3 v3.2.3
 	github.com/charmbracelet/bubbletea v0.23.2
-	github.com/cqroot/prompt v0.8.6
+	github.com/cqroot/prompt v0.8.7
 	github.com/icholy/replace v0.6.0
 	github.com/spf13/afero v1.9.5
 	github.com/spf13/cobra v1.6.1

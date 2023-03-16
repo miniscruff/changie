@@ -124,8 +124,7 @@ func (c Custom) askBlock(stdinReader io.ReadCloser) (string, error) {
 		Write(
 			"",
 			write.WithHelp(true),
-            // write does not have a validate func yet
-			// write.WithValidateFunc(c.validateString),
+			write.WithValidateFunc(c.validateString),
 			write.WithTeaProgramOpts(tea.WithInput(stdinReader)),
 		)
 }
@@ -155,8 +154,8 @@ func (c Custom) AskPrompt(stdinReader io.ReadCloser) (string, error) {
 	switch c.Type {
 	case CustomString:
 		return c.askString(stdinReader)
-    case CustomBlock:
-        return c.askBlock(stdinReader)
+	case CustomBlock:
+		return c.askBlock(stdinReader)
 	case CustomInt:
 		return c.askInt(stdinReader)
 	case CustomEnum:
