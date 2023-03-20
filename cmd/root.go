@@ -29,7 +29,7 @@ being easy to use for developers and your release team.`,
 	cmd.AddCommand(genCmd)
 	cmd.AddCommand(initCmd)
 	cmd.AddCommand(latestCmd)
-	cmd.AddCommand(mergeCmd)
+	cmd.AddCommand(NewMerge(afs.ReadFile, afs.WriteFile, afs.ReadDir, afs.Open, os.Create, templateCache).Command)
 	cmd.AddCommand(NewNew(afs.ReadFile, os.Create, time.Now, templateCache).Command)
 	cmd.AddCommand(NewNext(afs.ReadDir, afs.ReadFile).Command)
 

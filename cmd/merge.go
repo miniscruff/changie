@@ -2,56 +2,77 @@ package cmd
 
 import (
 	"io"
-	"os"
 	"path/filepath"
 
-	"github.com/spf13/afero"
 	"github.com/spf13/cobra"
 
 	"github.com/miniscruff/changie/core"
+	"github.com/miniscruff/changie/shared"
 )
 
-var (
-	mergeDryRunOut io.Writer = os.Stdout
-	_mergeDryRun             = false
-)
+type Merge struct {
+	*cobra.Command
 
-var mergeCmd = &cobra.Command{
-	Use:   "merge",
-	Short: "Merge all versions into one changelog",
-	Long: `Merge all version files into one changelog file and run any replacement commands.
+	// cli args
+	DryRun bool
 
-Note that a newline is added between each version file.`,
-	RunE: runMerge,
+	// dependencies
+	ReadFile      shared.ReadFiler
+	WriteFile     shared.WriteFiler
+	ReadDir       shared.ReadDirer
+	OpenFile      shared.OpenFiler
+	CreateFile    shared.CreateFilerOS
+	TemplateCache *core.TemplateCache
 }
 
-func init() {
-	mergeCmd.Flags().BoolVarP(
-		&_mergeDryRun,
+func NewMerge(
+	readFile shared.ReadFiler,
+	writeFile shared.WriteFiler,
+	readDir shared.ReadDirer,
+	openFile shared.OpenFiler,
+	createFile shared.CreateFilerOS,
+	templateCache *core.TemplateCache,
+) *Merge {
+	m := &Merge{
+		ReadFile:      readFile,
+		WriteFile:     writeFile,
+		ReadDir:       readDir,
+		OpenFile:      openFile,
+		CreateFile:    createFile,
+		TemplateCache: templateCache,
+	}
+
+	cmd := &cobra.Command{
+		Use:   "merge",
+		Short: "Merge all versions into one changelog",
+		Long: `Merge all version files into one changelog file and run any replacement commands.
+
+Note that a newline is added between each version file.`,
+		RunE: m.Run,
+	}
+
+	cmd.Flags().BoolVarP(
+		&m.DryRun,
 		"dry-run", "d",
 		false,
 		"Print merged changelog instead of writing to disk, will not run replacements",
 	)
+
+	m.Command = cmd
+	return m
 }
 
-func runMerge(cmd *cobra.Command, args []string) error {
-	fs := afero.NewOsFs()
-	afs := afero.Afero{Fs: fs}
-
-	return mergePipeline(afs)
-}
-
-func mergePipeline(afs afero.Afero) error {
-	config, err := core.LoadConfig(afs.ReadFile)
+func (m *Merge) Run(cmd *cobra.Command, args []string) error {
+	config, err := core.LoadConfig(m.ReadFile)
 	if err != nil {
 		return err
 	}
 
 	var writer io.Writer
-	if _mergeDryRun {
-		writer = mergeDryRunOut
+	if m.DryRun {
+		writer = m.Command.OutOrStdout()
 	} else {
-		changeFile, changeErr := afs.Create(config.ChangelogPath)
+		changeFile, changeErr := m.CreateFile(config.ChangelogPath)
 		if changeErr != nil {
 			return changeErr
 		}
@@ -59,20 +80,13 @@ func mergePipeline(afs afero.Afero) error {
 		writer = changeFile
 	}
 
-	allVersions, err := core.GetAllVersions(afs.ReadDir, config, false)
+	allVersions, err := core.GetAllVersions(m.ReadDir, config, false)
 	if err != nil {
 		return err
 	}
 
 	if config.HeaderPath != "" {
-		headerFile, headerErr := afs.Open(filepath.Join(config.ChangesDir, config.HeaderPath))
-		if headerErr != nil {
-			return headerErr
-		}
-
-		defer headerFile.Close()
-
-		_, _ = io.Copy(writer, headerFile)
+		_ = core.AppendFile(m.OpenFile, writer, filepath.Join(config.ChangesDir, config.HeaderPath))
 		_ = core.WriteNewlines(writer, config.Newlines.AfterChangelogHeader)
 	}
 
@@ -80,7 +94,7 @@ func mergePipeline(afs afero.Afero) error {
 		_ = core.WriteNewlines(writer, config.Newlines.BeforeChangelogVersion)
 		versionPath := filepath.Join(config.ChangesDir, version.Original()+"."+config.VersionExt)
 
-		err = core.AppendFile(afs.Open, writer, versionPath)
+		err = core.AppendFile(m.OpenFile, writer, versionPath)
 		if err != nil {
 			return err
 		}
@@ -92,7 +106,7 @@ func mergePipeline(afs afero.Afero) error {
 		return nil
 	}
 
-	if _mergeDryRun {
+	if m.DryRun {
 		return nil
 	}
 
@@ -108,7 +122,7 @@ func mergePipeline(afs afero.Afero) error {
 	}
 
 	for _, rep := range config.Replacements {
-		err = rep.Execute(afs.ReadFile, afs.WriteFile, replaceData)
+		err = rep.Execute(m.ReadFile, m.WriteFile, replaceData)
 		if err != nil {
 			return err
 		}
