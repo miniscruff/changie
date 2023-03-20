@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"log"
 	"sort"
 	"strings"
 	"time"
@@ -144,7 +143,6 @@ func (change *Change) AskPrompts(config Config, stdinReader io.Reader) error {
 
 	err = change.promptForKind(&ctx)
 	if err != nil {
-		log.Println("error prompting for kind")
 		return err
 	}
 
@@ -246,7 +244,6 @@ func (change *Change) promptForKind(ctx *PromptContext) error {
 		}.AskPrompt(ctx.stdinReader)
 
 		if err != nil {
-			log.Printf("kind: '%v'\n", change.Kind)
 			return err
 		}
 	}
