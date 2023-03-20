@@ -27,6 +27,20 @@ func WithTempDir(t *testing.T) {
 	})
 }
 
+func WithTempDirConfig(t *testing.T, cfg Saver, existingPath ...string) {
+	t.Helper()
+	WithTempDir(t)
+
+	var err error
+	if len(existingPath) > 0 {
+		err = os.MkdirAll(filepath.Join(existingPath...), 0755)
+		Nil(t, err)
+	}
+
+	err = cfg.Save(os.WriteFile)
+	Nil(t, err)
+}
+
 // FileExists checks whether a file exists at the path defined.
 // Paths will be joined together using `filepath.Join`.
 func FileExists(t *testing.T, paths ...string) {
@@ -41,9 +55,11 @@ func FileExists(t *testing.T, paths ...string) {
 
 	switch {
 	case os.IsNotExist(err):
-		t.Errorf("expected file '%v' to exist", fullPath)
+		t.Logf("expected file '%v' to exist", fullPath)
+		t.FailNow()
 	default:
-		t.Errorf("error getting info for '%v': %v", fullPath, err)
+		t.Logf("error getting info for '%v': %v", fullPath, err)
+		t.FailNow()
 	}
 }
 
@@ -55,7 +71,8 @@ func FileContentsNoAfero(t *testing.T, contents string, paths ...string) {
 
 	bs, err := os.ReadFile(fullPath)
 	if err != nil {
-		t.Errorf("reading file: '%v'", fullPath)
+		t.Logf("reading file: '%v'", fullPath)
+		t.FailNow()
 	}
 
 	expected := string(bs)

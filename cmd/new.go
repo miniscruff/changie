@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"io"
-	"log"
 	"strings"
 
 	"github.com/spf13/cobra"
@@ -23,24 +22,21 @@ type New struct {
 
 	// dependencies
 	ReadFile      shared.ReadFiler
-	CreateFile    shared.CreateFiler
+	CreateFile    shared.CreateFilerOS
 	TimeNow       shared.TimeNow
-	StdinReader   io.ReadCloser
 	TemplateCache *core.TemplateCache
 }
 
 func NewNew(
 	readFile shared.ReadFiler,
-	createFile shared.CreateFiler,
+	createFile shared.CreateFilerOS,
 	timeNow shared.TimeNow,
-	stdinReader io.ReadCloser,
 	templateCache *core.TemplateCache,
 ) *New {
 	n := &New{
 		ReadFile:      readFile,
 		CreateFile:    createFile,
 		TimeNow:       timeNow,
-		StdinReader:   stdinReader,
 		TemplateCache: templateCache,
 	}
 
@@ -107,9 +103,8 @@ func (n *New) Run(cmd *cobra.Command, args []string) error {
 		Custom:    customValues,
 	}
 
-	err = change.AskPrompts(config, n.Command.InOrStdin())
+	err = change.AskPrompts(config, n.InOrStdin())
 	if err != nil {
-        log.Println("error 1")
 		return err
 	}
 
@@ -126,7 +121,6 @@ func (n *New) Run(cmd *cobra.Command, args []string) error {
 
 		err = n.TemplateCache.Execute(config.FragmentFileFormat, &outputPath, change)
 		if err != nil {
-        log.Println("error 2")
 			return err
 		}
 
@@ -134,7 +128,6 @@ func (n *New) Run(cmd *cobra.Command, args []string) error {
 
 		newFile, err := n.CreateFile(outputPath.String())
 		if err != nil {
-        log.Println("error 3")
 			return err
 		}
 		defer newFile.Close()

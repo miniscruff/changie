@@ -48,7 +48,7 @@ func testNew(t *testing.T, cmd *cobra.Command, w io.Writer, body string) {
 	cmd.SetArgs([]string{"new"})
 	then.DelayWrite(
 		t, w,
-        []byte("j"),
+		[]byte("j"),
 		[]byte{13},
 		[]byte(body),
 		[]byte{13},

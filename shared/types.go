@@ -19,6 +19,10 @@ type OpenFiler func(filename string) (afero.File, error)
 // CreateFiler is a func type for os.CreateFile
 type CreateFiler func(filename string) (afero.File, error)
 
+// CreateFilerOS is a func type for os.CreateFile
+// TEMP copy of create file until afero is completely removed
+type CreateFilerOS func(filename string) (*os.File, error)
+
 // WriteFiler is a func type for os.WriteFile
 type WriteFiler func(filename string, data []byte, perm os.FileMode) error
 
