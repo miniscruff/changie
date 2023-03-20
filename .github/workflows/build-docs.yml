@@ -23,7 +23,7 @@ jobs:
     steps:
 
     - name: Setup Go
-      uses: actions/setup-go@v3
+      uses: actions/setup-go@v4
       with:
         go-version: 1.19
 
@@ -38,6 +38,7 @@ jobs:
 
     - name: Build docs
       run: |
+        go run main.go gen
         awk 'NR > 1' CHANGELOG.md >> docs/content/guide/changelog/index.md
         hugo --minify -s docs -b https://changie.dev/
 
