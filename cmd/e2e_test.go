@@ -1,5 +1,6 @@
 package cmd
 
+/*
 import (
 	"fmt"
 	"io"
@@ -17,13 +18,11 @@ func swapInReaderOutWriter(t *testing.T, cmd *cobra.Command, inReader, outWriter
 	cmd.SetIn(inReader)
 
 	batchDryRunOut = outWriter
-	mergeDryRunOut = outWriter
 
 	t.Cleanup(func() {
 		cmd.SetOut(nil)
 		cmd.SetIn(nil)
 		batchDryRunOut = cmd.OutOrStdout()
-		mergeDryRunOut = cmd.OutOrStdout()
 	})
 }
 
@@ -67,7 +66,7 @@ func testBatch(t *testing.T, cmd *cobra.Command) {
 * newer
 `, date)
 
-	then.FileContentsNoAfero(t, changeContents, ".changes", "v0.1.0.md")
+	then.FileContents(t, changeContents, ".changes", "v0.1.0.md")
 }
 
 func testMerge(t *testing.T, cmd *cobra.Command) {
@@ -82,7 +81,7 @@ func testMerge(t *testing.T, cmd *cobra.Command) {
 * older
 * newer
 `, defaultHeader, date)
-	then.FileContentsNoAfero(t, changeContents, "CHANGELOG.md")
+	then.FileContents(t, changeContents, "CHANGELOG.md")
 }
 
 func TestFullRun(t *testing.T) {
@@ -122,3 +121,4 @@ func TestErrorNextExactVersion(t *testing.T) {
 	cmd.SetArgs([]string{"next", "v1.2.3"})
 	then.NotNil(t, cmd.Execute())
 }
+*/

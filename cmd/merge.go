@@ -21,7 +21,7 @@ type Merge struct {
 	WriteFile     shared.WriteFiler
 	ReadDir       shared.ReadDirer
 	OpenFile      shared.OpenFiler
-	CreateFile    shared.CreateFilerOS
+	CreateFile    shared.CreateFiler
 	TemplateCache *core.TemplateCache
 }
 
@@ -30,7 +30,7 @@ func NewMerge(
 	writeFile shared.WriteFiler,
 	readDir shared.ReadDirer,
 	openFile shared.OpenFiler,
-	createFile shared.CreateFilerOS,
+	createFile shared.CreateFiler,
 	templateCache *core.TemplateCache,
 ) *Merge {
 	m := &Merge{
@@ -48,6 +48,7 @@ func NewMerge(
 		Long: `Merge all version files into one changelog file and run any replacement commands.
 
 Note that a newline is added between each version file.`,
+        Args: cobra.NoArgs,
 		RunE: m.Run,
 	}
 
@@ -86,7 +87,11 @@ func (m *Merge) Run(cmd *cobra.Command, args []string) error {
 	}
 
 	if config.HeaderPath != "" {
-		_ = core.AppendFile(m.OpenFile, writer, filepath.Join(config.ChangesDir, config.HeaderPath))
+		err = core.AppendFile(m.OpenFile, writer, filepath.Join(config.ChangesDir, config.HeaderPath))
+		if err != nil {
+			return err
+		}
+
 		_ = core.WriteNewlines(writer, config.Newlines.AfterChangelogHeader)
 	}
 

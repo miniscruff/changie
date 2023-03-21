@@ -1,67 +1,73 @@
 package cmd
 
 import (
-	"io"
 	"strings"
 
-	"github.com/spf13/afero"
 	"github.com/spf13/cobra"
 
 	"github.com/miniscruff/changie/core"
+	"github.com/miniscruff/changie/shared"
 )
 
-// latestCmd represents the latest command
-var latestCmd = &cobra.Command{
-	Use:   "latest",
-	Short: "Echos the latest release version number",
-	Long:  `Echo the latest release version number to be used by CI tools.`,
-	RunE:  runLatest,
+type Latest struct {
+	*cobra.Command
+
+	// CLI args
+	RemovePrefix    bool
+	SkipPrereleases bool
+
+	// dependencies
+	ReadFile shared.ReadFiler
+	ReadDir  shared.ReadDirer
 }
 
-var (
-	removePrefix          bool = false
-	latestSkipPrereleases bool = false
-)
+func NewLatest(readFile shared.ReadFiler, readDir shared.ReadDirer) *Latest {
+	l := &Latest{
+		ReadFile: readFile,
+		ReadDir:  readDir,
+	}
 
-func init() {
-	latestCmd.Flags().BoolVarP(
-		&removePrefix,
+	cmd := &cobra.Command{
+		Use:   "latest",
+		Short: "Echos the latest release version number",
+		Long:  `Echo the latest release version number to be used by CI tools.`,
+		Args:  cobra.NoArgs,
+		RunE:  l.Run,
+	}
+	cmd.Flags().BoolVarP(
+		&l.RemovePrefix,
 		"remove-prefix", "r",
 		false,
 		"Remove 'v' prefix before echoing",
 	)
-	latestCmd.Flags().BoolVarP(
-		&latestSkipPrereleases,
+	cmd.Flags().BoolVarP(
+		&l.SkipPrereleases,
 		"skip-prereleases", "",
 		false,
 		"Excludes prereleases to determine the latest version.",
 	)
+
+	l.Command = cmd
+	return l
 }
 
-func runLatest(cmd *cobra.Command, args []string) error {
-	fs := afero.NewOsFs()
-	afs := afero.Afero{Fs: fs}
-
-	return latestPipeline(afs, cmd.OutOrStdout(), latestSkipPrereleases)
-}
-
-func latestPipeline(afs afero.Afero, w io.Writer, skipPrereleases bool) error {
-	config, err := core.LoadConfig(afs.ReadFile)
+func (l *Latest) Run(cmd *cobra.Command, args []string) error {
+	config, err := core.LoadConfig(l.ReadFile)
 	if err != nil {
 		return err
 	}
 
-	ver, err := core.GetLatestVersion(afs.ReadDir, config, skipPrereleases)
+	ver, err := core.GetLatestVersion(l.ReadDir, config, l.SkipPrereleases)
 	if err != nil {
 		return err
 	}
 
 	latestVer := ver.Original()
-	if removePrefix {
+	if l.RemovePrefix {
 		latestVer = strings.TrimPrefix(latestVer, "v")
 	}
 
-	_, err = w.Write([]byte(latestVer))
+	_, err = l.OutOrStdout().Write([]byte(latestVer))
 
 	return err
 }

@@ -3,8 +3,6 @@ package shared
 import (
 	"os"
 	"time"
-
-	"github.com/spf13/afero"
 )
 
 // TimeNow is a func type for time.Now
@@ -14,14 +12,10 @@ type TimeNow func() time.Time
 type MkdirAller func(path string, perm os.FileMode) error
 
 // OpenFiler is a func type for os.Open
-type OpenFiler func(filename string) (afero.File, error)
-
-// CreateFiler is a func type for os.CreateFile
-type CreateFiler func(filename string) (afero.File, error)
+type OpenFiler func(filename string) (*os.File, error)
 
 // CreateFilerOS is a func type for os.CreateFile
-// TEMP copy of create file until afero is completely removed
-type CreateFilerOS func(filename string) (*os.File, error)
+type CreateFiler func(filename string) (*os.File, error)
 
 // WriteFiler is a func type for os.WriteFile
 type WriteFiler func(filename string, data []byte, perm os.FileMode) error
@@ -33,4 +27,4 @@ type FileExister func(filename string) (bool, error)
 type ReadFiler func(filename string) ([]byte, error)
 
 // ReadDirer is a func type for os.ReadDir
-type ReadDirer func(dirname string) ([]os.FileInfo, error)
+type ReadDirer func(dirname string) ([]os.DirEntry, error)

@@ -40,13 +40,6 @@ func TestNewCreatesNewFileAfterPrompts(t *testing.T) {
 	then.WithTempDirConfig(t, cfg, cfg.ChangesDir, cfg.UnreleasedDir)
 	reader, writer := then.WithReadWritePipe(t)
 
-	cmd := NewNew(
-		os.ReadFile,
-		os.Create,
-		newMockTime,
-		core.NewTemplateCache(),
-	)
-	cmd.SetIn(reader)
 
 	then.DelayWrite(
 		t, writer,
@@ -54,6 +47,14 @@ func TestNewCreatesNewFileAfterPrompts(t *testing.T) {
 		[]byte("a message"),
 		[]byte{13},
 	)
+
+	cmd := NewNew(
+		os.ReadFile,
+		os.Create,
+		newMockTime,
+		core.NewTemplateCache(),
+	)
+	cmd.SetIn(reader)
 
 	err := cmd.Run(cmd.Command, nil)
 	then.Nil(t, err)
@@ -70,7 +71,7 @@ func TestNewCreatesNewFileAfterPrompts(t *testing.T) {
 	)
 
 	then.FileExists(t, futurePath, fileInfos[0].Name())
-	then.FileContentsNoAfero(t, changeContent, futurePath, fileInfos[0].Name())
+	then.FileContents(t, changeContent, futurePath, fileInfos[0].Name())
 }
 
 func TestErrorNewBadCustomValues(t *testing.T) {

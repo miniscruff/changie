@@ -22,14 +22,14 @@ type New struct {
 
 	// dependencies
 	ReadFile      shared.ReadFiler
-	CreateFile    shared.CreateFilerOS
+	CreateFile    shared.CreateFiler
 	TimeNow       shared.TimeNow
 	TemplateCache *core.TemplateCache
 }
 
 func NewNew(
 	readFile shared.ReadFiler,
-	createFile shared.CreateFilerOS,
+	createFile shared.CreateFiler,
 	timeNow shared.TimeNow,
 	templateCache *core.TemplateCache,
 ) *New {
@@ -46,6 +46,7 @@ func NewNew(
 		Long: `Creates a new change file.
 Change files are processed when batching a new release.
 Each version is merged together for the overall project changelog.`,
+		Args: cobra.NoArgs,
 		RunE: n.Run,
 	}
 

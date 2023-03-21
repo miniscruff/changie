@@ -9,7 +9,6 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/spf13/afero"
 	"github.com/spf13/cobra"
 
 	"github.com/miniscruff/changie/core"
@@ -43,7 +42,6 @@ type BatchPipeliner interface {
 }
 
 type standardBatchPipeline struct {
-	afs           afero.Afero
 	templateCache *core.TemplateCache
 }
 
@@ -157,37 +155,31 @@ func init() {
 }
 
 func runBatch(cmd *cobra.Command, args []string) error {
-	fs := afero.NewOsFs()
-	afs := afero.Afero{Fs: fs}
-
 	return batchPipeline(
 		&standardBatchPipeline{
-			afs:           afs,
 			templateCache: core.NewTemplateCache(),
 		},
-		afs,
 		args[0],
 	)
 }
 
 func getBatchData(
 	config core.Config,
-	afs afero.Afero,
 	version string,
 	changePaths []string,
 ) (*core.BatchData, error) {
-	previousVersion, err := core.GetLatestVersion(afs.ReadDir, config, false)
+	previousVersion, err := core.GetLatestVersion(os.ReadDir, config, false)
 	if err != nil {
 		return nil, err
 	}
 
-	allChanges, err := core.GetChanges(config, changePaths, afs.ReadDir, afs.ReadFile)
+	allChanges, err := core.GetChanges(config, changePaths, os.ReadDir, os.ReadFile)
 	if err != nil {
 		return nil, err
 	}
 
 	currentVersion, err := core.GetNextVersion(
-		afs.ReadDir,
+		os.ReadDir,
 		config,
 		version,
 		batchPrereleaseFlag,
@@ -213,13 +205,13 @@ func getBatchData(
 }
 
 //nolint:funlen,gocyclo
-func batchPipeline(batcher BatchPipeliner, afs afero.Afero, version string) error {
-	config, err := core.LoadConfig(afs.ReadFile)
+func batchPipeline(batcher BatchPipeliner, version string) error {
+	config, err := core.LoadConfig(os.ReadFile)
 	if err != nil {
 		return err
 	}
 
-	data, err := getBatchData(config, afs, version, batchIncludeDirs)
+	data, err := getBatchData(config, version, batchIncludeDirs)
 	if err != nil {
 		return err
 	}
@@ -231,13 +223,13 @@ func batchPipeline(batcher BatchPipeliner, afs afero.Afero, version string) erro
 		versionPath := filepath.Join(config.ChangesDir, data.Version+"."+config.VersionExt)
 
 		if !batchForce {
-			_, statErr := afs.Fs.Stat(versionPath)
+			_, statErr := os.Stat(versionPath)
 			if !errors.Is(statErr, fs.ErrNotExist) {
 				return fmt.Errorf("%w: %v", errVersionExists, versionPath)
 			}
 		}
 
-		versionFile, createErr := afs.Fs.Create(versionPath)
+		versionFile, createErr := os.Create(versionPath)
 		if createErr != nil {
 			return createErr
 		}
@@ -335,14 +327,14 @@ func batchPipeline(batcher BatchPipeliner, afs afero.Afero, version string) erro
 
 	if !batchDryRunFlag && removePrereleasesFlag {
 		// only chance we fail is already checked above
-		allVers, _ := core.GetAllVersions(afs.ReadDir, config, false)
+		allVers, _ := core.GetAllVersions(os.ReadDir, config, false)
 
 		for _, v := range allVers {
 			if v.Prerelease() == "" {
 				continue
 			}
 
-			err = afs.Remove(filepath.Join(
+			err = os.Remove(filepath.Join(
 				config.ChangesDir,
 				v.Original()+"."+config.VersionExt,
 			))
@@ -420,16 +412,17 @@ func (b *standardBatchPipeline) WriteFile(
 		return nil
 	}
 
-	fullPath := filepath.Join(config.ChangesDir, config.UnreleasedDir, relativePath)
+	// fullPath := filepath.Join(config.ChangesDir, config.UnreleasedDir, relativePath)
 
-	fileBytes, readErr := b.afs.ReadFile(fullPath)
-	if readErr != nil && !os.IsNotExist(readErr) {
-		return readErr
-	}
+    var fileBytes []byte
+	// fileBytes, readErr := b.afs.ReadFile(fullPath)
+	// if readErr != nil && !os.IsNotExist(readErr) {
+		// return readErr
+	// }
 
-	if os.IsNotExist(readErr) {
-		return nil
-	}
+	// if os.IsNotExist(readErr) {
+		// return nil
+	// }
 
 	return b.WriteTemplate(writer, string(fileBytes), beforeNewlines, afterNewlines, templateData)
 }
@@ -510,7 +503,8 @@ func (b *standardBatchPipeline) ClearUnreleased(
 	)
 
 	if moveDir != "" {
-		err = b.afs.MkdirAll(filepath.Join(config.ChangesDir, moveDir), core.CreateDirMode)
+        // TODO: Use b.MkdirAll
+		err = os.MkdirAll(filepath.Join(config.ChangesDir, moveDir), core.CreateDirMode)
 		if err != nil {
 			return err
 		}
@@ -524,13 +518,15 @@ func (b *standardBatchPipeline) ClearUnreleased(
 		fullPath := filepath.Join(config.ChangesDir, config.UnreleasedDir, p)
 
 		// make sure the file exists first
-		_, err = b.afs.Stat(fullPath)
+        // TODO: use b.Stat
+		_, err = os.Stat(fullPath)
 		if err == nil {
 			filesToMove = append(filesToMove, fullPath)
 		}
 	}
 
-	filePaths, err := core.FindChangeFiles(config, b.afs.ReadDir, includeDirs)
+    // TODO: use b.ReadDir
+	filePaths, err := core.FindChangeFiles(config, os.ReadDir, includeDirs)
 	if err != nil {
 		return err
 	}
@@ -539,7 +535,8 @@ func (b *standardBatchPipeline) ClearUnreleased(
 
 	for _, f := range filesToMove {
 		if moveDir != "" {
-			err = b.afs.Rename(
+            // TODO: do not use os directly
+			err = os.Rename(
 				f,
 				filepath.Join(config.ChangesDir, moveDir, filepath.Base(f)),
 			)
@@ -547,7 +544,7 @@ func (b *standardBatchPipeline) ClearUnreleased(
 				return err
 			}
 		} else {
-			err = b.afs.Remove(f)
+			err = os.Remove(f)
 			if err != nil {
 				return err
 			}
@@ -557,9 +554,10 @@ func (b *standardBatchPipeline) ClearUnreleased(
 	for _, include := range includeDirs {
 		fullInclude := filepath.Join(config.ChangesDir, include)
 
-		files, _ := b.afs.ReadDir(fullInclude)
+        // TODO: do not use os
+		files, _ := os.ReadDir(fullInclude)
 		if len(files) == 0 {
-			err = b.afs.RemoveAll(fullInclude)
+			err = os.RemoveAll(fullInclude)
 			if err != nil {
 				return err
 			}

@@ -4,13 +4,12 @@ package then
 // afero, afero is going to be removed in favor of plain IO/OS calls
 // so no docs are provided.
 
+/*
 import (
 	"path/filepath"
 	"testing"
 
 	"github.com/spf13/afero"
-
-	"github.com/miniscruff/changie/shared"
 )
 
 func WithAferoFS() (afero.Fs, afero.Afero) {
@@ -18,10 +17,6 @@ func WithAferoFS() (afero.Fs, afero.Afero) {
 	afs := afero.Afero{Fs: fs}
 
 	return fs, afs
-}
-
-type Saver interface {
-	Save(shared.WriteFiler) error
 }
 
 func WithAferoFSConfig(t *testing.T, cfg Saver) (*MockFS, afero.Afero) {
@@ -34,13 +29,13 @@ func WithAferoFSConfig(t *testing.T, cfg Saver) (*MockFS, afero.Afero) {
 	return fs, afs
 }
 
-func CreateFile(t *testing.T, afs afero.Afero, paths ...string) {
+func CreateFileAfero(t *testing.T, afs afero.Afero, paths ...string) {
 	fullPath := filepath.Join(paths...)
 	_, err := afs.Create(fullPath)
 	Nil(t, err)
 }
 
-func WriteFile(t *testing.T, afs afero.Afero, data []byte, paths ...string) {
+func WriteFileAfero(t *testing.T, afs afero.Afero, data []byte, paths ...string) {
 	fullPath := filepath.Join(paths...)
 	f, err := afs.Create(fullPath)
 	Nil(t, err)
@@ -49,7 +44,7 @@ func WriteFile(t *testing.T, afs afero.Afero, data []byte, paths ...string) {
 	Nil(t, err)
 }
 
-func FileContents(t *testing.T, afs afero.Afero, contents string, paths ...string) {
+func FileContentsAfero(t *testing.T, afs afero.Afero, contents string, paths ...string) {
 	t.Helper()
 
 	fullPath := filepath.Join(paths...)
@@ -62,3 +57,4 @@ func FileContents(t *testing.T, afs afero.Afero, contents string, paths ...strin
 	expected := string(bs)
 	Equals(t, expected, contents)
 }
+*/

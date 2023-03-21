@@ -9,7 +9,7 @@ import (
 )
 
 func TestFindAndReplaceContentsInAFile(t *testing.T) {
-	_, afs := then.WithAferoFS()
+    then.WithTempDir(t)
 	filepath := "file.txt"
 	startData := `first line
 second line
@@ -20,7 +20,7 @@ replaced here
 third line
 ignore me`
 
-	err := afs.WriteFile(filepath, []byte(startData), os.ModeTemporary)
+	err := os.WriteFile(filepath, []byte(startData), os.ModePerm)
 	then.Nil(t, err)
 
 	rep := Replacement{
@@ -28,13 +28,13 @@ ignore me`
 		Find:    "second line",
 		Replace: "replaced here",
 	}
-	err = rep.Execute(afs.ReadFile, afs.WriteFile, ReplaceData{})
+	err = rep.Execute(os.ReadFile, os.WriteFile, ReplaceData{})
 	then.Nil(t, err)
-	then.FileContents(t, afs, endData, filepath)
+	then.FileContents(t, endData, filepath)
 }
 
 func TestFindAndReplaceWithTemplate(t *testing.T) {
-	_, afs := then.WithAferoFS()
+    then.WithTempDir(t)
 	filepath := "template.txt"
 	startData := `{
   "name": "demo-project",
@@ -45,7 +45,7 @@ func TestFindAndReplaceWithTemplate(t *testing.T) {
   "version": "1.1.0",
 }`
 
-	err := afs.WriteFile(filepath, []byte(startData), os.ModeTemporary)
+	err := os.WriteFile(filepath, []byte(startData), os.ModePerm)
 	then.Nil(t, err)
 
 	rep := Replacement{
@@ -53,15 +53,15 @@ func TestFindAndReplaceWithTemplate(t *testing.T) {
 		Find:    `  "version": ".*",`,
 		Replace: `  "version": "{{.VersionNoPrefix}}",`,
 	}
-	err = rep.Execute(afs.ReadFile, afs.WriteFile, ReplaceData{
+	err = rep.Execute(os.ReadFile, os.WriteFile, ReplaceData{
 		VersionNoPrefix: "1.1.0",
 	})
 	then.Nil(t, err)
-	then.FileContents(t, afs, endData, filepath)
+	then.FileContents(t, endData, filepath)
 }
 
 func TestFindAndReplaceStartOfLine(t *testing.T) {
-	_, afs := then.WithAferoFS()
+    then.WithTempDir(t)
 	filepath := "start.txt"
 	startData := `# yaml file
 version: 0.0.1
@@ -76,7 +76,7 @@ level1:
 		version: 0.0.1
 `
 
-	err := afs.WriteFile(filepath, []byte(startData), os.ModeTemporary)
+	err := os.WriteFile(filepath, []byte(startData), os.ModePerm)
 	then.Nil(t, err)
 
 	rep := Replacement{
@@ -84,15 +84,15 @@ level1:
 		Find:    "^version: .*",
 		Replace: "version: {{.VersionNoPrefix}}",
 	}
-	err = rep.Execute(afs.ReadFile, afs.WriteFile, ReplaceData{
+	err = rep.Execute(os.ReadFile, os.WriteFile, ReplaceData{
 		VersionNoPrefix: "1.2.3",
 	})
 	then.Nil(t, err)
-	then.FileContents(t, afs, endData, filepath)
+	then.FileContents(t, endData, filepath)
 }
 
 func TestFindAndReplaceCaseInsensitive(t *testing.T) {
-	_, afs := then.WithAferoFS()
+    then.WithTempDir(t)
 	filepath := "insensitive.txt"
 	startData := `# yaml file
 Version: 0.0.1
@@ -107,7 +107,7 @@ level1:
 		version: 0.0.1
 `
 
-	err := afs.WriteFile(filepath, []byte(startData), os.ModeTemporary)
+	err := os.WriteFile(filepath, []byte(startData), os.ModePerm)
 	then.Nil(t, err)
 
 	rep := Replacement{
@@ -116,42 +116,42 @@ level1:
 		Replace: "version: {{.VersionNoPrefix}}",
 		Flags:   "im",
 	}
-	err = rep.Execute(afs.ReadFile, afs.WriteFile, ReplaceData{
+	err = rep.Execute(os.ReadFile, os.WriteFile, ReplaceData{
 		VersionNoPrefix: "1.2.3",
 	})
 	then.Nil(t, err)
-	then.FileContents(t, afs, endData, filepath)
+	then.FileContents(t, endData, filepath)
 }
 
 func TestErrorBadFileRead(t *testing.T) {
-	_, afs := then.WithAferoFS()
+    then.WithTempDir(t)
 	rep := Replacement{
 		Path: "does not exist",
 	}
-	err := rep.Execute(afs.ReadFile, afs.WriteFile, ReplaceData{})
+	err := rep.Execute(os.ReadFile, os.WriteFile, ReplaceData{})
 	then.NotNil(t, err)
 }
 
 func TestErrorBadTemplateParse(t *testing.T) {
-	_, afs := then.WithAferoFS()
+    then.WithTempDir(t)
 	rep := Replacement{
 		Replace: "{{.bad..}}",
 	}
-	err := rep.Execute(afs.ReadFile, afs.WriteFile, ReplaceData{})
+	err := rep.Execute(os.ReadFile, os.WriteFile, ReplaceData{})
 	then.NotNil(t, err)
 }
 
 func TestErrorBadTemplateExec(t *testing.T) {
-	_, afs := then.WithAferoFS()
+    then.WithTempDir(t)
 	rep := Replacement{
 		Replace: "{{.bad}}",
 	}
-	err := rep.Execute(afs.ReadFile, afs.WriteFile, ReplaceData{})
+	err := rep.Execute(os.ReadFile, os.WriteFile, ReplaceData{})
 	then.NotNil(t, err)
 }
 
 func TestErrorBadWriteFile(t *testing.T) {
-	_, afs := then.WithAferoFS()
+    then.WithTempDir(t)
 	filepath := "err.txt"
 	startData := "some data"
 	mockError := errors.New("bad write")
@@ -159,7 +159,7 @@ func TestErrorBadWriteFile(t *testing.T) {
 		return mockError
 	}
 
-	err := afs.WriteFile(filepath, []byte(startData), os.ModeTemporary)
+	err := os.WriteFile(filepath, []byte(startData), os.ModePerm)
 	then.Nil(t, err)
 
 	rep := Replacement{
@@ -167,6 +167,6 @@ func TestErrorBadWriteFile(t *testing.T) {
 		Find:    "some",
 		Replace: "none",
 	}
-	err = rep.Execute(afs.ReadFile, badWrite, ReplaceData{})
+	err = rep.Execute(os.ReadFile, badWrite, ReplaceData{})
 	then.Err(t, mockError, err)
 }

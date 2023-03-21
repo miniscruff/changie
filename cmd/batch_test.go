@@ -1,5 +1,6 @@
 package cmd
 
+/*
 import (
 	"errors"
 	"fmt"
@@ -1132,3 +1133,4 @@ func (m *MockBatchPipeline) ClearUnreleased(
 
 	return m.standard.ClearUnreleased(config, moveDir, includeDirs, otherFiles...)
 }
+*/

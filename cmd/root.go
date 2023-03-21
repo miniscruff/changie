@@ -4,7 +4,6 @@ import (
 	"os"
 	"time"
 
-	"github.com/spf13/afero"
 	"github.com/spf13/cobra"
 
 	"github.com/miniscruff/changie/core"
@@ -21,17 +20,15 @@ Changie is aimed at seemlessly integrating into your release process while also
 being easy to use for developers and your release team.`,
 	}
 
-	fs := afero.NewOsFs()
-	afs := afero.Afero{Fs: fs}
 	templateCache := core.NewTemplateCache()
 
 	cmd.AddCommand(batchCmd)
 	cmd.AddCommand(genCmd)
 	cmd.AddCommand(initCmd)
-	cmd.AddCommand(latestCmd)
-	cmd.AddCommand(NewMerge(afs.ReadFile, afs.WriteFile, afs.ReadDir, afs.Open, os.Create, templateCache).Command)
-	cmd.AddCommand(NewNew(afs.ReadFile, os.Create, time.Now, templateCache).Command)
-	cmd.AddCommand(NewNext(afs.ReadDir, afs.ReadFile).Command)
+	cmd.AddCommand(NewLatest(os.ReadFile, os.ReadDir).Command)
+	cmd.AddCommand(NewMerge(os.ReadFile, os.WriteFile, os.ReadDir, os.Open, os.Create, templateCache).Command)
+	cmd.AddCommand(NewNew(os.ReadFile, os.Create, time.Now, templateCache).Command)
+	cmd.AddCommand(NewNext(os.ReadDir, os.ReadFile).Command)
 
 	return cmd
 }

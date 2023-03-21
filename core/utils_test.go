@@ -8,7 +8,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/spf13/afero"
 	"gopkg.in/yaml.v2"
 
 	"github.com/miniscruff/changie/then"
@@ -34,30 +33,30 @@ func utilsTestConfig() *Config {
 }
 
 func TestAppendFileAppendsTwoFiles(t *testing.T) {
-	fs, afs := then.WithAferoFS()
+	then.WithTempDir(t)
 	rootPath := "root.txt"
 	appendPath := "append.txt"
 
-	rootFile, err := fs.Create(rootPath)
+	rootFile, err := os.Create(rootPath)
 	then.Nil(t, err)
 
 	_, err = rootFile.WriteString("root")
 	then.Nil(t, err)
 
-	err = afs.WriteFile(appendPath, []byte(" append"), CreateFileMode)
+	err = os.WriteFile(appendPath, []byte(" append"), CreateFileMode)
 	then.Nil(t, err)
 
-	err = AppendFile(afs.Open, rootFile, appendPath)
+	err = AppendFile(os.Open, rootFile, appendPath)
 	then.Nil(t, err)
 
 	rootFile.Close()
-	then.FileContents(t, afs, "root append", rootPath)
+	then.FileContents(t, "root append", rootPath)
 }
 
 func TestErrorAppendFileIfOpenFails(t *testing.T) {
 	mockError := errors.New("bad open")
 	builder := &strings.Builder{}
-	badOpen := func(filename string) (afero.File, error) {
+	badOpen := func(filename string) (*os.File, error) {
 		return nil, mockError
 	}
 
@@ -69,13 +68,13 @@ func TestGetAllVersionsReturnsAllVersions(t *testing.T) {
 	config := Config{
 		HeaderPath: "header.md",
 	}
-	mockRead := func(dirname string) ([]os.FileInfo, error) {
-		return []os.FileInfo{
-			&then.MockFileInfo{MockIsDir: true, MockName: "dir"},
-			&then.MockFileInfo{MockName: "header.md"},
-			&then.MockFileInfo{MockName: "v0.1.0.md"},
-			&then.MockFileInfo{MockName: "v0.2.0.md"},
-			&then.MockFileInfo{MockName: "not-sem-ver.md"},
+	mockRead := func(dirname string) ([]os.DirEntry, error) {
+		return []os.DirEntry{
+			&then.MockDirEntry{MockIsDir: true, MockName: "dir"},
+			&then.MockDirEntry{MockName: "header.md"},
+			&then.MockDirEntry{MockName: "v0.1.0.md"},
+			&then.MockDirEntry{MockName: "v0.2.0.md"},
+			&then.MockDirEntry{MockName: "not-sem-ver.md"},
 		}, nil
 	}
 
@@ -87,10 +86,10 @@ func TestGetAllVersionsReturnsAllVersions(t *testing.T) {
 
 func TestGetLatestVersionReturnsMostRecent(t *testing.T) {
 	config := Config{}
-	mockRead := func(dirname string) ([]os.FileInfo, error) {
-		return []os.FileInfo{
-			&then.MockFileInfo{MockName: "v0.1.0.md"},
-			&then.MockFileInfo{MockName: "v0.2.0.md"},
+	mockRead := func(dirname string) ([]os.DirEntry, error) {
+		return []os.DirEntry{
+			&then.MockDirEntry{MockName: "v0.1.0.md"},
+			&then.MockDirEntry{MockName: "v0.2.0.md"},
 		}, nil
 	}
 
@@ -101,10 +100,10 @@ func TestGetLatestVersionReturnsMostRecent(t *testing.T) {
 
 func TestGetLatestReturnsRC(t *testing.T) {
 	config := Config{}
-	mockRead := func(dirname string) ([]os.FileInfo, error) {
-		return []os.FileInfo{
-			&then.MockFileInfo{MockName: "v0.1.0.md"},
-			&then.MockFileInfo{MockName: "v0.2.0-rc1.md"},
+	mockRead := func(dirname string) ([]os.DirEntry, error) {
+		return []os.DirEntry{
+			&then.MockDirEntry{MockName: "v0.1.0.md"},
+			&then.MockDirEntry{MockName: "v0.2.0-rc1.md"},
 		}, nil
 	}
 
@@ -115,10 +114,10 @@ func TestGetLatestReturnsRC(t *testing.T) {
 
 func TestGetLatestCanSkipRC(t *testing.T) {
 	config := Config{}
-	mockRead := func(dirname string) ([]os.FileInfo, error) {
-		return []os.FileInfo{
-			&then.MockFileInfo{MockName: "v0.1.0.md"},
-			&then.MockFileInfo{MockName: "v0.2.0-rc1.md"},
+	mockRead := func(dirname string) ([]os.DirEntry, error) {
+		return []os.DirEntry{
+			&then.MockDirEntry{MockName: "v0.1.0.md"},
+			&then.MockDirEntry{MockName: "v0.2.0-rc1.md"},
 		}, nil
 	}
 
@@ -129,8 +128,8 @@ func TestGetLatestCanSkipRC(t *testing.T) {
 
 func TestGetLatestReturnsZerosIfNoVersionsExist(t *testing.T) {
 	config := Config{}
-	mockRead := func(dirname string) ([]os.FileInfo, error) {
-		return []os.FileInfo{}, nil
+	mockRead := func(dirname string) ([]os.DirEntry, error) {
+		return []os.DirEntry{}, nil
 	}
 
 	ver, err := GetLatestVersion(mockRead, config, false)
@@ -141,8 +140,8 @@ func TestGetLatestReturnsZerosIfNoVersionsExist(t *testing.T) {
 func TestErrorAllVersionsBadReadDir(t *testing.T) {
 	config := Config{}
 	mockError := errors.New("bad stuff")
-	mockRead := func(dirname string) ([]os.FileInfo, error) {
-		return []os.FileInfo{}, mockError
+	mockRead := func(dirname string) ([]os.DirEntry, error) {
+		return []os.DirEntry{}, mockError
 	}
 
 	vers, err := GetAllVersions(mockRead, config, false)
@@ -153,8 +152,8 @@ func TestErrorAllVersionsBadReadDir(t *testing.T) {
 func TestErrorLatestVersionBadReadDir(t *testing.T) {
 	config := Config{}
 	mockError := errors.New("bad stuff")
-	mockRead := func(dirname string) ([]os.FileInfo, error) {
-		return []os.FileInfo{}, mockError
+	mockRead := func(dirname string) ([]os.DirEntry, error) {
+		return []os.DirEntry{}, mockError
 	}
 
 	ver, err := GetLatestVersion(mockRead, config, false)
@@ -165,8 +164,8 @@ func TestErrorLatestVersionBadReadDir(t *testing.T) {
 func TestErrorNextVersionBadReadDir(t *testing.T) {
 	config := Config{}
 	mockError := errors.New("bad stuff")
-	mockRead := func(dirname string) ([]os.FileInfo, error) {
-		return []os.FileInfo{}, mockError
+	mockRead := func(dirname string) ([]os.DirEntry, error) {
+		return []os.DirEntry{}, mockError
 	}
 
 	ver, err := GetNextVersion(mockRead, config, "major", nil, nil, nil)
@@ -176,9 +175,9 @@ func TestErrorNextVersionBadReadDir(t *testing.T) {
 
 func TestErrorNextVersionBadVersion(t *testing.T) {
 	config := Config{}
-	mockRead := func(dirname string) ([]os.FileInfo, error) {
-		return []os.FileInfo{
-			&then.MockFileInfo{MockName: "v0.1.0.md"},
+	mockRead := func(dirname string) ([]os.DirEntry, error) {
+		return []os.DirEntry{
+			&then.MockDirEntry{MockName: "v0.1.0.md"},
 		}, nil
 	}
 
@@ -256,9 +255,9 @@ func TestNextVersionOptions(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			config := Config{}
-			mockRead := func(dirname string) ([]os.FileInfo, error) {
-				return []os.FileInfo{
-					&then.MockFileInfo{MockName: tc.latestVersion + ".md"},
+			mockRead := func(dirname string) ([]os.DirEntry, error) {
+				return []os.DirEntry{
+					&then.MockDirEntry{MockName: tc.latestVersion + ".md"},
 				}, nil
 			}
 
@@ -287,9 +286,9 @@ func TestNextVersionOptionsWithAuto(t *testing.T) {
 		},
 	}
 	latestVersion := "v0.2.3"
-	mockRead := func(dirname string) ([]os.FileInfo, error) {
-		return []os.FileInfo{
-			&then.MockFileInfo{MockName: latestVersion + ".md"},
+	mockRead := func(dirname string) ([]os.DirEntry, error) {
+		return []os.DirEntry{
+			&then.MockDirEntry{MockName: latestVersion + ".md"},
 		}, nil
 	}
 	changes := []Change{
@@ -312,9 +311,9 @@ func TestErrorNextVersionAutoMissingKind(t *testing.T) {
 		},
 	}
 	latestVersion := "v0.2.3"
-	mockRead := func(dirname string) ([]os.FileInfo, error) {
-		return []os.FileInfo{
-			&then.MockFileInfo{MockName: latestVersion + ".md"},
+	mockRead := func(dirname string) ([]os.DirEntry, error) {
+		return []os.DirEntry{
+			&then.MockDirEntry{MockName: latestVersion + ".md"},
 		}, nil
 	}
 	changes := []Change{
@@ -329,9 +328,9 @@ func TestErrorNextVersionAutoMissingKind(t *testing.T) {
 
 func TestErrorNextVersionBadPrerelease(t *testing.T) {
 	config := Config{}
-	mockRead := func(dirname string) ([]os.FileInfo, error) {
-		return []os.FileInfo{
-			&then.MockFileInfo{MockName: "v0.2.5.md"},
+	mockRead := func(dirname string) ([]os.DirEntry, error) {
+		return []os.DirEntry{
+			&then.MockDirEntry{MockName: "v0.2.5.md"},
 		}, nil
 	}
 
@@ -341,9 +340,9 @@ func TestErrorNextVersionBadPrerelease(t *testing.T) {
 
 func TestErrorNextVersionBadMeta(t *testing.T) {
 	config := Config{}
-	mockRead := func(dirname string) ([]os.FileInfo, error) {
-		return []os.FileInfo{
-			&then.MockFileInfo{MockName: "v0.2.5.md"},
+	mockRead := func(dirname string) ([]os.DirEntry, error) {
+		return []os.DirEntry{
+			&then.MockDirEntry{MockName: "v0.2.5.md"},
 		}, nil
 	}
 
@@ -356,31 +355,31 @@ func TestCanFindChangeFiles(t *testing.T) {
 		ChangesDir:    ".chng",
 		UnreleasedDir: "unrel",
 	}
-	mockRead := func(dirname string) ([]os.FileInfo, error) {
+	mockRead := func(dirname string) ([]os.DirEntry, error) {
 		switch dirname {
 		case filepath.Join(".chng", "alpha"):
-			return []os.FileInfo{
-				&then.MockFileInfo{MockName: "c.yaml"},
-				&then.MockFileInfo{MockName: "d.yaml"},
+			return []os.DirEntry{
+				&then.MockDirEntry{MockName: "c.yaml"},
+				&then.MockDirEntry{MockName: "d.yaml"},
 			}, nil
 		case filepath.Join(".chng", "beta"):
-			return []os.FileInfo{
-				&then.MockFileInfo{MockName: "e.yaml"},
-				&then.MockFileInfo{MockName: "f.yaml"},
-				&then.MockFileInfo{MockName: "ignored.md"},
+			return []os.DirEntry{
+				&then.MockDirEntry{MockName: "e.yaml"},
+				&then.MockDirEntry{MockName: "f.yaml"},
+				&then.MockDirEntry{MockName: "ignored.md"},
 			}, nil
 		case filepath.Join(".chng", "unrel"):
-			return []os.FileInfo{
-				&then.MockFileInfo{MockName: "a.yaml"},
-				&then.MockFileInfo{MockName: "b.yaml"},
+			return []os.DirEntry{
+				&then.MockDirEntry{MockName: "a.yaml"},
+				&then.MockDirEntry{MockName: "b.yaml"},
 			}, nil
 		case filepath.Join(".chng", "ignored"):
-			return []os.FileInfo{
-				&then.MockFileInfo{MockName: "g.yaml"},
+			return []os.DirEntry{
+				&then.MockDirEntry{MockName: "g.yaml"},
 			}, nil
 		case ".chng":
-			return []os.FileInfo{
-				&then.MockFileInfo{MockName: "h.md"},
+			return []os.DirEntry{
+				&then.MockDirEntry{MockName: "h.md"},
 			}, nil
 		}
 
@@ -404,7 +403,7 @@ func TestCanFindChangeFiles(t *testing.T) {
 func TestErrorOnFindChangeFilesIfBadRead(t *testing.T) {
 	mockErr := errors.New("bad read")
 	config := Config{}
-	mockRead := func(dirname string) ([]os.FileInfo, error) {
+	mockRead := func(dirname string) ([]os.DirEntry, error) {
 		return nil, mockErr
 	}
 
@@ -590,7 +589,7 @@ func TestErrorHighestAutoLevelWithNoChanges(t *testing.T) {
 
 func TestGetAllChanges(t *testing.T) {
 	cfg := utilsTestConfig()
-	_, afs := then.WithAferoFSConfig(t, cfg)
+	then.WithTempDirConfig(t, cfg, cfg.ChangesDir, cfg.UnreleasedDir)
 	orderedTimes := []time.Time{
 		time.Date(2019, 5, 25, 20, 45, 0, 0, time.UTC),
 		time.Date(2017, 4, 25, 15, 20, 0, 0, time.UTC),
@@ -600,11 +599,11 @@ func TestGetAllChanges(t *testing.T) {
 	bPath := filepath.Join(cfg.ChangesDir, cfg.UnreleasedDir, "b.yaml")
 	cPath := filepath.Join(cfg.ChangesDir, cfg.UnreleasedDir, "c.yaml")
 
-	readDir := func(dirname string) ([]os.FileInfo, error) {
-		return []os.FileInfo{
-			&then.MockFileInfo{MockName: "a.yaml"},
-			&then.MockFileInfo{MockName: "b.yaml"},
-			&then.MockFileInfo{MockName: "c.yaml"},
+	readDir := func(dirname string) ([]os.DirEntry, error) {
+		return []os.DirEntry{
+			&then.MockDirEntry{MockName: "a.yaml"},
+			&then.MockDirEntry{MockName: "b.yaml"},
+			&then.MockDirEntry{MockName: "c.yaml"},
 		}, nil
 	}
 	readFile := func(filename string) ([]byte, error) {
@@ -622,7 +621,7 @@ func TestGetAllChanges(t *testing.T) {
 		return yaml.Marshal(&c)
 	}
 
-	then.CreateFile(t, afs, cfg.ChangesDir, cfg.UnreleasedDir, "ignored.txt")
+	then.CreateFile(t, cfg.ChangesDir, cfg.UnreleasedDir, "ignored.txt")
 
 	changes, err := GetChanges(*cfg, nil, readDir, readFile)
 	then.Nil(t, err)
@@ -633,17 +632,17 @@ func TestGetAllChanges(t *testing.T) {
 
 func TestBatchErrorIfUnableToReadDir(t *testing.T) {
 	cfg := utilsTestConfig()
-	_, afs := then.WithAferoFSConfig(t, cfg)
+	then.WithTempDirConfig(t, cfg, cfg.ChangesDir, cfg.UnreleasedDir)
 
 	mockErr := errors.New("bad mock open")
-	readDir := func(dirname string) ([]os.FileInfo, error) {
+	readDir := func(dirname string) ([]os.DirEntry, error) {
 		return nil, mockErr
 	}
 	readFile := func(filename string) ([]byte, error) {
 		return nil, nil
 	}
 
-	then.CreateFile(t, afs, cfg.ChangesDir, cfg.UnreleasedDir, "ignored.txt")
+	then.CreateFile(t, cfg.ChangesDir, cfg.UnreleasedDir, "ignored.txt")
 
 	_, err := GetChanges(*cfg, nil, readDir, readFile)
 	then.Err(t, mockErr, err)
@@ -651,11 +650,11 @@ func TestBatchErrorIfUnableToReadDir(t *testing.T) {
 
 func TestBatchErrorBadChangesFile(t *testing.T) {
 	cfg := utilsTestConfig()
-	_, afs := then.WithAferoFSConfig(t, cfg)
+	then.WithTempDirConfig(t, cfg, cfg.ChangesDir, cfg.UnreleasedDir)
 
-	readDir := func(dirname string) ([]os.FileInfo, error) {
-		return []os.FileInfo{
-			&then.MockFileInfo{MockName: "a.yaml"},
+	readDir := func(dirname string) ([]os.DirEntry, error) {
+		return []os.DirEntry{
+			&then.MockDirEntry{MockName: "a.yaml"},
 		}, nil
 	}
 	mockErr := errors.New("bad mock open")
@@ -663,7 +662,7 @@ func TestBatchErrorBadChangesFile(t *testing.T) {
 		return nil, mockErr
 	}
 
-	then.CreateFile(t, afs, cfg.ChangesDir, cfg.UnreleasedDir, "ignored.txt")
+	then.CreateFile(t, cfg.ChangesDir, cfg.UnreleasedDir, "ignored.txt")
 
 	_, err := GetChanges(*cfg, nil, readDir, readFile)
 	then.Err(t, mockErr, err)
