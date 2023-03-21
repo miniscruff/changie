@@ -23,8 +23,8 @@ being easy to use for developers and your release team.`,
 	templateCache := core.NewTemplateCache()
 
 	cmd.AddCommand(batchCmd)
-	cmd.AddCommand(genCmd)
-	cmd.AddCommand(initCmd)
+	cmd.AddCommand(NewGen().Command)
+	cmd.AddCommand(NewInit(os.MkdirAll, os.WriteFile).Command)
 	cmd.AddCommand(NewLatest(os.ReadFile, os.ReadDir).Command)
 	cmd.AddCommand(NewMerge(os.ReadFile, os.WriteFile, os.ReadDir, os.Open, os.Create, templateCache).Command)
 	cmd.AddCommand(NewNew(os.ReadFile, os.Create, time.Now, templateCache).Command)

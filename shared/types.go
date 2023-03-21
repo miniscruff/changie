@@ -20,9 +20,6 @@ type CreateFiler func(filename string) (*os.File, error)
 // WriteFiler is a func type for os.WriteFile
 type WriteFiler func(filename string, data []byte, perm os.FileMode) error
 
-// FileExister checks whether a file exists or not
-type FileExister func(filename string) (bool, error)
-
 // ReadFiler is a func type for os.ReadFile
 type ReadFiler func(filename string) ([]byte, error)
 

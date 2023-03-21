@@ -15,8 +15,6 @@ import (
 )
 
 type BatchPipeliner interface {
-	// afs afero.Afero should be part of struct
-	// GetChanges(config core.Config, searchPaths []string) ([]core.Change, error)
 	WriteTemplate(
 		writer io.Writer,
 		template string,

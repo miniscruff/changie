@@ -3,6 +3,7 @@ package core
 import (
 	"errors"
 	"io"
+	"os"
 	"path/filepath"
 	"sort"
 	"strings"
@@ -286,4 +287,15 @@ func GetChanges(
 	SortByConfig(config).Sort(changes)
 
 	return changes, nil
+}
+
+func FileExists(path string) (bool, error) {
+	fi, err := os.Stat(path)
+	if err == nil {
+		return !fi.IsDir(), nil
+	}
+	if os.IsNotExist(err) {
+		return false, nil
+	}
+	return false, err
 }

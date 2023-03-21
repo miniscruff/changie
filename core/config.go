@@ -354,9 +354,9 @@ func (c *Config) Save(wf shared.WriteFiler) error {
 }
 
 // Exists returns whether or not a config already exists
-func (c *Config) Exists(fe shared.FileExister) (bool, error) {
+func (c *Config) Exists() (bool, error) {
 	for _, p := range ConfigPaths {
-		if exists, err := fe(p); exists || err != nil {
+		if exists, err := FileExists(p); exists || err != nil {
 			return exists, err
 		}
 	}

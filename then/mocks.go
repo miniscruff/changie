@@ -1,5 +1,6 @@
 package then
 
+/*
 import (
 	"os"
 	"time"
@@ -209,3 +210,4 @@ func (m *MockFile) Contents() []byte {
 func (m *MockFile) String() string {
 	return string(m.contents)
 }
+*/

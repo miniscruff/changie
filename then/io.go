@@ -78,8 +78,7 @@ func FileExists(t *testing.T, paths ...string) {
 	}
 }
 
-// FileContentsOS will check the contents of a file.
-// NOTE: Remove the OS when Afero is removed
+// FileContents will check the contents of a file.
 func FileContents(t *testing.T, contents string, paths ...string) {
 	t.Helper()
 

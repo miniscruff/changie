@@ -667,3 +667,25 @@ func TestBatchErrorBadChangesFile(t *testing.T) {
 	_, err := GetChanges(*cfg, nil, readDir, readFile)
 	then.Err(t, mockErr, err)
 }
+
+func TestFileExists(t *testing.T) {
+    then.WithTempDir(t)
+    then.CreateFile(t, "does_exist.txt")
+    exists, err := FileExists("does_exist.txt")
+    then.True(t, exists)
+    then.Nil(t, err)
+}
+
+func TestFileDoesNotExist(t *testing.T) {
+    then.WithTempDir(t)
+    exists, err := FileExists("does_not_exist.txt")
+    then.False(t, exists)
+    then.Nil(t, err)
+}
+
+func TestFileExistError(t *testing.T) {
+    then.WithTempDir(t)
+    exists, err := FileExists("\000x")
+    then.False(t, exists)
+    then.NotNil(t, err)
+}
