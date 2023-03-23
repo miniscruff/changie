@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"io/fs"
 	"os"
 	"path/filepath"
 	"time"
@@ -12,7 +11,138 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/miniscruff/changie/core"
+	"github.com/miniscruff/changie/shared"
 )
+
+var errVersionExists = errors.New("version already exists")
+
+type Batch struct {
+	*cobra.Command
+
+	// CLI args
+	OldHeaderPath     string // deprecated but still supported until 2.0
+	VersionHeaderPath string
+	VersionFooterPath string
+	KeepFragments     bool
+	RemovePrereleases bool
+	MoveDir           string
+	IncludeDirs       []string
+	DryRun            bool
+	Prerelease        []string
+	Meta              []string
+	Force             bool
+
+	// Dependencies
+	TemplateCache *core.TemplateCache
+	Create        shared.CreateFiler
+	ReadFile      shared.ReadFiler
+	ReadDir       shared.ReadDirer
+	Rename        shared.Renamer
+	WriteFile     shared.WriteFiler
+	MkdirAll      shared.MkdirAller
+	Remove        shared.Remover
+	RemoveAll     shared.RemoveAller
+
+	// Computed values
+	config  *core.Config // current configuration
+	writer  io.Writer    // writer we are batching to
+	version string       // the version we are bumping to
+}
+
+func NewBatch() *Batch {
+	b := &Batch{}
+
+	cmd := &cobra.Command{
+		Use:   "batch version|major|minor|patch|auto",
+		Short: "Batch unreleased changes into a single changelog",
+		Long: `Merges all unreleased changes into one version changelog.
+
+Batch takes one argument for the next version to use, below are possible options.
+* A specific semantic version value, with optional prefix
+* Major, minor or patch to bump one level by one
+* Auto which will automatically bump based on what changes were found
+
+The new version changelog can then be modified with extra descriptions,
+context or with custom tweaks before merging into the main file.
+Line breaks are added before each formatted line except the first, if you wish to
+add more line breaks include them in your format configurations.
+
+Changes are sorted in the following order:
+* Components if enabled, in order specified by config.components
+* Kinds if enabled, in order specified by config.kinds
+* Timestamp oldest first`,
+		Args: cobra.ExactArgs(1),
+		RunE: b.Run,
+	}
+
+	cmd.Flags().StringVar(
+		&b.VersionHeaderPath,
+		"header-path", "",
+		"Path to version header file in unreleased directory",
+	)
+	cmd.Flags().StringVar(
+		&b.OldHeaderPath,
+		"headerPath", "",
+		"Path to version header file in unreleased directory",
+	)
+	_ = cmd.Flags().MarkDeprecated("headerPath", "use --header-path instead")
+
+	cmd.Flags().StringVar(
+		&b.VersionFooterPath,
+		"footer-path", "",
+		"Path to version footer file in unreleased directory",
+	)
+	cmd.Flags().StringVar(
+		&b.MoveDir,
+		"move-dir", "",
+		"Path to move unreleased changes",
+	)
+	cmd.Flags().StringSliceVarP(
+		&b.IncludeDirs,
+		"include", "i",
+		nil,
+		"Include extra directories to search for change files, relative to change directory",
+	)
+	cmd.Flags().BoolVarP(
+		&b.KeepFragments,
+		"keep", "k",
+		false,
+		"Keep change fragments instead of deleting them",
+	)
+	cmd.Flags().BoolVar(
+		&b.RemovePrereleases,
+		"remove-prereleases",
+		false,
+		"Remove existing prerelease versions",
+	)
+	cmd.Flags().BoolVarP(
+		&b.DryRun,
+		"dry-run", "d",
+		false,
+		"Print batched changes instead of writing to disk, does not delete fragments",
+	)
+	cmd.Flags().StringSliceVarP(
+		&b.Prerelease,
+		"prerelease", "p",
+		nil,
+		"Prerelease values to append to version",
+	)
+	cmd.Flags().StringSliceVarP(
+		&b.Meta,
+		"metadata", "m",
+		nil,
+		"Metadata values to append to version",
+	)
+	cmd.Flags().BoolVarP(
+		&b.Force,
+		"force", "f",
+		false,
+		"Force a new version file even if one already exists",
+	)
+	b.Command = cmd
+
+	return b
+}
 
 type BatchPipeliner interface {
 	WriteTemplate(
@@ -43,116 +173,8 @@ type standardBatchPipeline struct {
 	templateCache *core.TemplateCache
 }
 
-var (
-	batchDryRunOut io.Writer = os.Stdout
-	// deprecated but still supported until 2.0
-	oldHeaderPathFlag              = ""
-	versionHeaderPathFlag          = ""
-	versionFooterPathFlag          = ""
-	keepFragmentsFlag              = false
-	removePrereleasesFlag          = false
-	moveDirFlag                    = ""
-	batchIncludeDirs      []string = nil
-	batchDryRunFlag                = false
-	batchPrereleaseFlag   []string = nil
-	batchMetaFlag         []string = nil
-	batchForce                     = false
-	errVersionExists               = errors.New("version already exists")
-)
-
-var batchCmd = &cobra.Command{
-	Use:   "batch version|major|minor|patch|auto",
-	Short: "Batch unreleased changes into a single changelog",
-	Long: `Merges all unreleased changes into one version changelog.
-
-Batch takes one argument for the next version to use, below are possible options.
-* A specific semantic version value, with optional prefix
-* Major, minor or patch to bump one level by one
-* Auto which will automatically bump based on what changes were found
-
-The new version changelog can then be modified with extra descriptions,
-context or with custom tweaks before merging into the main file.
-Line breaks are added before each formatted line except the first, if you wish to
-add more line breaks include them in your format configurations.
-
-Changes are sorted in the following order:
-* Components if enabled, in order specified by config.components
-* Kinds if enabled, in order specified by config.kinds
-* Timestamp oldest first`,
-	Args: cobra.ExactArgs(1),
-	RunE: runBatch,
-}
-
-func init() {
-	batchCmd.Flags().StringVar(
-		&versionHeaderPathFlag,
-		"header-path", "",
-		"Path to version header file in unreleased directory",
-	)
-	batchCmd.Flags().StringVar(
-		&oldHeaderPathFlag,
-		"headerPath", "",
-		"Path to version header file in unreleased directory",
-	)
-
-	_ = batchCmd.Flags().MarkDeprecated("headerPath", "use --header-path instead")
-
-	batchCmd.Flags().StringVar(
-		&versionFooterPathFlag,
-		"footer-path", "",
-		"Path to version footer file in unreleased directory",
-	)
-
-	batchCmd.Flags().StringVar(
-		&moveDirFlag,
-		"move-dir", "",
-		"Path to move unreleased changes",
-	)
-	batchCmd.Flags().StringSliceVarP(
-		&batchIncludeDirs,
-		"include", "i",
-		nil,
-		"Include extra directories to search for change files, relative to change directory",
-	)
-	batchCmd.Flags().BoolVarP(
-		&keepFragmentsFlag,
-		"keep", "k",
-		false,
-		"Keep change fragments instead of deleting them",
-	)
-	batchCmd.Flags().BoolVar(
-		&removePrereleasesFlag,
-		"remove-prereleases",
-		false,
-		"Remove existing prerelease versions",
-	)
-	batchCmd.Flags().BoolVarP(
-		&batchDryRunFlag,
-		"dry-run", "d",
-		false,
-		"Print batched changes instead of writing to disk, does not delete fragments",
-	)
-	batchCmd.Flags().StringSliceVarP(
-		&batchPrereleaseFlag,
-		"prerelease", "p",
-		nil,
-		"Prerelease values to append to version",
-	)
-	batchCmd.Flags().StringSliceVarP(
-		&batchMetaFlag,
-		"metadata", "m",
-		nil,
-		"Metadata values to append to version",
-	)
-	batchCmd.Flags().BoolVarP(
-		&batchForce,
-		"force", "f",
-		false,
-		"Force a new version file even if one already exists",
-	)
-}
-
-func runBatch(cmd *cobra.Command, args []string) error {
+/*
+func (b *Batch) Run(cmd *cobra.Command, args []string) error {
 	return batchPipeline(
 		&standardBatchPipeline{
 			templateCache: core.NewTemplateCache(),
@@ -160,28 +182,25 @@ func runBatch(cmd *cobra.Command, args []string) error {
 		args[0],
 	)
 }
+*/
 
-func getBatchData(
-	config core.Config,
-	version string,
-	changePaths []string,
-) (*core.BatchData, error) {
-	previousVersion, err := core.GetLatestVersion(os.ReadDir, config, false)
+func (b *Batch) getBatchData() (*core.BatchData, error) {
+	previousVersion, err := core.GetLatestVersion(b.ReadDir, b.config, false)
 	if err != nil {
 		return nil, err
 	}
 
-	allChanges, err := core.GetChanges(config, changePaths, os.ReadDir, os.ReadFile)
+	allChanges, err := core.GetChanges(b.config, b.IncludeDirs, b.ReadDir, b.ReadFile)
 	if err != nil {
 		return nil, err
 	}
 
 	currentVersion, err := core.GetNextVersion(
-		os.ReadDir,
-		config,
-		version,
-		batchPrereleaseFlag,
-		batchMetaFlag,
+		b.ReadDir,
+		b.config,
+		b.version,
+		b.Prerelease,
+		b.Meta,
 		allChanges,
 	)
 	if err != nil {
@@ -198,49 +217,51 @@ func getBatchData(
 		Prerelease:      currentVersion.Prerelease(),
 		Metadata:        currentVersion.Metadata(),
 		Changes:         allChanges,
-		Env:             config.EnvVars(),
+		Env:             b.config.EnvVars(),
 	}, nil
 }
 
 //nolint:funlen,gocyclo
-func batchPipeline(batcher BatchPipeliner, version string) error {
-	config, err := core.LoadConfig(os.ReadFile)
+func (b *Batch) Run(cmd *cobra.Command, args []string) error {
+    var err error
+
+    // save our version for later use
+    b.version = args[0]
+
+	b.config, err = core.LoadConfig(b.ReadFile)
 	if err != nil {
 		return err
 	}
 
-	data, err := getBatchData(config, version, batchIncludeDirs)
+	data, err := b.getBatchData()
 	if err != nil {
 		return err
 	}
 
-	var writer io.Writer
-	if batchDryRunFlag {
-		writer = batchDryRunOut
+	if b.DryRun {
+		b.writer = cmd.OutOrStdout()
 	} else {
-		versionPath := filepath.Join(config.ChangesDir, data.Version+"."+config.VersionExt)
+		versionPath := filepath.Join(b.config.ChangesDir, data.Version+"."+b.config.VersionExt)
 
-		if !batchForce {
-			_, statErr := os.Stat(versionPath)
-			if !errors.Is(statErr, fs.ErrNotExist) {
+		if !b.Force {
+			if exists, err := core.FileExists(versionPath); !exists || err != nil {
 				return fmt.Errorf("%w: %v", errVersionExists, versionPath)
 			}
 		}
 
-		versionFile, createErr := os.Create(versionPath)
+		versionFile, createErr := b.Create(versionPath)
 		if createErr != nil {
 			return createErr
 		}
 
 		defer versionFile.Close()
-		writer = versionFile
+		b.writer = versionFile
 	}
 
-	err = batcher.WriteTemplate(
-		writer,
-		config.VersionFormat,
-		config.Newlines.BeforeVersion,
-		config.Newlines.AfterVersion,
+	err = b.WriteTemplate(
+		b.config.VersionFormat,
+		b.config.Newlines.BeforeVersion,
+		b.config.Newlines.AfterVersion,
 		data,
 	)
 	if err != nil {
@@ -248,15 +269,13 @@ func batchPipeline(batcher BatchPipeliner, version string) error {
 	}
 
 	for _, relativePath := range []string{
-		versionHeaderPathFlag,
-		oldHeaderPathFlag,
-		config.VersionHeaderPath,
+		b.VersionHeaderPath,
+		b.OldHeaderPath,
+		b.config.VersionHeaderPath,
 	} {
-		err = batcher.WriteFile(
-			writer,
-			config,
-			config.Newlines.BeforeHeaderFile+1,
-			config.Newlines.AfterHeaderFile,
+		err = b.WritePaddedFile(
+			b.config.Newlines.BeforeHeaderFile+1,
+			b.config.Newlines.AfterHeaderFile,
 			relativePath,
 			data,
 		)
@@ -265,39 +284,35 @@ func batchPipeline(batcher BatchPipeliner, version string) error {
 		}
 	}
 
-	err = batcher.WriteTemplate(
-		writer,
-		config.HeaderFormat,
-		config.Newlines.BeforeHeaderTemplate+1,
-		config.Newlines.AfterHeaderTemplate,
+	err = b.WriteTemplate(
+		b.config.HeaderFormat,
+		b.config.Newlines.BeforeHeaderTemplate+1,
+		b.config.Newlines.AfterHeaderTemplate,
 		data,
 	)
 	if err != nil {
 		return err
 	}
 
-	err = batcher.WriteChanges(writer, config, data.Changes)
+	err = b.WriteChanges(data.Changes)
 	if err != nil {
 		return err
 	}
 
-	err = batcher.WriteTemplate(
-		writer,
-		config.FooterFormat,
-		config.Newlines.BeforeFooterTemplate+1,
-		config.Newlines.AfterFooterTemplate,
+	err = b.WriteTemplate(
+		b.config.FooterFormat,
+		b.config.Newlines.BeforeFooterTemplate+1,
+		b.config.Newlines.AfterFooterTemplate,
 		data,
 	)
 	if err != nil {
 		return err
 	}
 
-	for _, relativePath := range []string{versionFooterPathFlag, config.VersionFooterPath} {
-		err = batcher.WriteFile(
-			writer,
-			config,
-			config.Newlines.BeforeFooterFile+1,
-			config.Newlines.AfterFooterFile,
+	for _, relativePath := range []string{b.VersionFooterPath, b.config.VersionFooterPath} {
+		err = b.WritePaddedFile(
+			b.config.Newlines.BeforeFooterFile+1,
+			b.config.Newlines.AfterFooterFile,
 			relativePath,
 			data,
 		)
@@ -306,35 +321,32 @@ func batchPipeline(batcher BatchPipeliner, version string) error {
 		}
 	}
 
-	_ = core.WriteNewlines(writer, config.Newlines.EndOfVersion)
+	_ = core.WriteNewlines(b.writer, b.config.Newlines.EndOfVersion)
 
-	if !batchDryRunFlag && !keepFragmentsFlag {
-		err = batcher.ClearUnreleased(
-			config,
-			moveDirFlag,
-			batchIncludeDirs,
-			versionHeaderPathFlag,
-			config.VersionHeaderPath,
-			versionFooterPathFlag,
-			config.VersionFooterPath,
+	if !b.DryRun && !b.KeepFragments {
+		err = b.ClearUnreleased(
+			b.VersionHeaderPath,
+			b.config.VersionHeaderPath,
+			b.VersionFooterPath,
+			b.config.VersionFooterPath,
 		)
 		if err != nil {
 			return err
 		}
 	}
 
-	if !batchDryRunFlag && removePrereleasesFlag {
+	if !b.DryRun && b.RemovePrereleases {
 		// only chance we fail is already checked above
-		allVers, _ := core.GetAllVersions(os.ReadDir, config, false)
+		allVers, _ := core.GetAllVersions(b.ReadDir, b.config, false)
 
 		for _, v := range allVers {
 			if v.Prerelease() == "" {
 				continue
 			}
 
-			err = os.Remove(filepath.Join(
-				config.ChangesDir,
-				v.Original()+"."+config.VersionExt,
+			err = b.Remove(filepath.Join(
+				b.config.ChangesDir,
+				v.Original()+"."+b.config.VersionExt,
 			))
 			if err != nil {
 				return err
@@ -345,36 +357,7 @@ func batchPipeline(batcher BatchPipeliner, version string) error {
 	return nil
 }
 
-/*
-func (b *standardBatchPipeline) GetChanges(
-	config core.Config,
-	searchPaths []string,
-) ([]core.Change, error) {
-	var changes []core.Change
-
-	changeFiles, err := core.FindChangeFiles(config, b.afs.ReadDir, searchPaths)
-	if err != nil {
-		return changes, err
-	}
-
-	for _, cf := range changeFiles {
-		c, err := core.LoadChange(cf, b.afs.ReadFile)
-		if err != nil {
-			return changes, err
-		}
-
-		c.Env = config.EnvVars()
-		changes = append(changes, c)
-	}
-
-	core.SortByConfig(config).Sort(changes)
-
-	return changes, nil
-}
-*/
-
-func (b *standardBatchPipeline) WriteTemplate(
-	writer io.Writer,
+func (b *Batch) WriteTemplate(
 	template string,
 	beforeNewlines int,
 	afterNewlines int,
@@ -384,23 +367,21 @@ func (b *standardBatchPipeline) WriteTemplate(
 		return nil
 	}
 
-	err := core.WriteNewlines(writer, beforeNewlines)
+	err := core.WriteNewlines(b.writer, beforeNewlines)
 	if err != nil {
 		return err
 	}
 
-	if err := b.templateCache.Execute(template, writer, templateData); err != nil {
+	if err := b.TemplateCache.Execute(template, b.writer, templateData); err != nil {
 		return err
 	}
 
-	_ = core.WriteNewlines(writer, afterNewlines)
+	_ = core.WriteNewlines(b.writer, afterNewlines)
 
 	return nil
 }
 
-func (b *standardBatchPipeline) WriteFile(
-	writer io.Writer,
-	config core.Config,
+func (b *Batch) WritePaddedFile(
 	beforeNewlines int,
 	afterNewlines int,
 	relativePath string,
@@ -410,42 +391,37 @@ func (b *standardBatchPipeline) WriteFile(
 		return nil
 	}
 
-	// fullPath := filepath.Join(config.ChangesDir, config.UnreleasedDir, relativePath)
+	fullPath := filepath.Join(b.config.ChangesDir, b.config.UnreleasedDir, relativePath)
 
-    var fileBytes []byte
-	// fileBytes, readErr := b.afs.ReadFile(fullPath)
-	// if readErr != nil && !os.IsNotExist(readErr) {
-		// return readErr
-	// }
+	var fileBytes []byte
+	fileBytes, readErr := b.ReadFile(fullPath)
+	if readErr != nil && !os.IsNotExist(readErr) {
+		return readErr
+	}
 
-	// if os.IsNotExist(readErr) {
-		// return nil
-	// }
+	if os.IsNotExist(readErr) {
+		return nil
+	}
 
-	return b.WriteTemplate(writer, string(fileBytes), beforeNewlines, afterNewlines, templateData)
+	return b.WriteTemplate(string(fileBytes), beforeNewlines, afterNewlines, templateData)
 }
 
-func (b *standardBatchPipeline) WriteChanges(
-	writer io.Writer,
-	config core.Config,
-	changes []core.Change,
-) error {
+func (b *Batch) WriteChanges(changes []core.Change) error {
 	lastComponent := ""
 	lastKind := ""
 
 	for _, change := range changes {
-		if config.ComponentFormat != "" && lastComponent != change.Component {
+		if b.config.ComponentFormat != "" && lastComponent != change.Component {
 			lastComponent = change.Component
 			lastKind = ""
 
 			err := b.WriteTemplate(
-				writer,
-				config.ComponentFormat,
-				config.Newlines.BeforeComponent+1,
-				config.Newlines.AfterComponent,
+				b.config.ComponentFormat,
+				b.config.Newlines.BeforeComponent+1,
+				b.config.Newlines.AfterComponent,
 				core.ComponentData{
 					Component: lastComponent,
-					Env:       config.EnvVars(),
+					Env:       b.config.EnvVars(),
 				},
 			)
 			if err != nil {
@@ -453,18 +429,17 @@ func (b *standardBatchPipeline) WriteChanges(
 			}
 		}
 
-		if config.KindFormat != "" && lastKind != change.Kind {
+		if b.config.KindFormat != "" && lastKind != change.Kind {
 			lastKind = change.Kind
-			kindHeader := config.KindHeader(change.Kind)
+			kindHeader := b.config.KindHeader(change.Kind)
 
 			err := b.WriteTemplate(
-				writer,
 				kindHeader,
-				config.Newlines.BeforeKind+1,
-				config.Newlines.AfterKind,
+				b.config.Newlines.BeforeKind+1,
+				b.config.Newlines.AfterKind,
 				core.KindData{
 					Kind: lastKind,
-					Env:  config.EnvVars(),
+					Env:  b.config.EnvVars(),
 				},
 			)
 			if err != nil {
@@ -472,13 +447,12 @@ func (b *standardBatchPipeline) WriteChanges(
 			}
 		}
 
-		changeFormat := config.ChangeFormatForKind(lastKind)
+		changeFormat := b.config.ChangeFormatForKind(lastKind)
 
 		err := b.WriteTemplate(
-			writer,
 			changeFormat,
-			config.Newlines.BeforeChange+1,
-			config.Newlines.AfterChange,
+			b.config.Newlines.BeforeChange+1,
+			b.config.Newlines.AfterChange,
 			change,
 		)
 		if err != nil {
@@ -489,20 +463,14 @@ func (b *standardBatchPipeline) WriteChanges(
 	return nil
 }
 
-func (b *standardBatchPipeline) ClearUnreleased(
-	config core.Config,
-	moveDir string,
-	includeDirs []string,
-	otherFiles ...string,
-) error {
+func (b *Batch) ClearUnreleased(otherFiles ...string) error {
 	var (
 		filesToMove []string
 		err         error
 	)
 
-	if moveDir != "" {
-        // TODO: Use b.MkdirAll
-		err = os.MkdirAll(filepath.Join(config.ChangesDir, moveDir), core.CreateDirMode)
+	if b.MoveDir != "" {
+		err = b.MkdirAll(filepath.Join(b.config.ChangesDir, b.MoveDir), core.CreateDirMode)
 		if err != nil {
 			return err
 		}
@@ -513,18 +481,14 @@ func (b *standardBatchPipeline) ClearUnreleased(
 			continue
 		}
 
-		fullPath := filepath.Join(config.ChangesDir, config.UnreleasedDir, p)
+		fullPath := filepath.Join(b.config.ChangesDir, b.config.UnreleasedDir, p)
 
-		// make sure the file exists first
-        // TODO: use b.Stat
-		_, err = os.Stat(fullPath)
-		if err == nil {
+		if exists, err := core.FileExists(fullPath); exists && err == nil {
 			filesToMove = append(filesToMove, fullPath)
 		}
 	}
 
-    // TODO: use b.ReadDir
-	filePaths, err := core.FindChangeFiles(config, os.ReadDir, includeDirs)
+	filePaths, err := core.FindChangeFiles(b.config, b.ReadDir, b.IncludeDirs)
 	if err != nil {
 		return err
 	}
@@ -532,30 +496,28 @@ func (b *standardBatchPipeline) ClearUnreleased(
 	filesToMove = append(filesToMove, filePaths...)
 
 	for _, f := range filesToMove {
-		if moveDir != "" {
-            // TODO: do not use os directly
-			err = os.Rename(
+		if b.MoveDir != "" {
+			err = b.Rename(
 				f,
-				filepath.Join(config.ChangesDir, moveDir, filepath.Base(f)),
+				filepath.Join(b.config.ChangesDir, b.MoveDir, filepath.Base(f)),
 			)
 			if err != nil {
 				return err
 			}
 		} else {
-			err = os.Remove(f)
+			err = b.Remove(f)
 			if err != nil {
 				return err
 			}
 		}
 	}
 
-	for _, include := range includeDirs {
-		fullInclude := filepath.Join(config.ChangesDir, include)
+	for _, include := range b.IncludeDirs {
+		fullInclude := filepath.Join(b.config.ChangesDir, include)
 
-        // TODO: do not use os
-		files, _ := os.ReadDir(fullInclude)
+		files, _ := b.ReadDir(fullInclude)
 		if len(files) == 0 {
-			err = os.RemoveAll(fullInclude)
+			err = b.RemoveAll(fullInclude)
 			if err != nil {
 				return err
 			}

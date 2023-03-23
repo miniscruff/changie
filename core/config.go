@@ -365,7 +365,7 @@ func (c *Config) Exists() (bool, error) {
 }
 
 // LoadConfig will load the config from the default path
-func LoadConfig(rf shared.ReadFiler) (Config, error) {
+func LoadConfig(rf shared.ReadFiler) (*Config, error) {
 	var (
 		c   Config
 		bs  []byte
@@ -385,12 +385,12 @@ func LoadConfig(rf shared.ReadFiler) (Config, error) {
 	}
 
 	if err != nil {
-		return c, err
+		return nil, err
 	}
 
 	err = yaml.Unmarshal(bs, &c)
 	if err != nil {
-		return c, err
+		return nil, err
 	}
 
 	// load backward incompatible configs
@@ -406,5 +406,5 @@ func LoadConfig(rf shared.ReadFiler) (Config, error) {
 		c.FragmentFileFormat += fmt.Sprintf("{{.Time.Format \"%v\"}}", timeFormat)
 	}
 
-	return c, nil
+	return &c, nil
 }

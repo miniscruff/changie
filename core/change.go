@@ -27,9 +27,9 @@ var (
 	errCustomProvidedNotConfigured        = errors.New("custom value provided but not configured")
 )
 
-func SortByConfig(config Config) *ChangesConfigSorter {
+func SortByConfig(config *Config) *ChangesConfigSorter {
 	return &ChangesConfigSorter{
-		config: config,
+		config: *config,
 	}
 }
 
@@ -117,14 +117,14 @@ func (change Change) Write(writer io.Writer) error {
 }
 
 type PromptContext struct {
-	config      Config
+	config      *Config
 	stdinReader io.Reader
 	kind        *KindConfig
 }
 
 // AskPrompts will ask the user prompts based on the configuration
 // updating the change as prompts are answered.
-func (change *Change) AskPrompts(config Config, stdinReader io.Reader) error {
+func (change *Change) AskPrompts(config *Config, stdinReader io.Reader) error {
 	ctx := PromptContext{
 		config:      config,
 		stdinReader: stdinReader,
@@ -161,7 +161,7 @@ func (change *Change) AskPrompts(config Config, stdinReader io.Reader) error {
 
 // validateArguments will check the initial state of a change against the config
 // and return an error if anything is invalid
-func (change *Change) validateArguments(config Config) error {
+func (change *Change) validateArguments(config *Config) error {
 	if len(config.Components) == 0 && len(change.Component) > 0 {
 		return errComponentProvidedWhenNotConfigured
 	}

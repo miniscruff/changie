@@ -65,7 +65,7 @@ func TestErrorAppendFileIfOpenFails(t *testing.T) {
 }
 
 func TestGetAllVersionsReturnsAllVersions(t *testing.T) {
-	config := Config{
+	config := &Config{
 		HeaderPath: "header.md",
 	}
 	mockRead := func(dirname string) ([]os.DirEntry, error) {
@@ -85,7 +85,7 @@ func TestGetAllVersionsReturnsAllVersions(t *testing.T) {
 }
 
 func TestGetLatestVersionReturnsMostRecent(t *testing.T) {
-	config := Config{}
+	config := &Config{}
 	mockRead := func(dirname string) ([]os.DirEntry, error) {
 		return []os.DirEntry{
 			&then.MockDirEntry{MockName: "v0.1.0.md"},
@@ -99,7 +99,7 @@ func TestGetLatestVersionReturnsMostRecent(t *testing.T) {
 }
 
 func TestGetLatestReturnsRC(t *testing.T) {
-	config := Config{}
+	config := &Config{}
 	mockRead := func(dirname string) ([]os.DirEntry, error) {
 		return []os.DirEntry{
 			&then.MockDirEntry{MockName: "v0.1.0.md"},
@@ -113,7 +113,7 @@ func TestGetLatestReturnsRC(t *testing.T) {
 }
 
 func TestGetLatestCanSkipRC(t *testing.T) {
-	config := Config{}
+	config := &Config{}
 	mockRead := func(dirname string) ([]os.DirEntry, error) {
 		return []os.DirEntry{
 			&then.MockDirEntry{MockName: "v0.1.0.md"},
@@ -127,7 +127,7 @@ func TestGetLatestCanSkipRC(t *testing.T) {
 }
 
 func TestGetLatestReturnsZerosIfNoVersionsExist(t *testing.T) {
-	config := Config{}
+	config := &Config{}
 	mockRead := func(dirname string) ([]os.DirEntry, error) {
 		return []os.DirEntry{}, nil
 	}
@@ -138,7 +138,7 @@ func TestGetLatestReturnsZerosIfNoVersionsExist(t *testing.T) {
 }
 
 func TestErrorAllVersionsBadReadDir(t *testing.T) {
-	config := Config{}
+	config := &Config{}
 	mockError := errors.New("bad stuff")
 	mockRead := func(dirname string) ([]os.DirEntry, error) {
 		return []os.DirEntry{}, mockError
@@ -150,7 +150,7 @@ func TestErrorAllVersionsBadReadDir(t *testing.T) {
 }
 
 func TestErrorLatestVersionBadReadDir(t *testing.T) {
-	config := Config{}
+	config := &Config{}
 	mockError := errors.New("bad stuff")
 	mockRead := func(dirname string) ([]os.DirEntry, error) {
 		return []os.DirEntry{}, mockError
@@ -162,7 +162,7 @@ func TestErrorLatestVersionBadReadDir(t *testing.T) {
 }
 
 func TestErrorNextVersionBadReadDir(t *testing.T) {
-	config := Config{}
+	config := &Config{}
 	mockError := errors.New("bad stuff")
 	mockRead := func(dirname string) ([]os.DirEntry, error) {
 		return []os.DirEntry{}, mockError
@@ -174,7 +174,7 @@ func TestErrorNextVersionBadReadDir(t *testing.T) {
 }
 
 func TestErrorNextVersionBadVersion(t *testing.T) {
-	config := Config{}
+	config := &Config{}
 	mockRead := func(dirname string) ([]os.DirEntry, error) {
 		return []os.DirEntry{
 			&then.MockDirEntry{MockName: "v0.1.0.md"},
@@ -254,7 +254,7 @@ func TestNextVersionOptions(t *testing.T) {
 		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
-			config := Config{}
+			config := &Config{}
 			mockRead := func(dirname string) ([]os.DirEntry, error) {
 				return []os.DirEntry{
 					&then.MockDirEntry{MockName: tc.latestVersion + ".md"},
@@ -269,7 +269,7 @@ func TestNextVersionOptions(t *testing.T) {
 }
 
 func TestNextVersionOptionsWithAuto(t *testing.T) {
-	config := Config{
+	config := &Config{
 		Kinds: []KindConfig{
 			{
 				Label:     "patch",
@@ -303,7 +303,7 @@ func TestNextVersionOptionsWithAuto(t *testing.T) {
 }
 
 func TestErrorNextVersionAutoMissingKind(t *testing.T) {
-	config := Config{
+	config := &Config{
 		Kinds: []KindConfig{
 			{
 				Label: "missing",
@@ -327,7 +327,7 @@ func TestErrorNextVersionAutoMissingKind(t *testing.T) {
 }
 
 func TestErrorNextVersionBadPrerelease(t *testing.T) {
-	config := Config{}
+	config := &Config{}
 	mockRead := func(dirname string) ([]os.DirEntry, error) {
 		return []os.DirEntry{
 			&then.MockDirEntry{MockName: "v0.2.5.md"},
@@ -339,7 +339,7 @@ func TestErrorNextVersionBadPrerelease(t *testing.T) {
 }
 
 func TestErrorNextVersionBadMeta(t *testing.T) {
-	config := Config{}
+	config := &Config{}
 	mockRead := func(dirname string) ([]os.DirEntry, error) {
 		return []os.DirEntry{
 			&then.MockDirEntry{MockName: "v0.2.5.md"},
@@ -351,7 +351,7 @@ func TestErrorNextVersionBadMeta(t *testing.T) {
 }
 
 func TestCanFindChangeFiles(t *testing.T) {
-	config := Config{
+	config := &Config{
 		ChangesDir:    ".chng",
 		UnreleasedDir: "unrel",
 	}
@@ -402,7 +402,7 @@ func TestCanFindChangeFiles(t *testing.T) {
 
 func TestErrorOnFindChangeFilesIfBadRead(t *testing.T) {
 	mockErr := errors.New("bad read")
-	config := Config{}
+	config := &Config{}
 	mockRead := func(dirname string) ([]os.DirEntry, error) {
 		return nil, mockErr
 	}
@@ -490,7 +490,7 @@ func TestInvalidBumpLevel(t *testing.T) {
 }
 
 func TestHighestAutoLevel(t *testing.T) {
-	cfg := Config{
+	cfg := &Config{
 		Kinds: []KindConfig{
 			{
 				Label:     "patch",
@@ -558,7 +558,7 @@ func TestHighestAutoLevel(t *testing.T) {
 }
 
 func TestErrorHighestAutoLevelMissingKindConfig(t *testing.T) {
-	cfg := Config{
+	cfg := &Config{
 		Kinds: []KindConfig{
 			{
 				Label: "missing",
@@ -575,7 +575,7 @@ func TestErrorHighestAutoLevelMissingKindConfig(t *testing.T) {
 }
 
 func TestErrorHighestAutoLevelWithNoChanges(t *testing.T) {
-	cfg := Config{
+	cfg := &Config{
 		Kinds: []KindConfig{
 			{
 				Label: "missing",
@@ -623,7 +623,7 @@ func TestGetAllChanges(t *testing.T) {
 
 	then.CreateFile(t, cfg.ChangesDir, cfg.UnreleasedDir, "ignored.txt")
 
-	changes, err := GetChanges(*cfg, nil, readDir, readFile)
+	changes, err := GetChanges(cfg, nil, readDir, readFile)
 	then.Nil(t, err)
 	then.Equals(t, "second", changes[0].Body)
 	then.Equals(t, "first", changes[1].Body)
@@ -644,7 +644,7 @@ func TestBatchErrorIfUnableToReadDir(t *testing.T) {
 
 	then.CreateFile(t, cfg.ChangesDir, cfg.UnreleasedDir, "ignored.txt")
 
-	_, err := GetChanges(*cfg, nil, readDir, readFile)
+	_, err := GetChanges(cfg, nil, readDir, readFile)
 	then.Err(t, mockErr, err)
 }
 
@@ -664,7 +664,7 @@ func TestBatchErrorBadChangesFile(t *testing.T) {
 
 	then.CreateFile(t, cfg.ChangesDir, cfg.UnreleasedDir, "ignored.txt")
 
-	_, err := GetChanges(*cfg, nil, readDir, readFile)
+	_, err := GetChanges(cfg, nil, readDir, readFile)
 	then.Err(t, mockErr, err)
 }
 

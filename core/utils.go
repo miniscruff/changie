@@ -35,7 +35,7 @@ func AppendFile(opener shared.OpenFiler, rootFile io.Writer, path string) error 
 
 func GetAllVersions(
 	readDir shared.ReadDirer,
-	config Config,
+	config *Config,
 	skipPrereleases bool,
 ) ([]*semver.Version, error) {
 	allVersions := make([]*semver.Version, 0)
@@ -71,7 +71,7 @@ func GetAllVersions(
 
 func GetLatestVersion(
 	readDir shared.ReadDirer,
-	config Config,
+	config *Config,
 	skipPrereleases bool,
 ) (*semver.Version, error) {
 	allVersions, err := GetAllVersions(readDir, config, skipPrereleases)
@@ -94,7 +94,7 @@ func ValidBumpLevel(level string) bool {
 		level == AutoLevel
 }
 
-func HighestAutoLevel(config Config, allChanges []Change) (string, error) {
+func HighestAutoLevel(config *Config, allChanges []Change) (string, error) {
 	if len(allChanges) == 0 {
 		return "", ErrNoChangesFoundForAuto
 	}
@@ -129,7 +129,7 @@ func HighestAutoLevel(config Config, allChanges []Change) (string, error) {
 
 func GetNextVersion(
 	readDir shared.ReadDirer,
-	config Config,
+	config *Config,
 	partOrVersion string,
 	prerelease, meta []string,
 	allChanges []Change,
@@ -194,7 +194,7 @@ func GetNextVersion(
 }
 
 func FindChangeFiles(
-	config Config,
+	config *Config,
 	readDir shared.ReadDirer,
 	searchPaths []string,
 ) ([]string, error) {
@@ -262,7 +262,7 @@ func LoadEnvVars(config *Config, envs []string) map[string]string {
 }
 
 func GetChanges(
-	config Config,
+	config *Config,
 	searchPaths []string,
 	readDir shared.ReadDirer,
 	readFile shared.ReadFiler,
