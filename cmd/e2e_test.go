@@ -1,6 +1,5 @@
 package cmd
 
-/*
 import (
 	"fmt"
 	"io"
@@ -17,12 +16,9 @@ func swapInReaderOutWriter(t *testing.T, cmd *cobra.Command, inReader, outWriter
 	cmd.SetOut(outWriter)
 	cmd.SetIn(inReader)
 
-	batchDryRunOut = outWriter
-
 	t.Cleanup(func() {
 		cmd.SetOut(nil)
 		cmd.SetIn(nil)
-		batchDryRunOut = cmd.OutOrStdout()
 	})
 }
 
@@ -121,4 +117,3 @@ func TestErrorNextExactVersion(t *testing.T) {
 	cmd.SetArgs([]string{"next", "v1.2.3"})
 	then.NotNil(t, cmd.Execute())
 }
-*/

@@ -6,7 +6,6 @@ import (
 	"io"
 	"os"
 	"path/filepath"
-	"time"
 
 	"github.com/spf13/cobra"
 
@@ -33,7 +32,6 @@ type Batch struct {
 	Force             bool
 
 	// Dependencies
-	TemplateCache *core.TemplateCache
 	Create        shared.CreateFiler
 	ReadFile      shared.ReadFiler
 	ReadDir       shared.ReadDirer
@@ -42,6 +40,8 @@ type Batch struct {
 	MkdirAll      shared.MkdirAller
 	Remove        shared.Remover
 	RemoveAll     shared.RemoveAller
+	TimeNow       shared.TimeNow
+	TemplateCache *core.TemplateCache
 
 	// Computed values
 	config  *core.Config // current configuration
@@ -49,8 +49,30 @@ type Batch struct {
 	version string       // the version we are bumping to
 }
 
-func NewBatch() *Batch {
-	b := &Batch{}
+func NewBatch(
+	create shared.CreateFiler,
+	readFile shared.ReadFiler,
+	readDir shared.ReadDirer,
+	rename shared.Renamer,
+	writeFile shared.WriteFiler,
+	mkdirAll shared.MkdirAller,
+	remove shared.Remover,
+	removeAll shared.RemoveAller,
+	timeNow shared.TimeNow,
+	templateCache *core.TemplateCache,
+) *Batch {
+	b := &Batch{
+		Create:        create,
+		ReadFile:      readFile,
+		ReadDir:       readDir,
+		Rename:        rename,
+		WriteFile:     writeFile,
+		MkdirAll:      mkdirAll,
+		Remove:        remove,
+		RemoveAll:     removeAll,
+		TimeNow:       timeNow,
+		TemplateCache: templateCache,
+	}
 
 	cmd := &cobra.Command{
 		Use:   "batch version|major|minor|patch|auto",
@@ -144,46 +166,6 @@ Changes are sorted in the following order:
 	return b
 }
 
-type BatchPipeliner interface {
-	WriteTemplate(
-		writer io.Writer,
-		template string,
-		beforeNewlines int,
-		afterNewlines int,
-		templateData interface{},
-	) error
-	WriteFile(
-		writer io.Writer,
-		config core.Config,
-		beforeNewlines int,
-		afterNewlines int,
-		relativePath string,
-		templateData interface{},
-	) error
-	WriteChanges(writer io.Writer, config core.Config, changes []core.Change) error
-	ClearUnreleased(
-		config core.Config,
-		moveDir string,
-		searchPaths []string,
-		otherFiles ...string,
-	) error
-}
-
-type standardBatchPipeline struct {
-	templateCache *core.TemplateCache
-}
-
-/*
-func (b *Batch) Run(cmd *cobra.Command, args []string) error {
-	return batchPipeline(
-		&standardBatchPipeline{
-			templateCache: core.NewTemplateCache(),
-		},
-		args[0],
-	)
-}
-*/
-
 func (b *Batch) getBatchData() (*core.BatchData, error) {
 	previousVersion, err := core.GetLatestVersion(b.ReadDir, b.config, false)
 	if err != nil {
@@ -208,7 +190,7 @@ func (b *Batch) getBatchData() (*core.BatchData, error) {
 	}
 
 	return &core.BatchData{
-		Time:            time.Now(),
+		Time:            b.TimeNow(),
 		Version:         currentVersion.Original(),
 		PreviousVersion: previousVersion.Original(),
 		Major:           int(currentVersion.Major()),
@@ -221,12 +203,11 @@ func (b *Batch) getBatchData() (*core.BatchData, error) {
 	}, nil
 }
 
-//nolint:funlen,gocyclo
 func (b *Batch) Run(cmd *cobra.Command, args []string) error {
-    var err error
+	var err error
 
-    // save our version for later use
-    b.version = args[0]
+	// save our version for later use
+	b.version = args[0]
 
 	b.config, err = core.LoadConfig(b.ReadFile)
 	if err != nil {
@@ -244,7 +225,7 @@ func (b *Batch) Run(cmd *cobra.Command, args []string) error {
 		versionPath := filepath.Join(b.config.ChangesDir, data.Version+"."+b.config.VersionExt)
 
 		if !b.Force {
-			if exists, err := core.FileExists(versionPath); !exists || err != nil {
+			if exists, err := core.FileExists(versionPath); exists || err != nil {
 				return fmt.Errorf("%w: %v", errVersionExists, versionPath)
 			}
 		}
@@ -273,10 +254,10 @@ func (b *Batch) Run(cmd *cobra.Command, args []string) error {
 		b.OldHeaderPath,
 		b.config.VersionHeaderPath,
 	} {
-		err = b.WritePaddedFile(
+		err = b.WriteTemplateFile(
+			relativePath,
 			b.config.Newlines.BeforeHeaderFile+1,
 			b.config.Newlines.AfterHeaderFile,
-			relativePath,
 			data,
 		)
 		if err != nil {
@@ -310,10 +291,10 @@ func (b *Batch) Run(cmd *cobra.Command, args []string) error {
 	}
 
 	for _, relativePath := range []string{b.VersionFooterPath, b.config.VersionFooterPath} {
-		err = b.WritePaddedFile(
+		err = b.WriteTemplateFile(
+			relativePath,
 			b.config.Newlines.BeforeFooterFile+1,
 			b.config.Newlines.AfterFooterFile,
-			relativePath,
 			data,
 		)
 		if err != nil {
@@ -361,7 +342,7 @@ func (b *Batch) WriteTemplate(
 	template string,
 	beforeNewlines int,
 	afterNewlines int,
-	templateData interface{},
+	templateData any,
 ) error {
 	if template == "" {
 		return nil
@@ -381,11 +362,11 @@ func (b *Batch) WriteTemplate(
 	return nil
 }
 
-func (b *Batch) WritePaddedFile(
+func (b *Batch) WriteTemplateFile(
+	relativePath string,
 	beforeNewlines int,
 	afterNewlines int,
-	relativePath string,
-	templateData interface{},
+	templateData any,
 ) error {
 	if relativePath == "" {
 		return nil

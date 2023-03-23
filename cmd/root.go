@@ -22,11 +22,33 @@ being easy to use for developers and your release team.`,
 
 	templateCache := core.NewTemplateCache()
 
-	cmd.AddCommand(NewBatch().Command)
+	batch := NewBatch(
+		os.Create,
+		os.ReadFile,
+		os.ReadDir,
+		os.Rename,
+		os.WriteFile,
+		os.MkdirAll,
+		os.Remove,
+		os.RemoveAll,
+        time.Now,
+		templateCache,
+	)
+
+    merge := NewMerge(
+        os.ReadFile,
+        os.WriteFile,
+        os.ReadDir,
+        os.Open,
+        os.Create,
+        templateCache,
+    )
+
+	cmd.AddCommand(batch.Command)
 	cmd.AddCommand(NewGen().Command)
 	cmd.AddCommand(NewInit(os.MkdirAll, os.WriteFile).Command)
 	cmd.AddCommand(NewLatest(os.ReadFile, os.ReadDir).Command)
-	cmd.AddCommand(NewMerge(os.ReadFile, os.WriteFile, os.ReadDir, os.Open, os.Create, templateCache).Command)
+	cmd.AddCommand(merge.Command)
 	cmd.AddCommand(NewNew(os.ReadFile, os.Create, time.Now, templateCache).Command)
 	cmd.AddCommand(NewNext(os.ReadDir, os.ReadFile).Command)
 
