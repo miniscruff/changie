@@ -3,7 +3,7 @@ module github.com/miniscruff/changie
 go 1.19
 
 require (
-	github.com/Masterminds/semver/v3 v3.2.0
+	github.com/Masterminds/semver/v3 v3.2.1
 	github.com/Masterminds/sprig/v3 v3.2.3
 	github.com/charmbracelet/bubbletea v0.23.2
 	github.com/cqroot/prompt v0.9.0
