@@ -19,7 +19,7 @@ jobs:
         go-version: 1.19
 
     - name: Login to GitHub Container Registry
-      uses: docker/login-action@v2.1.0
+      uses: docker/login-action@v2.2.0
       with:
         registry: ghcr.io
         username: ${{ github.repository_owner }}
@@ -51,7 +51,7 @@ jobs:
         hugo --minify -s docs -b https://changie.dev/
 
     - name: Deploy docs
-      uses: peaceiris/actions-gh-pages@v3.9.2
+      uses: peaceiris/actions-gh-pages@v3.9.3
       with:
         github_token: ${{ secrets.GITHUB_TOKEN }}
         publish_dir: ./docs/public
