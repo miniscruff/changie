@@ -31,7 +31,7 @@ jobs:
         echo RELEASE_NOTES_PATH=.changes/$(go run main.go latest).md >> $GITHUB_ENV
 
     - name: Run GoReleaser
-      uses: goreleaser/goreleaser-action@v4.2.0
+      uses: goreleaser/goreleaser-action@v4.3.0
       with:
         version: latest
         args: --rm-dist --release-notes=${{ env.RELEASE_NOTES_PATH }} --skip-validate --debug
