@@ -40,7 +40,7 @@ func TestMergeVersionsSuccessfully(t *testing.T) {
 	cfg := mergeTestConfig()
 	cfg.HeaderPath = ""
 	cfg.Replacements = nil
-	then.WithTempDirConfig(t, cfg, cfg.ChangesDir, cfg.UnreleasedDir)
+	then.WithTempDirConfig(t, cfg)
 
 	then.WriteFile(t, []byte("first version\n"), cfg.ChangesDir, "v0.1.0.md")
 	then.WriteFile(t, []byte("second version\n"), cfg.ChangesDir, "v0.2.0.md")
@@ -64,7 +64,8 @@ first version
 
 func TestMergeVersionsWithHeaderAndReplacements(t *testing.T) {
 	cfg := mergeTestConfig()
-	then.WithTempDirConfig(t, cfg, cfg.ChangesDir)
+	then.WithTempDirConfig(t, cfg)
+
 	jsonContents := `{
   "key": "value",
   "version": "old-version",
@@ -102,7 +103,7 @@ first version
 
 func TestMergeDryRun(t *testing.T) {
 	cfg := mergeTestConfig()
-	then.WithTempDirConfig(t, cfg, cfg.ChangesDir)
+	then.WithTempDirConfig(t, cfg)
 
 	changeContents := `a simple header
 second version
@@ -132,9 +133,10 @@ first version
 
 func TestMergeSkipsVersionsIfNoneFound(t *testing.T) {
 	cfg := mergeTestConfig()
-	then.WithTempDirConfig(t, cfg, cfg.ChangesDir)
+	then.WithTempDirConfig(t, cfg)
+
 	changeContents := "a simple header\n"
-	writer := strings.Builder{}
+	builder := strings.Builder{}
 
 	then.WriteFile(t, []byte("a simple header\n"), cfg.ChangesDir, cfg.HeaderPath)
 
@@ -147,11 +149,11 @@ func TestMergeSkipsVersionsIfNoneFound(t *testing.T) {
 		core.NewTemplateCache(),
 	)
 	cmd.DryRun = true
-	cmd.Command.SetOut(&writer)
+	cmd.Command.SetOut(&builder)
 
 	err := cmd.Run(cmd.Command, nil)
 	then.Nil(t, err)
-	then.Equals(t, changeContents, writer.String())
+	then.Equals(t, changeContents, builder.String())
 }
 
 func TestErrorMergeBadChangelogPath(t *testing.T) {
@@ -194,7 +196,7 @@ func TestErrorMergeBadConfig(t *testing.T) {
 
 func TestErrorMergeUnableToReadChanges(t *testing.T) {
 	cfg := mergeTestConfig()
-	then.WithTempDirConfig(t, cfg, cfg.ChangesDir)
+	then.WithTempDirConfig(t, cfg)
 
 	mockErr := errors.New("bad read dir")
 	mockReadDir := func(name string) ([]os.DirEntry, error) {
@@ -216,9 +218,9 @@ func TestErrorMergeUnableToReadChanges(t *testing.T) {
 
 func TestErrorMergeBadHeaderFile(t *testing.T) {
 	cfg := mergeTestConfig()
-	then.WithTempDirConfig(t, cfg, cfg.ChangesDir)
-	mockError := errors.New("bad open")
+	then.WithTempDirConfig(t, cfg)
 
+	mockError := errors.New("bad open")
 	mockOpen := func(filename string) (*os.File, error) {
 		if filename == filepath.Join(cfg.ChangesDir, cfg.HeaderPath) {
 			return nil, mockError
@@ -245,7 +247,8 @@ func TestErrorMergeBadHeaderFile(t *testing.T) {
 
 func TestErrorMergeBadAppend(t *testing.T) {
 	cfg := mergeTestConfig()
-	then.WithTempDirConfig(t, cfg, cfg.ChangesDir)
+	then.WithTempDirConfig(t, cfg)
+
 	mockError := errors.New("bad write string")
 
 	// need at least one change to exist
@@ -277,7 +280,7 @@ func TestErrorMergeBadAppend(t *testing.T) {
 func TestErrorMergeBadReplacement(t *testing.T) {
 	cfg := mergeTestConfig()
 	cfg.Replacements[0].Replace = "{{bad....}}"
-	then.WithTempDirConfig(t, cfg, cfg.ChangesDir)
+	then.WithTempDirConfig(t, cfg)
 
 	then.WriteFile(t, []byte("a simple header\n"), cfg.ChangesDir, cfg.HeaderPath)
 	then.WriteFile(t, []byte("first version\n"), cfg.ChangesDir, "v0.1.0.md")

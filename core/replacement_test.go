@@ -9,7 +9,8 @@ import (
 )
 
 func TestFindAndReplaceContentsInAFile(t *testing.T) {
-    then.WithTempDir(t)
+	then.WithTempDir(t)
+
 	filepath := "file.txt"
 	startData := `first line
 second line
@@ -34,7 +35,8 @@ ignore me`
 }
 
 func TestFindAndReplaceWithTemplate(t *testing.T) {
-    then.WithTempDir(t)
+	then.WithTempDir(t)
+
 	filepath := "template.txt"
 	startData := `{
   "name": "demo-project",
@@ -61,7 +63,8 @@ func TestFindAndReplaceWithTemplate(t *testing.T) {
 }
 
 func TestFindAndReplaceStartOfLine(t *testing.T) {
-    then.WithTempDir(t)
+	then.WithTempDir(t)
+
 	filepath := "start.txt"
 	startData := `# yaml file
 version: 0.0.1
@@ -92,7 +95,8 @@ level1:
 }
 
 func TestFindAndReplaceCaseInsensitive(t *testing.T) {
-    then.WithTempDir(t)
+	then.WithTempDir(t)
+
 	filepath := "insensitive.txt"
 	startData := `# yaml file
 Version: 0.0.1
@@ -124,7 +128,8 @@ level1:
 }
 
 func TestErrorBadFileRead(t *testing.T) {
-    then.WithTempDir(t)
+	then.WithTempDir(t)
+
 	rep := Replacement{
 		Path: "does not exist",
 	}
@@ -133,7 +138,8 @@ func TestErrorBadFileRead(t *testing.T) {
 }
 
 func TestErrorBadTemplateParse(t *testing.T) {
-    then.WithTempDir(t)
+	then.WithTempDir(t)
+
 	rep := Replacement{
 		Replace: "{{.bad..}}",
 	}
@@ -142,7 +148,8 @@ func TestErrorBadTemplateParse(t *testing.T) {
 }
 
 func TestErrorBadTemplateExec(t *testing.T) {
-    then.WithTempDir(t)
+	then.WithTempDir(t)
+
 	rep := Replacement{
 		Replace: "{{.bad}}",
 	}
@@ -151,7 +158,8 @@ func TestErrorBadTemplateExec(t *testing.T) {
 }
 
 func TestErrorBadWriteFile(t *testing.T) {
-    then.WithTempDir(t)
+	then.WithTempDir(t)
+
 	filepath := "err.txt"
 	startData := "some data"
 	mockError := errors.New("bad write")

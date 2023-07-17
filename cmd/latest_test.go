@@ -1,7 +1,7 @@
 package cmd
 
 import (
-    "errors"
+	"errors"
 	"os"
 	"strings"
 	"testing"
@@ -26,8 +26,9 @@ func latestConfig() *core.Config {
 
 func TestLatestVersionEchosLatestVersion(t *testing.T) {
 	cfg := latestConfig()
-	then.WithTempDirConfig(t, cfg, cfg.ChangesDir)
-	w := strings.Builder{}
+	then.WithTempDirConfig(t, cfg)
+
+	builder := strings.Builder{}
 
 	then.CreateFile(t, cfg.ChangesDir, "v0.0.1.md")
 	then.CreateFile(t, cfg.ChangesDir, "v0.1.0.md")
@@ -35,16 +36,18 @@ func TestLatestVersionEchosLatestVersion(t *testing.T) {
 	then.CreateFile(t, cfg.ChangesDir, "head.tpl.md")
 
 	cmd := NewLatest(os.ReadFile, os.ReadDir)
-    cmd.SetOut(&w)
+	cmd.SetOut(&builder)
+
 	err := cmd.Run(cmd.Command, nil)
 	then.Nil(t, err)
-	then.Equals(t, "v0.2.0-rc1", w.String())
+	then.Equals(t, "v0.2.0-rc1", builder.String())
 }
 
 func TestLatestEchoLatestNonPrerelease(t *testing.T) {
 	cfg := latestConfig()
-	then.WithTempDirConfig(t, cfg, cfg.ChangesDir)
-	w := strings.Builder{}
+	then.WithTempDirConfig(t, cfg)
+
+	builder := strings.Builder{}
 
 	then.CreateFile(t, cfg.ChangesDir, "v0.0.1.md")
 	then.CreateFile(t, cfg.ChangesDir, "v0.1.0.md")
@@ -52,17 +55,19 @@ func TestLatestEchoLatestNonPrerelease(t *testing.T) {
 	then.CreateFile(t, cfg.ChangesDir, "head.tpl.md")
 
 	cmd := NewLatest(os.ReadFile, os.ReadDir)
-    cmd.SkipPrereleases = true
-	cmd.SetOut(&w)
+	cmd.SkipPrereleases = true
+	cmd.SetOut(&builder)
+
 	err := cmd.Run(cmd.Command, nil)
 	then.Nil(t, err)
-	then.Equals(t, "v0.1.0", w.String())
+	then.Equals(t, "v0.1.0", builder.String())
 }
 
 func TestLatestWithoutPrefix(t *testing.T) {
 	cfg := latestConfig()
-	then.WithTempDirConfig(t, cfg, cfg.ChangesDir)
-	w := strings.Builder{}
+	then.WithTempDirConfig(t, cfg)
+
+	builder := strings.Builder{}
 
 	then.CreateFile(t, cfg.ChangesDir, "v0.0.1.md")
 	then.CreateFile(t, cfg.ChangesDir, "v0.1.0.md")
@@ -70,10 +75,11 @@ func TestLatestWithoutPrefix(t *testing.T) {
 
 	cmd := NewLatest(os.ReadFile, os.ReadDir)
 	cmd.RemovePrefix = true
-	cmd.SetOut(&w)
+	cmd.SetOut(&builder)
+
 	err := cmd.Run(cmd.Command, nil)
 	then.Nil(t, err)
-	then.Equals(t, "0.1.0", w.String())
+	then.Equals(t, "0.1.0", builder.String())
 }
 
 func TestErrorLatestBadConfig(t *testing.T) {
@@ -86,7 +92,7 @@ func TestErrorLatestBadConfig(t *testing.T) {
 
 func TestErrorLatestUnableToGetLatest(t *testing.T) {
 	cfg := latestConfig()
-	then.WithTempDirConfig(t, cfg, cfg.ChangesDir)
+	then.WithTempDirConfig(t, cfg)
 
 	mockErr := errors.New("bad read dir")
 	mockReadDir := func(name string) ([]os.DirEntry, error) {
@@ -100,7 +106,7 @@ func TestErrorLatestUnableToGetLatest(t *testing.T) {
 
 func TestErrorLatestBadWrite(t *testing.T) {
 	cfg := latestConfig()
-	then.WithTempDirConfig(t, cfg, cfg.ChangesDir)
+	then.WithTempDirConfig(t, cfg)
 	w := then.NewErrWriter()
 
 	then.CreateFile(t, cfg.ChangesDir, "v0.0.1.md")

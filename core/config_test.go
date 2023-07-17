@@ -110,7 +110,7 @@ custom:
 
 func TestCanCheckIfFileDoesExist(t *testing.T) {
 	cfg := &Config{}
-    then.WithTempDirConfig(t, cfg)
+	then.WithTempDirConfig(t, cfg)
 
 	exist, err := cfg.Exists()
 	then.True(t, exist)
@@ -119,7 +119,8 @@ func TestCanCheckIfFileDoesExist(t *testing.T) {
 
 func TestCanCheckIfFileDoesNotExist(t *testing.T) {
 	cfg := &Config{}
-    then.WithTempDir(t)
+
+	then.WithTempDir(t)
 
 	exist, err := cfg.Exists()
 	then.False(t, exist)

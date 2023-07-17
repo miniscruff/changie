@@ -107,6 +107,7 @@ Changes are sorted in the following order:
 		"headerPath", "",
 		"Path to version header file in unreleased directory",
 	)
+
 	_ = cmd.Flags().MarkDeprecated("headerPath", "use --header-path instead")
 
 	cmd.Flags().StringVar(
@@ -161,6 +162,7 @@ Changes are sorted in the following order:
 		false,
 		"Force a new version file even if one already exists",
 	)
+
 	b.Command = cmd
 
 	return b
@@ -203,6 +205,7 @@ func (b *Batch) getBatchData() (*core.BatchData, error) {
 	}, nil
 }
 
+//nolint:gocyclo
 func (b *Batch) Run(cmd *cobra.Command, args []string) error {
 	var err error
 
@@ -225,7 +228,7 @@ func (b *Batch) Run(cmd *cobra.Command, args []string) error {
 		versionPath := filepath.Join(b.config.ChangesDir, data.Version+"."+b.config.VersionExt)
 
 		if !b.Force {
-			if exists, err := core.FileExists(versionPath); exists || err != nil {
+			if exists, existErr := core.FileExists(versionPath); exists || existErr != nil {
 				return fmt.Errorf("%w: %v", errVersionExists, versionPath)
 			}
 		}
@@ -375,6 +378,7 @@ func (b *Batch) WriteTemplateFile(
 	fullPath := filepath.Join(b.config.ChangesDir, b.config.UnreleasedDir, relativePath)
 
 	var fileBytes []byte
+
 	fileBytes, readErr := b.ReadFile(fullPath)
 	if readErr != nil && !os.IsNotExist(readErr) {
 		return readErr
@@ -464,7 +468,7 @@ func (b *Batch) ClearUnreleased(otherFiles ...string) error {
 
 		fullPath := filepath.Join(b.config.ChangesDir, b.config.UnreleasedDir, p)
 
-		if exists, err := core.FileExists(fullPath); exists && err == nil {
+		if exists, existErr := core.FileExists(fullPath); exists && existErr == nil {
 			filesToMove = append(filesToMove, fullPath)
 		}
 	}

@@ -48,6 +48,7 @@ func NewLatest(readFile shared.ReadFiler, readDir shared.ReadDirer) *Latest {
 	)
 
 	l.Command = cmd
+
 	return l
 }
 

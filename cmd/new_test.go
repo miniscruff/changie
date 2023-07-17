@@ -37,9 +37,8 @@ func newMockTime() time.Time {
 
 func TestNewCreatesNewFileAfterPrompts(t *testing.T) {
 	cfg := newTestConfig()
-	then.WithTempDirConfig(t, cfg, cfg.ChangesDir, cfg.UnreleasedDir)
+	then.WithTempDirConfig(t, cfg)
 	reader, writer := then.WithReadWritePipe(t)
-
 
 	then.DelayWrite(
 		t, writer,
@@ -55,6 +54,8 @@ func TestNewCreatesNewFileAfterPrompts(t *testing.T) {
 		core.NewTemplateCache(),
 	)
 	cmd.SetIn(reader)
+
+	then.Nil(t, os.MkdirAll(filepath.Join(cfg.ChangesDir, cfg.UnreleasedDir), 0755))
 
 	err := cmd.Run(cmd.Command, nil)
 	then.Nil(t, err)
@@ -106,7 +107,7 @@ func TestErrorOnBadConfig(t *testing.T) {
 
 func TestErrorNewOnBadPrompts(t *testing.T) {
 	cfg := newTestConfig()
-	then.WithTempDirConfig(t, cfg, cfg.ChangesDir, cfg.UnreleasedDir)
+	then.WithTempDirConfig(t, cfg)
 	reader, writer := then.WithReadWritePipe(t)
 
 	cmd := NewNew(
@@ -131,7 +132,7 @@ func TestErrorNewOnBadPrompts(t *testing.T) {
 func TestErrorNewFragmentTemplate(t *testing.T) {
 	cfg := newTestConfig()
 	cfg.FragmentFileFormat = "{{...asdf}}"
-	then.WithTempDirConfig(t, cfg, cfg.ChangesDir, cfg.UnreleasedDir)
+	then.WithTempDirConfig(t, cfg)
 	reader, writer := then.WithReadWritePipe(t)
 
 	cmd := NewNew(
@@ -156,7 +157,7 @@ func TestErrorNewFragmentTemplate(t *testing.T) {
 func TestNewOutputsToCmdOutWhenDry(t *testing.T) {
 	cfg := newTestConfig()
 	cfg.Kinds = []core.KindConfig{}
-	then.WithTempDirConfig(t, cfg, cfg.ChangesDir, cfg.UnreleasedDir)
+	then.WithTempDirConfig(t, cfg)
 	reader, writer := then.WithReadWritePipe(t)
 
 	outWriter := strings.Builder{}
@@ -188,7 +189,7 @@ func TestNewOutputsToCmdOutWhenDry(t *testing.T) {
 
 func TestErrorNewBadBody(t *testing.T) {
 	cfg := newTestConfig()
-	then.WithTempDirConfig(t, cfg, cfg.ChangesDir, cfg.UnreleasedDir)
+	then.WithTempDirConfig(t, cfg)
 	reader, writer := then.WithReadWritePipe(t)
 
 	mockErr := errors.New("bad create file")

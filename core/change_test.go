@@ -31,7 +31,7 @@ func TestWriteChange(t *testing.T) {
 	)
 
 	var builder strings.Builder
-	err := change.Write(&builder)
+	_, err := change.WriteTo(&builder)
 
 	then.Equals(t, changesYaml, builder.String())
 	then.Nil(t, err)

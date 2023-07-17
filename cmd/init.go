@@ -61,6 +61,7 @@ Default values follow keep a changelog and semver specs but are customizable.`,
 	cmd.Flags().BoolVarP(&i.Force, "force", "f", false, "force initialize even if config already exist")
 
 	i.Command = cmd
+
 	return i
 }
 
@@ -119,7 +120,7 @@ func (i *Init) Run(cmd *cobra.Command, args []string) error {
 		}
 	}
 
-    err := config.Save(i.WriteFile)
+	err := config.Save(i.WriteFile)
 	if err != nil {
 		return err
 	}

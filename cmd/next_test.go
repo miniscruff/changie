@@ -26,7 +26,8 @@ func nextTestConfig() *core.Config {
 
 func TestNextVersionWithPatch(t *testing.T) {
 	cfg := nextTestConfig()
-	then.WithTempDirConfig(t, cfg, cfg.ChangesDir)
+	then.WithTempDirConfig(t, cfg)
+
 	next := NewNext(os.ReadDir, os.ReadFile)
 	builder := strings.Builder{}
 
@@ -52,8 +53,9 @@ func TestNextVersionWithAuto(t *testing.T) {
 		},
 	}
 
+	then.WithTempDirConfig(t, cfg)
+
 	builder := strings.Builder{}
-    then.WithTempDirConfig(t, cfg, cfg.ChangesDir, cfg.UnreleasedDir)
 	next := NewNext(os.ReadDir, os.ReadFile)
 
 	next.SetOut(&builder)
@@ -66,17 +68,19 @@ func TestNextVersionWithAuto(t *testing.T) {
 	minorChange := core.Change{
 		Kind: "Feature",
 	}
-	then.Nil(t, minorChange.Write(&changeBytes))
+	_, err := minorChange.WriteTo(&changeBytes)
+	then.Nil(t, err)
 	then.WriteFile(t, changeBytes.Bytes(), cfg.ChangesDir, cfg.UnreleasedDir, "a.yaml")
 
-	err := next.Run(next.Command, []string{"auto"})
+	err = next.Run(next.Command, []string{"auto"})
 	then.Nil(t, err)
 	then.Equals(t, "v0.2.0", builder.String())
 }
 
 func TestNextVersionWithPrereleaseAndMeta(t *testing.T) {
-    cfg := nextTestConfig()
-    then.WithTempDirConfig(t, cfg, cfg.ChangesDir)
+	cfg := nextTestConfig()
+	then.WithTempDirConfig(t, cfg)
+
 	next := NewNext(os.ReadDir, os.ReadFile)
 	builder := strings.Builder{}
 
@@ -94,7 +98,8 @@ func TestNextVersionWithPrereleaseAndMeta(t *testing.T) {
 }
 
 func TestErrorNextVersionBadConfig(t *testing.T) {
-    then.WithTempDir(t)
+	then.WithTempDir(t)
+
 	next := NewNext(os.ReadDir, os.ReadFile)
 	builder := strings.Builder{}
 
@@ -105,8 +110,9 @@ func TestErrorNextVersionBadConfig(t *testing.T) {
 }
 
 func TestErrorNextPartNotSupported(t *testing.T) {
-    cfg := nextTestConfig()
-    then.WithTempDirConfig(t, cfg, cfg.ChangesDir)
+	cfg := nextTestConfig()
+	then.WithTempDirConfig(t, cfg)
+
 	next := NewNext(os.ReadDir, os.ReadFile)
 	builder := strings.Builder{}
 
@@ -119,7 +125,8 @@ func TestErrorNextPartNotSupported(t *testing.T) {
 
 func TestErrorNextUnableToGetChanges(t *testing.T) {
 	cfg := nextTestConfig()
-    then.WithTempDirConfig(t, cfg, cfg.ChangesDir, cfg.UnreleasedDir)
+	then.WithTempDirConfig(t, cfg)
+
 	next := NewNext(os.ReadDir, os.ReadFile)
 	builder := strings.Builder{}
 	aVer := []byte("not a valid change")
@@ -133,7 +140,8 @@ func TestErrorNextUnableToGetChanges(t *testing.T) {
 }
 
 func TestErrorNextUnableToGetVersions(t *testing.T) {
-    then.WithTempDirConfig(t, nextTestConfig())
+	then.WithTempDirConfig(t, nextTestConfig())
+
 	next := NewNext(os.ReadDir, os.ReadFile)
 	builder := strings.Builder{}
 

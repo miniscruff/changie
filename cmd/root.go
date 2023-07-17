@@ -31,18 +31,18 @@ being easy to use for developers and your release team.`,
 		os.MkdirAll,
 		os.Remove,
 		os.RemoveAll,
-        time.Now,
+		time.Now,
 		templateCache,
 	)
 
-    merge := NewMerge(
-        os.ReadFile,
-        os.WriteFile,
-        os.ReadDir,
-        os.Open,
-        os.Create,
-        templateCache,
-    )
+	merge := NewMerge(
+		os.ReadFile,
+		os.WriteFile,
+		os.ReadDir,
+		os.Open,
+		os.Create,
+		templateCache,
+	)
 
 	cmd.AddCommand(batch.Command)
 	cmd.AddCommand(NewGen().Command)

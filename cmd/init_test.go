@@ -25,9 +25,9 @@ func initConfig() *core.Config {
 }
 
 func TestInitBuildsDefaultSkeleton(t *testing.T) {
-	cfg := initConfig()
 	then.WithTempDir(t)
 
+	cfg := initConfig()
 	cmd := NewInit(os.MkdirAll, os.WriteFile)
 	err := cmd.Run(cmd.Command, nil)
 
@@ -102,7 +102,7 @@ func TestErrorInitBadWriteFiles(t *testing.T) {
 			then.WithTempDir(t)
 
 			mockWriteFile := func(path string, data []byte, perm os.FileMode) error {
-                t.Log(path, filepath.Join(tc.path...))
+				t.Log(path, filepath.Join(tc.path...))
 				if path == filepath.Join(tc.path...) {
 					return mockError
 				}
@@ -110,7 +110,7 @@ func TestErrorInitBadWriteFiles(t *testing.T) {
 			}
 
 			cmd := NewInit(os.MkdirAll, mockWriteFile)
-            err := cmd.Run(cmd.Command, nil)
+			err := cmd.Run(cmd.Command, nil)
 			then.Err(t, mockError, err)
 		})
 	}

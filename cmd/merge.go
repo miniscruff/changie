@@ -48,7 +48,7 @@ func NewMerge(
 		Long: `Merge all version files into one changelog file and run any replacement commands.
 
 Note that a newline is added between each version file.`,
-        Args: cobra.NoArgs,
+		Args: cobra.NoArgs,
 		RunE: m.Run,
 	}
 
@@ -60,6 +60,7 @@ Note that a newline is added between each version file.`,
 	)
 
 	m.Command = cmd
+
 	return m
 }
 

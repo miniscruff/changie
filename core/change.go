@@ -108,12 +108,12 @@ type Change struct {
 	Env map[string]string `yaml:"-" default:"nil"`
 }
 
-// Write will write a change to the writer as YAML
-func (change Change) Write(writer io.Writer) error {
+// WriteTo will write a change to the writer as YAML
+func (change Change) WriteTo(writer io.Writer) (int64, error) {
 	bs, _ := yaml.Marshal(&change)
-	_, err := writer.Write(bs)
+	n, err := writer.Write(bs)
 
-	return err
+	return int64(n), err
 }
 
 type PromptContext struct {

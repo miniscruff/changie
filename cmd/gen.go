@@ -74,6 +74,7 @@ func NewGen() *Gen {
 	}
 
 	g.Command = cmd
+
 	return g
 }
 

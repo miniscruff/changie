@@ -34,6 +34,7 @@ func utilsTestConfig() *Config {
 
 func TestAppendFileAppendsTwoFiles(t *testing.T) {
 	then.WithTempDir(t)
+
 	rootPath := "root.txt"
 	appendPath := "append.txt"
 
@@ -589,7 +590,8 @@ func TestErrorHighestAutoLevelWithNoChanges(t *testing.T) {
 
 func TestGetAllChanges(t *testing.T) {
 	cfg := utilsTestConfig()
-	then.WithTempDirConfig(t, cfg, cfg.ChangesDir, cfg.UnreleasedDir)
+	then.WithTempDirConfig(t, cfg)
+
 	orderedTimes := []time.Time{
 		time.Date(2019, 5, 25, 20, 45, 0, 0, time.UTC),
 		time.Date(2017, 4, 25, 15, 20, 0, 0, time.UTC),
@@ -632,7 +634,7 @@ func TestGetAllChanges(t *testing.T) {
 
 func TestBatchErrorIfUnableToReadDir(t *testing.T) {
 	cfg := utilsTestConfig()
-	then.WithTempDirConfig(t, cfg, cfg.ChangesDir, cfg.UnreleasedDir)
+	then.WithTempDirConfig(t, cfg)
 
 	mockErr := errors.New("bad mock open")
 	readDir := func(dirname string) ([]os.DirEntry, error) {
@@ -650,7 +652,7 @@ func TestBatchErrorIfUnableToReadDir(t *testing.T) {
 
 func TestBatchErrorBadChangesFile(t *testing.T) {
 	cfg := utilsTestConfig()
-	then.WithTempDirConfig(t, cfg, cfg.ChangesDir, cfg.UnreleasedDir)
+	then.WithTempDirConfig(t, cfg)
 
 	readDir := func(dirname string) ([]os.DirEntry, error) {
 		return []os.DirEntry{
@@ -669,23 +671,26 @@ func TestBatchErrorBadChangesFile(t *testing.T) {
 }
 
 func TestFileExists(t *testing.T) {
-    then.WithTempDir(t)
-    then.CreateFile(t, "does_exist.txt")
-    exists, err := FileExists("does_exist.txt")
-    then.True(t, exists)
-    then.Nil(t, err)
+	then.WithTempDir(t)
+	then.CreateFile(t, "does_exist.txt")
+
+	exists, err := FileExists("does_exist.txt")
+	then.True(t, exists)
+	then.Nil(t, err)
 }
 
 func TestFileDoesNotExist(t *testing.T) {
-    then.WithTempDir(t)
-    exists, err := FileExists("does_not_exist.txt")
-    then.False(t, exists)
-    then.Nil(t, err)
+	then.WithTempDir(t)
+
+	exists, err := FileExists("does_not_exist.txt")
+	then.False(t, exists)
+	then.Nil(t, err)
 }
 
 func TestFileExistError(t *testing.T) {
-    then.WithTempDir(t)
-    exists, err := FileExists("\000x")
-    then.False(t, exists)
-    then.NotNil(t, err)
+	then.WithTempDir(t)
+
+	exists, err := FileExists("\000x")
+	then.False(t, exists)
+	then.NotNil(t, err)
 }

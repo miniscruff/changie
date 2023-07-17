@@ -120,21 +120,24 @@ func (n *New) Run(cmd *cobra.Command, args []string) error {
 
 		outputPath.WriteString(config.ChangesDir + "/" + config.UnreleasedDir + "/")
 
-		err = n.TemplateCache.Execute(config.FragmentFileFormat, &outputPath, change)
-		if err != nil {
-			return err
+		fileErr := n.TemplateCache.Execute(config.FragmentFileFormat, &outputPath, change)
+		if fileErr != nil {
+			return fileErr
 		}
 
 		outputPath.WriteString(".yaml")
 
-		newFile, err := n.CreateFile(outputPath.String())
-		if err != nil {
-			return err
+		newFile, fileErr := n.CreateFile(outputPath.String())
+		if fileErr != nil {
+			return fileErr
 		}
+
 		defer newFile.Close()
 
 		writer = newFile
 	}
 
-	return change.Write(writer)
+	_, err = change.WriteTo(writer)
+
+	return err
 }
