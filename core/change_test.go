@@ -31,7 +31,7 @@ func TestWriteChange(t *testing.T) {
 	)
 
 	var builder strings.Builder
-	err := change.Write(&builder)
+	_, err := change.WriteTo(&builder)
 
 	then.Equals(t, changesYaml, builder.String())
 	then.Nil(t, err)
@@ -78,7 +78,7 @@ func TestSortByTime(t *testing.T) {
 		{Body: "second", Time: orderedTimes[1]},
 		{Body: "first", Time: orderedTimes[0]},
 	}
-	config := Config{}
+	config := &Config{}
 	SortByConfig(config).Sort(changes)
 
 	then.Equals(t, "third", changes[0].Body)
@@ -87,7 +87,7 @@ func TestSortByTime(t *testing.T) {
 }
 
 func TestSortByKindThenTime(t *testing.T) {
-	config := Config{
+	config := &Config{
 		Kinds: []KindConfig{
 			{Label: "A"},
 			{Label: "B"},
@@ -108,7 +108,7 @@ func TestSortByKindThenTime(t *testing.T) {
 }
 
 func TestSortByComponentThenKind(t *testing.T) {
-	config := Config{
+	config := &Config{
 		Kinds: []KindConfig{
 			{Label: "D"},
 			{Label: "E"},
@@ -156,7 +156,7 @@ func TestAskPromptsForBody(t *testing.T) {
 		[]byte{13},
 	)
 
-	config := Config{}
+	config := &Config{}
 	c := &Change{}
 	then.Nil(t, c.AskPrompts(config, reader))
 
@@ -176,7 +176,7 @@ func TestAskComponentKindBody(t *testing.T) {
 		[]byte{13},
 	)
 
-	config := Config{
+	config := &Config{
 		Components: []string{"cli", "tests", "utils"},
 		Kinds: []KindConfig{
 			{Label: "added"},
@@ -196,7 +196,7 @@ func TestAskComponentKindBody(t *testing.T) {
 func TestBodyKindPostProcess(t *testing.T) {
 	reader, _ := then.WithReadWritePipe(t)
 
-	config := Config{
+	config := &Config{
 		Kinds: []KindConfig{
 			{
 				Label: "added",
@@ -236,7 +236,7 @@ func TestBodyCustom(t *testing.T) {
 		[]byte{13},
 	)
 
-	config := Config{
+	config := &Config{
 		CustomChoices: []Custom{
 			{Key: "check", Type: CustomString},
 		},
@@ -260,7 +260,7 @@ func TestBodyCustomWithExistingCustomValue(t *testing.T) {
 		[]byte{13},
 	)
 
-	config := Config{
+	config := &Config{
 		CustomChoices: []Custom{
 			{Key: "Issue", Type: CustomString},
 			{Key: "Project", Label: "Custom Project Prompt", Type: CustomString},
@@ -290,7 +290,7 @@ func TestSkippedBodyGlobalChoicesKindWithAdditional(t *testing.T) {
 		[]byte{13},
 	)
 
-	config := Config{
+	config := &Config{
 		CustomChoices: []Custom{
 			{Key: "skipped", Type: CustomString, Label: "a"},
 		},
@@ -319,7 +319,7 @@ func TestSkippedBodyGlobalChoicesKindWithAdditional(t *testing.T) {
 func TestBodyAndPostProcess(t *testing.T) {
 	reader, _ := then.WithReadWritePipe(t)
 
-	config := Config{
+	config := &Config{
 		Post: []PostProcessConfig{
 			{Key: "Post", Value: "Body again {{.Body}}"},
 		},
@@ -339,7 +339,7 @@ func TestBodyAndPostProcess(t *testing.T) {
 
 func TestBodyAndPostProcessSkipGlobalPost(t *testing.T) {
 	reader, _ := then.WithReadWritePipe(t)
-	config := Config{
+	config := &Config{
 		Kinds: []KindConfig{
 			{
 				Label:          "added",
@@ -384,7 +384,7 @@ func TestErrorInvalidBody(t *testing.T) {
 
 	var min int64 = 5
 
-	config := Config{
+	config := &Config{
 		Body: BodyConfig{
 			MinLength: &min,
 		},
@@ -395,7 +395,7 @@ func TestErrorInvalidBody(t *testing.T) {
 
 func TestErrorInvalidPost(t *testing.T) {
 	reader, _ := then.WithReadWritePipe(t)
-	config := Config{
+	config := &Config{
 		Post: []PostProcessConfig{
 			{Key: "Post", Value: "invalid {{++...thing}}"},
 		},
@@ -414,7 +414,7 @@ func TestErrorInvalidCustomType(t *testing.T) {
 		[]byte{13},
 	)
 
-	config := Config{
+	config := &Config{
 		CustomChoices: []Custom{
 			{Key: "check", Type: "bad type", Label: "a"},
 		},
@@ -431,7 +431,7 @@ func TestErrorInvalidComponent(t *testing.T) {
 		[]byte{3},
 	)
 
-	config := Config{
+	config := &Config{
 		Components: []string{"a", "b"},
 	}
 	c := &Change{}
@@ -445,7 +445,7 @@ func TestErrorInvalidKind(t *testing.T) {
 		[]byte{3},
 	)
 
-	config := Config{
+	config := &Config{
 		Kinds: []KindConfig{
 			{Label: "a"},
 			{Label: "b"},
@@ -462,7 +462,7 @@ func TestErrorFaultBody(t *testing.T) {
 		[]byte{3},
 	)
 
-	config := Config{}
+	config := &Config{}
 	c := &Change{}
 	then.NotNil(t, c.AskPrompts(config, reader))
 }
@@ -477,7 +477,7 @@ func TestErrorInvalidCustomValue(t *testing.T) {
 		[]byte{3},
 	)
 
-	config := Config{
+	config := &Config{
 		CustomChoices: []Custom{
 			{Key: "check", Type: CustomString, Label: "a"},
 		},
@@ -488,7 +488,7 @@ func TestErrorInvalidCustomValue(t *testing.T) {
 
 func TestErrorBadKindLabel(t *testing.T) {
 	reader, _ := then.WithReadWritePipe(t)
-	config := Config{
+	config := &Config{
 		Kinds: []KindConfig{
 			{Label: "kind"},
 		},
@@ -504,7 +504,7 @@ func TestErrorBadKindLabel(t *testing.T) {
 
 func TestErrorBadComponentInput(t *testing.T) {
 	reader, _ := then.WithReadWritePipe(t)
-	config := Config{
+	config := &Config{
 		Components: []string{"a", "b", "c"},
 	}
 	c := &Change{
@@ -518,7 +518,7 @@ func TestErrorBadComponentInput(t *testing.T) {
 
 func TestErrorComponentGivenWithNoConfiguration(t *testing.T) {
 	reader, _ := then.WithReadWritePipe(t)
-	config := Config{}
+	config := &Config{}
 	c := &Change{
 		Component: "we shouldn't have a component",
 		Body:      "body",
@@ -530,7 +530,7 @@ func TestErrorComponentGivenWithNoConfiguration(t *testing.T) {
 
 func TestErrorKindGivenWithNoConfiguration(t *testing.T) {
 	reader, _ := then.WithReadWritePipe(t)
-	config := Config{}
+	config := &Config{}
 	c := &Change{
 		Kind: "we shouldn't have a kind",
 		Body: "body",
@@ -542,7 +542,7 @@ func TestErrorKindGivenWithNoConfiguration(t *testing.T) {
 
 func TestErrorCustomGivenWithNoConfiguration(t *testing.T) {
 	reader, _ := then.WithReadWritePipe(t)
-	config := Config{
+	config := &Config{
 		CustomChoices: []Custom{
 			{Key: "Issue", Type: CustomInt},
 		},
@@ -560,7 +560,7 @@ func TestErrorCustomGivenWithNoConfiguration(t *testing.T) {
 func TestErrorCustomGivenDoesNotPassValidation(t *testing.T) {
 	reader, _ := then.WithReadWritePipe(t)
 	minValue := int64(50)
-	config := Config{
+	config := &Config{
 		CustomChoices: []Custom{
 			{Key: "Issue", Type: CustomInt, MinInt: &minValue},
 		},
@@ -577,7 +577,7 @@ func TestErrorCustomGivenDoesNotPassValidation(t *testing.T) {
 
 func TestErrorBodyGivenWithNoConfiguration(t *testing.T) {
 	reader, _ := then.WithReadWritePipe(t)
-	config := Config{
+	config := &Config{
 		Kinds: []KindConfig{
 			{Label: "kind", SkipBody: true},
 		},
@@ -595,7 +595,7 @@ func TestErrorBodyGivenDoesNotPassValidation(t *testing.T) {
 	var min int64 = 10
 
 	reader, _ := then.WithReadWritePipe(t)
-	config := Config{
+	config := &Config{
 		Kinds: []KindConfig{
 			{Label: "kind"},
 		},
@@ -620,7 +620,7 @@ func TestSkipPromptForComponentIfSet(t *testing.T) {
 		[]byte{13},
 	)
 
-	config := Config{
+	config := &Config{
 		Components: []string{"a", "b"},
 	}
 	c := &Change{
@@ -640,7 +640,7 @@ func TestSkipPromptForKindIfSet(t *testing.T) {
 		[]byte{13},
 	)
 
-	config := Config{
+	config := &Config{
 		Kinds: []KindConfig{
 			{Label: "kind"},
 		},
@@ -662,7 +662,7 @@ func TestSkipPromptForBodyIfSet(t *testing.T) {
 		[]byte{13},
 	)
 
-	config := Config{
+	config := &Config{
 		Kinds: []KindConfig{
 			{Label: "kind"},
 		},

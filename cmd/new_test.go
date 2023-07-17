@@ -9,8 +9,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/spf13/afero"
-
 	"github.com/miniscruff/changie/core"
 	"github.com/miniscruff/changie/then"
 )
@@ -33,22 +31,15 @@ func newTestConfig() *core.Config {
 	}
 }
 
-func newResetVars() {
-	_newDryRun = false
-	_body = ""
-	_kind = ""
-	_component = ""
-	_custom = nil
-}
-
 func newMockTime() time.Time {
 	return time.Date(2021, 5, 22, 13, 30, 10, 5, time.UTC)
 }
 
 func TestNewCreatesNewFileAfterPrompts(t *testing.T) {
 	cfg := newTestConfig()
-	_, afs := then.WithAferoFSConfig(t, cfg)
+	then.WithTempDirConfig(t, cfg)
 	reader, writer := then.WithReadWritePipe(t)
+
 	then.DelayWrite(
 		t, writer,
 		[]byte{106, 13},
@@ -56,16 +47,21 @@ func TestNewCreatesNewFileAfterPrompts(t *testing.T) {
 		[]byte{13},
 	)
 
-	err := newPipeline(newConfig{
-		afs:           afs,
-		timeNow:       newMockTime,
-		stdinReader:   reader,
-		templateCache: core.NewTemplateCache(),
-	})
+	cmd := NewNew(
+		os.ReadFile,
+		os.Create,
+		newMockTime,
+		core.NewTemplateCache(),
+	)
+	cmd.SetIn(reader)
+
+	then.Nil(t, os.MkdirAll(filepath.Join(cfg.ChangesDir, cfg.UnreleasedDir), 0755))
+
+	err := cmd.Run(cmd.Command, nil)
 	then.Nil(t, err)
 
 	futurePath := filepath.Join(cfg.ChangesDir, cfg.UnreleasedDir)
-	fileInfos, err := afs.ReadDir(futurePath)
+	fileInfos, err := os.ReadDir(futurePath)
 	then.Nil(t, err)
 	then.Equals(t, 1, len(fileInfos))
 	then.Equals(t, ".yaml", filepath.Ext(fileInfos[0].Name()))
@@ -74,67 +70,79 @@ func TestNewCreatesNewFileAfterPrompts(t *testing.T) {
 		"kind: removed\nbody: a message\ntime: %s\n",
 		newMockTime().Format(time.RFC3339Nano),
 	)
-	then.FileContents(t, afs, changeContent, futurePath, fileInfos[0].Name())
+
+	then.FileExists(t, futurePath, fileInfos[0].Name())
+	then.FileContents(t, changeContent, futurePath, fileInfos[0].Name())
 }
 
 func TestErrorNewBadCustomValues(t *testing.T) {
-	_, afs := then.WithAferoFSConfig(t, newTestConfig())
-	_custom = []string{"bad-format"}
+	cfg := newTestConfig()
+	then.WithTempDirConfig(t, cfg)
 
-	t.Cleanup(newResetVars)
+	cmd := NewNew(
+		os.ReadFile,
+		os.Create,
+		newMockTime,
+		core.NewTemplateCache(),
+	)
+	cmd.Custom = []string{"bad-format"}
 
-	err := newPipeline(newConfig{
-		afs:           afs,
-		timeNow:       newMockTime,
-		stdinReader:   nil,
-		templateCache: core.NewTemplateCache(),
-	})
+	err := cmd.Run(cmd.Command, nil)
 	then.NotNil(t, err)
 }
 
 func TestErrorOnBadConfig(t *testing.T) {
-	_, afs := then.WithAferoFS()
-	err := newPipeline(newConfig{
-		afs:           afs,
-		timeNow:       newMockTime,
-		stdinReader:   os.Stdin,
-		templateCache: core.NewTemplateCache(),
-	})
+	then.WithTempDir(t)
+
+	cmd := NewNew(
+		os.ReadFile,
+		os.Create,
+		newMockTime,
+		core.NewTemplateCache(),
+	)
+
+	err := cmd.Run(cmd.Command, nil)
 	then.NotNil(t, err)
 }
 
-func TestErrorNewOnBadWrite(t *testing.T) {
+func TestErrorNewOnBadPrompts(t *testing.T) {
 	cfg := newTestConfig()
-	cfg.Kinds = []core.KindConfig{}
-	fs, afs := then.WithAferoFSConfig(t, cfg)
-
+	then.WithTempDirConfig(t, cfg)
 	reader, writer := then.WithReadWritePipe(t)
+
+	cmd := NewNew(
+		os.ReadFile,
+		os.Create,
+		newMockTime,
+		core.NewTemplateCache(),
+	)
+	cmd.SetIn(reader)
+
 	then.DelayWrite(
 		t, writer,
-		[]byte("body stuff"),
-		[]byte{13},
+		[]byte{106, 13},
+		[]byte("a message"),
+		[]byte{3}, // 3=ctrl+c to quit
 	)
 
-	mockError := errors.New("dummy mock error")
-	fs.MockCreate = func(name string) (afero.File, error) {
-		return nil, mockError
-	}
-
-	err := newPipeline(newConfig{
-		afs:           afs,
-		timeNow:       newMockTime,
-		stdinReader:   reader,
-		templateCache: core.NewTemplateCache(),
-	})
-	then.Err(t, mockError, err)
+	err := cmd.Run(cmd.Command, nil)
+	then.NotNil(t, err)
 }
 
 func TestErrorNewFragmentTemplate(t *testing.T) {
 	cfg := newTestConfig()
 	cfg.FragmentFileFormat = "{{...asdf}}"
-	_, afs := then.WithAferoFSConfig(t, cfg)
-
+	then.WithTempDirConfig(t, cfg)
 	reader, writer := then.WithReadWritePipe(t)
+
+	cmd := NewNew(
+		os.ReadFile,
+		os.Create,
+		newMockTime,
+		core.NewTemplateCache(),
+	)
+	cmd.SetIn(reader)
+
 	then.DelayWrite(
 		t, writer,
 		[]byte{106, 13},
@@ -142,68 +150,68 @@ func TestErrorNewFragmentTemplate(t *testing.T) {
 		[]byte{13},
 	)
 
-	err := newPipeline(newConfig{
-		afs:           afs,
-		timeNow:       newMockTime,
-		stdinReader:   reader,
-		templateCache: core.NewTemplateCache(),
-	})
+	err := cmd.Run(cmd.Command, nil)
 	then.NotNil(t, err)
 }
 
 func TestNewOutputsToCmdOutWhenDry(t *testing.T) {
-	_newDryRun = true
-
-	t.Cleanup(newResetVars)
-
 	cfg := newTestConfig()
 	cfg.Kinds = []core.KindConfig{}
-	_, afs := then.WithAferoFSConfig(t, cfg)
-
+	then.WithTempDirConfig(t, cfg)
 	reader, writer := then.WithReadWritePipe(t)
+
+	outWriter := strings.Builder{}
+	cmd := NewNew(
+		os.ReadFile,
+		os.Create,
+		newMockTime,
+		core.NewTemplateCache(),
+	)
+	cmd.DryRun = true
+	cmd.SetIn(reader)
+	cmd.SetOut(&outWriter)
+
 	then.DelayWrite(
 		t, writer,
 		[]byte("another body"),
 		[]byte{13},
 	)
 
-	outWriter := strings.Builder{}
-
 	changeContent := fmt.Sprintf(
 		"body: another body\ntime: %s\n",
 		newMockTime().Format(time.RFC3339Nano),
 	)
 
-	err := newPipeline(newConfig{
-		afs:           afs,
-		timeNow:       newMockTime,
-		stdinReader:   reader,
-		templateCache: core.NewTemplateCache(),
-		cmdOut:        &outWriter,
-	})
+	err := cmd.Run(cmd.Command, nil)
 	then.Nil(t, err)
 	then.Equals(t, changeContent, outWriter.String())
-
-	futurePath := filepath.Join(cfg.ChangesDir, cfg.UnreleasedDir)
-	_, err = afs.ReadDir(futurePath)
-	then.NotNil(t, err)
 }
 
 func TestErrorNewBadBody(t *testing.T) {
-	_, afs := then.WithAferoFSConfig(t, newTestConfig())
+	cfg := newTestConfig()
+	then.WithTempDirConfig(t, cfg)
 	reader, writer := then.WithReadWritePipe(t)
+
+	mockErr := errors.New("bad create file")
+	badCreate := func(filename string) (*os.File, error) {
+		return nil, mockErr
+	}
+
+	cmd := NewNew(
+		os.ReadFile,
+		badCreate,
+		newMockTime,
+		core.NewTemplateCache(),
+	)
+	cmd.SetIn(reader)
+
 	then.DelayWrite(
 		t, writer,
+		[]byte{106, 13},
+		[]byte("a message"),
 		[]byte{13},
-		[]byte("ctrl-c next"),
-		[]byte{3},
 	)
 
-	err := newPipeline(newConfig{
-		afs:           afs,
-		timeNow:       newMockTime,
-		stdinReader:   reader,
-		templateCache: core.NewTemplateCache(),
-	})
-	then.NotNil(t, err)
+	err := cmd.Run(cmd.Command, nil)
+	then.Err(t, mockErr, err)
 }

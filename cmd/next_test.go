@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"bytes"
+	"os"
 	"strings"
 	"testing"
 
@@ -24,17 +25,19 @@ func nextTestConfig() *core.Config {
 }
 
 func TestNextVersionWithPatch(t *testing.T) {
-	_, afs := then.WithAferoFSConfig(t, nextTestConfig())
-	next := NewNext(afs.ReadDir, afs.ReadFile)
+	cfg := nextTestConfig()
+	then.WithTempDirConfig(t, cfg)
+
+	next := NewNext(os.ReadDir, os.ReadFile)
 	builder := strings.Builder{}
 
 	next.SetOut(&builder)
 
 	// major and minor are not tested directly
 	// as next version is tested in utils
-	then.CreateFile(t, afs, "chgs", "v0.0.1.md")
-	then.CreateFile(t, afs, "chgs", "v0.1.0.md")
-	then.CreateFile(t, afs, "chgs", "head.tpl.md")
+	then.CreateFile(t, cfg.ChangesDir, "v0.0.1.md")
+	then.CreateFile(t, cfg.ChangesDir, "v0.1.0.md")
+	then.CreateFile(t, cfg.ChangesDir, "head.tpl.md")
 
 	err := next.Run(next.Command, []string{"patch"})
 	then.Nil(t, err)
@@ -50,40 +53,44 @@ func TestNextVersionWithAuto(t *testing.T) {
 		},
 	}
 
+	then.WithTempDirConfig(t, cfg)
+
 	builder := strings.Builder{}
-	_, afs := then.WithAferoFSConfig(t, cfg)
-	next := NewNext(afs.ReadDir, afs.ReadFile)
+	next := NewNext(os.ReadDir, os.ReadFile)
 
 	next.SetOut(&builder)
-	then.CreateFile(t, afs, "chgs", "v0.0.1.md")
-	then.CreateFile(t, afs, "chgs", "v0.1.0.md")
-	then.CreateFile(t, afs, "chgs", "head.tpl.md")
+	then.CreateFile(t, cfg.ChangesDir, "v0.0.1.md")
+	then.CreateFile(t, cfg.ChangesDir, "v0.1.0.md")
+	then.CreateFile(t, cfg.ChangesDir, "head.tpl.md")
 
 	var changeBytes bytes.Buffer
 
 	minorChange := core.Change{
 		Kind: "Feature",
 	}
-	then.Nil(t, minorChange.Write(&changeBytes))
-	then.WriteFile(t, afs, changeBytes.Bytes(), cfg.ChangesDir, cfg.UnreleasedDir, "a.yaml")
+	_, err := minorChange.WriteTo(&changeBytes)
+	then.Nil(t, err)
+	then.WriteFile(t, changeBytes.Bytes(), cfg.ChangesDir, cfg.UnreleasedDir, "a.yaml")
 
-	err := next.Run(next.Command, []string{"auto"})
+	err = next.Run(next.Command, []string{"auto"})
 	then.Nil(t, err)
 	then.Equals(t, "v0.2.0", builder.String())
 }
 
 func TestNextVersionWithPrereleaseAndMeta(t *testing.T) {
-	_, afs := then.WithAferoFSConfig(t, nextTestConfig())
-	next := NewNext(afs.ReadDir, afs.ReadFile)
+	cfg := nextTestConfig()
+	then.WithTempDirConfig(t, cfg)
+
+	next := NewNext(os.ReadDir, os.ReadFile)
 	builder := strings.Builder{}
 
 	next.Prerelease = []string{"b1"}
 	next.Meta = []string{"hash"}
 
 	next.SetOut(&builder)
-	then.CreateFile(t, afs, "chgs", "v0.0.1.md")
-	then.CreateFile(t, afs, "chgs", "v0.1.0.md")
-	then.CreateFile(t, afs, "chgs", "head.tpl.md")
+	then.CreateFile(t, cfg.ChangesDir, "v0.0.1.md")
+	then.CreateFile(t, cfg.ChangesDir, "v0.1.0.md")
+	then.CreateFile(t, cfg.ChangesDir, "head.tpl.md")
 
 	err := next.Run(next.Command, []string{"patch"})
 	then.Nil(t, err)
@@ -91,9 +98,10 @@ func TestNextVersionWithPrereleaseAndMeta(t *testing.T) {
 }
 
 func TestErrorNextVersionBadConfig(t *testing.T) {
-	_, afs := then.WithAferoFS()
+	then.WithTempDir(t)
+
+	next := NewNext(os.ReadDir, os.ReadFile)
 	builder := strings.Builder{}
-	next := NewNext(afs.ReadDir, afs.ReadFile)
 
 	next.SetOut(&builder)
 
@@ -102,12 +110,14 @@ func TestErrorNextVersionBadConfig(t *testing.T) {
 }
 
 func TestErrorNextPartNotSupported(t *testing.T) {
-	_, afs := then.WithAferoFSConfig(t, nextTestConfig())
+	cfg := nextTestConfig()
+	then.WithTempDirConfig(t, cfg)
+
+	next := NewNext(os.ReadDir, os.ReadFile)
 	builder := strings.Builder{}
-	next := NewNext(afs.ReadDir, afs.ReadFile)
 
 	next.SetOut(&builder)
-	then.CreateFile(t, afs, "chgs", "v0.0.1.md")
+	then.CreateFile(t, cfg.ChangesDir, "v0.0.1.md")
 
 	err := next.Run(next.Command, []string{"notsupported"})
 	then.NotNil(t, err)
@@ -115,13 +125,14 @@ func TestErrorNextPartNotSupported(t *testing.T) {
 
 func TestErrorNextUnableToGetChanges(t *testing.T) {
 	cfg := nextTestConfig()
+	then.WithTempDirConfig(t, cfg)
+
+	next := NewNext(os.ReadDir, os.ReadFile)
 	builder := strings.Builder{}
-	_, afs := then.WithAferoFSConfig(t, cfg)
-	next := NewNext(afs.ReadDir, afs.ReadFile)
 	aVer := []byte("not a valid change")
 
 	next.SetOut(&builder)
-	then.WriteFile(t, afs, aVer, cfg.ChangesDir, cfg.UnreleasedDir, "a.yaml")
+	then.WriteFile(t, aVer, cfg.ChangesDir, cfg.UnreleasedDir, "a.yaml")
 
 	// bad yaml will fail to load changes
 	err := next.Run(next.Command, []string{"auto"})
@@ -129,9 +140,10 @@ func TestErrorNextUnableToGetChanges(t *testing.T) {
 }
 
 func TestErrorNextUnableToGetVersions(t *testing.T) {
-	_, afs := then.WithAferoFSConfig(t, nextTestConfig())
+	then.WithTempDirConfig(t, nextTestConfig())
+
+	next := NewNext(os.ReadDir, os.ReadFile)
 	builder := strings.Builder{}
-	next := NewNext(afs.ReadDir, afs.ReadFile)
 
 	next.SetOut(&builder)
 

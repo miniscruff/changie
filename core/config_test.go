@@ -109,36 +109,22 @@ custom:
 }
 
 func TestCanCheckIfFileDoesExist(t *testing.T) {
-	config := Config{}
-	exister := func(path string) (bool, error) {
-		return true, nil
-	}
+	cfg := &Config{}
+	then.WithTempDirConfig(t, cfg)
 
-	exist, err := config.Exists(exister)
+	exist, err := cfg.Exists()
 	then.True(t, exist)
 	then.Nil(t, err)
 }
 
 func TestCanCheckIfFileDoesNotExist(t *testing.T) {
-	config := Config{}
-	exister := func(path string) (bool, error) {
-		return false, nil
-	}
+	cfg := &Config{}
 
-	exist, err := config.Exists(exister)
+	then.WithTempDir(t)
+
+	exist, err := cfg.Exists()
 	then.False(t, exist)
 	then.Nil(t, err)
-}
-
-func TestErrorWhenCheckingFileExists(t *testing.T) {
-	mockError := errors.New("mock error")
-	config := Config{}
-	exister := func(path string) (bool, error) {
-		return false, mockError
-	}
-
-	_, err := config.Exists(exister)
-	then.Err(t, mockError, err)
 }
 
 func TestLoadConfigFromPath(t *testing.T) {

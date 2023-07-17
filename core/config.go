@@ -354,9 +354,9 @@ func (c *Config) Save(wf shared.WriteFiler) error {
 }
 
 // Exists returns whether or not a config already exists
-func (c *Config) Exists(fe shared.FileExister) (bool, error) {
+func (c *Config) Exists() (bool, error) {
 	for _, p := range ConfigPaths {
-		if exists, err := fe(p); exists || err != nil {
+		if exists, err := FileExists(p); exists || err != nil {
 			return exists, err
 		}
 	}
@@ -365,7 +365,7 @@ func (c *Config) Exists(fe shared.FileExister) (bool, error) {
 }
 
 // LoadConfig will load the config from the default path
-func LoadConfig(rf shared.ReadFiler) (Config, error) {
+func LoadConfig(rf shared.ReadFiler) (*Config, error) {
 	var (
 		c   Config
 		bs  []byte
@@ -385,12 +385,12 @@ func LoadConfig(rf shared.ReadFiler) (Config, error) {
 	}
 
 	if err != nil {
-		return c, err
+		return nil, err
 	}
 
 	err = yaml.Unmarshal(bs, &c)
 	if err != nil {
-		return c, err
+		return nil, err
 	}
 
 	// load backward incompatible configs
@@ -406,5 +406,5 @@ func LoadConfig(rf shared.ReadFiler) (Config, error) {
 		c.FragmentFileFormat += fmt.Sprintf("{{.Time.Format \"%v\"}}", timeFormat)
 	}
 
-	return c, nil
+	return &c, nil
 }

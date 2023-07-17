@@ -12,7 +12,8 @@ func Equals[T comparable](t *testing.T, expected, actual T) {
 	t.Helper()
 
 	if expected != actual {
-		t.Errorf("expected '%v' to equal '%v'", expected, actual)
+		t.Logf("expected '%v' to equal '%v'", expected, actual)
+		t.FailNow()
 	}
 }
 
@@ -21,7 +22,8 @@ func NotEqual[T comparable](t *testing.T, expected, actual T) {
 	t.Helper()
 
 	if expected == actual {
-		t.Errorf("expected '%v' not to equal '%v'", expected, actual)
+		t.Logf("expected '%v' not to equal '%v'", expected, actual)
+		t.FailNow()
 	}
 }
 
@@ -30,26 +32,29 @@ func MapEquals[M1, M2 ~map[K]V, K, V comparable](t *testing.T, expected M1, actu
 	t.Helper()
 
 	if len(expected) != len(actual) {
-		t.Errorf("length of expected does not equal actual: %v != %v", len(expected), len(actual))
+		t.Logf("length of expected does not equal actual: %v != %v", len(expected), len(actual))
+		t.FailNow()
 	}
 
 	for k, v1 := range expected {
 		v2, ok := actual[k]
 		if !ok {
-			t.Errorf(
+			t.Logf(
 				"actual map is missing key '%v', expected value: '%v'",
 				k,
 				v1,
 			)
+			t.FailNow()
 		}
 
 		if v1 != v2 {
-			t.Errorf(
+			t.Logf(
 				"expected value does not equal actual of key '%v': expected '%v' != '%v'",
 				k,
 				v1,
 				v2,
 			)
+			t.FailNow()
 		}
 	}
 }
@@ -59,17 +64,19 @@ func SliceEquals[T comparable](t *testing.T, expected, actual []T) {
 	t.Helper()
 
 	if len(expected) != len(actual) {
-		t.Errorf("length of expected does not equal actual: %v != %v", len(expected), len(actual))
+		t.Logf("length of expected does not equal actual: %v != %v", len(expected), len(actual))
+		t.FailNow()
 	}
 
 	for i := 0; i < len(expected); i++ {
 		if expected[i] != actual[i] {
-			t.Errorf(
+			t.Logf(
 				"expected value does not equal actual at index %v: expected '%v' != '%v'",
 				i,
 				expected[i],
 				actual[i],
 			)
+			t.FailNow()
 		}
 	}
 }
@@ -79,7 +86,8 @@ func Nil(t *testing.T, value any) {
 	t.Helper()
 
 	if value != nil {
-		t.Errorf("expected '%v' to be nil", value)
+		t.Logf("expected '%v' to be nil", value)
+		t.FailNow()
 	}
 }
 
@@ -88,7 +96,8 @@ func NotNil(t *testing.T, value any) {
 	t.Helper()
 
 	if value == nil {
-		t.Errorf("expected '%v' not to be nil", value)
+		t.Logf("expected '%v' not to be nil", value)
+		t.FailNow()
 	}
 }
 
@@ -97,7 +106,8 @@ func Err(t *testing.T, expected, actual error) {
 	t.Helper()
 
 	if !errors.Is(actual, expected) {
-		t.Errorf("expected '%v' to be '%v'", expected, actual)
+		t.Logf("expected '%v' to be '%v'", expected, actual)
+		t.FailNow()
 	}
 }
 
@@ -110,6 +120,7 @@ func Panic(t *testing.T, f func()) {
 
 	f()
 	t.Error("expected func to panic")
+	t.FailNow()
 }
 
 // True checks if a value is true.
@@ -118,6 +129,7 @@ func True(t *testing.T, value bool) {
 
 	if !value {
 		t.Error("expected value to be true")
+		t.FailNow()
 	}
 }
 
@@ -127,6 +139,7 @@ func False(t *testing.T, value bool) {
 
 	if value {
 		t.Error("expected value to be false")
+		t.FailNow()
 	}
 }
 
@@ -135,6 +148,7 @@ func Contains(t *testing.T, sub, full string) {
 	t.Helper()
 
 	if !strings.Contains(full, sub) {
-		t.Errorf("expected '%v' to be in '%v'", sub, full)
+		t.Logf("expected '%v' to be in '%v'", sub, full)
+		t.FailNow()
 	}
 }

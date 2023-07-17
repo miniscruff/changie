@@ -109,7 +109,7 @@ func (c Custom) DisplayLabel() string {
 	return c.Label
 }
 
-func (c Custom) askString(stdinReader io.ReadCloser) (string, error) {
+func (c Custom) askString(stdinReader io.Reader) (string, error) {
 	return prompt.New().Ask(c.DisplayLabel()).
 		Input(
 			"",
@@ -119,7 +119,7 @@ func (c Custom) askString(stdinReader io.ReadCloser) (string, error) {
 		)
 }
 
-func (c Custom) askBlock(stdinReader io.ReadCloser) (string, error) {
+func (c Custom) askBlock(stdinReader io.Reader) (string, error) {
 	return prompt.New().Ask(c.DisplayLabel()).
 		Write(
 			"",
@@ -129,7 +129,7 @@ func (c Custom) askBlock(stdinReader io.ReadCloser) (string, error) {
 		)
 }
 
-func (c Custom) askInt(stdinReader io.ReadCloser) (string, error) {
+func (c Custom) askInt(stdinReader io.Reader) (string, error) {
 	return prompt.New().Ask(c.DisplayLabel()).
 		Input(
 			"",
@@ -140,7 +140,7 @@ func (c Custom) askInt(stdinReader io.ReadCloser) (string, error) {
 		)
 }
 
-func (c Custom) askEnum(stdinReader io.ReadCloser) (string, error) {
+func (c Custom) askEnum(stdinReader io.Reader) (string, error) {
 	return prompt.New().Ask(c.DisplayLabel()).
 		Choose(
 			c.EnumOptions,
@@ -150,7 +150,7 @@ func (c Custom) askEnum(stdinReader io.ReadCloser) (string, error) {
 }
 
 // CreatePrompt will create a promptui select or prompt from a custom choice
-func (c Custom) AskPrompt(stdinReader io.ReadCloser) (string, error) {
+func (c Custom) AskPrompt(stdinReader io.Reader) (string, error) {
 	switch c.Type {
 	case CustomString:
 		return c.askString(stdinReader)

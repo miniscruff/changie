@@ -57,27 +57,41 @@ type FieldProps struct {
 	Slice            bool
 }
 
-// genCmd represents the gen command
-var genCmd = &cobra.Command{
-	Use:   "gen",
-	Short: "Generate documentation",
-	Long:  `Generate markdown documentation.`,
-	RunE: func(cmd *cobra.Command, args []string) error {
-		file, err := os.Create(filepath.Join("docs", "content", "config", "_index.md"))
-		if err != nil {
-			return fmt.Errorf("unable to create or open config index: %w", err)
-		}
+type Gen struct {
+	*cobra.Command
+}
 
-		defer file.Close()
+func NewGen() *Gen {
+	g := &Gen{}
 
-		fset, corePackages := getCorePackages("core")
+	cmd := &cobra.Command{
+		Use:    "gen",
+		Short:  "Generate documentation",
+		Long:   `Generate markdown documentation.`,
+		RunE:   g.Run,
+		Args:   cobra.NoArgs,
+		Hidden: true,
+	}
 
-		writeConfigFrontMatter(file, time.Now)
-		genConfigDocs(fset, file, corePackages)
+	g.Command = cmd
 
-		return doc.GenMarkdownTreeCustom(cmd.Root(), "docs/content/cli", filePrepender, linkHandler)
-	},
-	Hidden: true,
+	return g
+}
+
+func (g *Gen) Run(cmd *cobra.Command, args []string) error {
+	file, err := os.Create(filepath.Join("docs", "content", "config", "_index.md"))
+	if err != nil {
+		return fmt.Errorf("unable to create or open config index: %w", err)
+	}
+
+	defer file.Close()
+
+	fset, corePackages := getCorePackages("core")
+
+	writeConfigFrontMatter(file, time.Now)
+	genConfigDocs(fset, file, corePackages)
+
+	return doc.GenMarkdownTreeCustom(cmd.Root(), "docs/content/cli", filePrepender, linkHandler)
 }
 
 func filePrepender(filename string) string {

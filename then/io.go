@@ -1,11 +1,18 @@
 package then
 
 import (
+	"io"
 	"os"
 	"path/filepath"
 	"testing"
 	"time"
+
+	"github.com/miniscruff/changie/shared"
 )
+
+type Saver interface {
+	Save(shared.WriteFiler) error
+}
 
 // WithTempDir creates a temporary directory and moves our working directory to it.
 // At the end of our test it will remove the directory and revert our working directory
@@ -27,6 +34,18 @@ func WithTempDir(t *testing.T) {
 	})
 }
 
+func WithTempDirConfig(t *testing.T, cfg Saver) {
+	t.Helper()
+	WithTempDir(t)
+
+	err := cfg.Save(os.WriteFile)
+	Nil(t, err)
+}
+
+func CreateFile(t *testing.T, paths ...string) {
+	WriteFile(t, nil, paths...)
+}
+
 // FileExists checks whether a file exists at the path defined.
 // Paths will be joined together using `filepath.Join`.
 func FileExists(t *testing.T, paths ...string) {
@@ -41,25 +60,134 @@ func FileExists(t *testing.T, paths ...string) {
 
 	switch {
 	case os.IsNotExist(err):
-		t.Errorf("expected file '%v' to exist", fullPath)
+		t.Logf("expected file '%v' to exist", fullPath)
+		t.FailNow()
 	default:
-		t.Errorf("error getting info for '%v': %v", fullPath, err)
+		t.Logf("error getting info for '%v': %v", fullPath, err)
+		t.FailNow()
 	}
 }
 
-// FileContentsNoAfero will check the contents of a file.
-func FileContentsNoAfero(t *testing.T, contents string, paths ...string) {
+// FileNotExists checks whether a file does not exist at the path defined.
+// Paths will be joined together using `filepath.Join`.
+func FileNotExists(t *testing.T, paths ...string) {
+	t.Helper()
+
+	fullPath := filepath.Join(paths...)
+
+	_, err := os.Stat(fullPath)
+	if err == nil {
+		t.Logf("expected file '%v' not to exist", fullPath)
+		t.FailNow()
+	}
+
+	if !os.IsNotExist(err) {
+		t.Logf("expected to get is note exist error at '%v': %v", fullPath, err)
+		t.FailNow()
+	}
+}
+
+// FileContents will check the contents of a file.
+func FileContents(t *testing.T, contents string, paths ...string) {
 	t.Helper()
 
 	fullPath := filepath.Join(paths...)
 
 	bs, err := os.ReadFile(fullPath)
 	if err != nil {
-		t.Errorf("reading file: '%v'", fullPath)
+		t.Logf("reading file: '%v'", fullPath)
+		t.FailNow()
 	}
 
 	expected := string(bs)
 	Equals(t, expected, contents)
+}
+
+func WriteFile(t *testing.T, data []byte, paths ...string) {
+	t.Helper()
+
+	fullPath := filepath.Join(paths...)
+	err := os.MkdirAll(filepath.Dir(fullPath), 0777)
+	Nil(t, err)
+
+	f, err := os.Create(fullPath)
+	Nil(t, err)
+
+	defer f.Close()
+
+	if len(data) > 0 {
+		_, err = f.Write(data)
+		Nil(t, err)
+	}
+}
+
+func WriteFileTo(t *testing.T, w io.WriterTo, paths ...string) {
+	t.Helper()
+
+	cd, _ := os.Getwd()
+	t.Log("cd", cd)
+
+	fullPath := filepath.Join(paths...)
+	err := os.MkdirAll(filepath.Dir(fullPath), 0777)
+	Nil(t, err)
+
+	f, err := os.Create(fullPath)
+	Nil(t, err)
+
+	defer f.Close()
+
+	_, err = w.WriteTo(f)
+	Nil(t, err)
+}
+
+func DirectoryFileCount(t *testing.T, count int, paths ...string) {
+	t.Helper()
+
+	infos, err := os.ReadDir(filepath.Join(paths...))
+	Nil(t, err)
+
+	if count != len(infos) {
+		t.Logf("expected %v files but found %v", count, len(infos))
+
+		for _, fi := range infos {
+			t.Log("file:", fi.Name())
+		}
+
+		t.FailNow()
+	}
+}
+
+type MockDirEntry struct {
+	MockName    string
+	MockIsDir   bool
+	MockInfo    os.FileInfo
+	MockInfoErr error
+}
+
+var _ os.DirEntry = (*MockDirEntry)(nil)
+
+func (m *MockDirEntry) Name() string {
+	return m.MockName
+}
+
+func (m *MockDirEntry) IsDir() bool {
+	return m.MockIsDir
+}
+
+func (m *MockDirEntry) Type() os.FileMode {
+	if m.MockIsDir {
+		return os.ModeDir
+	}
+
+	return os.ModePerm
+}
+
+func (m *MockDirEntry) Info() (os.FileInfo, error) {
+	if m.MockInfoErr != nil {
+		return nil, m.MockInfoErr
+	}
+
+	return m.MockInfo, nil
 }
 
 // MockFileInfo is a simple struct to fake the `os.FileInfo`

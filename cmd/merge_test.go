@@ -2,10 +2,10 @@ package cmd
 
 import (
 	"errors"
+	"os"
 	"path/filepath"
+	"strings"
 	"testing"
-
-	"github.com/spf13/afero"
 
 	"github.com/miniscruff/changie/core"
 	"github.com/miniscruff/changie/then"
@@ -36,177 +36,264 @@ func mergeTestConfig() *core.Config {
 	}
 }
 
-func mergeResetVars() {
-	_mergeDryRun = false
-}
-
 func TestMergeVersionsSuccessfully(t *testing.T) {
 	cfg := mergeTestConfig()
 	cfg.HeaderPath = ""
 	cfg.Replacements = nil
-	_, afs := then.WithAferoFSConfig(t, cfg)
+	then.WithTempDirConfig(t, cfg)
 
-	then.WriteFile(t, afs, []byte("first version\n"), cfg.ChangesDir, "v0.1.0.md")
-	then.WriteFile(t, afs, []byte("second version\n"), cfg.ChangesDir, "v0.2.0.md")
+	then.WriteFile(t, []byte("first version\n"), cfg.ChangesDir, "v0.1.0.md")
+	then.WriteFile(t, []byte("second version\n"), cfg.ChangesDir, "v0.2.0.md")
 
-	err := mergePipeline(afs)
+	cmd := NewMerge(
+		os.ReadFile,
+		os.WriteFile,
+		os.ReadDir,
+		os.Open,
+		os.Create,
+		core.NewTemplateCache(),
+	)
+	err := cmd.Run(cmd.Command, nil)
 	then.Nil(t, err)
 
 	changeContents := `second version
 first version
 `
-	then.FileContents(t, afs, changeContents, "news.md")
+	then.FileContents(t, changeContents, "news.md")
 }
 
 func TestMergeVersionsWithHeaderAndReplacements(t *testing.T) {
 	cfg := mergeTestConfig()
-	_, afs := then.WithAferoFSConfig(t, cfg)
+	then.WithTempDirConfig(t, cfg)
+
 	jsonContents := `{
   "key": "value",
   "version": "old-version",
 }`
 
-	then.WriteFile(t, afs, []byte("first version\n"), cfg.ChangesDir, "v0.1.0.md")
-	then.WriteFile(t, afs, []byte("second version\n"), cfg.ChangesDir, "v0.2.0.md")
-	then.WriteFile(t, afs, []byte("ignored\n"), cfg.ChangesDir, "ignored.txt")
-	then.WriteFile(t, afs, []byte("a simple header\n"), cfg.ChangesDir, cfg.HeaderPath)
-	then.WriteFile(t, afs, []byte(jsonContents), "replace.json")
+	then.WriteFile(t, []byte("first version\n"), cfg.ChangesDir, "v0.1.0.md")
+	then.WriteFile(t, []byte("second version\n"), cfg.ChangesDir, "v0.2.0.md")
+	then.WriteFile(t, []byte("ignored\n"), cfg.ChangesDir, "ignored.txt")
+	then.WriteFile(t, []byte("a simple header\n"), cfg.ChangesDir, cfg.HeaderPath)
+	then.WriteFile(t, []byte(jsonContents), "replace.json")
 
-	err := mergePipeline(afs)
+	cmd := NewMerge(
+		os.ReadFile,
+		os.WriteFile,
+		os.ReadDir,
+		os.Open,
+		os.Create,
+		core.NewTemplateCache(),
+	)
+	err := cmd.Run(cmd.Command, nil)
 	then.Nil(t, err)
 
 	changeContents := `a simple header
 second version
 first version
 `
-	then.FileContents(t, afs, changeContents, cfg.ChangelogPath)
+	then.FileContents(t, changeContents, cfg.ChangelogPath)
 
 	newContents := `{
   "key": "value",
   "version": "0.2.0",
 }`
-	then.FileContents(t, afs, newContents, "replace.json")
+	then.FileContents(t, newContents, "replace.json")
 }
 
 func TestMergeDryRun(t *testing.T) {
 	cfg := mergeTestConfig()
-	_, afs := then.WithAferoFSConfig(t, cfg)
+	then.WithTempDirConfig(t, cfg)
+
 	changeContents := `a simple header
 second version
 first version
 `
-	writer := then.WithStdout(t)
-	mergeDryRunOut = writer
-	_mergeDryRun = true
+	writer := strings.Builder{}
 
-	t.Cleanup(mergeResetVars)
-	then.WriteFile(t, afs, []byte("first version\n"), cfg.ChangesDir, "v0.1.0.md")
-	then.WriteFile(t, afs, []byte("second version\n"), cfg.ChangesDir, "v0.2.0.md")
-	then.WriteFile(t, afs, []byte("ignored\n"), cfg.ChangesDir, "ignored.txt")
-	then.WriteFile(t, afs, []byte("a simple header\n"), cfg.ChangesDir, cfg.HeaderPath)
+	then.WriteFile(t, []byte("first version\n"), cfg.ChangesDir, "v0.1.0.md")
+	then.WriteFile(t, []byte("second version\n"), cfg.ChangesDir, "v0.2.0.md")
+	then.WriteFile(t, []byte("ignored\n"), cfg.ChangesDir, "ignored.txt")
+	then.WriteFile(t, []byte("a simple header\n"), cfg.ChangesDir, cfg.HeaderPath)
 
-	err := mergePipeline(afs)
+	cmd := NewMerge(
+		os.ReadFile,
+		os.WriteFile,
+		os.ReadDir,
+		os.Open,
+		os.Create,
+		core.NewTemplateCache(),
+	)
+	cmd.DryRun = true
+	cmd.Command.SetOut(&writer)
+	err := cmd.Run(cmd.Command, nil)
 	then.Nil(t, err)
 	then.Equals(t, changeContents, writer.String())
 }
 
 func TestMergeSkipsVersionsIfNoneFound(t *testing.T) {
 	cfg := mergeTestConfig()
-	_, afs := then.WithAferoFSConfig(t, cfg)
+	then.WithTempDirConfig(t, cfg)
+
 	changeContents := "a simple header\n"
+	builder := strings.Builder{}
 
-	writer := then.WithStdout(t)
-	mergeDryRunOut = writer
-	_mergeDryRun = true
+	then.WriteFile(t, []byte("a simple header\n"), cfg.ChangesDir, cfg.HeaderPath)
 
-	then.WriteFile(t, afs, []byte("a simple header\n"), cfg.ChangesDir, cfg.HeaderPath)
-	t.Cleanup(mergeResetVars)
+	cmd := NewMerge(
+		os.ReadFile,
+		os.WriteFile,
+		os.ReadDir,
+		os.Open,
+		os.Create,
+		core.NewTemplateCache(),
+	)
+	cmd.DryRun = true
+	cmd.Command.SetOut(&builder)
 
-	err := mergePipeline(afs)
+	err := cmd.Run(cmd.Command, nil)
 	then.Nil(t, err)
-	then.Equals(t, changeContents, writer.String())
+	then.Equals(t, changeContents, builder.String())
 }
 
 func TestErrorMergeBadChangelogPath(t *testing.T) {
 	cfg := mergeTestConfig()
-	fs, afs := then.WithAferoFSConfig(t, cfg)
+	then.WithTempDirConfig(t, cfg)
 
 	badError := errors.New("bad create")
-	fs.MockCreate = func(filename string) (afero.File, error) {
-		var f afero.File
-		return f, badError
+	mockCreate := func(filename string) (*os.File, error) {
+		return nil, badError
 	}
 
-	err := mergePipeline(afs)
+	cmd := NewMerge(
+		os.ReadFile,
+		os.WriteFile,
+		os.ReadDir,
+		os.Open,
+		mockCreate,
+		core.NewTemplateCache(),
+	)
+
+	err := cmd.Run(cmd.Command, nil)
 	then.Err(t, badError, err)
 }
 
 func TestErrorMergeBadConfig(t *testing.T) {
-	_, afs := then.WithAferoFS()
+	then.WithTempDir(t)
 
-	err := mergePipeline(afs)
+	cmd := NewMerge(
+		os.ReadFile,
+		os.WriteFile,
+		os.ReadDir,
+		os.Open,
+		os.Create,
+		core.NewTemplateCache(),
+	)
+
+	err := cmd.Run(cmd.Command, nil)
 	then.NotNil(t, err)
 }
 
 func TestErrorMergeUnableToReadChanges(t *testing.T) {
 	cfg := mergeTestConfig()
-	_, afs := then.WithAferoFSConfig(t, cfg)
+	then.WithTempDirConfig(t, cfg)
 
-	// no files, means bad read
-	err := mergePipeline(afs)
-	then.NotNil(t, err)
+	mockErr := errors.New("bad read dir")
+	mockReadDir := func(name string) ([]os.DirEntry, error) {
+		return nil, mockErr
+	}
+
+	cmd := NewMerge(
+		os.ReadFile,
+		os.WriteFile,
+		mockReadDir,
+		os.Open,
+		os.Create,
+		core.NewTemplateCache(),
+	)
+
+	err := cmd.Run(cmd.Command, nil)
+	then.Err(t, mockErr, err)
 }
 
 func TestErrorMergeBadHeaderFile(t *testing.T) {
 	cfg := mergeTestConfig()
-	fs, afs := then.WithAferoFSConfig(t, cfg)
-	mockError := errors.New("bad open")
+	then.WithTempDirConfig(t, cfg)
 
-	fs.MockOpen = func(filename string) (afero.File, error) {
+	mockError := errors.New("bad open")
+	mockOpen := func(filename string) (*os.File, error) {
 		if filename == filepath.Join(cfg.ChangesDir, cfg.HeaderPath) {
 			return nil, mockError
 		}
 
-		return fs.MemFS.Open(filename)
+		return os.Open(filename)
 	}
 
 	// need at least one change to exist
-	then.WriteFile(t, afs, []byte("first version\n"), cfg.ChangesDir, "v0.1.0.md")
+	then.WriteFile(t, []byte("first version\n"), cfg.ChangesDir, "v0.1.0.md")
 
-	err := mergePipeline(afs)
+	cmd := NewMerge(
+		os.ReadFile,
+		os.WriteFile,
+		os.ReadDir,
+		mockOpen,
+		os.Create,
+		core.NewTemplateCache(),
+	)
+
+	err := cmd.Run(cmd.Command, nil)
 	then.Err(t, mockError, err)
 }
 
 func TestErrorMergeBadAppend(t *testing.T) {
 	cfg := mergeTestConfig()
-	fs, afs := then.WithAferoFSConfig(t, cfg)
+	then.WithTempDirConfig(t, cfg)
+
 	mockError := errors.New("bad write string")
 
 	// need at least one change to exist
-	then.WriteFile(t, afs, []byte("first version\n"), cfg.ChangesDir, "v0.1.0.md")
-	then.WriteFile(t, afs, []byte("a simple header\n"), cfg.ChangesDir, cfg.HeaderPath)
+	then.WriteFile(t, []byte("first version\n"), cfg.ChangesDir, "v0.1.0.md")
+	then.WriteFile(t, []byte("a simple header\n"), cfg.ChangesDir, cfg.HeaderPath)
 
 	// create a version file, then fail to open it the second time
-	fs.MockOpen = func(filename string) (afero.File, error) {
+	mockOpen := func(filename string) (*os.File, error) {
 		if filename == filepath.Join(cfg.ChangesDir, "v0.1.0.md") {
 			return nil, mockError
 		}
 
-		return fs.MemFS.Open(filename)
+		return os.Open(filename)
 	}
 
-	err := mergePipeline(afs)
+	cmd := NewMerge(
+		os.ReadFile,
+		os.WriteFile,
+		os.ReadDir,
+		mockOpen,
+		os.Create,
+		core.NewTemplateCache(),
+	)
+
+	err := cmd.Run(cmd.Command, nil)
 	then.Err(t, mockError, err)
 }
 
 func TestErrorMergeBadReplacement(t *testing.T) {
 	cfg := mergeTestConfig()
 	cfg.Replacements[0].Replace = "{{bad....}}"
-	_, afs := then.WithAferoFSConfig(t, cfg)
+	then.WithTempDirConfig(t, cfg)
 
-	then.WriteFile(t, afs, []byte("a simple header\n"), cfg.ChangesDir, cfg.HeaderPath)
-	then.WriteFile(t, afs, []byte("first version\n"), cfg.ChangesDir, "v0.1.0.md")
+	then.WriteFile(t, []byte("a simple header\n"), cfg.ChangesDir, cfg.HeaderPath)
+	then.WriteFile(t, []byte("first version\n"), cfg.ChangesDir, "v0.1.0.md")
 
-	err := mergePipeline(afs)
+	cmd := NewMerge(
+		os.ReadFile,
+		os.WriteFile,
+		os.ReadDir,
+		os.Open,
+		os.Create,
+		core.NewTemplateCache(),
+	)
+
+	err := cmd.Run(cmd.Command, nil)
 	then.NotNil(t, err)
 }
