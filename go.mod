@@ -6,7 +6,7 @@ require (
 	github.com/Masterminds/semver/v3 v3.2.1
 	github.com/Masterminds/sprig/v3 v3.2.3
 	github.com/charmbracelet/bubbletea v0.24.2
-	github.com/cqroot/prompt v0.9.0
+	github.com/cqroot/prompt v0.9.1
 	github.com/icholy/replace v0.6.0
 	github.com/spf13/cobra v1.7.0
 	golang.org/x/text v0.11.0
