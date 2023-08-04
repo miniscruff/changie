@@ -265,7 +265,12 @@ func (change *Change) promptForBody(ctx *PromptContext) error {
 		return fmt.Errorf("%w: %s", errKindDoesNotAcceptBody, change.Kind)
 	}
 
-	if ctx.expectsBody() && len(change.Body) == 0 {
+	if ctx.expectsBody() && ctx.config.Body.EditBodyWithTextEditor {
+		err := getBodyTextWithEditor(&change.Body, ctx.config.TextEditorName)
+		if err != nil {
+			return err
+		}
+	} else if ctx.expectsBody() && len(change.Body) == 0 {
 		bodyCustom := ctx.config.Body.CreateCustom()
 
 		var err error

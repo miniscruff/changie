@@ -14,11 +14,12 @@ type New struct {
 	*cobra.Command
 
 	// cli args
-	DryRun    bool
-	Component string
-	Kind      string
-	Body      string
-	Custom    []string
+	DryRun     bool
+	Component  string
+	Kind       string
+	Body       string
+	BodyEditor bool // edit body with editor
+	Custom     []string
 
 	// dependencies
 	ReadFile      shared.ReadFiler
@@ -74,6 +75,12 @@ Each version is merged together for the overall project changelog.`,
 		"",
 		"Set the change body without a prompt",
 	)
+	cmd.Flags().BoolVarP(
+		&n.BodyEditor,
+		"editor", "e",
+		false,
+		"Edit body with a text editor",
+	)
 	cmd.Flags().StringSliceVarP(
 		&n.Custom,
 		"custom", "m",
@@ -96,6 +103,8 @@ func (n *New) Run(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return err
 	}
+
+	config.Body.EditBodyWithTextEditor = n.BodyEditor
 
 	change := core.Change{
 		Component: n.Component,

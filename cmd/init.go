@@ -67,14 +67,15 @@ Default values follow keep a changelog and semver specs but are customizable.`,
 
 func (i *Init) Run(cmd *cobra.Command, args []string) error {
 	config := core.Config{
-		ChangesDir:    i.ChangesDir,
-		UnreleasedDir: "unreleased",
-		HeaderPath:    "header.tpl.md",
-		ChangelogPath: i.ChangelogPath,
-		VersionExt:    "md",
-		VersionFormat: "## {{.Version}} - {{.Time.Format \"2006-01-02\"}}",
-		KindFormat:    "### {{.Kind}}",
-		ChangeFormat:  "* {{.Body}}",
+		ChangesDir:     i.ChangesDir,
+		UnreleasedDir:  "unreleased",
+		HeaderPath:     "header.tpl.md",
+		ChangelogPath:  i.ChangelogPath,
+		VersionExt:     "md",
+		VersionFormat:  "## {{.Version}} - {{.Time.Format \"2006-01-02\"}}",
+		KindFormat:     "### {{.Kind}}",
+		ChangeFormat:   "* {{.Body}}",
+		TextEditorName: "vi",
 		Kinds: []core.KindConfig{
 			{
 				Label:     "Added",

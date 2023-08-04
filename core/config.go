@@ -53,6 +53,8 @@ type KindConfig struct {
 	SkipGlobalChoices bool `yaml:"skipGlobalChoices,omitempty" default:"false"`
 	// Skip body allows skipping the parent body prompt.
 	SkipBody bool `yaml:"skipBody,omitempty" default:"false"`
+	// // EditBody txt editor allows skipping the parent body prompt to open a txt editor for editing the body.
+	// EditBodyTxtEditor bool `yaml:"editBodyTxtEditor,omitempty" default:"false"`
 	// Skip global post allows skipping the parent post processing.
 	SkipGlobalPost bool `yaml:"skipGlobalPost,omitempty" default:"false"`
 	// Auto determines what value to bump when using `batch auto` or `next auto`.
@@ -71,6 +73,8 @@ type BodyConfig struct {
 	MaxLength *int64 `yaml:"maxLength,omitempty" default:"no max"`
 	// Block allows multiline text inputs for body messages
 	UseBlock bool `yaml:"block,omitempty" default:"false"`
+	// Edit body with text editor, if true then the body will be opened with a text editor
+	EditBodyWithTextEditor bool `yaml:"editBodyWithTextEditor,omitempty" default:"false"`
 }
 
 func (b BodyConfig) CreateCustom() *Custom {
@@ -260,7 +264,8 @@ type Config struct {
 	// - API
 	// - CLI
 	// - Frontend
-	Components []string `yaml:"components,omitempty"`
+	TextEditorName string   `yaml:"textEditorName" default:"vi"`
+	Components     []string `yaml:"components,omitempty"`
 	// Kinds are another optional layer of changelogs suited for specifying what type of change we are
 	// making.
 	// If configured, developers will be prompted to select a kind.
