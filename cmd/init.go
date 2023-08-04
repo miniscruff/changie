@@ -75,7 +75,7 @@ func (i *Init) Run(cmd *cobra.Command, args []string) error {
 		VersionFormat:  "## {{.Version}} - {{.Time.Format \"2006-01-02\"}}",
 		KindFormat:     "### {{.Kind}}",
 		ChangeFormat:   "* {{.Body}}",
-		TextEditorName: "vi",
+		TextEditorName: "vim",
 		Kinds: []core.KindConfig{
 			{
 				Label:     "Added",

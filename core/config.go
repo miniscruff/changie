@@ -53,8 +53,6 @@ type KindConfig struct {
 	SkipGlobalChoices bool `yaml:"skipGlobalChoices,omitempty" default:"false"`
 	// Skip body allows skipping the parent body prompt.
 	SkipBody bool `yaml:"skipBody,omitempty" default:"false"`
-	// // EditBody txt editor allows skipping the parent body prompt to open a txt editor for editing the body.
-	// EditBodyTxtEditor bool `yaml:"editBodyTxtEditor,omitempty" default:"false"`
 	// Skip global post allows skipping the parent post processing.
 	SkipGlobalPost bool `yaml:"skipGlobalPost,omitempty" default:"false"`
 	// Auto determines what value to bump when using `batch auto` or `next auto`.
