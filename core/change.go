@@ -266,7 +266,9 @@ func (change *Change) promptForBody(ctx *PromptContext) error {
 	}
 
 	if ctx.expectsBody() && ctx.config.Body.EditBodyWithTextEditor {
-		err := getBodyTextWithEditor(&change.Body, ctx.config.TextEditorName)
+		var err error
+		change.Body, err = getBodyTextWithEditor(ctx.config.TextEditorName)
+
 		if err != nil {
 			return err
 		}

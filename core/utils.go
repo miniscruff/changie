@@ -306,34 +306,34 @@ func FileExists(path string) (bool, error) {
 
 // get body text with a text editor
 // works with terminal based editors
-func getBodyTextWithEditor(body *string, editor string) error {
+func getBodyTextWithEditor(editor string) (string, error) {
 	bodyTxtFile, err := os.CreateTemp(os.TempDir(), "changie-body-txt-")
 	if err != nil {
-		return err
+		return "", err
 	}
 	defer bodyTxtFile.Close()
 	defer os.Remove(bodyTxtFile.Name())
 
 	if editor == "" {
-		editor = "vi"
+		editor = "vim"
 	}
+
 	cmd := exec.Command("sh", "-c", editor+" "+bodyTxtFile.Name())
 
 	// Set the stdin and stdout of the command to the current process's stdin and stdout
 	cmd.Stdin = os.Stdin
 	cmd.Stdout = os.Stdout
 
-	if err := cmd.Run(); err != nil {
-		return fmt.Errorf("error opening the editor: %v", err)
+	if err = cmd.Run(); err != nil {
+		return "", fmt.Errorf("error opening the editor: %v", err)
 	}
 
 	buf, err := io.ReadAll(bodyTxtFile)
 	if err != nil {
 		if err != io.EOF {
-			return err
+			return "", err
 		}
 	}
-	*body = strings.TrimSpace(string(buf))
 
-	return nil
+	return strings.TrimSpace(string(buf)), nil
 }
