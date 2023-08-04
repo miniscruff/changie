@@ -262,8 +262,9 @@ type Config struct {
 	// - API
 	// - CLI
 	// - Frontend
-	TextEditorName string   `yaml:"textEditorName,omitempty" default:"vim"`
-	Components     []string `yaml:"components,omitempty"`
+	Components []string `yaml:"components,omitempty"`
+	// Text editor for editing texts. eg. body text
+	TextEditorName string `yaml:"textEditorName,omitempty" default:"vim"`
 	// Kinds are another optional layer of changelogs suited for specifying what type of change we are
 	// making.
 	// If configured, developers will be prompted to select a kind.
