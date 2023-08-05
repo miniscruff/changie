@@ -332,9 +332,7 @@ func getBodyTextWithEditor() (string, error) {
 
 	buf, err := os.ReadFile(bodyTxtFile.Name())
 	if err != nil {
-		if err != io.EOF {
-			return "", err
-		}
+		return "", err
 	}
 
 	return strings.TrimSpace(string(buf)), nil
