@@ -310,6 +310,7 @@ func getBodyTextWithEditor() (string, error) {
 	if err != nil {
 		return "", err
 	}
+
 	defer os.Remove(bodyTxtFile.Name())
 	defer bodyTxtFile.Close()
 
@@ -329,9 +330,11 @@ func getBodyTextWithEditor() (string, error) {
 		return "", fmt.Errorf("error opening the editor: %v", err)
 	}
 
-	buf, err := io.ReadAll(bodyTxtFile)
+	buf, err := os.ReadFile(bodyTxtFile.Name())
 	if err != nil {
-		return "", err
+		if err != io.EOF {
+			return "", err
+		}
 	}
 
 	return strings.TrimSpace(string(buf)), nil
