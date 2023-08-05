@@ -304,8 +304,7 @@ func FileExists(path string) (bool, error) {
 	return false, err
 }
 
-// get body text with a text editor
-// works with terminal based editors
+// get body text with a text editor form env
 func getBodyTextWithEditor() (string, error) {
 	bodyTxtFile, err := os.CreateTemp(os.TempDir(), "changie-body-txt-")
 	if err != nil {

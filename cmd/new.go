@@ -79,7 +79,7 @@ Each version is merged together for the overall project changelog.`,
 		&n.BodyEditor,
 		"editor", "e",
 		false,
-		"Edit body with a text editor",
+		`Edit body using 'EDITOR' env variable (default: "vim"). For VSCode: 'EDIROR="code --wait --new-window"'`,
 	)
 	cmd.Flags().StringSliceVarP(
 		&n.Custom,
