@@ -71,8 +71,6 @@ type BodyConfig struct {
 	MaxLength *int64 `yaml:"maxLength,omitempty" default:"no max"`
 	// Block allows multiline text inputs for body messages
 	UseBlock bool `yaml:"block,omitempty" default:"false"`
-	// Edit body with text editor, if true then the body will be opened with a text editor
-	EditBodyWithTextEditor bool `yaml:"editBodyWithTextEditor,omitempty" default:"false"`
 }
 
 func (b BodyConfig) CreateCustom() *Custom {
@@ -263,8 +261,6 @@ type Config struct {
 	// - CLI
 	// - Frontend
 	Components []string `yaml:"components,omitempty"`
-	// Text editor for editing texts. eg. body text
-	TextEditorName string `yaml:"textEditorName,omitempty" default:"vim"`
 	// Kinds are another optional layer of changelogs suited for specifying what type of change we are
 	// making.
 	// If configured, developers will be prompted to select a kind.

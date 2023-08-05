@@ -18,7 +18,7 @@ type New struct {
 	Component  string
 	Kind       string
 	Body       string
-	BodyEditor bool // edit body with editor
+	BodyEditor bool
 	Custom     []string
 
 	// dependencies
@@ -104,8 +104,6 @@ func (n *New) Run(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	config.Body.EditBodyWithTextEditor = n.BodyEditor
-
 	change := core.Change{
 		Component: n.Component,
 		Kind:      n.Kind,
@@ -113,7 +111,7 @@ func (n *New) Run(cmd *cobra.Command, args []string) error {
 		Custom:    customValues,
 	}
 
-	err = change.AskPrompts(config, n.InOrStdin())
+	err = change.AskPrompts(config, n.InOrStdin(), n.BodyEditor)
 	if err != nil {
 		return err
 	}

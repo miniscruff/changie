@@ -120,15 +120,17 @@ type PromptContext struct {
 	config      *Config
 	stdinReader io.Reader
 	kind        *KindConfig
+	bodyEditor  bool
 }
 
 // AskPrompts will ask the user prompts based on the configuration
 // updating the change as prompts are answered.
-func (change *Change) AskPrompts(config *Config, stdinReader io.Reader) error {
+func (change *Change) AskPrompts(config *Config, stdinReader io.Reader, bodyEditor bool) error {
 	ctx := PromptContext{
 		config:      config,
 		stdinReader: stdinReader,
 		kind:        nil,
+		bodyEditor:  bodyEditor,
 	}
 
 	err := change.validateArguments(config)
@@ -265,9 +267,9 @@ func (change *Change) promptForBody(ctx *PromptContext) error {
 		return fmt.Errorf("%w: %s", errKindDoesNotAcceptBody, change.Kind)
 	}
 
-	if ctx.expectsBody() && ctx.config.Body.EditBodyWithTextEditor {
+	if ctx.expectsBody() && ctx.bodyEditor {
 		var err error
-		change.Body, err = getBodyTextWithEditor(ctx.config.TextEditorName)
+		change.Body, err = getBodyTextWithEditor()
 
 		if err != nil {
 			return err

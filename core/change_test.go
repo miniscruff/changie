@@ -10,6 +10,10 @@ import (
 	"github.com/miniscruff/changie/then"
 )
 
+const (
+	testBodyEditorBool = false
+)
+
 var (
 	orderedTimes = []time.Time{
 		time.Date(2018, 5, 24, 3, 30, 10, 5, time.Local),
@@ -158,7 +162,7 @@ func TestAskPromptsForBody(t *testing.T) {
 
 	config := &Config{}
 	c := &Change{}
-	then.Nil(t, c.AskPrompts(config, reader))
+	then.Nil(t, c.AskPrompts(config, reader, testBodyEditorBool))
 
 	then.Equals(t, "", c.Component)
 	then.Equals(t, "", c.Kind)
@@ -185,7 +189,7 @@ func TestAskComponentKindBody(t *testing.T) {
 		},
 	}
 	c := &Change{}
-	then.Nil(t, c.AskPrompts(config, reader))
+	then.Nil(t, c.AskPrompts(config, reader, testBodyEditorBool))
 
 	then.Equals(t, "tests", c.Component)
 	then.Equals(t, "removed", c.Kind)
@@ -217,7 +221,7 @@ func TestBodyKindPostProcess(t *testing.T) {
 		},
 	}
 
-	then.Nil(t, c.AskPrompts(config, reader))
+	then.Nil(t, c.AskPrompts(config, reader, testBodyEditorBool))
 
 	then.Equals(t, "", c.Component)
 	then.Equals(t, "added", c.Kind)
@@ -242,7 +246,7 @@ func TestBodyCustom(t *testing.T) {
 		},
 	}
 	c := &Change{}
-	then.Nil(t, c.AskPrompts(config, reader))
+	then.Nil(t, c.AskPrompts(config, reader, testBodyEditorBool))
 
 	then.Equals(t, "", c.Component)
 	then.Equals(t, "", c.Kind)
@@ -272,7 +276,7 @@ func TestBodyCustomWithExistingCustomValue(t *testing.T) {
 		},
 	}
 
-	then.Nil(t, c.AskPrompts(config, reader))
+	then.Nil(t, c.AskPrompts(config, reader, testBodyEditorBool))
 
 	then.Equals(t, "", c.Component)
 	then.Equals(t, "", c.Kind)
@@ -308,7 +312,7 @@ func TestSkippedBodyGlobalChoicesKindWithAdditional(t *testing.T) {
 	}
 
 	c := &Change{}
-	then.Nil(t, c.AskPrompts(config, reader))
+	then.Nil(t, c.AskPrompts(config, reader, testBodyEditorBool))
 
 	then.Equals(t, "", c.Component)
 	then.Equals(t, "", c.Custom["skipped"])
@@ -329,7 +333,7 @@ func TestBodyAndPostProcess(t *testing.T) {
 		Body: "our body",
 	}
 
-	then.Nil(t, c.AskPrompts(config, reader))
+	then.Nil(t, c.AskPrompts(config, reader, testBodyEditorBool))
 
 	then.Equals(t, "", c.Component)
 	then.Equals(t, "", c.Kind)
@@ -365,7 +369,7 @@ func TestBodyAndPostProcessSkipGlobalPost(t *testing.T) {
 		},
 	}
 
-	then.Nil(t, c.AskPrompts(config, reader))
+	then.Nil(t, c.AskPrompts(config, reader, testBodyEditorBool))
 
 	then.Equals(t, "", c.Component)
 	then.Equals(t, "added", c.Kind)
@@ -390,7 +394,7 @@ func TestErrorInvalidBody(t *testing.T) {
 		},
 	}
 	c := &Change{}
-	then.NotNil(t, c.AskPrompts(config, reader))
+	then.NotNil(t, c.AskPrompts(config, reader, testBodyEditorBool))
 }
 
 func TestErrorInvalidPost(t *testing.T) {
@@ -403,7 +407,7 @@ func TestErrorInvalidPost(t *testing.T) {
 	c := &Change{
 		Body: "our body",
 	}
-	then.NotNil(t, c.AskPrompts(config, reader))
+	then.NotNil(t, c.AskPrompts(config, reader, testBodyEditorBool))
 }
 
 func TestErrorInvalidCustomType(t *testing.T) {
@@ -421,7 +425,7 @@ func TestErrorInvalidCustomType(t *testing.T) {
 	}
 
 	c := &Change{}
-	then.NotNil(t, c.AskPrompts(config, reader))
+	then.NotNil(t, c.AskPrompts(config, reader, testBodyEditorBool))
 }
 
 func TestErrorInvalidComponent(t *testing.T) {
@@ -435,7 +439,7 @@ func TestErrorInvalidComponent(t *testing.T) {
 		Components: []string{"a", "b"},
 	}
 	c := &Change{}
-	then.NotNil(t, c.AskPrompts(config, reader))
+	then.NotNil(t, c.AskPrompts(config, reader, testBodyEditorBool))
 }
 
 func TestErrorInvalidKind(t *testing.T) {
@@ -452,7 +456,7 @@ func TestErrorInvalidKind(t *testing.T) {
 		},
 	}
 	c := &Change{}
-	then.NotNil(t, c.AskPrompts(config, reader))
+	then.NotNil(t, c.AskPrompts(config, reader, testBodyEditorBool))
 }
 
 func TestErrorFaultBody(t *testing.T) {
@@ -464,7 +468,7 @@ func TestErrorFaultBody(t *testing.T) {
 
 	config := &Config{}
 	c := &Change{}
-	then.NotNil(t, c.AskPrompts(config, reader))
+	then.NotNil(t, c.AskPrompts(config, reader, testBodyEditorBool))
 }
 
 func TestErrorInvalidCustomValue(t *testing.T) {
@@ -483,7 +487,7 @@ func TestErrorInvalidCustomValue(t *testing.T) {
 		},
 	}
 	c := &Change{}
-	then.NotNil(t, c.AskPrompts(config, reader))
+	then.NotNil(t, c.AskPrompts(config, reader, testBodyEditorBool))
 }
 
 func TestErrorBadKindLabel(t *testing.T) {
@@ -498,7 +502,7 @@ func TestErrorBadKindLabel(t *testing.T) {
 		Body: "body",
 	}
 
-	err := c.AskPrompts(config, reader)
+	err := c.AskPrompts(config, reader, testBodyEditorBool)
 	then.Err(t, errInvalidKind, err)
 }
 
@@ -512,7 +516,7 @@ func TestErrorBadComponentInput(t *testing.T) {
 		Body:      "body",
 	}
 
-	err := c.AskPrompts(config, reader)
+	err := c.AskPrompts(config, reader, testBodyEditorBool)
 	then.Err(t, errInvalidComponent, err)
 }
 
@@ -524,7 +528,7 @@ func TestErrorComponentGivenWithNoConfiguration(t *testing.T) {
 		Body:      "body",
 	}
 
-	err := c.AskPrompts(config, reader)
+	err := c.AskPrompts(config, reader, testBodyEditorBool)
 	then.Err(t, errComponentProvidedWhenNotConfigured, err)
 }
 
@@ -536,7 +540,7 @@ func TestErrorKindGivenWithNoConfiguration(t *testing.T) {
 		Body: "body",
 	}
 
-	err := c.AskPrompts(config, reader)
+	err := c.AskPrompts(config, reader, testBodyEditorBool)
 	then.Err(t, errKindProvidedWhenNotConfigured, err)
 }
 
@@ -553,7 +557,7 @@ func TestErrorCustomGivenWithNoConfiguration(t *testing.T) {
 		},
 	}
 
-	err := c.AskPrompts(config, reader)
+	err := c.AskPrompts(config, reader, testBodyEditorBool)
 	then.Err(t, errCustomProvidedNotConfigured, err)
 }
 
@@ -571,7 +575,7 @@ func TestErrorCustomGivenDoesNotPassValidation(t *testing.T) {
 		},
 	}
 
-	err := c.AskPrompts(config, reader)
+	err := c.AskPrompts(config, reader, testBodyEditorBool)
 	then.Err(t, errIntTooLow, err)
 }
 
@@ -587,7 +591,7 @@ func TestErrorBodyGivenWithNoConfiguration(t *testing.T) {
 		Kind: "kind",
 	}
 
-	err := c.AskPrompts(config, reader)
+	err := c.AskPrompts(config, reader, testBodyEditorBool)
 	then.Err(t, errKindDoesNotAcceptBody, err)
 }
 
@@ -608,7 +612,7 @@ func TestErrorBodyGivenDoesNotPassValidation(t *testing.T) {
 		Body: "body",
 	}
 
-	err := c.AskPrompts(config, reader)
+	err := c.AskPrompts(config, reader, testBodyEditorBool)
 	then.Err(t, errInputTooShort, err)
 }
 
@@ -627,7 +631,7 @@ func TestSkipPromptForComponentIfSet(t *testing.T) {
 		Component: "a",
 	}
 
-	then.Nil(t, c.AskPrompts(config, reader))
+	then.Nil(t, c.AskPrompts(config, reader, testBodyEditorBool))
 	then.Equals(t, "a", c.Component)
 	then.Equals(t, "skip component body", c.Body)
 }
@@ -649,7 +653,7 @@ func TestSkipPromptForKindIfSet(t *testing.T) {
 		Kind: "kind",
 	}
 
-	then.Nil(t, c.AskPrompts(config, reader))
+	then.Nil(t, c.AskPrompts(config, reader, testBodyEditorBool))
 	then.Equals(t, "kind", c.Kind)
 	then.Equals(t, "skip kind body", c.Body)
 }
@@ -671,7 +675,7 @@ func TestSkipPromptForBodyIfSet(t *testing.T) {
 		Body: "skip body body",
 	}
 
-	then.Nil(t, c.AskPrompts(config, reader))
+	then.Nil(t, c.AskPrompts(config, reader, testBodyEditorBool))
 	then.Equals(t, "kind", c.Kind)
 	then.Equals(t, "skip body body", c.Body)
 }

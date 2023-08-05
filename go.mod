@@ -9,7 +9,7 @@ require (
 	github.com/cqroot/prompt v0.9.1
 	github.com/icholy/replace v0.6.0
 	github.com/spf13/cobra v1.7.0
-	golang.org/x/text v0.12.0
+	golang.org/x/text v0.11.0
 	gopkg.in/yaml.v2 v2.4.0
 )
 
