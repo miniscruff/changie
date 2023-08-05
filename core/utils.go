@@ -310,12 +310,12 @@ func getBodyTextWithEditor() (string, error) {
 	if err != nil {
 		return "", err
 	}
-	defer bodyTxtFile.Close()
 	defer os.Remove(bodyTxtFile.Name())
+	defer bodyTxtFile.Close()
 
 	editor := os.Getenv("EDITOR")
 	if editor == "" {
-		editor = "vim"
+		return "", fmt.Errorf("'EDITOR' env variable not set")
 	}
 
 	// #nosec G204
