@@ -1,24 +1,32 @@
 package core
 
 import (
+	"bytes"
 	"errors"
 	"fmt"
 	"io"
 	"os"
 	"os/exec"
 	"path/filepath"
+	"runtime"
 	"sort"
 	"strings"
 
 	"github.com/Masterminds/semver/v3"
 
 	"github.com/miniscruff/changie/shared"
+
+	shellquote "github.com/kballard/go-shellquote"
 )
 
 var (
 	ErrBadVersionOrPart      = errors.New("part string is not a supported version or version increment")
 	ErrMissingAutoLevel      = errors.New("kind config missing auto level value for auto bumping")
 	ErrNoChangesFoundForAuto = errors.New("no unreleased changes found for automatic bumping")
+)
+
+var (
+	bom = []byte{0xef, 0xbb, 0xbf}
 )
 
 func AppendFile(opener shared.OpenFiler, rootFile io.Writer, path string) error {
@@ -304,23 +312,51 @@ func FileExists(path string) (bool, error) {
 	return false, err
 }
 
+func needsBom() bool {
+	// The reason why we do this is because notepad.exe on Windows determines the
+	// encoding of an "empty" text file by the locale, for example, GBK in China,
+	// while golang string only handles utf8 well. However, a text file with utf8
+	// BOM header is not considered "empty" on Windows, and the encoding will then
+	// be determined utf8 by notepad.exe, instead of GBK or other encodings.
+	// This could be enhanced in the future by doing this only when a non-utf8
+	// locale is in use, and possibly doing that for any OS, not just windows.
+	return runtime.GOOS == "windows"
+}
+
 // get body text with a text editor form env
-func getBodyTextWithEditor() (string, error) {
-	bodyTxtFile, err := os.CreateTemp(os.TempDir(), "changie-body-txt-")
+func getBodyTextWithEditor(ext string) (string, error) {
+	bodyTxtFile, err := os.CreateTemp(os.TempDir(), "changie-body-txt-*."+ext)
 	if err != nil {
 		return "", err
 	}
 
 	defer os.Remove(bodyTxtFile.Name())
-	defer bodyTxtFile.Close()
+
+	if needsBom() {
+		if _, err = bodyTxtFile.Write(bom); err != nil {
+			return "", err
+		}
+	}
+
+	// close the file to prevent the editor unable to save file
+	if err = bodyTxtFile.Close(); err != nil {
+		return "", err
+	}
 
 	editor := os.Getenv("EDITOR")
 	if editor == "" {
 		return "", fmt.Errorf("'EDITOR' env variable not set")
 	}
 
+	args, err := shellquote.Split(editor)
+	if editor == "" {
+		return "", err
+	}
+
+	args = append(args, bodyTxtFile.Name())
+
 	// #nosec G204
-	cmd := exec.Command("sh", "-c", editor+" "+bodyTxtFile.Name())
+	cmd := exec.Command(args[0], args[1:]...)
 
 	// Set the stdin and stdout of the command to the current process's stdin and stdout
 	cmd.Stdin = os.Stdin
@@ -335,5 +371,5 @@ func getBodyTextWithEditor() (string, error) {
 		return "", err
 	}
 
-	return strings.TrimSpace(string(buf)), nil
+	return strings.TrimSpace(string(bytes.TrimPrefix(buf, bom))), nil
 }

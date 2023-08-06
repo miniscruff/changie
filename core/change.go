@@ -269,7 +269,7 @@ func (change *Change) promptForBody(ctx *PromptContext) error {
 
 	if ctx.expectsBody() && ctx.bodyEditor {
 		var err error
-		change.Body, err = getBodyTextWithEditor()
+		change.Body, err = getBodyTextWithEditor(ctx.config.VersionExt)
 
 		if err != nil {
 			return err
