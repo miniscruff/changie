@@ -694,3 +694,21 @@ func TestFileExistError(t *testing.T) {
 	then.False(t, exists)
 	then.NotNil(t, err)
 }
+
+type runnerr struct{}
+
+func (r runnerr) Run() error {
+	return nil
+}
+
+func TestGetBodyTxtWithEditor(t *testing.T) {
+	rf := func(_ string) ([]byte, error) {
+		return []byte("hi"), nil
+	}
+
+	str, err := getBodyTextWithEditor(runnerr{}, "", rf)
+	if err != nil {
+		t.Error(err)
+	}
+	t.Log(str)
+}

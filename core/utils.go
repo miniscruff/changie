@@ -19,6 +19,10 @@ import (
 	shellquote "github.com/kballard/go-shellquote"
 )
 
+type EditorRunner interface {
+	Run() error
+}
+
 var (
 	ErrBadVersionOrPart      = errors.New("part string is not a supported version or version increment")
 	ErrMissingAutoLevel      = errors.New("kind config missing auto level value for auto bumping")
@@ -323,14 +327,15 @@ func needsBom() bool {
 	return runtime.GOOS == "windows"
 }
 
-// get body text with a text editor form env
-func getBodyTextWithEditor(ext string) (string, error) {
-	bodyTxtFile, err := os.CreateTemp(os.TempDir(), "changie-body-txt-*."+ext)
+// createTempFile will create a new temporary file, writing a BOM header if we need to.
+// It will return the path to that file or an error.
+func createTempFile(cf shared.CreateFiler, ext string) (string, error) {
+	bodyTxtFile, err := cf(filepath.Join(os.TempDir(), "changie-body-txt."+ext))
 	if err != nil {
 		return "", err
 	}
 
-	defer os.Remove(bodyTxtFile.Name())
+	defer bodyTxtFile.Close()
 
 	if needsBom() {
 		if _, err = bodyTxtFile.Write(bom); err != nil {
@@ -338,22 +343,22 @@ func getBodyTextWithEditor(ext string) (string, error) {
 		}
 	}
 
-	// close the file to prevent the editor unable to save file
-	if err = bodyTxtFile.Close(); err != nil {
-		return "", err
-	}
+	return bodyTxtFile.Name(), nil
+}
 
+// buildCommand will create an exec command to run our editor.
+func buildCommand(editorFilePath string) (*exec.Cmd, error) {
 	editor := os.Getenv("EDITOR")
 	if editor == "" {
-		return "", fmt.Errorf("'EDITOR' env variable not set")
+		return nil, errors.New("'EDITOR' env variable not set")
 	}
 
 	args, err := shellquote.Split(editor)
 	if editor == "" {
-		return "", err
+		return nil, err
 	}
 
-	args = append(args, bodyTxtFile.Name())
+	args = append(args, editorFilePath)
 
 	// #nosec G204
 	cmd := exec.Command(args[0], args[1:]...)
@@ -362,11 +367,16 @@ func getBodyTextWithEditor(ext string) (string, error) {
 	cmd.Stdin = os.Stdin
 	cmd.Stdout = os.Stdout
 
-	if err = cmd.Run(); err != nil {
-		return "", fmt.Errorf("error opening the editor: %v", err)
+	return cmd, nil
+}
+
+// getBodyTextWithEditor will run the provided editor runner and read the final file.
+func getBodyTextWithEditor(runner EditorRunner, editorFile string, rf shared.ReadFiler) (string, error) {
+	if err := runner.Run(); err != nil {
+		return "", fmt.Errorf("opening the editor: %w", err)
 	}
 
-	buf, err := os.ReadFile(bodyTxtFile.Name())
+	buf, err := rf(editorFile)
 	if err != nil {
 		return "", err
 	}

@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"os"
 	"sort"
 	"strings"
 	"time"
@@ -268,9 +269,25 @@ func (change *Change) promptForBody(ctx *PromptContext) error {
 	}
 
 	if ctx.expectsBody() && ctx.bodyEditor {
-		var err error
-		change.Body, err = getBodyTextWithEditor(ctx.config.VersionExt)
+		fileCreater := func(filename string) (*os.File, error) {
+			return os.Create(filename)
+		}
 
+		file, err := createTempFile(fileCreater, ctx.config.VersionExt)
+		if err != nil {
+			return err
+		}
+
+		runner, err := buildCommand(file)
+		if err != nil {
+			return err
+		}
+
+		reader := func(filename string) ([]byte, error) {
+			return os.ReadFile(filename)
+		}
+
+		change.Body, err = getBodyTextWithEditor(runner, file, reader)
 		if err != nil {
 			return err
 		}
