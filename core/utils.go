@@ -8,7 +8,6 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
-	"runtime"
 	"sort"
 	"strings"
 
@@ -316,7 +315,7 @@ func FileExists(path string) (bool, error) {
 	return false, err
 }
 
-func needsBom() bool {
+func needsBom(runtime string) bool {
 	// The reason why we do this is because notepad.exe on Windows determines the
 	// encoding of an "empty" text file by the locale, for example, GBK in China,
 	// while golang string only handles utf8 well. However, a text file with utf8
@@ -324,26 +323,26 @@ func needsBom() bool {
 	// be determined utf8 by notepad.exe, instead of GBK or other encodings.
 	// This could be enhanced in the future by doing this only when a non-utf8
 	// locale is in use, and possibly doing that for any OS, not just windows.
-	return runtime.GOOS == "windows"
+	return runtime == "windows"
 }
 
 // createTempFile will create a new temporary file, writing a BOM header if we need to.
 // It will return the path to that file or an error.
-func createTempFile(cf shared.CreateFiler, ext string) (string, error) {
-	bodyTxtFile, err := cf(filepath.Join(os.TempDir(), "changie-body-txt."+ext))
+func createTempFile(cf shared.CreateFiler, runtime string, ext string) (string, error) {
+	file, err := cf(filepath.Join(os.TempDir(), "changie-body-txt."+ext))
 	if err != nil {
 		return "", err
 	}
 
-	defer bodyTxtFile.Close()
+	defer file.Close()
 
-	if needsBom() {
-		if _, err = bodyTxtFile.Write(bom); err != nil {
+	if needsBom(runtime) {
+		if _, err = file.Write(bom); err != nil {
 			return "", err
 		}
 	}
 
-	return bodyTxtFile.Name(), nil
+	return file.Name(), nil
 }
 
 // buildCommand will create an exec command to run our editor.

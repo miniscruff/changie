@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"runtime"
 	"sort"
 	"strings"
 	"time"
@@ -269,11 +270,7 @@ func (change *Change) promptForBody(ctx *PromptContext) error {
 	}
 
 	if ctx.expectsBody() && ctx.bodyEditor {
-		fileCreater := func(filename string) (*os.File, error) {
-			return os.Create(filename)
-		}
-
-		file, err := createTempFile(fileCreater, ctx.config.VersionExt)
+		file, err := createTempFile(os.Create, runtime.GOOS, ctx.config.VersionExt)
 		if err != nil {
 			return err
 		}

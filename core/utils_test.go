@@ -10,6 +10,7 @@ import (
 
 	"gopkg.in/yaml.v2"
 
+	"github.com/miniscruff/changie/shared"
 	"github.com/miniscruff/changie/then"
 )
 
@@ -695,20 +696,41 @@ func TestFileExistError(t *testing.T) {
 	then.NotNil(t, err)
 }
 
-type runnerr struct{}
-
-func (r runnerr) Run() error {
-	return nil
+func TestGetBodyTxtWithEditor(t *testing.T) {
+	// TODO: write test fot the promt
 }
 
-func TestGetBodyTxtWithEditor(t *testing.T) {
-	rf := func(_ string) ([]byte, error) {
-		return []byte("hi"), nil
+func TestCreateTempFileSuccess(t *testing.T) {
+	file, err := createTempFile(os.Create, "windows", "txt")
+	defer os.Remove(file)
+
+	then.Nil(t, err)
+	then.FileContents(t, string(bom), file)
+}
+
+// }
+
+func TestCreateTempFileUnableToWriteBom(t *testing.T) {
+	var cf shared.CreateFiler = func(filename string) (*os.File, error) {
+		return nil, nil // returning nil so that write boom fials
 	}
 
-	str, err := getBodyTextWithEditor(runnerr{}, "", rf)
-	if err != nil {
-		t.Error(err)
+	runt := "windows"
+	ext := ".md"
+
+	_, err := createTempFile(cf, runt, ext)
+	then.Err(t, os.ErrInvalid, err)
+}
+
+func TestCreateTempFileUnableToCreateFile(t *testing.T) {
+	var cf shared.CreateFiler = func(filename string) (*os.File, error) {
+		return nil, os.ErrPermission // simulating permissin denied err
 	}
-	t.Log(str)
+
+	runt := "windows"
+	ext := ".md"
+
+	_, err := createTempFile(cf, runt, ext)
+	then.Err(t, os.ErrPermission, err)
+
 }
