@@ -280,11 +280,7 @@ func (change *Change) promptForBody(ctx *PromptContext) error {
 			return err
 		}
 
-		reader := func(filename string) ([]byte, error) {
-			return os.ReadFile(filename)
-		}
-
-		change.Body, err = getBodyTextWithEditor(runner, file, reader)
+		change.Body, err = getBodyTextWithEditor(runner, file, os.ReadFile)
 		if err != nil {
 			return err
 		}
