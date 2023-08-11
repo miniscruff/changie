@@ -3,6 +3,7 @@ package core
 import (
 	"errors"
 	"fmt"
+	"os"
 	"strings"
 	"testing"
 	"time"
@@ -678,4 +679,31 @@ func TestSkipPromptForBodyIfSet(t *testing.T) {
 	then.Nil(t, c.AskPrompts(config, reader, testBodyEditorBool))
 	then.Equals(t, "kind", c.Kind)
 	then.Equals(t, "skip body body", c.Body)
+}
+
+type mockTextEditor struct {
+	file string
+	t    *testing.T
+	body []byte
+}
+
+func (m mockTextEditor) Run() error {
+	then.WriteFile(m.t, m.body, m.file)
+	return nil
+}
+
+func TestGetBodyTxtWithEditor(t *testing.T) {
+	ext := "md"
+	runt := "windows"
+	fileName, err := createTempFile(os.Create, runt, ext)
+	then.Err(t, err, nil)
+
+	expectedBodyMsg := "some body msg"
+
+	me := mockTextEditor{file: fileName, body: []byte(expectedBodyMsg), t: t}
+
+	bodyMsg, err := getBodyTextWithEditor(me, fileName, os.ReadFile)
+	then.Nil(t, err)
+
+	then.Equals[string](t, expectedBodyMsg, bodyMsg)
 }

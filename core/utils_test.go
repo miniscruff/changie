@@ -696,10 +696,6 @@ func TestFileExistError(t *testing.T) {
 	then.NotNil(t, err)
 }
 
-func TestGetBodyTxtWithEditor(t *testing.T) {
-	// TODO: write test fot the promt
-}
-
 func TestCreateTempFileSuccess(t *testing.T) {
 	file, err := createTempFile(os.Create, "windows", "txt")
 	defer os.Remove(file)
@@ -724,7 +720,7 @@ func TestCreateTempFileUnableToWriteBom(t *testing.T) {
 
 func TestCreateTempFileUnableToCreateFile(t *testing.T) {
 	var cf shared.CreateFiler = func(filename string) (*os.File, error) {
-		return nil, os.ErrPermission // simulating permissin denied err
+		return nil, os.ErrPermission // simulating permission denied err
 	}
 
 	runt := "windows"
@@ -732,5 +728,4 @@ func TestCreateTempFileUnableToCreateFile(t *testing.T) {
 
 	_, err := createTempFile(cf, runt, ext)
 	then.Err(t, os.ErrPermission, err)
-
 }
