@@ -168,6 +168,7 @@ func TestNewOutputsToCmdOutWhenDry(t *testing.T) {
 		core.NewTemplateCache(),
 	)
 	cmd.DryRun = true
+	cmd.BodyEditor = false
 	cmd.SetIn(reader)
 	cmd.SetOut(&outWriter)
 

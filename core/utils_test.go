@@ -741,6 +741,8 @@ func TestBuildCommandToEditFile(t *testing.T) {
 }
 
 func TestBuildCommandFailsWithNoEditorConfig(t *testing.T) {
+	t.Setenv("EDITOR", "")
+
 	_, err := BuildCommand("test.md")
 	then.NotNil(t, err)
 }

@@ -782,6 +782,7 @@ func TestGetBodyTxtWithEditor(t *testing.T) {
 }
 
 func TestGetBodyTxtWithEditorUnableToCreateCmd(t *testing.T) {
+	t.Setenv("EDITOR", "")
 	then.WithTempDir(t)
 
 	c := &Change{}
