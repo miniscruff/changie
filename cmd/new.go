@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"io"
+	"os"
 	"strings"
 
 	"github.com/spf13/cobra"
@@ -79,7 +80,7 @@ Each version is merged together for the overall project changelog.`,
 		&n.BodyEditor,
 		"editor", "e",
 		false,
-		"Edit body using 'EDITOR' env variable",
+		"Edit body message using your text editor defined by 'EDITOR' env variable",
 	)
 	cmd.Flags().StringSliceVarP(
 		&n.Custom,
@@ -111,7 +112,13 @@ func (n *New) Run(cmd *cobra.Command, args []string) error {
 		Custom:    customValues,
 	}
 
-	err = change.AskPrompts(config, n.InOrStdin(), n.BodyEditor)
+	err = change.AskPrompts(core.PromptContext{
+		Config:           config,
+		StdinReader:      n.InOrStdin(),
+		BodyEditor:       n.BodyEditor,
+		CreateFiler:      os.Create,
+		EditorCmdBuilder: core.BuildCommand,
+	})
 	if err != nil {
 		return err
 	}

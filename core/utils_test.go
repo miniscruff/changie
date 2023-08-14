@@ -3,6 +3,7 @@ package core
 import (
 	"errors"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -704,11 +705,9 @@ func TestCreateTempFileSuccess(t *testing.T) {
 	then.FileContents(t, string(bom), file)
 }
 
-// }
-
 func TestCreateTempFileUnableToWriteBom(t *testing.T) {
 	var cf shared.CreateFiler = func(filename string) (*os.File, error) {
-		return nil, nil // returning nil so that write boom fials
+		return nil, nil // returning nil so that write bom fails
 	}
 
 	runt := "windows"
@@ -728,4 +727,81 @@ func TestCreateTempFileUnableToCreateFile(t *testing.T) {
 
 	_, err := createTempFile(cf, runt, ext)
 	then.Err(t, os.ErrPermission, err)
+}
+
+func TestBuildCommandToEditFile(t *testing.T) {
+	t.Setenv("EDITOR", "vim")
+
+	cmd, err := BuildCommand("test.md")
+	then.Nil(t, err)
+
+	osCmd, ok := cmd.(*exec.Cmd)
+	then.True(t, ok)
+	then.SliceEquals(t, osCmd.Args, []string{"vim", "test.md"})
+}
+
+func TestBuildCommandFailsWithNoEditorConfig(t *testing.T) {
+	_, err := BuildCommand("test.md")
+	then.NotNil(t, err)
+}
+
+func TestBuildCommandFailsWithBadEditorConfig(t *testing.T) {
+	t.Setenv("EDITOR", "bad shell command\n '")
+
+	_, err := BuildCommand("test.md")
+	then.NotNil(t, err)
+}
+
+func TestGetBodyFromEditorSuccess(t *testing.T) {
+	then.WithTempDir(t)
+	mockRunner := &dummyEditorRunner{
+		filename: "body.txt",
+		body:     []byte("some body text"),
+		t:        t,
+	}
+
+	body, err := getBodyTextWithEditor(mockRunner, "body.txt", os.ReadFile)
+	then.Nil(t, err)
+	then.Equals(t, "some body text", body)
+}
+
+func TestGetBodyFromEditorBadRunner(t *testing.T) {
+	then.WithTempDir(t)
+
+	mockErr := errors.New("bad runner")
+	mockRunner := &errRunner{err: mockErr}
+
+	_, err := getBodyTextWithEditor(mockRunner, "body.txt", os.ReadFile)
+	then.Err(t, mockErr, err)
+}
+
+func TestGetBodyFromEditorBadReadFile(t *testing.T) {
+	then.WithTempDir(t)
+	mockRunner := &dummyEditorRunner{
+		filename: "body.txt",
+		body:     []byte("some body text"),
+		t:        t,
+	}
+
+	_, err := getBodyTextWithEditor(mockRunner, "diff_file.txt", os.ReadFile)
+	then.NotNil(t, err)
+}
+
+type dummyEditorRunner struct {
+	filename string
+	body     []byte
+	t        *testing.T
+}
+
+func (d *dummyEditorRunner) Run() error {
+	then.WriteFile(d.t, d.body, d.filename)
+	return nil
+}
+
+type errRunner struct {
+	err error
+}
+
+func (r *errRunner) Run() error {
+	return r.err
 }

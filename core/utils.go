@@ -315,17 +315,6 @@ func FileExists(path string) (bool, error) {
 	return false, err
 }
 
-func needsBom(runtime string) bool {
-	// The reason why we do this is because notepad.exe on Windows determines the
-	// encoding of an "empty" text file by the locale, for example, GBK in China,
-	// while golang string only handles utf8 well. However, a text file with utf8
-	// BOM header is not considered "empty" on Windows, and the encoding will then
-	// be determined utf8 by notepad.exe, instead of GBK or other encodings.
-	// This could be enhanced in the future by doing this only when a non-utf8
-	// locale is in use, and possibly doing that for any OS, not just windows.
-	return runtime == "windows"
-}
-
 // createTempFile will create a new temporary file, writing a BOM header if we need to.
 // It will return the path to that file or an error.
 func createTempFile(cf shared.CreateFiler, runtime string, ext string) (string, error) {
@@ -336,7 +325,14 @@ func createTempFile(cf shared.CreateFiler, runtime string, ext string) (string, 
 
 	defer file.Close()
 
-	if needsBom(runtime) {
+	// The reason why we do this is because notepad.exe on Windows determines the
+	// encoding of an "empty" text file by the locale, for example, GBK in China,
+	// while golang string only handles utf8 well. However, a text file with utf8
+	// BOM header is not considered "empty" on Windows, and the encoding will then
+	// be determined utf8 by notepad.exe, instead of GBK or other encodings.
+	// This could be enhanced in the future by doing this only when a non-utf8
+	// locale is in use, and possibly doing that for any OS, not just windows.
+	if runtime == "windows" {
 		if _, err = file.Write(bom); err != nil {
 			return "", err
 		}
@@ -345,15 +341,15 @@ func createTempFile(cf shared.CreateFiler, runtime string, ext string) (string, 
 	return file.Name(), nil
 }
 
-// buildCommand will create an exec command to run our editor.
-func buildCommand(editorFilePath string) (*exec.Cmd, error) {
+// BuildCommand will create an exec command to run our editor.
+func BuildCommand(editorFilePath string) (EditorRunner, error) {
 	editor := os.Getenv("EDITOR")
 	if editor == "" {
 		return nil, errors.New("'EDITOR' env variable not set")
 	}
 
 	args, err := shellquote.Split(editor)
-	if editor == "" {
+	if err != nil {
 		return nil, err
 	}
 

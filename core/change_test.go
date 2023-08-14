@@ -11,10 +11,6 @@ import (
 	"github.com/miniscruff/changie/then"
 )
 
-const (
-	testBodyEditorBool = false
-)
-
 var (
 	orderedTimes = []time.Time{
 		time.Date(2018, 5, 24, 3, 30, 10, 5, time.Local),
@@ -163,7 +159,10 @@ func TestAskPromptsForBody(t *testing.T) {
 
 	config := &Config{}
 	c := &Change{}
-	then.Nil(t, c.AskPrompts(config, reader, testBodyEditorBool))
+	then.Nil(t, c.AskPrompts(PromptContext{
+		Config:      config,
+		StdinReader: reader,
+	}))
 
 	then.Equals(t, "", c.Component)
 	then.Equals(t, "", c.Kind)
@@ -190,7 +189,10 @@ func TestAskComponentKindBody(t *testing.T) {
 		},
 	}
 	c := &Change{}
-	then.Nil(t, c.AskPrompts(config, reader, testBodyEditorBool))
+	then.Nil(t, c.AskPrompts(PromptContext{
+		Config:      config,
+		StdinReader: reader,
+	}))
 
 	then.Equals(t, "tests", c.Component)
 	then.Equals(t, "removed", c.Kind)
@@ -222,7 +224,10 @@ func TestBodyKindPostProcess(t *testing.T) {
 		},
 	}
 
-	then.Nil(t, c.AskPrompts(config, reader, testBodyEditorBool))
+	then.Nil(t, c.AskPrompts(PromptContext{
+		Config:      config,
+		StdinReader: reader,
+	}))
 
 	then.Equals(t, "", c.Component)
 	then.Equals(t, "added", c.Kind)
@@ -247,7 +252,10 @@ func TestBodyCustom(t *testing.T) {
 		},
 	}
 	c := &Change{}
-	then.Nil(t, c.AskPrompts(config, reader, testBodyEditorBool))
+	then.Nil(t, c.AskPrompts(PromptContext{
+		Config:      config,
+		StdinReader: reader,
+	}))
 
 	then.Equals(t, "", c.Component)
 	then.Equals(t, "", c.Kind)
@@ -277,7 +285,10 @@ func TestBodyCustomWithExistingCustomValue(t *testing.T) {
 		},
 	}
 
-	then.Nil(t, c.AskPrompts(config, reader, testBodyEditorBool))
+	then.Nil(t, c.AskPrompts(PromptContext{
+		Config:      config,
+		StdinReader: reader,
+	}))
 
 	then.Equals(t, "", c.Component)
 	then.Equals(t, "", c.Kind)
@@ -313,7 +324,10 @@ func TestSkippedBodyGlobalChoicesKindWithAdditional(t *testing.T) {
 	}
 
 	c := &Change{}
-	then.Nil(t, c.AskPrompts(config, reader, testBodyEditorBool))
+	then.Nil(t, c.AskPrompts(PromptContext{
+		Config:      config,
+		StdinReader: reader,
+	}))
 
 	then.Equals(t, "", c.Component)
 	then.Equals(t, "", c.Custom["skipped"])
@@ -334,7 +348,10 @@ func TestBodyAndPostProcess(t *testing.T) {
 		Body: "our body",
 	}
 
-	then.Nil(t, c.AskPrompts(config, reader, testBodyEditorBool))
+	then.Nil(t, c.AskPrompts(PromptContext{
+		Config:      config,
+		StdinReader: reader,
+	}))
 
 	then.Equals(t, "", c.Component)
 	then.Equals(t, "", c.Kind)
@@ -370,7 +387,10 @@ func TestBodyAndPostProcessSkipGlobalPost(t *testing.T) {
 		},
 	}
 
-	then.Nil(t, c.AskPrompts(config, reader, testBodyEditorBool))
+	then.Nil(t, c.AskPrompts(PromptContext{
+		Config:      config,
+		StdinReader: reader,
+	}))
 
 	then.Equals(t, "", c.Component)
 	then.Equals(t, "added", c.Kind)
@@ -395,7 +415,10 @@ func TestErrorInvalidBody(t *testing.T) {
 		},
 	}
 	c := &Change{}
-	then.NotNil(t, c.AskPrompts(config, reader, testBodyEditorBool))
+	then.NotNil(t, c.AskPrompts(PromptContext{
+		Config:      config,
+		StdinReader: reader,
+	}))
 }
 
 func TestErrorInvalidPost(t *testing.T) {
@@ -408,7 +431,10 @@ func TestErrorInvalidPost(t *testing.T) {
 	c := &Change{
 		Body: "our body",
 	}
-	then.NotNil(t, c.AskPrompts(config, reader, testBodyEditorBool))
+	then.NotNil(t, c.AskPrompts(PromptContext{
+		Config:      config,
+		StdinReader: reader,
+	}))
 }
 
 func TestErrorInvalidCustomType(t *testing.T) {
@@ -426,7 +452,10 @@ func TestErrorInvalidCustomType(t *testing.T) {
 	}
 
 	c := &Change{}
-	then.NotNil(t, c.AskPrompts(config, reader, testBodyEditorBool))
+	then.NotNil(t, c.AskPrompts(PromptContext{
+		Config:      config,
+		StdinReader: reader,
+	}))
 }
 
 func TestErrorInvalidComponent(t *testing.T) {
@@ -440,7 +469,10 @@ func TestErrorInvalidComponent(t *testing.T) {
 		Components: []string{"a", "b"},
 	}
 	c := &Change{}
-	then.NotNil(t, c.AskPrompts(config, reader, testBodyEditorBool))
+	then.NotNil(t, c.AskPrompts(PromptContext{
+		Config:      config,
+		StdinReader: reader,
+	}))
 }
 
 func TestErrorInvalidKind(t *testing.T) {
@@ -457,7 +489,10 @@ func TestErrorInvalidKind(t *testing.T) {
 		},
 	}
 	c := &Change{}
-	then.NotNil(t, c.AskPrompts(config, reader, testBodyEditorBool))
+	then.NotNil(t, c.AskPrompts(PromptContext{
+		Config:      config,
+		StdinReader: reader,
+	}))
 }
 
 func TestErrorFaultBody(t *testing.T) {
@@ -469,7 +504,10 @@ func TestErrorFaultBody(t *testing.T) {
 
 	config := &Config{}
 	c := &Change{}
-	then.NotNil(t, c.AskPrompts(config, reader, testBodyEditorBool))
+	then.NotNil(t, c.AskPrompts(PromptContext{
+		Config:      config,
+		StdinReader: reader,
+	}))
 }
 
 func TestErrorInvalidCustomValue(t *testing.T) {
@@ -488,7 +526,10 @@ func TestErrorInvalidCustomValue(t *testing.T) {
 		},
 	}
 	c := &Change{}
-	then.NotNil(t, c.AskPrompts(config, reader, testBodyEditorBool))
+	then.NotNil(t, c.AskPrompts(PromptContext{
+		Config:      config,
+		StdinReader: reader,
+	}))
 }
 
 func TestErrorBadKindLabel(t *testing.T) {
@@ -503,7 +544,10 @@ func TestErrorBadKindLabel(t *testing.T) {
 		Body: "body",
 	}
 
-	err := c.AskPrompts(config, reader, testBodyEditorBool)
+	err := c.AskPrompts(PromptContext{
+		Config:      config,
+		StdinReader: reader,
+	})
 	then.Err(t, errInvalidKind, err)
 }
 
@@ -517,7 +561,10 @@ func TestErrorBadComponentInput(t *testing.T) {
 		Body:      "body",
 	}
 
-	err := c.AskPrompts(config, reader, testBodyEditorBool)
+	err := c.AskPrompts(PromptContext{
+		Config:      config,
+		StdinReader: reader,
+	})
 	then.Err(t, errInvalidComponent, err)
 }
 
@@ -529,7 +576,10 @@ func TestErrorComponentGivenWithNoConfiguration(t *testing.T) {
 		Body:      "body",
 	}
 
-	err := c.AskPrompts(config, reader, testBodyEditorBool)
+	err := c.AskPrompts(PromptContext{
+		Config:      config,
+		StdinReader: reader,
+	})
 	then.Err(t, errComponentProvidedWhenNotConfigured, err)
 }
 
@@ -541,7 +591,10 @@ func TestErrorKindGivenWithNoConfiguration(t *testing.T) {
 		Body: "body",
 	}
 
-	err := c.AskPrompts(config, reader, testBodyEditorBool)
+	err := c.AskPrompts(PromptContext{
+		Config:      config,
+		StdinReader: reader,
+	})
 	then.Err(t, errKindProvidedWhenNotConfigured, err)
 }
 
@@ -558,7 +611,10 @@ func TestErrorCustomGivenWithNoConfiguration(t *testing.T) {
 		},
 	}
 
-	err := c.AskPrompts(config, reader, testBodyEditorBool)
+	err := c.AskPrompts(PromptContext{
+		Config:      config,
+		StdinReader: reader,
+	})
 	then.Err(t, errCustomProvidedNotConfigured, err)
 }
 
@@ -576,7 +632,10 @@ func TestErrorCustomGivenDoesNotPassValidation(t *testing.T) {
 		},
 	}
 
-	err := c.AskPrompts(config, reader, testBodyEditorBool)
+	err := c.AskPrompts(PromptContext{
+		Config:      config,
+		StdinReader: reader,
+	})
 	then.Err(t, errIntTooLow, err)
 }
 
@@ -592,7 +651,10 @@ func TestErrorBodyGivenWithNoConfiguration(t *testing.T) {
 		Kind: "kind",
 	}
 
-	err := c.AskPrompts(config, reader, testBodyEditorBool)
+	err := c.AskPrompts(PromptContext{
+		Config:      config,
+		StdinReader: reader,
+	})
 	then.Err(t, errKindDoesNotAcceptBody, err)
 }
 
@@ -613,7 +675,10 @@ func TestErrorBodyGivenDoesNotPassValidation(t *testing.T) {
 		Body: "body",
 	}
 
-	err := c.AskPrompts(config, reader, testBodyEditorBool)
+	err := c.AskPrompts(PromptContext{
+		Config:      config,
+		StdinReader: reader,
+	})
 	then.Err(t, errInputTooShort, err)
 }
 
@@ -632,7 +697,10 @@ func TestSkipPromptForComponentIfSet(t *testing.T) {
 		Component: "a",
 	}
 
-	then.Nil(t, c.AskPrompts(config, reader, testBodyEditorBool))
+	then.Nil(t, c.AskPrompts(PromptContext{
+		Config:      config,
+		StdinReader: reader,
+	}))
 	then.Equals(t, "a", c.Component)
 	then.Equals(t, "skip component body", c.Body)
 }
@@ -654,7 +722,10 @@ func TestSkipPromptForKindIfSet(t *testing.T) {
 		Kind: "kind",
 	}
 
-	then.Nil(t, c.AskPrompts(config, reader, testBodyEditorBool))
+	then.Nil(t, c.AskPrompts(PromptContext{
+		Config:      config,
+		StdinReader: reader,
+	}))
 	then.Equals(t, "kind", c.Kind)
 	then.Equals(t, "skip kind body", c.Body)
 }
@@ -676,34 +747,66 @@ func TestSkipPromptForBodyIfSet(t *testing.T) {
 		Body: "skip body body",
 	}
 
-	then.Nil(t, c.AskPrompts(config, reader, testBodyEditorBool))
+	then.Nil(t, c.AskPrompts(PromptContext{
+		Config:      config,
+		StdinReader: reader,
+	}))
 	then.Equals(t, "kind", c.Kind)
 	then.Equals(t, "skip body body", c.Body)
 }
 
-type mockTextEditor struct {
-	file string
-	t    *testing.T
-	body []byte
-}
-
-func (m mockTextEditor) Run() error {
-	then.WriteFile(m.t, m.body, m.file)
-	return nil
-}
-
 func TestGetBodyTxtWithEditor(t *testing.T) {
-	ext := "md"
-	runt := "windows"
-	fileName, err := createTempFile(os.Create, runt, ext)
-	then.Err(t, err, nil)
+	then.WithTempDir(t)
+	t.Setenv("EDITOR", "vim")
 
 	expectedBodyMsg := "some body msg"
+	c := &Change{}
 
-	me := mockTextEditor{file: fileName, body: []byte(expectedBodyMsg), t: t}
+	then.Nil(t, c.AskPrompts(PromptContext{
+		Config:      &Config{},
+		BodyEditor:  true,
+		CreateFiler: os.Create,
+		EditorCmdBuilder: func(filename string) (EditorRunner, error) {
+			return &dummyEditorRunner{
+				filename: filename,
+				body:     []byte(expectedBodyMsg),
+				t:        t,
+			}, nil
+		},
+	}))
 
-	bodyMsg, err := getBodyTextWithEditor(me, fileName, os.ReadFile)
-	then.Nil(t, err)
+	then.Equals(t, "", c.Component)
+	then.Equals(t, "", c.Kind)
+	then.Equals(t, 0, len(c.Custom))
+	then.Equals(t, expectedBodyMsg, c.Body)
+}
 
-	then.Equals[string](t, expectedBodyMsg, bodyMsg)
+func TestGetBodyTxtWithEditorUnableToCreateCmd(t *testing.T) {
+	then.WithTempDir(t)
+
+	c := &Change{}
+	err := c.AskPrompts(PromptContext{
+		Config:      &Config{},
+		BodyEditor:  true,
+		CreateFiler: os.Create,
+		EditorCmdBuilder: func(s string) (EditorRunner, error) {
+			return BuildCommand(s)
+		},
+	})
+
+	then.NotNil(t, err)
+}
+
+func TestGetBodyTxtWithEditorUnableToCreateTempFile(t *testing.T) {
+	c := &Change{}
+	mockErr := errors.New("bad create file")
+	err := c.AskPrompts(PromptContext{
+		Config:     &Config{},
+		BodyEditor: true,
+		CreateFiler: func(filename string) (*os.File, error) {
+			return nil, mockErr
+		},
+	})
+
+	then.Err(t, mockErr, err)
 }

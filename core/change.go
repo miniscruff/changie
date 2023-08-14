@@ -119,23 +119,18 @@ func (change Change) WriteTo(writer io.Writer) (int64, error) {
 }
 
 type PromptContext struct {
-	config      *Config
-	stdinReader io.Reader
-	kind        *KindConfig
-	bodyEditor  bool
+	Config           *Config
+	StdinReader      io.Reader
+	Kind             *KindConfig
+	BodyEditor       bool
+	CreateFiler      shared.CreateFiler
+	EditorCmdBuilder func(string) (EditorRunner, error)
 }
 
 // AskPrompts will ask the user prompts based on the configuration
 // updating the change as prompts are answered.
-func (change *Change) AskPrompts(config *Config, stdinReader io.Reader, bodyEditor bool) error {
-	ctx := PromptContext{
-		config:      config,
-		stdinReader: stdinReader,
-		kind:        nil,
-		bodyEditor:  bodyEditor,
-	}
-
-	err := change.validateArguments(config)
+func (change *Change) AskPrompts(ctx PromptContext) error {
+	err := change.validateArguments(ctx.Config)
 	if err != nil {
 		return err
 	}
@@ -201,7 +196,7 @@ func (change *Change) validateArguments(config *Config) error {
 }
 
 func (change *Change) promptForComponent(ctx *PromptContext) error {
-	if len(ctx.config.Components) == 0 {
+	if len(ctx.Config.Components) == 0 {
 		return nil
 	}
 
@@ -211,14 +206,14 @@ func (change *Change) promptForComponent(ctx *PromptContext) error {
 		change.Component, err = Custom{
 			Type:        CustomEnum,
 			Label:       "Component",
-			EnumOptions: ctx.config.Components,
-		}.AskPrompt(ctx.stdinReader)
+			EnumOptions: ctx.Config.Components,
+		}.AskPrompt(ctx.StdinReader)
 		if err != nil {
 			return err
 		}
 	}
 
-	for _, comp := range ctx.config.Components {
+	for _, comp := range ctx.Config.Components {
 		if comp == change.Component {
 			return nil
 		}
@@ -230,13 +225,13 @@ func (change *Change) promptForComponent(ctx *PromptContext) error {
 // promptForKind will prompt for a kind if not provided
 // and validate and the kind exists and save the kind config for later use
 func (change *Change) promptForKind(ctx *PromptContext) error {
-	if len(ctx.config.Kinds) == 0 {
+	if len(ctx.Config.Kinds) == 0 {
 		return nil
 	}
 
 	if len(change.Kind) == 0 {
-		kindLabels := make([]string, len(ctx.config.Kinds))
-		for i, kc := range ctx.config.Kinds {
+		kindLabels := make([]string, len(ctx.Config.Kinds))
+		for i, kc := range ctx.Config.Kinds {
 			kindLabels[i] = kc.Label
 		}
 
@@ -245,18 +240,18 @@ func (change *Change) promptForKind(ctx *PromptContext) error {
 			Type:        CustomEnum,
 			Label:       "Kind",
 			EnumOptions: kindLabels,
-		}.AskPrompt(ctx.stdinReader)
+		}.AskPrompt(ctx.StdinReader)
 
 		if err != nil {
 			return err
 		}
 	}
 
-	for i := range ctx.config.Kinds {
-		kindConfig := &ctx.config.Kinds[i]
+	for i := range ctx.Config.Kinds {
+		kindConfig := &ctx.Config.Kinds[i]
 
 		if kindConfig.Label == change.Kind {
-			ctx.kind = kindConfig
+			ctx.Kind = kindConfig
 			return nil
 		}
 	}
@@ -269,54 +264,55 @@ func (change *Change) promptForBody(ctx *PromptContext) error {
 		return fmt.Errorf("%w: %s", errKindDoesNotAcceptBody, change.Kind)
 	}
 
-	if ctx.expectsBody() && ctx.bodyEditor {
-		file, err := createTempFile(os.Create, runtime.GOOS, ctx.config.VersionExt)
-		if err != nil {
+	if ctx.expectsBody() && len(change.Body) == 0 {
+		if ctx.BodyEditor {
+			file, err := createTempFile(ctx.CreateFiler, runtime.GOOS, ctx.Config.VersionExt)
+			if err != nil {
+				return err
+			}
+
+			runner, err := ctx.EditorCmdBuilder(file)
+			if err != nil {
+				return err
+			}
+
+			change.Body, err = getBodyTextWithEditor(runner, file, os.ReadFile)
+
+			return err
+		} else {
+			bodyCustom := ctx.Config.Body.CreateCustom()
+
+			var err error
+			change.Body, err = bodyCustom.AskPrompt(ctx.StdinReader)
+
 			return err
 		}
-
-		runner, err := buildCommand(file)
-		if err != nil {
-			return err
-		}
-
-		change.Body, err = getBodyTextWithEditor(runner, file, os.ReadFile)
-		if err != nil {
-			return err
-		}
-	} else if ctx.expectsBody() && len(change.Body) == 0 {
-		bodyCustom := ctx.config.Body.CreateCustom()
-
-		var err error
-		change.Body, err = bodyCustom.AskPrompt(ctx.stdinReader)
-
-		return err
 	}
 
 	if ctx.expectsBody() && len(change.Body) > 0 {
-		return ctx.config.Body.Validate(change.Body)
+		return ctx.Config.Body.Validate(change.Body)
 	}
 
 	return nil
 }
 
 func (ctx *PromptContext) expectsNoBody() bool {
-	return ctx.kind != nil && ctx.kind.SkipBody
+	return ctx.Kind != nil && ctx.Kind.SkipBody
 }
 
 func (ctx *PromptContext) expectsBody() bool {
-	return ctx.kind == nil || !ctx.kind.SkipBody
+	return ctx.Kind == nil || !ctx.Kind.SkipBody
 }
 
 func (change *Change) promptForUserChoices(ctx *PromptContext) error {
 	userChoices := make([]Custom, 0)
 
-	if ctx.kind == nil || !ctx.kind.SkipGlobalChoices {
-		userChoices = append(userChoices, ctx.config.CustomChoices...)
+	if ctx.Kind == nil || !ctx.Kind.SkipGlobalChoices {
+		userChoices = append(userChoices, ctx.Config.CustomChoices...)
 	}
 
-	if ctx.kind != nil {
-		userChoices = append(userChoices, ctx.kind.AdditionalChoices...)
+	if ctx.Kind != nil {
+		userChoices = append(userChoices, ctx.Kind.AdditionalChoices...)
 	}
 
 	// custom map may be nil, which is fine if we have no choices
@@ -333,7 +329,7 @@ func (change *Change) promptForUserChoices(ctx *PromptContext) error {
 
 		var err error
 
-		change.Custom[custom.Key], err = custom.AskPrompt(ctx.stdinReader)
+		change.Custom[custom.Key], err = custom.AskPrompt(ctx.StdinReader)
 		if err != nil {
 			return err
 		}
@@ -345,12 +341,12 @@ func (change *Change) promptForUserChoices(ctx *PromptContext) error {
 func (change *Change) postProcess(ctx *PromptContext) error {
 	postConfigs := make([]PostProcessConfig, 0)
 
-	if ctx.kind == nil || !ctx.kind.SkipGlobalPost {
-		postConfigs = append(postConfigs, ctx.config.Post...)
+	if ctx.Kind == nil || !ctx.Kind.SkipGlobalPost {
+		postConfigs = append(postConfigs, ctx.Config.Post...)
 	}
 
-	if ctx.kind != nil {
-		postConfigs = append(postConfigs, ctx.kind.Post...)
+	if ctx.Kind != nil {
+		postConfigs = append(postConfigs, ctx.Kind.Post...)
 	}
 
 	if len(postConfigs) == 0 {
