@@ -120,7 +120,9 @@ func (m *Merge) Run(cmd *cobra.Command, args []string) error {
 		// Make sure we have any changes before writing the unreleased content.
 		if len(allChanges) > 0 {
 			_ = core.WriteNewlines(writer, config.Newlines.BeforeChangelogVersion)
+			_ = core.WriteNewlines(writer, config.Newlines.BeforeVersion)
 			_, _ = writer.Write([]byte(m.UnreleasedHeader))
+			_ = core.WriteNewlines(writer, config.Newlines.AfterVersion)
 
 			// create a fake batch to write the changes
 			b := &Batch{
@@ -134,6 +136,7 @@ func (m *Merge) Run(cmd *cobra.Command, args []string) error {
 				return unrelErr
 			}
 
+			_ = core.WriteNewlines(b.writer, b.config.Newlines.EndOfVersion)
 			_ = core.WriteNewlines(writer, config.Newlines.AfterChangelogVersion)
 		}
 	}
