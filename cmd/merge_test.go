@@ -26,6 +26,13 @@ func mergeTestConfig() *core.Config {
 			{Label: "removed"},
 			{Label: "other"},
 		},
+		Newlines: core.NewlinesConfig{
+			// BeforeVersion: 1,
+			// AfterVersion: 1,
+			AfterChange:            1,
+			BeforeChangelogVersion: 0,
+			// AfterChangelogVersion: 1,
+		},
 		Replacements: []core.Replacement{
 			{
 				Path:    "replace.json",
@@ -60,6 +67,96 @@ func TestMergeVersionsSuccessfully(t *testing.T) {
 first version
 `
 	then.FileContents(t, changeContents, "news.md")
+}
+
+func TestMergeVersionsWithUnreleasedChanges(t *testing.T) {
+	cfg := mergeTestConfig()
+	cfg.HeaderPath = ""
+	cfg.Replacements = nil
+	then.WithTempDirConfig(t, cfg)
+
+	then.WriteFile(t, []byte("first version\n"), cfg.ChangesDir, "v0.1.0.md")
+	then.WriteFile(t, []byte("second version\n"), cfg.ChangesDir, "v0.2.0.md")
+
+	unrel := core.Change{
+		Kind: "Added",
+		Body: "new feature coming soon",
+	}
+	writeChangeFile(t, cfg, unrel)
+
+	cmd := NewMerge(
+		os.ReadFile,
+		os.WriteFile,
+		os.ReadDir,
+		os.Open,
+		os.Create,
+		core.NewTemplateCache(),
+	)
+	cmd.UnreleasedHeader = "## Coming Soon"
+	err := cmd.Run(cmd.Command, nil)
+	then.Nil(t, err)
+
+	changeContents := `## Coming Soon
+### Added
+* new feature coming soon
+second version
+first version
+`
+	then.FileContents(t, changeContents, "news.md")
+}
+
+func TestMergeVersionsWithUnreleasedChangesErrorsOnBadChanges(t *testing.T) {
+	cfg := mergeTestConfig()
+	cfg.HeaderPath = ""
+	cfg.Replacements = nil
+	then.WithTempDirConfig(t, cfg)
+
+	then.WriteFile(t, []byte("first version\n"), cfg.ChangesDir, "v0.1.0.md")
+	then.WriteFile(t, []byte("second version\n"), cfg.ChangesDir, "v0.2.0.md")
+
+	aVer := []byte("not a valid change")
+	then.WriteFile(t, aVer, cfg.ChangesDir, cfg.UnreleasedDir, "a.yaml")
+
+	cmd := NewMerge(
+		os.ReadFile,
+		os.WriteFile,
+		os.ReadDir,
+		os.Open,
+		os.Create,
+		core.NewTemplateCache(),
+	)
+	cmd.UnreleasedHeader = "## Coming Soon"
+	err := cmd.Run(cmd.Command, nil)
+	then.NotNil(t, err)
+}
+
+func TestMergeVersionsWithUnreleasedChangesErrorsOnBadChangeFormat(t *testing.T) {
+	cfg := mergeTestConfig()
+	cfg.HeaderPath = ""
+	cfg.Replacements = nil
+	cfg.ChangeFormat = "{{...invalid format{{{"
+	then.WithTempDirConfig(t, cfg)
+
+	then.WriteFile(t, []byte("first version\n"), cfg.ChangesDir, "v0.1.0.md")
+	then.WriteFile(t, []byte("second version\n"), cfg.ChangesDir, "v0.2.0.md")
+
+	unrel := core.Change{
+		Kind: "Added",
+		Body: "new feature coming soon",
+	}
+	writeChangeFile(t, cfg, unrel)
+
+	cmd := NewMerge(
+		os.ReadFile,
+		os.WriteFile,
+		os.ReadDir,
+		os.Open,
+		os.Create,
+		core.NewTemplateCache(),
+	)
+	cmd.UnreleasedHeader = "## Coming Soon"
+	err := cmd.Run(cmd.Command, nil)
+	then.NotNil(t, err)
 }
 
 func TestMergeVersionsWithHeaderAndReplacements(t *testing.T) {
