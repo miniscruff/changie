@@ -14,7 +14,8 @@ type Merge struct {
 	*cobra.Command
 
 	// cli args
-	DryRun bool
+	DryRun           bool
+	UnreleasedHeader string
 
 	// dependencies
 	ReadFile      shared.ReadFiler
@@ -58,12 +59,19 @@ Note that a newline is added between each version file.`,
 		false,
 		"Print merged changelog instead of writing to disk, will not run replacements",
 	)
+	cmd.Flags().StringVarP(
+		&m.UnreleasedHeader,
+		"include-unreleased", "u",
+		"",
+		"Include unreleased changes with this value as the header",
+	)
 
 	m.Command = cmd
 
 	return m
 }
 
+//nolint:gocyclo
 func (m *Merge) Run(cmd *cobra.Command, args []string) error {
 	config, err := core.LoadConfig(m.ReadFile)
 	if err != nil {
@@ -94,6 +102,43 @@ func (m *Merge) Run(cmd *cobra.Command, args []string) error {
 		}
 
 		_ = core.WriteNewlines(writer, config.Newlines.AfterChangelogHeader)
+	}
+
+	if m.UnreleasedHeader != "" {
+		var unrelErr error
+
+		allChanges, unrelErr := core.GetChanges(
+			config,
+			nil,
+			m.ReadDir,
+			m.ReadFile,
+		)
+		if unrelErr != nil {
+			return unrelErr
+		}
+
+		// Make sure we have any changes before writing the unreleased content.
+		if len(allChanges) > 0 {
+			_ = core.WriteNewlines(writer, config.Newlines.BeforeChangelogVersion)
+			_ = core.WriteNewlines(writer, config.Newlines.BeforeVersion)
+			_, _ = writer.Write([]byte(m.UnreleasedHeader))
+			_ = core.WriteNewlines(writer, config.Newlines.AfterVersion)
+
+			// create a fake batch to write the changes
+			b := &Batch{
+				config:        config,
+				writer:        writer,
+				TemplateCache: m.TemplateCache,
+			}
+
+			unrelErr = b.WriteChanges(allChanges)
+			if unrelErr != nil {
+				return unrelErr
+			}
+
+			_ = core.WriteNewlines(b.writer, b.config.Newlines.EndOfVersion)
+			_ = core.WriteNewlines(writer, config.Newlines.AfterChangelogVersion)
+		}
 	}
 
 	for _, version := range allVersions {
