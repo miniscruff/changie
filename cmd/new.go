@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"io"
+	"os"
 	"strings"
 
 	"github.com/spf13/cobra"
@@ -14,11 +15,12 @@ type New struct {
 	*cobra.Command
 
 	// cli args
-	DryRun    bool
-	Component string
-	Kind      string
-	Body      string
-	Custom    []string
+	DryRun     bool
+	Component  string
+	Kind       string
+	Body       string
+	BodyEditor bool
+	Custom     []string
 
 	// dependencies
 	ReadFile      shared.ReadFiler
@@ -74,6 +76,12 @@ Each version is merged together for the overall project changelog.`,
 		"",
 		"Set the change body without a prompt",
 	)
+	cmd.Flags().BoolVarP(
+		&n.BodyEditor,
+		"editor", "e",
+		false,
+		"Edit body message using your text editor defined by 'EDITOR' env variable",
+	)
 	cmd.Flags().StringSliceVarP(
 		&n.Custom,
 		"custom", "m",
@@ -104,7 +112,13 @@ func (n *New) Run(cmd *cobra.Command, args []string) error {
 		Custom:    customValues,
 	}
 
-	err = change.AskPrompts(config, n.InOrStdin())
+	err = change.AskPrompts(core.PromptContext{
+		Config:           config,
+		StdinReader:      n.InOrStdin(),
+		BodyEditor:       n.BodyEditor,
+		CreateFiler:      os.Create,
+		EditorCmdBuilder: core.BuildCommand,
+	})
 	if err != nil {
 		return err
 	}
