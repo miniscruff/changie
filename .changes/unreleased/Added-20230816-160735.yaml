@@ -1,0 +1,5 @@
+kind: Added
+body: 'Allow usage of environment variables in post:'
+time: 2023-08-16T16:07:35.731728209+02:00
+custom:
+  Issue: "520"
