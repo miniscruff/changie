@@ -36,7 +36,7 @@ func newMockTime() time.Time {
 	return time.Date(2021, 5, 22, 13, 30, 10, 5, time.UTC)
 }
 
-func TestEnvOnNew(t *testing.T) {
+func TestNewWithEnvVars(t *testing.T) {
 	cfg := newTestConfig()
 	cfg.Post = []core.PostProcessConfig{
 		{Key: "author", Value: "{{.Env.AUTHOR}}"},
