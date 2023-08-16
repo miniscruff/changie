@@ -24,6 +24,7 @@ type Batch struct {
 	VersionFooterPath string
 	KeepFragments     bool
 	RemovePrereleases bool
+	Project           string
 	MoveDir           string
 	IncludeDirs       []string
 	DryRun            bool
@@ -162,6 +163,12 @@ Changes are sorted in the following order:
 		false,
 		"Force a new version file even if one already exists",
 	)
+	cmd.Flags().StringVarP(
+		&b.Project,
+		"project", "j",
+		"",
+		"SPecify which project version we are batching",
+	)
 
 	b.Command = cmd
 
@@ -169,12 +176,12 @@ Changes are sorted in the following order:
 }
 
 func (b *Batch) getBatchData() (*core.BatchData, error) {
-	previousVersion, err := core.GetLatestVersion(b.ReadDir, b.config, false)
+	previousVersion, err := core.GetLatestVersion(b.ReadDir, b.config, false, b.Project)
 	if err != nil {
 		return nil, err
 	}
 
-	allChanges, err := core.GetChanges(b.config, b.IncludeDirs, b.ReadDir, b.ReadFile)
+	allChanges, err := core.GetChanges(b.config, b.IncludeDirs, b.ReadDir, b.ReadFile, b.Project)
 	if err != nil {
 		return nil, err
 	}
@@ -186,6 +193,7 @@ func (b *Batch) getBatchData() (*core.BatchData, error) {
 		b.Prerelease,
 		b.Meta,
 		allChanges,
+        b.Project,
 	)
 	if err != nil {
 		return nil, err
@@ -217,6 +225,27 @@ func (b *Batch) Run(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
+	if len(b.config.Projects) > 0 {
+		if len(b.Project) == 0 {
+			return errors.New("missing project label or key")
+		}
+
+        // make sure our passed in project is the key not the label
+        for _, pc := range b.config.Projects {
+            if b.Project == pc.Label {
+                b.Project = pc.Key
+            }
+            if b.Project == pc.Key {
+                break
+            }
+        }
+
+		err = b.MkdirAll(filepath.Join(b.config.ChangesDir, b.Project), core.CreateDirMode)
+        if err != nil {
+            return err
+        }
+	}
+
 	data, err := b.getBatchData()
 	if err != nil {
 		return err
@@ -225,7 +254,7 @@ func (b *Batch) Run(cmd *cobra.Command, args []string) error {
 	if b.DryRun {
 		b.writer = cmd.OutOrStdout()
 	} else {
-		versionPath := filepath.Join(b.config.ChangesDir, data.Version+"."+b.config.VersionExt)
+		versionPath := filepath.Join(b.config.ChangesDir, b.Project, data.Version+"."+b.config.VersionExt)
 
 		if !b.Force {
 			if exists, existErr := core.FileExists(versionPath); exists || existErr != nil {
@@ -321,7 +350,7 @@ func (b *Batch) Run(cmd *cobra.Command, args []string) error {
 
 	if !b.DryRun && b.RemovePrereleases {
 		// only chance we fail is already checked above
-		allVers, _ := core.GetAllVersions(b.ReadDir, b.config, false)
+		allVers, _ := core.GetAllVersions(b.ReadDir, b.config, false, b.Project)
 
 		for _, v := range allVers {
 			if v.Prerelease() == "" {
@@ -330,6 +359,7 @@ func (b *Batch) Run(cmd *cobra.Command, args []string) error {
 
 			err = b.Remove(filepath.Join(
 				b.config.ChangesDir,
+                b.Project,
 				v.Original()+"."+b.config.VersionExt,
 			))
 			if err != nil {

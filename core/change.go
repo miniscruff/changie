@@ -23,6 +23,7 @@ type ChangesConfigSorter struct {
 var (
 	errInvalidKind                        = errors.New("invalid kind")
 	errInvalidComponent                   = errors.New("invalid component")
+	errInvalidProject                     = errors.New("invalid project")
 	errKindDoesNotAcceptBody              = errors.New("kind does not accept a body")
 	errKindProvidedWhenNotConfigured      = errors.New("kind provided but not supported")
 	errComponentProvidedWhenNotConfigured = errors.New("component provided but not supported")
@@ -86,6 +87,8 @@ func (s *ChangesConfigSorter) Less(i, j int) bool {
 
 // Change represents an atomic change to a project.
 type Change struct {
+	// Project of our change, if one was provided.
+	Project string `yaml:",omitempty" default:""`
 	// Component of our change, if one was provided.
 	Component string `yaml:",omitempty" default:""`
 	// Kind of our change, if one was provided.
@@ -131,6 +134,11 @@ type PromptContext struct {
 // updating the change as prompts are answered.
 func (change *Change) AskPrompts(ctx PromptContext) error {
 	err := change.validateArguments(ctx.Config)
+	if err != nil {
+		return err
+	}
+
+	err = change.promptForProject(&ctx)
 	if err != nil {
 		return err
 	}
@@ -193,6 +201,45 @@ func (change *Change) validateArguments(config *Config) error {
 	}
 
 	return nil
+}
+
+func (change *Change) promptForProject(ctx *PromptContext) error {
+	if len(ctx.Config.Projects) == 0 {
+		return nil
+	}
+
+	if len(change.Project) == 0 {
+		var err error
+
+		projectLabels := make([]string, len(ctx.Config.Projects))
+		for i, pc := range ctx.Config.Projects {
+			if len(pc.Label) > 0 {
+				projectLabels[i] = pc.Label
+			} else {
+				projectLabels[i] = pc.Key
+			}
+		}
+
+		change.Project, err = Custom{
+			Type:        CustomEnum,
+			Label:       "Project",
+			EnumOptions: projectLabels,
+		}.AskPrompt(ctx.StdinReader)
+		if err != nil {
+			return err
+		}
+	}
+
+	for _, proj := range ctx.Config.Projects {
+        // Validate our project matches a key or label depending on if label was empty.
+		if change.Project == proj.Label || change.Project == proj.Key {
+            // Make sure our project string is set to our project key regardless of the label.
+            change.Project = proj.Key
+			return nil
+		}
+	}
+
+	return fmt.Errorf("%w: %s", errInvalidProject, change.Project)
 }
 
 func (change *Change) promptForComponent(ctx *PromptContext) error {
