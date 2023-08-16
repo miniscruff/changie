@@ -43,6 +43,7 @@ func TestNewWithEnvVars(t *testing.T) {
 	}
 	then.WithTempDirConfig(t, cfg)
 	reader, writer := then.WithReadWritePipe(t)
+
 	t.Setenv("ENVPREFIX_TESTCONTENT", "Test content")
 
 	then.DelayWrite(
