@@ -23,14 +23,12 @@ func newTestConfig() *core.Config {
 		VersionFormat: "## {{.Version}}",
 		KindFormat:    "### {{.Kind}}",
 		ChangeFormat:  "* {{.Body}}",
-		EnvPrefix: "ENVPREFIX_",
+		EnvPrefix:     "ENVPREFIX_",
 		Kinds: []core.KindConfig{
 			{Label: "added"},
 			{Label: "removed"},
 			{Label: "other"},
 		},
-
-
 	}
 }
 
