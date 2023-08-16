@@ -39,16 +39,16 @@ func newMockTime() time.Time {
 func TestNewWithEnvVars(t *testing.T) {
 	cfg := newTestConfig()
 	cfg.Post = []core.PostProcessConfig{
-		{Key: "author", Value: "{{.Env.AUTHOR}}"},
+		{Key: "TestPost", Value: "{{.Env.TESTCONTENT}}"},
 	}
 	then.WithTempDirConfig(t, cfg)
 	reader, writer := then.WithReadWritePipe(t)
-	t.Setenv("ENVPREFIX_AUTHOR", "test author")
+	t.Setenv("ENVPREFIX_TESTCONTENT", "Test content")
 
 	then.DelayWrite(
 		t, writer,
 		[]byte{106, 13},
-		[]byte("a message with author"),
+		[]byte("a message with testcontent"),
 		[]byte{13},
 	)
 
@@ -72,7 +72,7 @@ func TestNewWithEnvVars(t *testing.T) {
 	then.Equals(t, ".yaml", filepath.Ext(fileInfos[0].Name()))
 
 	changeContent := fmt.Sprintf(
-		"kind: removed\nbody: a message with author\ntime: %s\ncustom:\n  author: test author\n",
+		"kind: removed\nbody: a message with testcontent\ntime: %s\ncustom:\n  TestPost: Test content\n",
 		newMockTime().Format(time.RFC3339Nano),
 	)
 
