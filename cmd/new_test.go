@@ -23,16 +23,63 @@ func newTestConfig() *core.Config {
 		VersionFormat: "## {{.Version}}",
 		KindFormat:    "### {{.Kind}}",
 		ChangeFormat:  "* {{.Body}}",
+		EnvPrefix: "ENVPREFIX_",
 		Kinds: []core.KindConfig{
 			{Label: "added"},
 			{Label: "removed"},
 			{Label: "other"},
 		},
+
+
 	}
 }
 
 func newMockTime() time.Time {
 	return time.Date(2021, 5, 22, 13, 30, 10, 5, time.UTC)
+}
+
+func TestEnvOnNew(t *testing.T) {
+	cfg := newTestConfig()
+	cfg.Post = []core.PostProcessConfig{
+		{Key: "author", Value: "{{.Env.AUTHOR}}"},
+	}
+	then.WithTempDirConfig(t, cfg)
+	reader, writer := then.WithReadWritePipe(t)
+	os.Setenv("ENVPREFIX_AUTHOR", "test author")
+
+	then.DelayWrite(
+		t, writer,
+		[]byte{106, 13},
+		[]byte("a message with author"),
+		[]byte{13},
+	)
+
+	cmd := NewNew(
+		os.ReadFile,
+		os.Create,
+		newMockTime,
+		core.NewTemplateCache(),
+	)
+	cmd.SetIn(reader)
+
+	then.Nil(t, os.MkdirAll(filepath.Join(cfg.ChangesDir, cfg.UnreleasedDir), 0755))
+
+	err := cmd.Run(cmd.Command, nil)
+	then.Nil(t, err)
+
+	futurePath := filepath.Join(cfg.ChangesDir, cfg.UnreleasedDir)
+	fileInfos, err := os.ReadDir(futurePath)
+	then.Nil(t, err)
+	then.Equals(t, 1, len(fileInfos))
+	then.Equals(t, ".yaml", filepath.Ext(fileInfos[0].Name()))
+
+	changeContent := fmt.Sprintf(
+		"kind: removed\nbody: a message with author\ntime: %s\ncustom:\n  author: test author\n",
+		newMockTime().Format(time.RFC3339Nano),
+	)
+
+	then.FileExists(t, futurePath, fileInfos[0].Name())
+	then.FileContents(t, changeContent, futurePath, fileInfos[0].Name())
 }
 
 func TestNewCreatesNewFileAfterPrompts(t *testing.T) {
