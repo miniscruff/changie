@@ -43,7 +43,7 @@ func TestEnvOnNew(t *testing.T) {
 	}
 	then.WithTempDirConfig(t, cfg)
 	reader, writer := then.WithReadWritePipe(t)
-	os.Setenv("ENVPREFIX_AUTHOR", "test author")
+	t.Setenv("ENVPREFIX_AUTHOR", "test author")
 
 	then.DelayWrite(
 		t, writer,
