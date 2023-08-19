@@ -70,7 +70,7 @@ Note that a newline is added between each version file.`,
 		&m.Project,
 		"project", "j",
 		"",
-		"Specify which project we are merging",
+		"(Preview) Specify which project we are merging",
 	)
 
 	m.Command = cmd

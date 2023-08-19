@@ -167,7 +167,7 @@ Changes are sorted in the following order:
 		&b.Project,
 		"project", "j",
 		"",
-		"Specify which project version we are batching",
+		"(Preview) Specify which project version we are batching",
 	)
 
 	b.Command = cmd
@@ -226,6 +226,8 @@ func (b *Batch) Run(cmd *cobra.Command, args []string) error {
 	}
 
 	if len(b.config.Projects) > 0 {
+		fmt.Println(core.PreviewWarning)
+
 		var pc *core.ProjectConfig
 
 		pc, err = b.config.Project(b.Project)

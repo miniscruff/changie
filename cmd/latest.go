@@ -51,7 +51,7 @@ func NewLatest(readFile shared.ReadFiler, readDir shared.ReadDirer) *Latest {
 		&l.Project,
 		"project", "j",
 		"",
-		"Specify which project we are interested in",
+		"(Preview) Specify which project we are interested in",
 	)
 
 	l.Command = cmd

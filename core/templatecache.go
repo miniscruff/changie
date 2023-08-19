@@ -9,6 +9,11 @@ import (
 	"github.com/Masterminds/sprig/v3"
 )
 
+const (
+	PreviewWarning  = "is in preview mode and may require breaking changes."
+	ProjectsWarning = "projects " + PreviewWarning
+)
+
 // Batch data is a common structure for templates when generating change fragments.
 type BatchData struct {
 	// Time of the change
