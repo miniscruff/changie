@@ -114,7 +114,12 @@ func (n *Next) Run(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	_, err = writer.Write([]byte(next.Original()))
+	projPrefix := ""
+	if len(n.Project) > 0 {
+		projPrefix = n.Project + config.ProjectsVersionSeparator
+	}
+
+	_, err = writer.Write([]byte(projPrefix + next.Original()))
 
 	return err
 }

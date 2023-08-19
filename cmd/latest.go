@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"errors"
 	"strings"
 
 	"github.com/spf13/cobra"
@@ -15,6 +16,7 @@ type Latest struct {
 	// CLI args
 	RemovePrefix    bool
 	SkipPrereleases bool
+	Project         string
 
 	// dependencies
 	ReadFile shared.ReadFiler
@@ -46,6 +48,12 @@ func NewLatest(readFile shared.ReadFiler, readDir shared.ReadDirer) *Latest {
 		false,
 		"Excludes prereleases to determine the latest version.",
 	)
+	cmd.Flags().StringVarP(
+		&l.Project,
+		"project", "j",
+		"",
+		"Specify which project we are interested in",
+	)
 
 	l.Command = cmd
 
@@ -58,7 +66,25 @@ func (l *Latest) Run(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	ver, err := core.GetLatestVersion(l.ReadDir, config, l.SkipPrereleases, "")
+	// TODO: move this to a util func
+	if len(config.Projects) > 0 {
+		if len(l.Project) == 0 {
+			return errors.New("missing project label or key")
+		}
+
+		// make sure our passed in project is the key not the label
+		for _, pc := range config.Projects {
+			if l.Project == pc.Label {
+				l.Project = pc.Key
+			}
+
+			if l.Project == pc.Key {
+				break
+			}
+		}
+	}
+
+	ver, err := core.GetLatestVersion(l.ReadDir, config, l.SkipPrereleases, l.Project)
 	if err != nil {
 		return err
 	}
@@ -68,7 +94,12 @@ func (l *Latest) Run(cmd *cobra.Command, args []string) error {
 		latestVer = strings.TrimPrefix(latestVer, "v")
 	}
 
-	_, err = l.OutOrStdout().Write([]byte(latestVer))
+	projPrefix := ""
+	if len(l.Project) > 0 {
+		projPrefix = l.Project + config.ProjectsVersionSeparator
+	}
+
+	_, err = l.OutOrStdout().Write([]byte(projPrefix + latestVer))
 
 	return err
 }
