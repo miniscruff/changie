@@ -212,7 +212,7 @@ func (change *Change) promptForProject(ctx *PromptContext) error {
 	}
 
 	if len(change.Project) == 0 {
-		fmt.Println(PreviewWarning)
+		fmt.Println(ProjectsWarning)
 
 		var err error
 

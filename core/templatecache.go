@@ -10,8 +10,8 @@ import (
 )
 
 const (
-	PreviewWarning  = "is in preview mode and may require breaking changes."
-	ProjectsWarning = "projects " + PreviewWarning
+	previewWarning  = "is in preview mode and may require breaking changes."
+	ProjectsWarning = "Projects " + previewWarning
 )
 
 // Batch data is a common structure for templates when generating change fragments.

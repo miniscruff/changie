@@ -226,7 +226,7 @@ func (b *Batch) Run(cmd *cobra.Command, args []string) error {
 	}
 
 	if len(b.config.Projects) > 0 {
-		fmt.Println(core.PreviewWarning)
+		fmt.Println(core.ProjectsWarning)
 
 		var pc *core.ProjectConfig
 
