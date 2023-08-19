@@ -412,6 +412,20 @@ func (c *Config) Project(labelOrKey string) (*ProjectConfig, error) {
 	return nil, errProjectNotFound
 }
 
+func (c *Config) ProjectLabels() []string {
+	projectLabels := make([]string, len(c.Projects))
+
+	for i, pc := range c.Projects {
+		if len(pc.Label) > 0 {
+			projectLabels[i] = pc.Label
+		} else {
+			projectLabels[i] = pc.Key
+		}
+	}
+
+	return projectLabels
+}
+
 // Exists returns whether or not a config already exists
 func (c *Config) Exists() (bool, error) {
 	for _, p := range ConfigPaths {

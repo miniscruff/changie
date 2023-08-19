@@ -211,38 +211,26 @@ func (change *Change) promptForProject(ctx *PromptContext) error {
 	}
 
 	if len(change.Project) == 0 {
-		projectLabels := make([]string, len(ctx.Config.Projects))
-
-		for i, pc := range ctx.Config.Projects {
-			if len(pc.Label) > 0 {
-				projectLabels[i] = pc.Label
-			} else {
-				projectLabels[i] = pc.Key
-			}
-		}
-
 		var err error
 
 		change.Project, err = Custom{
 			Type:        CustomEnum,
 			Label:       "Project",
-			EnumOptions: projectLabels,
+			EnumOptions: ctx.Config.ProjectLabels(),
 		}.AskPrompt(ctx.StdinReader)
 		if err != nil {
 			return err
 		}
 	}
 
-	for _, proj := range ctx.Config.Projects {
-		// Validate our project matches a key or label depending on if label was empty.
-		if change.Project == proj.Label || change.Project == proj.Key {
-			// Make sure our project string is set to our project key regardless of the label.
-			change.Project = proj.Key
-			return nil
-		}
+	pc, err := ctx.Config.Project(change.Project)
+	if err != nil {
+		return fmt.Errorf("%w: %s", err, change.Project)
 	}
 
-	return fmt.Errorf("%w: %s", errInvalidProject, change.Project)
+	change.Project = pc.Key
+
+	return nil
 }
 
 func (change *Change) promptForComponent(ctx *PromptContext) error {

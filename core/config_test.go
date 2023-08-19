@@ -368,6 +368,23 @@ func TestConfigProjectNoProjectsReturnsEmptyConfig(t *testing.T) {
 	then.Equals(t, "", proj.ChangelogPath)
 }
 
+func TestConfigProjectCanGetLabels(t *testing.T) {
+	cfg := &Config{
+		Projects: []ProjectConfig{
+			{
+				Label: "Labeled",
+				Key:   "labeled",
+			},
+			{
+				Key: "key_only",
+			},
+		},
+	}
+
+	labels := cfg.ProjectLabels()
+	then.SliceEquals(t, []string{"Labeled", "key_only"}, labels)
+}
+
 func TestConfigProjectErrorNoLabelOrKeyAndRequired(t *testing.T) {
 	cfg := &Config{
 		Projects: []ProjectConfig{

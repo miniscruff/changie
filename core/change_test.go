@@ -190,6 +190,74 @@ func TestAskPromptsForBody(t *testing.T) {
 	then.Equals(t, "body stuff", c.Body)
 }
 
+func TestAskPromptsForBodyWithProject(t *testing.T) {
+	reader, writer := then.WithReadWritePipe(t)
+	then.DelayWrite(
+		t, writer,
+		[]byte{13},
+		[]byte("body stuff"),
+		[]byte{13},
+	)
+
+	config := &Config{
+		Projects: []ProjectConfig{
+			{Label: "Client", Key: "client"},
+			{Label: "Other", Key: "other"},
+		},
+	}
+	c := &Change{}
+	then.Nil(t, c.AskPrompts(PromptContext{
+		Config:      config,
+		StdinReader: reader,
+	}))
+
+	then.Equals(t, "client", c.Project)
+	then.Equals(t, "", c.Component)
+	then.Equals(t, "", c.Kind)
+	then.Equals(t, 0, len(c.Custom))
+	then.Equals(t, "body stuff", c.Body)
+}
+
+func TestAskPromptsForBodyWithProjectErrBadProject(t *testing.T) {
+	reader, _ := then.WithReadWritePipe(t)
+
+	config := &Config{
+		Projects: []ProjectConfig{
+			{Label: "Client", Key: "client"},
+			{Label: "Other", Key: "other"},
+		},
+	}
+	c := &Change{
+		Project: "missing",
+	}
+	err := c.AskPrompts(PromptContext{
+		Config:      config,
+		StdinReader: reader,
+	})
+	then.Err(t, errProjectNotFound, err)
+}
+
+func TestAskPromptsForBodyWithProjectErrBadInput(t *testing.T) {
+	reader, writer := then.WithReadWritePipe(t)
+	then.DelayWrite(
+		t, writer,
+		[]byte{3},
+	)
+
+	config := &Config{
+		Projects: []ProjectConfig{
+			{Label: "Client", Key: "client"},
+			{Label: "Other", Key: "other"},
+		},
+	}
+	c := &Change{}
+	err := c.AskPrompts(PromptContext{
+		Config:      config,
+		StdinReader: reader,
+	})
+	then.NotNil(t, err)
+}
+
 func TestAskComponentKindBody(t *testing.T) {
 	reader, writer := then.WithReadWritePipe(t)
 	then.DelayWrite(
