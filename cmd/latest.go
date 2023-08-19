@@ -58,7 +58,7 @@ func (l *Latest) Run(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	ver, err := core.GetLatestVersion(l.ReadDir, config, l.SkipPrereleases, "PROJECT")
+	ver, err := core.GetLatestVersion(l.ReadDir, config, l.SkipPrereleases, "")
 	if err != nil {
 		return err
 	}

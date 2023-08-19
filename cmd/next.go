@@ -77,13 +77,13 @@ func (n *Next) Run(cmd *cobra.Command, args []string) error {
 	var changes []core.Change
 	// only worry about loading changes, if we are in auto mode
 	if part == core.AutoLevel {
-		changes, err = core.GetChanges(config, n.IncludeDirs, n.ReadDir, n.ReadFile, "PROJECT")
+		changes, err = core.GetChanges(config, n.IncludeDirs, n.ReadDir, n.ReadFile, "")
 		if err != nil {
 			return err
 		}
 	}
 
-	next, err := core.GetNextVersion(n.ReadDir, config, part, n.Prerelease, n.Meta, changes, "PROJECT")
+	next, err := core.GetNextVersion(n.ReadDir, config, part, n.Prerelease, n.Meta, changes, "")
 	if err != nil {
 		return err
 	}

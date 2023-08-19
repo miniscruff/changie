@@ -90,7 +90,7 @@ func (m *Merge) Run(cmd *cobra.Command, args []string) error {
 		writer = changeFile
 	}
 
-	allVersions, err := core.GetAllVersions(m.ReadDir, config, false, "PROJECT")
+	allVersions, err := core.GetAllVersions(m.ReadDir, config, false, "")
 	if err != nil {
 		return err
 	}
@@ -112,7 +112,7 @@ func (m *Merge) Run(cmd *cobra.Command, args []string) error {
 			nil,
 			m.ReadDir,
 			m.ReadFile,
-			"PROJECT_KEY",
+			"",
 		)
 		if unrelErr != nil {
 			return unrelErr
