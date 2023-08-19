@@ -118,6 +118,7 @@ func (n *New) Run(cmd *cobra.Command, args []string) error {
 		Kind:      n.Kind,
 		Body:      n.Body,
 		Custom:    customValues,
+		Env:       config.EnvVars(),
 	}
 
 	err = change.AskPrompts(core.PromptContext{

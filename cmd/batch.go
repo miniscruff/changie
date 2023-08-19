@@ -167,7 +167,7 @@ Changes are sorted in the following order:
 		&b.Project,
 		"project", "j",
 		"",
-		"SPecify which project version we are batching",
+		"Specify which project version we are batching",
 	)
 
 	b.Command = cmd
