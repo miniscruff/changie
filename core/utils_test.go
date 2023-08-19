@@ -87,6 +87,27 @@ func TestGetAllVersionsReturnsAllVersions(t *testing.T) {
 	then.Equals(t, "v0.1.0", vers[1].Original())
 }
 
+func TestGetAllVersionsReturnsAllVersionsInProject(t *testing.T) {
+	config := &Config{
+		HeaderPath: "header.md",
+	}
+	mockRead := func(dirname string) ([]os.DirEntry, error) {
+		then.Equals(t, "patcher", dirname)
+		return []os.DirEntry{
+			&then.MockDirEntry{MockIsDir: true, MockName: "dir"},
+			&then.MockDirEntry{MockName: "header.md"},
+			&then.MockDirEntry{MockName: "v0.1.0.md"},
+			&then.MockDirEntry{MockName: "v0.2.0.md"},
+			&then.MockDirEntry{MockName: "not-sem-ver.md"},
+		}, nil
+	}
+
+	vers, err := GetAllVersions(mockRead, config, false, "patcher")
+	then.Nil(t, err)
+	then.Equals(t, "v0.2.0", vers[0].Original())
+	then.Equals(t, "v0.1.0", vers[1].Original())
+}
+
 func TestGetLatestVersionReturnsMostRecent(t *testing.T) {
 	config := &Config{}
 	mockRead := func(dirname string) ([]os.DirEntry, error) {
@@ -632,6 +653,27 @@ func TestGetAllChanges(t *testing.T) {
 	then.Equals(t, "second", changes[0].Body)
 	then.Equals(t, "first", changes[1].Body)
 	then.Equals(t, "third", changes[2].Body)
+}
+
+func TestGetAllChangesWithProject(t *testing.T) {
+	cfg := utilsTestConfig()
+	cfg.Projects = []ProjectConfig{
+		{
+			Label: "Web Hook",
+			Key:   "web_hook_sender",
+		},
+	}
+	then.WithTempDirConfig(t, cfg)
+
+	writeChangeFile(t, cfg, Change{Kind: "added", Body: "first", Project: "web_hook_sender"})
+	writeChangeFile(t, cfg, Change{Kind: "added", Body: "second", Project: "web_hook_sender"})
+	writeChangeFile(t, cfg, Change{Kind: "removed", Body: "ignored", Project: "skipped"})
+
+	changes, err := GetChanges(cfg, nil, os.ReadDir, os.ReadFile, "web_hook_sender")
+	then.Nil(t, err)
+    then.Equals(t, 2, len(changes))
+	then.Equals(t, "first", changes[0].Body)
+	then.Equals(t, "second", changes[1].Body)
 }
 
 func TestBatchErrorIfUnableToReadDir(t *testing.T) {

@@ -28,6 +28,8 @@ var (
 	errKindProvidedWhenNotConfigured      = errors.New("kind provided but not supported")
 	errComponentProvidedWhenNotConfigured = errors.New("component provided but not supported")
 	errCustomProvidedNotConfigured        = errors.New("custom value provided but not configured")
+	errProjectNotFound                    = errors.New("project not found")
+	errProjectRequired                    = errors.New("project missing but required")
 )
 
 func SortByConfig(config *Config) *ChangesConfigSorter {

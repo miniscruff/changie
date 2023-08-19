@@ -394,6 +394,24 @@ func (c *Config) Save(wf shared.WriteFiler) error {
 	return wf(ConfigPaths[0], bs, CreateFileMode)
 }
 
+func (c *Config) Project(labelOrKey string) (*ProjectConfig, error) {
+	if len(c.Projects) == 0 {
+		return &ProjectConfig{}, nil
+	}
+
+	if len(labelOrKey) == 0 {
+		return nil, errProjectRequired
+	}
+
+	for _, pc := range c.Projects {
+		if labelOrKey == pc.Label || labelOrKey == pc.Key{
+			return &pc, nil
+		}
+	}
+
+	return nil, errProjectNotFound
+}
+
 // Exists returns whether or not a config already exists
 func (c *Config) Exists() (bool, error) {
 	for _, p := range ConfigPaths {

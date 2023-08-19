@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/miniscruff/changie/then"
+	"gopkg.in/yaml.v2"
 )
 
 var (
@@ -17,7 +18,25 @@ var (
 		time.Date(2017, 5, 24, 3, 30, 10, 5, time.Local),
 		time.Date(2016, 5, 24, 3, 30, 10, 5, time.Local),
 	}
+    changeIncrementer = 0
 )
+
+// writeChangeFile will write a change file with an auto-incrementing index to prevent
+// same second clobbering
+func writeChangeFile(t *testing.T, cfg *Config, change Change) {
+	// set our time as an arbitrary amount from jan 1 2000 so
+	// each change is 1 hour later then the last
+	if change.Time.Year() == 0 {
+		diff := time.Duration(changeIncrementer) * time.Hour
+		change.Time = time.Date(2000, 0, 0, 0, 0, 0, 0, time.UTC).Add(diff)
+	}
+
+	bs, _ := yaml.Marshal(&change)
+	name := fmt.Sprintf("change-%d.yaml", changeIncrementer)
+	changeIncrementer++
+
+	then.WriteFile(t, bs, cfg.ChangesDir, cfg.UnreleasedDir, name)
+}
 
 func TestWriteChange(t *testing.T) {
 	mockTime := time.Date(2016, 5, 24, 3, 30, 10, 5, time.Local)
