@@ -86,7 +86,7 @@ func (m *Merge) Run(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-    changelogPath := config.ChangelogPath
+	changelogPath := config.ChangelogPath
 
 	if len(config.Projects) > 0 {
 		if len(m.Project) == 0 {
@@ -100,12 +100,10 @@ func (m *Merge) Run(cmd *cobra.Command, args []string) error {
 			}
 
 			if m.Project == pc.Key {
-                changelogPath = pc.ChangelogPath
+				changelogPath = pc.ChangelogPath
 				break
 			}
 		}
-
-        // todo: make sure our passed in project actually exists
 	}
 
 	var writer io.Writer
