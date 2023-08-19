@@ -1,7 +1,6 @@
 package cmd
 
 import (
-	"errors"
 	"strings"
 
 	"github.com/spf13/cobra"
@@ -76,28 +75,23 @@ Echo the next release version number to be used by CI tools or other commands li
 func (n *Next) Run(cmd *cobra.Command, args []string) error {
 	writer := cmd.OutOrStdout()
 	part := strings.ToLower(args[0])
+	projPrefix := ""
 
 	config, err := core.LoadConfig(n.ReadFile)
 	if err != nil {
 		return err
 	}
 
-	// TODO: move this to a util func
 	if len(config.Projects) > 0 {
-		if len(n.Project) == 0 {
-			return errors.New("missing project label or key")
+		var pc *core.ProjectConfig
+
+		pc, err = config.Project(n.Project)
+		if err != nil {
+			return err
 		}
 
-		// make sure our passed in project is the key not the label
-		for _, pc := range config.Projects {
-			if n.Project == pc.Label {
-				n.Project = pc.Key
-			}
-
-			if n.Project == pc.Key {
-				break
-			}
-		}
+		n.Project = pc.Key
+		projPrefix = pc.Key + config.ProjectsVersionSeparator
 	}
 
 	var changes []core.Change
@@ -112,11 +106,6 @@ func (n *Next) Run(cmd *cobra.Command, args []string) error {
 	next, err := core.GetNextVersion(n.ReadDir, config, part, n.Prerelease, n.Meta, changes, n.Project)
 	if err != nil {
 		return err
-	}
-
-	projPrefix := ""
-	if len(n.Project) > 0 {
-		projPrefix = n.Project + config.ProjectsVersionSeparator
 	}
 
 	_, err = writer.Write([]byte(projPrefix + next.Original()))

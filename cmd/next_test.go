@@ -44,6 +44,61 @@ func TestNextVersionWithPatch(t *testing.T) {
 	then.Equals(t, "v0.1.1", builder.String())
 }
 
+func TestNextVersionWithProject(t *testing.T) {
+	cfg := nextTestConfig()
+	cfg.ProjectsVersionSeparator = "|"
+	cfg.Projects = []core.ProjectConfig{
+		{
+			Label: "W things",
+			Key:   "w",
+		},
+	}
+	then.WithTempDirConfig(t, cfg)
+
+	builder := strings.Builder{}
+	next := NewNext(os.ReadDir, os.ReadFile)
+	next.Project = "w"
+
+	next.SetOut(&builder)
+
+	// major and minor are not tested directly
+	// as next version is tested in utils
+	then.CreateFile(t, cfg.ChangesDir, "w", "v0.0.1.md")
+	then.CreateFile(t, cfg.ChangesDir, "w", "v0.1.0.md")
+	then.CreateFile(t, cfg.ChangesDir, "w", "head.tpl.md")
+
+	err := next.Run(next.Command, []string{"patch"})
+	then.Nil(t, err)
+	then.Equals(t, "w|v0.1.1", builder.String())
+}
+
+func TestNextVersionWithProjectBadProject(t *testing.T) {
+	cfg := nextTestConfig()
+	cfg.ProjectsVersionSeparator = "|"
+	cfg.Projects = []core.ProjectConfig{
+		{
+			Label: "W things",
+			Key:   "w",
+		},
+	}
+	then.WithTempDirConfig(t, cfg)
+
+	builder := strings.Builder{}
+	next := NewNext(os.ReadDir, os.ReadFile)
+	next.Project = "missing_proj"
+
+	next.SetOut(&builder)
+
+	// major and minor are not tested directly
+	// as next version is tested in utils
+	then.CreateFile(t, cfg.ChangesDir, "w", "v0.0.1.md")
+	then.CreateFile(t, cfg.ChangesDir, "w", "v0.1.0.md")
+	then.CreateFile(t, cfg.ChangesDir, "w", "head.tpl.md")
+
+	err := next.Run(next.Command, []string{"patch"})
+	then.NotNil(t, err)
+}
+
 func TestNextVersionWithAuto(t *testing.T) {
 	cfg := nextTestConfig()
 	cfg.Kinds = []core.KindConfig{

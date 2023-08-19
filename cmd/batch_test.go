@@ -53,7 +53,7 @@ func withDefaultBatch() *Batch {
 
 // writeChangeFile will write a change file with an auto-incrementing index to prevent
 // same second clobbering
-func writeChangeFile(t *testing.T, cfg *core.Config, change core.Change) {
+func writeChangeFile(t *testing.T, cfg *core.Config, change *core.Change) {
 	// set our time as an arbitrary amount from jan 1 2000 so
 	// each change is 1 hour later then the last
 	if change.Time.Year() == 0 {
@@ -65,7 +65,11 @@ func writeChangeFile(t *testing.T, cfg *core.Config, change core.Change) {
 	name := fmt.Sprintf("change-%d.yaml", changeIncrementer)
 	changeIncrementer++
 
-	then.WriteFile(t, bs, cfg.ChangesDir, cfg.UnreleasedDir, name)
+	if change.Filename == "" {
+		change.Filename = filepath.Join(cfg.ChangesDir, cfg.UnreleasedDir, name)
+	}
+
+	then.WriteFile(t, bs, change.Filename)
 }
 
 type testCaseOption func(*core.Config, *Batch)
@@ -77,9 +81,9 @@ func TestBatchCanBatch(t *testing.T) {
 
 	then.WithTempDirConfig(t, cfg)
 
-	writeChangeFile(t, cfg, core.Change{Kind: "added", Body: "A"})
-	writeChangeFile(t, cfg, core.Change{Kind: "added", Body: "B"})
-	writeChangeFile(t, cfg, core.Change{Kind: "removed", Body: "C"})
+	writeChangeFile(t, cfg, &core.Change{Kind: "added", Body: "A"})
+	writeChangeFile(t, cfg, &core.Change{Kind: "added", Body: "B"})
+	writeChangeFile(t, cfg, &core.Change{Kind: "removed", Body: "C"})
 
 	batch := withDefaultBatch()
 	err := batch.Run(batch.Command, []string{"v0.2.0"})
@@ -96,6 +100,84 @@ func TestBatchCanBatch(t *testing.T) {
 	then.DirectoryFileCount(t, 0, cfg.ChangesDir, cfg.UnreleasedDir)
 }
 
+func TestBatchCanBatchWithProject(t *testing.T) {
+	cfg := batchTestConfig()
+	cfg.Projects = []core.ProjectConfig{
+		{
+			Label: "A",
+			Key:   "a",
+		},
+	}
+	// declared path but missing is accepted
+	cfg.VersionHeaderPath = "header.md"
+
+	then.WithTempDirConfig(t, cfg)
+
+	writeChangeFile(t, cfg, &core.Change{Kind: "added", Body: "A", Project: "a"})
+	writeChangeFile(t, cfg, &core.Change{Kind: "added", Body: "B", Project: "b"})
+	writeChangeFile(t, cfg, &core.Change{Kind: "removed", Body: "C", Project: "a"})
+
+	batch := withDefaultBatch()
+	batch.Project = "a"
+	err := batch.Run(batch.Command, []string{"v0.2.0"})
+	then.Nil(t, err)
+
+	verContents := `## v0.2.0
+### added
+* A
+### removed
+* C`
+
+	then.FileContents(t, verContents, cfg.ChangesDir, "a", "v0.2.0.md")
+	then.DirectoryFileCount(t, 1, cfg.ChangesDir, cfg.UnreleasedDir)
+}
+
+func TestBatchProjectFailsIfUnableToMakeProjectDir(t *testing.T) {
+	cfg := batchTestConfig()
+	cfg.Projects = []core.ProjectConfig{
+		{
+			Label: "A",
+			Key:   "a",
+		},
+	}
+	// declared path but missing is accepted
+	cfg.VersionHeaderPath = "header.md"
+
+	then.WithTempDirConfig(t, cfg)
+
+	writeChangeFile(t, cfg, &core.Change{Kind: "added", Body: "A", Project: "a"})
+	writeChangeFile(t, cfg, &core.Change{Kind: "removed", Body: "C", Project: "a"})
+
+	batch := withDefaultBatch()
+	batch.Project = "A"
+
+	mockErr := errors.New("bad mkdir all")
+	batch.MkdirAll = func(path string, perm os.FileMode) error {
+		return mockErr
+	}
+
+	err := batch.Run(batch.Command, []string{"v0.2.0"})
+	then.Err(t, mockErr, err)
+}
+
+func TestBatchProjectFailsIfUnableToFindProject(t *testing.T) {
+	cfg := batchTestConfig()
+	cfg.Projects = []core.ProjectConfig{
+		{
+			Label: "A",
+			Key:   "a",
+		},
+	}
+
+	then.WithTempDirConfig(t, cfg)
+
+	batch := withDefaultBatch()
+	batch.Project = "not found"
+
+	err := batch.Run(batch.Command, []string{"v0.2.0"})
+	then.NotNil(t, err)
+}
+
 func TestBatchCanAddNewLinesBeforeAndAfterKindHeader(t *testing.T) {
 	cfg := batchTestConfig()
 	// declared path but missing is accepted
@@ -105,9 +187,9 @@ func TestBatchCanAddNewLinesBeforeAndAfterKindHeader(t *testing.T) {
 
 	then.WithTempDirConfig(t, cfg)
 
-	writeChangeFile(t, cfg, core.Change{Kind: "added", Body: "A"})
-	writeChangeFile(t, cfg, core.Change{Kind: "added", Body: "B"})
-	writeChangeFile(t, cfg, core.Change{Kind: "removed", Body: "C"})
+	writeChangeFile(t, cfg, &core.Change{Kind: "added", Body: "A"})
+	writeChangeFile(t, cfg, &core.Change{Kind: "added", Body: "B"})
+	writeChangeFile(t, cfg, &core.Change{Kind: "removed", Body: "C"})
 
 	batch := withDefaultBatch()
 	err := batch.Run(batch.Command, []string{"v0.2.0"})
@@ -168,7 +250,7 @@ env: {{.Env.ENV_KEY}}`
 	batch.Meta = []string{"hash"}
 
 	writeChangeFile(t, cfg,
-		core.Change{
+		&core.Change{
 			Kind: "added",
 			Body: "D",
 			Custom: map[string]string{
@@ -215,9 +297,9 @@ func TestBatchDryRun(t *testing.T) {
 	var builder strings.Builder
 
 	batch.Command.SetOut(&builder)
-	writeChangeFile(t, cfg, core.Change{Kind: "added", Body: "D"})
-	writeChangeFile(t, cfg, core.Change{Kind: "added", Body: "E"})
-	writeChangeFile(t, cfg, core.Change{Kind: "removed", Body: "F"})
+	writeChangeFile(t, cfg, &core.Change{Kind: "added", Body: "D"})
+	writeChangeFile(t, cfg, &core.Change{Kind: "added", Body: "E"})
+	writeChangeFile(t, cfg, &core.Change{Kind: "removed", Body: "F"})
 
 	err := batch.Run(batch.Command, []string{"v0.2.0"})
 	then.Nil(t, err)
@@ -239,9 +321,9 @@ func TestBatchRemovePrereleases(t *testing.T) {
 	batch := withDefaultBatch()
 	batch.RemovePrereleases = true
 
-	writeChangeFile(t, cfg, core.Change{Kind: "added", Body: "A"})
-	writeChangeFile(t, cfg, core.Change{Kind: "added", Body: "B"})
-	writeChangeFile(t, cfg, core.Change{Kind: "removed", Body: "C"})
+	writeChangeFile(t, cfg, &core.Change{Kind: "added", Body: "A"})
+	writeChangeFile(t, cfg, &core.Change{Kind: "added", Body: "B"})
+	writeChangeFile(t, cfg, &core.Change{Kind: "removed", Body: "C"})
 
 	then.CreateFile(t, cfg.ChangesDir, "v0.1.2-a1.md")
 	then.CreateFile(t, cfg.ChangesDir, "v0.1.2-a2.md")
@@ -263,9 +345,9 @@ func TestBatchKeepChangeFiles(t *testing.T) {
 	batch := withDefaultBatch()
 	batch.KeepFragments = true
 
-	writeChangeFile(t, cfg, core.Change{Kind: "added", Body: "A"})
-	writeChangeFile(t, cfg, core.Change{Kind: "added", Body: "B"})
-	writeChangeFile(t, cfg, core.Change{Kind: "removed", Body: "C"})
+	writeChangeFile(t, cfg, &core.Change{Kind: "added", Body: "A"})
+	writeChangeFile(t, cfg, &core.Change{Kind: "added", Body: "B"})
+	writeChangeFile(t, cfg, &core.Change{Kind: "removed", Body: "C"})
 
 	err := batch.Run(batch.Command, []string{"v0.2.0"})
 	then.Nil(t, err)
@@ -284,9 +366,9 @@ func TestBatchWithHeadersAndFooters(t *testing.T) {
 	batch.VersionHeaderPath = "h1.md"
 	batch.VersionFooterPath = "f1.md"
 
-	writeChangeFile(t, cfg, core.Change{Kind: "added", Body: "A"})
-	writeChangeFile(t, cfg, core.Change{Kind: "added", Body: "B"})
-	writeChangeFile(t, cfg, core.Change{Kind: "removed", Body: "C"})
+	writeChangeFile(t, cfg, &core.Change{Kind: "added", Body: "A"})
+	writeChangeFile(t, cfg, &core.Change{Kind: "added", Body: "B"})
+	writeChangeFile(t, cfg, &core.Change{Kind: "removed", Body: "C"})
 
 	then.WriteFile(t, []byte("first header\n"), cfg.ChangesDir, cfg.UnreleasedDir, "h1.md")
 	then.WriteFile(t, []byte("second header\n"), cfg.ChangesDir, cfg.UnreleasedDir, "h2.md")
@@ -334,12 +416,12 @@ func TestBatchOverrideIfForced(t *testing.T) {
 	batch := withDefaultBatch()
 	batch.Force = true
 
-	writeChangeFile(t, cfg, core.Change{Kind: "added", Body: "A"})
+	writeChangeFile(t, cfg, &core.Change{Kind: "added", Body: "A"})
 
 	err := batch.Run(batch.Command, []string{"v0.2.0"})
 	then.Nil(t, err)
 
-	writeChangeFile(t, cfg, core.Change{Kind: "added", Body: "B"})
+	writeChangeFile(t, cfg, &core.Change{Kind: "added", Body: "B"})
 
 	err = batch.Run(batch.Command, []string{"v0.2.0"})
 	then.Nil(t, err)
@@ -356,12 +438,12 @@ func TestBatchErrorIfBatchExists(t *testing.T) {
 
 	batch := withDefaultBatch()
 
-	writeChangeFile(t, cfg, core.Change{Kind: "added", Body: "A"})
+	writeChangeFile(t, cfg, &core.Change{Kind: "added", Body: "A"})
 
 	err := batch.Run(batch.Command, []string{"v0.2.0"})
 	then.Nil(t, err)
 
-	writeChangeFile(t, cfg, core.Change{Kind: "added", Body: "B"})
+	writeChangeFile(t, cfg, &core.Change{Kind: "added", Body: "B"})
 
 	err = batch.Run(batch.Command, []string{"v0.2.0"})
 	then.Err(t, errVersionExists, err)
@@ -373,7 +455,7 @@ func TestBatchErrorBadVersion(t *testing.T) {
 
 	batch := withDefaultBatch()
 
-	writeChangeFile(t, cfg, core.Change{Kind: "added", Body: "A"})
+	writeChangeFile(t, cfg, &core.Change{Kind: "added", Body: "A"})
 
 	err := batch.Run(batch.Command, []string{"---asdfasdf---"})
 	then.Err(t, core.ErrBadVersionOrPart, err)
@@ -387,9 +469,9 @@ func TestBatchErrorTryingToGetAllVersionsWithRemovingPrereleases(t *testing.T) {
 	batch := withDefaultBatch()
 	batch.RemovePrereleases = true
 
-	writeChangeFile(t, cfg, core.Change{Kind: "added", Body: "A"})
-	writeChangeFile(t, cfg, core.Change{Kind: "added", Body: "B"})
-	writeChangeFile(t, cfg, core.Change{Kind: "removed", Body: "C"})
+	writeChangeFile(t, cfg, &core.Change{Kind: "added", Body: "A"})
+	writeChangeFile(t, cfg, &core.Change{Kind: "added", Body: "B"})
+	writeChangeFile(t, cfg, &core.Change{Kind: "removed", Body: "C"})
 
 	prePath := filepath.Join(cfg.ChangesDir, "v0.1.2-a1.txt")
 	then.CreateFile(t, prePath)
@@ -425,7 +507,7 @@ func TestBatchErrorBadCreateFile(t *testing.T) {
 
 	batch := withDefaultBatch()
 
-	writeChangeFile(t, cfg, core.Change{Kind: "added", Body: "C"})
+	writeChangeFile(t, cfg, &core.Change{Kind: "added", Body: "C"})
 
 	mockErr := errors.New("bad create")
 	batch.Create = func(name string) (*os.File, error) {
@@ -452,7 +534,7 @@ func TestBatchErrorBadVersionFormat(t *testing.T) {
 
 	batch := withDefaultBatch()
 
-	writeChangeFile(t, cfg, core.Change{Kind: "removed", Body: "C"})
+	writeChangeFile(t, cfg, &core.Change{Kind: "removed", Body: "C"})
 
 	err := batch.Run(batch.Command, []string{"v0.11.0"})
 	then.NotNil(t, err)
@@ -487,7 +569,7 @@ func TestBatchErrorBadFilesAndTemplates(t *testing.T) {
 		opt(cfg, batch)
 
 		then.WithTempDirConfig(t, cfg)
-		writeChangeFile(t, cfg, core.Change{Kind: "added", Body: "A"})
+		writeChangeFile(t, cfg, &core.Change{Kind: "added", Body: "A"})
 
 		batch.ReadFile = func(filename string) ([]byte, error) {
 			if strings.HasSuffix(filename, expectedFile) {
@@ -507,7 +589,7 @@ func TestBatchErrorBadDelete(t *testing.T) {
 	batch := withDefaultBatch()
 
 	then.WithTempDirConfig(t, cfg)
-	writeChangeFile(t, cfg, core.Change{Kind: "added", Body: "C"})
+	writeChangeFile(t, cfg, &core.Change{Kind: "added", Body: "C"})
 
 	mockErr := errors.New("bad clear unreleased")
 	batch.Remove = func(path string) error {
@@ -524,7 +606,7 @@ func TestBatchErrorBadKindFormat(t *testing.T) {
 	batch := withDefaultBatch()
 
 	then.WithTempDirConfig(t, cfg)
-	writeChangeFile(t, cfg, core.Change{Kind: "added", Body: "C"})
+	writeChangeFile(t, cfg, &core.Change{Kind: "added", Body: "C"})
 
 	err := batch.Run(batch.Command, []string{"v0.2.3"})
 	then.NotNil(t, err)
@@ -536,7 +618,7 @@ func TestBatchErrorBadComponentFormat(t *testing.T) {
 	batch := withDefaultBatch()
 
 	then.WithTempDirConfig(t, cfg)
-	writeChangeFile(t, cfg, core.Change{Component: "ui", Body: "C"})
+	writeChangeFile(t, cfg, &core.Change{Component: "ui", Body: "C"})
 
 	err := batch.Run(batch.Command, []string{"v0.2.3"})
 	then.NotNil(t, err)
@@ -548,7 +630,7 @@ func TestBatchErrorBadChangeFormat(t *testing.T) {
 	batch := withDefaultBatch()
 
 	then.WithTempDirConfig(t, cfg)
-	writeChangeFile(t, cfg, core.Change{Component: "ui", Body: "C"})
+	writeChangeFile(t, cfg, &core.Change{Component: "ui", Body: "C"})
 
 	err := batch.Run(batch.Command, []string{"v0.2.3"})
 	then.NotNil(t, err)
@@ -660,14 +742,22 @@ func TestBatchClearUnreleasedRemovesUnreleasedFilesIncludingHeader(t *testing.T)
 	betaPath := filepath.Join(cfg.ChangesDir, "beta")
 	batch.IncludeDirs = []string{"alpha", "beta"}
 
-	then.CreateFile(t, cfg.ChangesDir, cfg.UnreleasedDir, "a.yaml")
 	then.CreateFile(t, cfg.ChangesDir, cfg.UnreleasedDir, ".gitkeep")
 	then.CreateFile(t, cfg.ChangesDir, cfg.UnreleasedDir, "header.md")
-	then.CreateFile(t, alphaPath, "b.yaml")
 	then.CreateFile(t, alphaPath, ".gitkeep")
-	then.CreateFile(t, betaPath, "c.yaml")
+
+	changes := []core.Change{
+		{Kind: "added", Body: "A"},
+		{Kind: "added", Body: "B"},
+		{Kind: "added", Body: "alpha b", Filename: filepath.Join(alphaPath, "b.yaml")},
+		{Kind: "added", Body: "beta c", Filename: filepath.Join(betaPath, "c.yaml")},
+	}
+	for i := range changes {
+		writeChangeFile(t, cfg, &changes[i])
+	}
 
 	err := batch.ClearUnreleased(
+		changes,
 		"",
 		"header.md",
 		"does-not-exist.md",
@@ -688,11 +778,21 @@ func TestBatchClearUnreleasedMovesFilesIncludingHeaderIfSpecified(t *testing.T) 
 	batch.config = cfg
 	batch.MoveDir = "beta"
 
-	for _, name := range []string{"a.yaml", "b.yaml", "c.yaml", ".gitkeep", "header.md"} {
+	for _, name := range []string{".gitkeep", "header.md"} {
 		then.CreateFile(t, cfg.ChangesDir, cfg.UnreleasedDir, name)
 	}
 
+	changes := []core.Change{
+		{Kind: "added", Body: "A"},
+		{Kind: "added", Body: "B"},
+		{Kind: "added", Body: "C"},
+	}
+	for i := range changes {
+		writeChangeFile(t, cfg, &changes[i])
+	}
+
 	err := batch.ClearUnreleased(
+		changes,
 		"header.md",
 		"",
 		"does-not-exist.md",
@@ -701,6 +801,8 @@ func TestBatchClearUnreleasedMovesFilesIncludingHeaderIfSpecified(t *testing.T) 
 
 	// should of moved the unreleased and header file to beta
 	then.DirectoryFileCount(t, 4, cfg.ChangesDir, "beta")
+	// .gitkeep should remain
+	then.DirectoryFileCount(t, 1, cfg.ChangesDir, cfg.UnreleasedDir)
 }
 
 func TestBatchErrorClearUnreleasedIfMoveFails(t *testing.T) {
@@ -710,14 +812,19 @@ func TestBatchErrorClearUnreleasedIfMoveFails(t *testing.T) {
 	batch := withDefaultBatch()
 	batch.config = cfg
 
-	then.CreateFile(t, cfg.ChangesDir, cfg.UnreleasedDir, "a.yaml")
-
 	mockErr := errors.New("bad mock remove")
 	batch.Remove = func(name string) error {
 		return mockErr
 	}
 
-	err := batch.ClearUnreleased()
+	changes := []core.Change{
+		{Kind: "added", Body: "A"},
+	}
+	for i := range changes {
+		writeChangeFile(t, cfg, &changes[i])
+	}
+
+	err := batch.ClearUnreleased(changes)
 	then.Err(t, mockErr, err)
 }
 
@@ -729,17 +836,22 @@ func TestBatchErrorUnreleasedIfRemoveAllFails(t *testing.T) {
 	batch.config = cfg
 	batch.IncludeDirs = []string{"alpha"}
 
-	alphaPath := filepath.Join(cfg.ChangesDir, "alpha")
-
-	then.CreateFile(t, cfg.ChangesDir, cfg.UnreleasedDir, "a.yaml")
-	then.CreateFile(t, alphaPath, "b.yaml")
-
 	mockErr := errors.New("bad mock remove all")
 	batch.RemoveAll = func(path string) error {
 		return mockErr
 	}
 
+	alphaPath := filepath.Join(cfg.ChangesDir, "alpha")
+
+	changes := []core.Change{
+		{Kind: "added", Body: "A", Filename: filepath.Join(alphaPath, "a.yaml")},
+	}
+	for i := range changes {
+		writeChangeFile(t, cfg, &changes[i])
+	}
+
 	err := batch.ClearUnreleased(
+		changes,
 		"header.md",
 		"",
 		"does-not-exist.md",
@@ -755,14 +867,19 @@ func TestBatchUnreleasedFailsIfMoveFails(t *testing.T) {
 	batch.config = cfg
 	batch.MoveDir = "beta"
 
-	then.CreateFile(t, cfg.ChangesDir, cfg.UnreleasedDir, "a.yaml")
+	changes := []core.Change{
+		{Kind: "added", Body: "A"},
+	}
+	for i := range changes {
+		writeChangeFile(t, cfg, &changes[i])
+	}
 
 	mockErr := errors.New("bad mock rename")
 	batch.Rename = func(before, after string) error {
 		return mockErr
 	}
 
-	err := batch.ClearUnreleased()
+	err := batch.ClearUnreleased(changes)
 	then.Err(t, mockErr, err)
 }
 
@@ -781,18 +898,6 @@ func TestBatchUnreleasedFailsIfMakeDirFails(t *testing.T) {
 		return mockErr
 	}
 
-	err := batch.ClearUnreleased()
+	err := batch.ClearUnreleased(nil)
 	then.Err(t, mockErr, err)
-}
-
-func TestBatchUnreleasedFailsIfUnableToFindFiles(t *testing.T) {
-	then.WithTempDir(t)
-
-	cfg := batchTestConfig()
-	batch := withDefaultBatch()
-	batch.config = cfg
-	batch.IncludeDirs = []string{"../../bad"}
-
-	err := batch.ClearUnreleased()
-	then.NotNil(t, err)
 }

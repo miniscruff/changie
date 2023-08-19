@@ -69,6 +69,69 @@ first version
 	then.FileContents(t, changeContents, "news.md")
 }
 
+func TestMergeVersionsSuccessfullyWithProject(t *testing.T) {
+	cfg := mergeTestConfig()
+	cfg.HeaderPath = ""
+	cfg.Replacements = nil
+	cfg.Projects = []core.ProjectConfig{
+		{
+			Label:         "A thing",
+			Key:           "a",
+			ChangelogPath: "a/thing/CHANGELOG.md",
+		},
+	}
+	then.WithTempDirConfig(t, cfg)
+
+	then.WriteFile(t, []byte("first version\n"), cfg.ChangesDir, "a", "v0.1.0.md")
+	then.WriteFile(t, []byte("second version\n"), cfg.ChangesDir, "a", "v0.2.0.md")
+	then.Nil(t, os.MkdirAll(filepath.Join("a", "thing"), core.CreateDirMode))
+
+	cmd := NewMerge(
+		os.ReadFile,
+		os.WriteFile,
+		os.ReadDir,
+		os.Open,
+		os.Create,
+		core.NewTemplateCache(),
+	)
+	cmd.Project = "a"
+
+	err := cmd.Run(cmd.Command, nil)
+	then.Nil(t, err)
+
+	changeContents := `second version
+first version
+`
+	then.FileContents(t, changeContents, "a", "thing", "CHANGELOG.md")
+}
+
+func TestMergeVersionsErrorInvalidProject(t *testing.T) {
+	cfg := mergeTestConfig()
+	cfg.HeaderPath = ""
+	cfg.Replacements = nil
+	cfg.Projects = []core.ProjectConfig{
+		{
+			Label:         "A thing",
+			Key:           "a",
+			ChangelogPath: "a/thing/CHANGELOG.md",
+		},
+	}
+	then.WithTempDirConfig(t, cfg)
+
+	cmd := NewMerge(
+		os.ReadFile,
+		os.WriteFile,
+		os.ReadDir,
+		os.Open,
+		os.Create,
+		core.NewTemplateCache(),
+	)
+	cmd.Project = "not_found"
+
+	err := cmd.Run(cmd.Command, nil)
+	then.NotNil(t, err)
+}
+
 func TestMergeVersionsWithUnreleasedChanges(t *testing.T) {
 	cfg := mergeTestConfig()
 	cfg.HeaderPath = ""
@@ -82,7 +145,7 @@ func TestMergeVersionsWithUnreleasedChanges(t *testing.T) {
 		Kind: "Added",
 		Body: "new feature coming soon",
 	}
-	writeChangeFile(t, cfg, unrel)
+	writeChangeFile(t, cfg, &unrel)
 
 	cmd := NewMerge(
 		os.ReadFile,
@@ -144,7 +207,7 @@ func TestMergeVersionsWithUnreleasedChangesErrorsOnBadChangeFormat(t *testing.T)
 		Kind: "Added",
 		Body: "new feature coming soon",
 	}
-	writeChangeFile(t, cfg, unrel)
+	writeChangeFile(t, cfg, &unrel)
 
 	cmd := NewMerge(
 		os.ReadFile,

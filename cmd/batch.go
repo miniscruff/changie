@@ -226,20 +226,14 @@ func (b *Batch) Run(cmd *cobra.Command, args []string) error {
 	}
 
 	if len(b.config.Projects) > 0 {
-		if len(b.Project) == 0 {
-			return errors.New("missing project label or key")
+		var pc *core.ProjectConfig
+
+		pc, err = b.config.Project(b.Project)
+		if err != nil {
+			return err
 		}
 
-		// make sure our passed in project is the key not the label
-		for _, pc := range b.config.Projects {
-			if b.Project == pc.Label {
-				b.Project = pc.Key
-			}
-
-			if b.Project == pc.Key {
-				break
-			}
-		}
+		b.Project = pc.Key
 
 		err = b.MkdirAll(filepath.Join(b.config.ChangesDir, b.Project), core.CreateDirMode)
 		if err != nil {
@@ -339,6 +333,7 @@ func (b *Batch) Run(cmd *cobra.Command, args []string) error {
 
 	if !b.DryRun && !b.KeepFragments {
 		err = b.ClearUnreleased(
+			data.Changes,
 			b.VersionHeaderPath,
 			b.config.VersionHeaderPath,
 			b.VersionFooterPath,
@@ -479,7 +474,7 @@ func (b *Batch) WriteChanges(changes []core.Change) error {
 	return nil
 }
 
-func (b *Batch) ClearUnreleased(otherFiles ...string) error {
+func (b *Batch) ClearUnreleased(changes []core.Change, otherFiles ...string) error {
 	var (
 		filesToMove []string
 		err         error
@@ -504,12 +499,9 @@ func (b *Batch) ClearUnreleased(otherFiles ...string) error {
 		}
 	}
 
-	filePaths, err := core.FindChangeFiles(b.config, b.ReadDir, b.IncludeDirs)
-	if err != nil {
-		return err
+	for _, ch := range changes {
+		filesToMove = append(filesToMove, ch.Filename)
 	}
-
-	filesToMove = append(filesToMove, filePaths...)
 
 	for _, f := range filesToMove {
 		if b.MoveDir != "" {

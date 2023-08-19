@@ -1,7 +1,6 @@
 package cmd
 
 import (
-	"errors"
 	"strings"
 
 	"github.com/spf13/cobra"
@@ -61,27 +60,23 @@ func NewLatest(readFile shared.ReadFiler, readDir shared.ReadDirer) *Latest {
 }
 
 func (l *Latest) Run(cmd *cobra.Command, args []string) error {
+	projPrefix := ""
+
 	config, err := core.LoadConfig(l.ReadFile)
 	if err != nil {
 		return err
 	}
 
-	// TODO: move this to a util func
 	if len(config.Projects) > 0 {
-		if len(l.Project) == 0 {
-			return errors.New("missing project label or key")
+		var pc *core.ProjectConfig
+
+		pc, err = config.Project(l.Project)
+		if err != nil {
+			return err
 		}
 
-		// make sure our passed in project is the key not the label
-		for _, pc := range config.Projects {
-			if l.Project == pc.Label {
-				l.Project = pc.Key
-			}
-
-			if l.Project == pc.Key {
-				break
-			}
-		}
+		l.Project = pc.Key
+		projPrefix = pc.Key + config.ProjectsVersionSeparator
 	}
 
 	ver, err := core.GetLatestVersion(l.ReadDir, config, l.SkipPrereleases, l.Project)
@@ -92,11 +87,6 @@ func (l *Latest) Run(cmd *cobra.Command, args []string) error {
 	latestVer := ver.Original()
 	if l.RemovePrefix {
 		latestVer = strings.TrimPrefix(latestVer, "v")
-	}
-
-	projPrefix := ""
-	if len(l.Project) > 0 {
-		projPrefix = l.Project + config.ProjectsVersionSeparator
 	}
 
 	_, err = l.OutOrStdout().Write([]byte(projPrefix + latestVer))

@@ -23,7 +23,6 @@ type ChangesConfigSorter struct {
 var (
 	errInvalidKind                        = errors.New("invalid kind")
 	errInvalidComponent                   = errors.New("invalid component")
-	errInvalidProject                     = errors.New("invalid project")
 	errKindDoesNotAcceptBody              = errors.New("kind does not accept a body")
 	errKindProvidedWhenNotConfigured      = errors.New("kind provided but not supported")
 	errComponentProvidedWhenNotConfigured = errors.New("component provided but not supported")
@@ -113,6 +112,8 @@ type Change struct {
 	// but env vars configured when executing `changie new` will not be saved.
 	// See [envPrefix](#config-envprefix) for configuration.
 	Env map[string]string `yaml:"-" default:"nil"`
+	// Filename the change was saved to.
+	Filename string `yaml:"-"`
 }
 
 // WriteTo will write a change to the writer as YAML
@@ -424,6 +425,8 @@ func LoadChange(path string, rf shared.ReadFiler) (Change, error) {
 	if err != nil {
 		return c, err
 	}
+
+	c.Filename = path
 
 	return c, nil
 }

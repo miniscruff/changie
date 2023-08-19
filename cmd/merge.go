@@ -1,7 +1,6 @@
 package cmd
 
 import (
-	"errors"
 	"io"
 	"path/filepath"
 
@@ -89,21 +88,15 @@ func (m *Merge) Run(cmd *cobra.Command, args []string) error {
 	changelogPath := config.ChangelogPath
 
 	if len(config.Projects) > 0 {
-		if len(m.Project) == 0 {
-			return errors.New("missing project label or key")
+		var pc *core.ProjectConfig
+
+		pc, err = config.Project(m.Project)
+		if err != nil {
+			return err
 		}
 
-		// make sure our passed in project is the key not the label
-		for _, pc := range config.Projects {
-			if m.Project == pc.Label {
-				m.Project = pc.Key
-			}
-
-			if m.Project == pc.Key {
-				changelogPath = pc.ChangelogPath
-				break
-			}
-		}
+		m.Project = pc.Key
+		changelogPath = pc.ChangelogPath
 	}
 
 	var writer io.Writer
