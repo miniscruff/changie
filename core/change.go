@@ -209,9 +209,8 @@ func (change *Change) promptForProject(ctx *PromptContext) error {
 	}
 
 	if len(change.Project) == 0 {
-		var err error
-
 		projectLabels := make([]string, len(ctx.Config.Projects))
+
 		for i, pc := range ctx.Config.Projects {
 			if len(pc.Label) > 0 {
 				projectLabels[i] = pc.Label
@@ -219,6 +218,8 @@ func (change *Change) promptForProject(ctx *PromptContext) error {
 				projectLabels[i] = pc.Key
 			}
 		}
+
+		var err error
 
 		change.Project, err = Custom{
 			Type:        CustomEnum,

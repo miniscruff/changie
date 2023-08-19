@@ -81,7 +81,7 @@ func TestGetAllVersionsReturnsAllVersions(t *testing.T) {
 		}, nil
 	}
 
-	vers, err := GetAllVersions(mockRead, config, false)
+	vers, err := GetAllVersions(mockRead, config, false, "")
 	then.Nil(t, err)
 	then.Equals(t, "v0.2.0", vers[0].Original())
 	then.Equals(t, "v0.1.0", vers[1].Original())
@@ -96,7 +96,7 @@ func TestGetLatestVersionReturnsMostRecent(t *testing.T) {
 		}, nil
 	}
 
-	ver, err := GetLatestVersion(mockRead, config, false)
+	ver, err := GetLatestVersion(mockRead, config, false, "")
 	then.Nil(t, err)
 	then.Equals(t, "v0.2.0", ver.Original())
 }
@@ -110,7 +110,7 @@ func TestGetLatestReturnsRC(t *testing.T) {
 		}, nil
 	}
 
-	ver, err := GetLatestVersion(mockRead, config, false)
+	ver, err := GetLatestVersion(mockRead, config, false, "")
 	then.Nil(t, err)
 	then.Equals(t, "v0.2.0-rc1", ver.Original())
 }
@@ -124,7 +124,7 @@ func TestGetLatestCanSkipRC(t *testing.T) {
 		}, nil
 	}
 
-	ver, err := GetLatestVersion(mockRead, config, true)
+	ver, err := GetLatestVersion(mockRead, config, true, "")
 	then.Nil(t, err)
 	then.Equals(t, "v0.1.0", ver.Original())
 }
@@ -135,7 +135,7 @@ func TestGetLatestReturnsZerosIfNoVersionsExist(t *testing.T) {
 		return []os.DirEntry{}, nil
 	}
 
-	ver, err := GetLatestVersion(mockRead, config, false)
+	ver, err := GetLatestVersion(mockRead, config, false, "")
 	then.Nil(t, err)
 	then.Equals(t, "v0.0.0", ver.Original())
 }
@@ -147,7 +147,7 @@ func TestErrorAllVersionsBadReadDir(t *testing.T) {
 		return []os.DirEntry{}, mockError
 	}
 
-	vers, err := GetAllVersions(mockRead, config, false)
+	vers, err := GetAllVersions(mockRead, config, false, "")
 	then.Equals(t, len(vers), 0)
 	then.Err(t, mockError, err)
 }
@@ -159,7 +159,7 @@ func TestErrorLatestVersionBadReadDir(t *testing.T) {
 		return []os.DirEntry{}, mockError
 	}
 
-	ver, err := GetLatestVersion(mockRead, config, false)
+	ver, err := GetLatestVersion(mockRead, config, false, "")
 	then.Equals(t, nil, ver)
 	then.Err(t, mockError, err)
 }
@@ -171,7 +171,7 @@ func TestErrorNextVersionBadReadDir(t *testing.T) {
 		return []os.DirEntry{}, mockError
 	}
 
-	ver, err := GetNextVersion(mockRead, config, "major", nil, nil, nil)
+	ver, err := GetNextVersion(mockRead, config, "major", nil, nil, nil, "")
 	then.Equals(t, nil, ver)
 	then.Err(t, mockError, err)
 }
@@ -184,7 +184,7 @@ func TestErrorNextVersionBadVersion(t *testing.T) {
 		}, nil
 	}
 
-	ver, err := GetNextVersion(mockRead, config, "a", []string{}, []string{}, nil)
+	ver, err := GetNextVersion(mockRead, config, "a", []string{}, []string{}, nil, "")
 	then.Equals(t, ver, nil)
 	then.Err(t, ErrBadVersionOrPart, err)
 }
@@ -264,7 +264,7 @@ func TestNextVersionOptions(t *testing.T) {
 				}, nil
 			}
 
-			ver, err := GetNextVersion(mockRead, config, tc.partOrVersion, tc.prerelease, tc.meta, nil)
+			ver, err := GetNextVersion(mockRead, config, tc.partOrVersion, tc.prerelease, tc.meta, nil, "")
 			then.Nil(t, err)
 			then.Equals(t, tc.expected, ver.Original())
 		})
@@ -300,7 +300,7 @@ func TestNextVersionOptionsWithAuto(t *testing.T) {
 		},
 	}
 
-	ver, err := GetNextVersion(mockRead, config, "auto", nil, nil, changes)
+	ver, err := GetNextVersion(mockRead, config, "auto", nil, nil, changes, "")
 	then.Nil(t, err)
 	then.Equals(t, "v0.3.0", ver.Original())
 }
@@ -325,7 +325,7 @@ func TestErrorNextVersionAutoMissingKind(t *testing.T) {
 		},
 	}
 
-	_, err := GetNextVersion(mockRead, config, "auto", nil, nil, changes)
+	_, err := GetNextVersion(mockRead, config, "auto", nil, nil, changes, "")
 	then.Err(t, ErrMissingAutoLevel, err)
 }
 
@@ -337,7 +337,7 @@ func TestErrorNextVersionBadPrerelease(t *testing.T) {
 		}, nil
 	}
 
-	_, err := GetNextVersion(mockRead, config, "patch", []string{"0005"}, nil, nil)
+	_, err := GetNextVersion(mockRead, config, "patch", []string{"0005"}, nil, nil, "")
 	then.NotNil(t, err)
 }
 
@@ -349,7 +349,7 @@ func TestErrorNextVersionBadMeta(t *testing.T) {
 		}, nil
 	}
 
-	_, err := GetNextVersion(mockRead, config, "patch", nil, []string{"&&*&"}, nil)
+	_, err := GetNextVersion(mockRead, config, "patch", nil, []string{"&&*&"}, nil, "")
 	then.NotNil(t, err)
 }
 
@@ -627,7 +627,7 @@ func TestGetAllChanges(t *testing.T) {
 
 	then.CreateFile(t, cfg.ChangesDir, cfg.UnreleasedDir, "ignored.txt")
 
-	changes, err := GetChanges(cfg, nil, readDir, readFile)
+	changes, err := GetChanges(cfg, nil, readDir, readFile, "")
 	then.Nil(t, err)
 	then.Equals(t, "second", changes[0].Body)
 	then.Equals(t, "first", changes[1].Body)
@@ -648,7 +648,7 @@ func TestBatchErrorIfUnableToReadDir(t *testing.T) {
 
 	then.CreateFile(t, cfg.ChangesDir, cfg.UnreleasedDir, "ignored.txt")
 
-	_, err := GetChanges(cfg, nil, readDir, readFile)
+	_, err := GetChanges(cfg, nil, readDir, readFile, "")
 	then.Err(t, mockErr, err)
 }
 
@@ -668,7 +668,7 @@ func TestBatchErrorBadChangesFile(t *testing.T) {
 
 	then.CreateFile(t, cfg.ChangesDir, cfg.UnreleasedDir, "ignored.txt")
 
-	_, err := GetChanges(cfg, nil, readDir, readFile)
+	_, err := GetChanges(cfg, nil, readDir, readFile, "")
 	then.Err(t, mockErr, err)
 }
 
