@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"errors"
 	"strings"
 
 	"github.com/spf13/cobra"
@@ -16,6 +17,7 @@ type Next struct {
 	IncludeDirs []string
 	Prerelease  []string
 	Meta        []string
+	Project     string
 
 	// dependencies
 	ReadDir  shared.ReadDirer
@@ -59,6 +61,12 @@ Echo the next release version number to be used by CI tools or other commands li
 		nil,
 		"Metadata values to append to version",
 	)
+	cmd.Flags().StringVarP(
+		&next.Project,
+		"project", "j",
+		"",
+		"Specify which project we are interested in",
+	)
 
 	next.Command = cmd
 
@@ -74,16 +82,34 @@ func (n *Next) Run(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
+	// TODO: move this to a util func
+	if len(config.Projects) > 0 {
+		if len(n.Project) == 0 {
+			return errors.New("missing project label or key")
+		}
+
+		// make sure our passed in project is the key not the label
+		for _, pc := range config.Projects {
+			if n.Project == pc.Label {
+				n.Project = pc.Key
+			}
+
+			if n.Project == pc.Key {
+				break
+			}
+		}
+	}
+
 	var changes []core.Change
 	// only worry about loading changes, if we are in auto mode
 	if part == core.AutoLevel {
-		changes, err = core.GetChanges(config, n.IncludeDirs, n.ReadDir, n.ReadFile, "")
+		changes, err = core.GetChanges(config, n.IncludeDirs, n.ReadDir, n.ReadFile, n.Project)
 		if err != nil {
 			return err
 		}
 	}
 
-	next, err := core.GetNextVersion(n.ReadDir, config, part, n.Prerelease, n.Meta, changes, "")
+	next, err := core.GetNextVersion(n.ReadDir, config, part, n.Prerelease, n.Meta, changes, n.Project)
 	if err != nil {
 		return err
 	}
