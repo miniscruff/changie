@@ -1,5 +1,0 @@
-kind: Added
-body: Option to edit body messages with a text editor using `-e/--editor`
-time: 2023-08-14T01:08:31.513622956-07:00
-custom:
-  Issue: "505"
