@@ -27,6 +27,8 @@ var (
 	errKindProvidedWhenNotConfigured      = errors.New("kind provided but not supported")
 	errComponentProvidedWhenNotConfigured = errors.New("component provided but not supported")
 	errCustomProvidedNotConfigured        = errors.New("custom value provided but not configured")
+	errProjectNotFound                    = errors.New("project not found")
+	errProjectRequired                    = errors.New("project missing but required")
 )
 
 func SortByConfig(config *Config) *ChangesConfigSorter {
@@ -86,6 +88,8 @@ func (s *ChangesConfigSorter) Less(i, j int) bool {
 
 // Change represents an atomic change to a project.
 type Change struct {
+	// Project of our change, if one was provided.
+	Project string `yaml:",omitempty" default:""`
 	// Component of our change, if one was provided.
 	Component string `yaml:",omitempty" default:""`
 	// Kind of our change, if one was provided.
@@ -108,6 +112,8 @@ type Change struct {
 	// but env vars configured when executing `changie new` will not be saved.
 	// See [envPrefix](#config-envprefix) for configuration.
 	Env map[string]string `yaml:"-" default:"nil"`
+	// Filename the change was saved to.
+	Filename string `yaml:"-"`
 }
 
 // WriteTo will write a change to the writer as YAML
@@ -131,6 +137,11 @@ type PromptContext struct {
 // updating the change as prompts are answered.
 func (change *Change) AskPrompts(ctx PromptContext) error {
 	err := change.validateArguments(ctx.Config)
+	if err != nil {
+		return err
+	}
+
+	err = change.promptForProject(&ctx)
 	if err != nil {
 		return err
 	}
@@ -191,6 +202,36 @@ func (change *Change) validateArguments(config *Config) error {
 			return fmt.Errorf("%w: %s", errCustomProvidedNotConfigured, key)
 		}
 	}
+
+	return nil
+}
+
+func (change *Change) promptForProject(ctx *PromptContext) error {
+	if len(ctx.Config.Projects) == 0 {
+		return nil
+	}
+
+	if len(change.Project) == 0 {
+		fmt.Println(ProjectsWarning)
+
+		var err error
+
+		change.Project, err = Custom{
+			Type:        CustomEnum,
+			Label:       "Project",
+			EnumOptions: ctx.Config.ProjectLabels(),
+		}.AskPrompt(ctx.StdinReader)
+		if err != nil {
+			return err
+		}
+	}
+
+	pc, err := ctx.Config.Project(change.Project)
+	if err != nil {
+		return fmt.Errorf("%w: %s", err, change.Project)
+	}
+
+	change.Project = pc.Key
 
 	return nil
 }
@@ -386,6 +427,8 @@ func LoadChange(path string, rf shared.ReadFiler) (Change, error) {
 	if err != nil {
 		return c, err
 	}
+
+	c.Filename = path
 
 	return c, nil
 }

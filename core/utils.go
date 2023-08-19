@@ -50,10 +50,16 @@ func GetAllVersions(
 	readDir shared.ReadDirer,
 	config *Config,
 	skipPrereleases bool,
+	projectKey string,
 ) ([]*semver.Version, error) {
 	allVersions := make([]*semver.Version, 0)
 
-	fileInfos, err := readDir(config.ChangesDir)
+	versionsPath := config.ChangesDir
+	if len(projectKey) > 0 {
+		versionsPath = filepath.Join(versionsPath, projectKey)
+	}
+
+	fileInfos, err := readDir(versionsPath)
 	if err != nil {
 		return allVersions, err
 	}
@@ -86,8 +92,9 @@ func GetLatestVersion(
 	readDir shared.ReadDirer,
 	config *Config,
 	skipPrereleases bool,
+	projectKey string,
 ) (*semver.Version, error) {
-	allVersions, err := GetAllVersions(readDir, config, skipPrereleases)
+	allVersions, err := GetAllVersions(readDir, config, skipPrereleases, projectKey)
 	if err != nil {
 		return nil, err
 	}
@@ -146,6 +153,7 @@ func GetNextVersion(
 	partOrVersion string,
 	prerelease, meta []string,
 	allChanges []Change,
+	projectKey string,
 ) (*semver.Version, error) {
 	var (
 		err  error
@@ -161,7 +169,7 @@ func GetNextVersion(
 		}
 
 		// otherwise use a bump type command
-		next, err = GetLatestVersion(readDir, config, false)
+		next, err = GetLatestVersion(readDir, config, false, projectKey)
 		if err != nil {
 			return nil, err
 		}
@@ -279,6 +287,7 @@ func GetChanges(
 	searchPaths []string,
 	readDir shared.ReadDirer,
 	readFile shared.ReadFiler,
+	projectKey string,
 ) ([]Change, error) {
 	var changes []Change
 
@@ -291,6 +300,10 @@ func GetChanges(
 		c, err := LoadChange(cf, readFile)
 		if err != nil {
 			return changes, err
+		}
+
+		if len(projectKey) > 0 && c.Project != projectKey {
+			continue
 		}
 
 		c.Env = config.EnvVars()

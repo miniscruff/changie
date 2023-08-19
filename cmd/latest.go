@@ -15,6 +15,7 @@ type Latest struct {
 	// CLI args
 	RemovePrefix    bool
 	SkipPrereleases bool
+	Project         string
 
 	// dependencies
 	ReadFile shared.ReadFiler
@@ -46,6 +47,12 @@ func NewLatest(readFile shared.ReadFiler, readDir shared.ReadDirer) *Latest {
 		false,
 		"Excludes prereleases to determine the latest version.",
 	)
+	cmd.Flags().StringVarP(
+		&l.Project,
+		"project", "j",
+		"",
+		"(Preview) Specify which project we are interested in",
+	)
 
 	l.Command = cmd
 
@@ -53,12 +60,26 @@ func NewLatest(readFile shared.ReadFiler, readDir shared.ReadDirer) *Latest {
 }
 
 func (l *Latest) Run(cmd *cobra.Command, args []string) error {
+	projPrefix := ""
+
 	config, err := core.LoadConfig(l.ReadFile)
 	if err != nil {
 		return err
 	}
 
-	ver, err := core.GetLatestVersion(l.ReadDir, config, l.SkipPrereleases)
+	if len(config.Projects) > 0 {
+		var pc *core.ProjectConfig
+
+		pc, err = config.Project(l.Project)
+		if err != nil {
+			return err
+		}
+
+		l.Project = pc.Key
+		projPrefix = pc.Key + config.ProjectsVersionSeparator
+	}
+
+	ver, err := core.GetLatestVersion(l.ReadDir, config, l.SkipPrereleases, l.Project)
 	if err != nil {
 		return err
 	}
@@ -68,7 +89,7 @@ func (l *Latest) Run(cmd *cobra.Command, args []string) error {
 		latestVer = strings.TrimPrefix(latestVer, "v")
 	}
 
-	_, err = l.OutOrStdout().Write([]byte(latestVer))
+	_, err = l.OutOrStdout().Write([]byte(projPrefix + latestVer))
 
 	return err
 }

@@ -8,6 +8,8 @@ import (
 	"testing"
 	"time"
 
+	"gopkg.in/yaml.v2"
+
 	"github.com/miniscruff/changie/then"
 )
 
@@ -17,7 +19,25 @@ var (
 		time.Date(2017, 5, 24, 3, 30, 10, 5, time.Local),
 		time.Date(2016, 5, 24, 3, 30, 10, 5, time.Local),
 	}
+	changeIncrementer = 0
 )
+
+// writeChangeFile will write a change file with an auto-incrementing index to prevent
+// same second clobbering
+func writeChangeFile(t *testing.T, cfg *Config, change Change) {
+	// set our time as an arbitrary amount from jan 1 2000 so
+	// each change is 1 hour later then the last
+	if change.Time.Year() == 0 {
+		diff := time.Duration(changeIncrementer) * time.Hour
+		change.Time = time.Date(2000, 0, 0, 0, 0, 0, 0, time.UTC).Add(diff)
+	}
+
+	bs, _ := yaml.Marshal(&change)
+	name := fmt.Sprintf("change-%d.yaml", changeIncrementer)
+	changeIncrementer++
+
+	then.WriteFile(t, bs, cfg.ChangesDir, cfg.UnreleasedDir, name)
+}
 
 func TestWriteChange(t *testing.T) {
 	mockTime := time.Date(2016, 5, 24, 3, 30, 10, 5, time.Local)
@@ -168,6 +188,74 @@ func TestAskPromptsForBody(t *testing.T) {
 	then.Equals(t, "", c.Kind)
 	then.Equals(t, 0, len(c.Custom))
 	then.Equals(t, "body stuff", c.Body)
+}
+
+func TestAskPromptsForBodyWithProject(t *testing.T) {
+	reader, writer := then.WithReadWritePipe(t)
+	then.DelayWrite(
+		t, writer,
+		[]byte{13},
+		[]byte("body stuff"),
+		[]byte{13},
+	)
+
+	config := &Config{
+		Projects: []ProjectConfig{
+			{Label: "Client", Key: "client"},
+			{Label: "Other", Key: "other"},
+		},
+	}
+	c := &Change{}
+	then.Nil(t, c.AskPrompts(PromptContext{
+		Config:      config,
+		StdinReader: reader,
+	}))
+
+	then.Equals(t, "client", c.Project)
+	then.Equals(t, "", c.Component)
+	then.Equals(t, "", c.Kind)
+	then.Equals(t, 0, len(c.Custom))
+	then.Equals(t, "body stuff", c.Body)
+}
+
+func TestAskPromptsForBodyWithProjectErrBadProject(t *testing.T) {
+	reader, _ := then.WithReadWritePipe(t)
+
+	config := &Config{
+		Projects: []ProjectConfig{
+			{Label: "Client", Key: "client"},
+			{Label: "Other", Key: "other"},
+		},
+	}
+	c := &Change{
+		Project: "missing",
+	}
+	err := c.AskPrompts(PromptContext{
+		Config:      config,
+		StdinReader: reader,
+	})
+	then.Err(t, errProjectNotFound, err)
+}
+
+func TestAskPromptsForBodyWithProjectErrBadInput(t *testing.T) {
+	reader, writer := then.WithReadWritePipe(t)
+	then.DelayWrite(
+		t, writer,
+		[]byte{3},
+	)
+
+	config := &Config{
+		Projects: []ProjectConfig{
+			{Label: "Client", Key: "client"},
+			{Label: "Other", Key: "other"},
+		},
+	}
+	c := &Change{}
+	err := c.AskPrompts(PromptContext{
+		Config:      config,
+		StdinReader: reader,
+	})
+	then.NotNil(t, err)
 }
 
 func TestAskComponentKindBody(t *testing.T) {

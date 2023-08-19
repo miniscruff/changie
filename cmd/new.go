@@ -16,6 +16,7 @@ type New struct {
 
 	// cli args
 	DryRun     bool
+	Project    string
 	Component  string
 	Kind       string
 	Body       string
@@ -57,6 +58,12 @@ Each version is merged together for the overall project changelog.`,
 		"dry-run", "d",
 		false,
 		"Print new fragment instead of writing to disk",
+	)
+	cmd.Flags().StringVarP(
+		&n.Project,
+		"project", "j",
+		"",
+		"(Preview) Set the change project key without a prompt",
 	)
 	cmd.Flags().StringVarP(
 		&n.Component,
@@ -106,6 +113,7 @@ func (n *New) Run(cmd *cobra.Command, args []string) error {
 	}
 
 	change := core.Change{
+		Project:   n.Project,
 		Component: n.Component,
 		Kind:      n.Kind,
 		Body:      n.Body,

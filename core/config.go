@@ -153,6 +153,31 @@ type PostProcessConfig struct {
 	Value string `yaml:"value" templateType:"Change"`
 }
 
+// ProjectConfig extends changie to support multiple changelog files for different projects
+// inside one repository.
+// example: yaml
+// projects:
+//   - label: UI
+//     key: ui
+//     changelog: ui/CHANGELOG.md
+//   - label: Email Sender
+//     key: email_sender
+//     changelog: services/email/CHANGELOG.md
+type ProjectConfig struct {
+	// Label is the value used in the prompt when selecting a project.
+	// example: yaml
+	// label: Frontend
+	Label string `yaml:"label"`
+	// Key is the value used for unreleased and version output paths.
+	// example: yaml
+	// key: frontend
+	Key string `yaml:"key"`
+	//ChangelogPath is the path to the changelog for this project.
+	// example: yaml
+	// changelog: src/frontend/CHANGELOG.md
+	ChangelogPath string `yaml:"changelog"`
+}
+
 // Config handles configuration for a project.
 //
 // Custom configuration path:
@@ -194,9 +219,10 @@ type Config struct {
 	HeaderPath string `yaml:"headerPath"`
 	// Filepath for the generated changelog file.
 	// Relative to project root.
+	// ChangelogPath is not required if you are using projects.
 	// example: yaml
 	// changelogPath: CHANGELOG.md
-	ChangelogPath string `yaml:"changelogPath" required:"true"`
+	ChangelogPath string `yaml:"changelogPath"`
 	// File extension for generated version files.
 	// This should probably match your changelog path file.
 	// Must not include the period.
@@ -315,6 +341,21 @@ type Config struct {
 	// envPrefix: "CHANGIE_"
 	// versionFormat: "New release for {{.Env.PROJECT}}"
 	EnvPrefix string `yaml:"envPrefix,omitempty"`
+	// Projects allow you to specify child projects as part of a monorepo setup.
+	// example: yaml
+	// projects:
+	//   - label: UI
+	//     key: ui
+	//     changelog: ui/CHANGELOG.md
+	//   - label: Email Sender
+	//     key: email_sender
+	//     changelog: services/email/CHANGELOG.md
+	Projects []ProjectConfig `yaml:"projects,omitempty"`
+	// ProjectsVersionSeparator is used to determine the final version when using projects.
+	// The result is: project key + projectVersionSeparator + latest/next version.
+	// example: yaml
+	// projectsVersionSeparator: "_"
+	ProjectsVersionSeparator string `yaml:"projectsVersionSeparator,omitempty"`
 
 	cachedEnvVars map[string]string
 }
@@ -351,6 +392,38 @@ func (c *Config) EnvVars() map[string]string {
 func (c *Config) Save(wf shared.WriteFiler) error {
 	bs, _ := yaml.Marshal(&c)
 	return wf(ConfigPaths[0], bs, CreateFileMode)
+}
+
+func (c *Config) Project(labelOrKey string) (*ProjectConfig, error) {
+	if len(c.Projects) == 0 {
+		return &ProjectConfig{}, nil
+	}
+
+	if len(labelOrKey) == 0 {
+		return nil, errProjectRequired
+	}
+
+	for _, pc := range c.Projects {
+		if labelOrKey == pc.Label || labelOrKey == pc.Key {
+			return &pc, nil
+		}
+	}
+
+	return nil, errProjectNotFound
+}
+
+func (c *Config) ProjectLabels() []string {
+	projectLabels := make([]string, len(c.Projects))
+
+	for i, pc := range c.Projects {
+		if len(pc.Label) > 0 {
+			projectLabels[i] = pc.Label
+		} else {
+			projectLabels[i] = pc.Key
+		}
+	}
+
+	return projectLabels
 }
 
 // Exists returns whether or not a config already exists

@@ -319,3 +319,96 @@ func TestBodyConfigWithMinAndMax(t *testing.T) {
 	cust := BodyConfig{MaxLength: &max}.CreateCustom()
 	then.Equals(t, 10, *cust.MaxLength)
 }
+
+func TestConfigProjectFindsProjectByLabel(t *testing.T) {
+	cfg := &Config{
+		Projects: []ProjectConfig{
+			{
+				Label: "Other",
+				Key:   "other",
+			},
+			{
+				Label: "CLI",
+				Key:   "cli",
+			},
+		},
+	}
+
+	proj, err := cfg.Project("CLI")
+	then.Nil(t, err)
+	then.Equals(t, "cli", proj.Key)
+}
+
+func TestConfigProjectFindsProjectByKey(t *testing.T) {
+	cfg := &Config{
+		Projects: []ProjectConfig{
+			{
+				Label: "Other",
+				Key:   "other",
+			},
+			{
+				Label: "CLI",
+				Key:   "cli",
+			},
+		},
+	}
+
+	proj, err := cfg.Project("cli")
+	then.Nil(t, err)
+	then.Equals(t, "CLI", proj.Label)
+}
+
+func TestConfigProjectNoProjectsReturnsEmptyConfig(t *testing.T) {
+	cfg := &Config{}
+
+	proj, err := cfg.Project("")
+	then.Nil(t, err)
+	then.Equals(t, "", proj.Label)
+	then.Equals(t, "", proj.Key)
+	then.Equals(t, "", proj.ChangelogPath)
+}
+
+func TestConfigProjectCanGetLabels(t *testing.T) {
+	cfg := &Config{
+		Projects: []ProjectConfig{
+			{
+				Label: "Labeled",
+				Key:   "labeled",
+			},
+			{
+				Key: "key_only",
+			},
+		},
+	}
+
+	labels := cfg.ProjectLabels()
+	then.SliceEquals(t, []string{"Labeled", "key_only"}, labels)
+}
+
+func TestConfigProjectErrorNoLabelOrKeyAndRequired(t *testing.T) {
+	cfg := &Config{
+		Projects: []ProjectConfig{
+			{
+				Label: "Other",
+				Key:   "other",
+			},
+		},
+	}
+
+	_, err := cfg.Project("")
+	then.Err(t, errProjectRequired, err)
+}
+
+func TestConfigProjectErrorNotFound(t *testing.T) {
+	cfg := &Config{
+		Projects: []ProjectConfig{
+			{
+				Label: "Other",
+				Key:   "other",
+			},
+		},
+	}
+
+	_, err := cfg.Project("emailer")
+	then.Err(t, errProjectNotFound, err)
+}

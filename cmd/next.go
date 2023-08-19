@@ -16,6 +16,7 @@ type Next struct {
 	IncludeDirs []string
 	Prerelease  []string
 	Meta        []string
+	Project     string
 
 	// dependencies
 	ReadDir  shared.ReadDirer
@@ -59,6 +60,12 @@ Echo the next release version number to be used by CI tools or other commands li
 		nil,
 		"Metadata values to append to version",
 	)
+	cmd.Flags().StringVarP(
+		&next.Project,
+		"project", "j",
+		"",
+		"(Preview) Specify which project we are interested in",
+	)
 
 	next.Command = cmd
 
@@ -68,27 +75,40 @@ Echo the next release version number to be used by CI tools or other commands li
 func (n *Next) Run(cmd *cobra.Command, args []string) error {
 	writer := cmd.OutOrStdout()
 	part := strings.ToLower(args[0])
+	projPrefix := ""
 
 	config, err := core.LoadConfig(n.ReadFile)
 	if err != nil {
 		return err
 	}
 
+	if len(config.Projects) > 0 {
+		var pc *core.ProjectConfig
+
+		pc, err = config.Project(n.Project)
+		if err != nil {
+			return err
+		}
+
+		n.Project = pc.Key
+		projPrefix = pc.Key + config.ProjectsVersionSeparator
+	}
+
 	var changes []core.Change
 	// only worry about loading changes, if we are in auto mode
 	if part == core.AutoLevel {
-		changes, err = core.GetChanges(config, n.IncludeDirs, n.ReadDir, n.ReadFile)
+		changes, err = core.GetChanges(config, n.IncludeDirs, n.ReadDir, n.ReadFile, n.Project)
 		if err != nil {
 			return err
 		}
 	}
 
-	next, err := core.GetNextVersion(n.ReadDir, config, part, n.Prerelease, n.Meta, changes)
+	next, err := core.GetNextVersion(n.ReadDir, config, part, n.Prerelease, n.Meta, changes, n.Project)
 	if err != nil {
 		return err
 	}
 
-	_, err = writer.Write([]byte(next.Original()))
+	_, err = writer.Write([]byte(projPrefix + next.Original()))
 
 	return err
 }

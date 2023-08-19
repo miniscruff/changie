@@ -16,6 +16,7 @@ type Merge struct {
 	// cli args
 	DryRun           bool
 	UnreleasedHeader string
+	Project          string
 
 	// dependencies
 	ReadFile      shared.ReadFiler
@@ -65,6 +66,12 @@ Note that a newline is added between each version file.`,
 		"",
 		"Include unreleased changes with this value as the header",
 	)
+	cmd.Flags().StringVarP(
+		&m.Project,
+		"project", "j",
+		"",
+		"(Preview) Specify which project we are merging",
+	)
 
 	m.Command = cmd
 
@@ -78,11 +85,25 @@ func (m *Merge) Run(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
+	changelogPath := config.ChangelogPath
+
+	if len(config.Projects) > 0 {
+		var pc *core.ProjectConfig
+
+		pc, err = config.Project(m.Project)
+		if err != nil {
+			return err
+		}
+
+		m.Project = pc.Key
+		changelogPath = pc.ChangelogPath
+	}
+
 	var writer io.Writer
 	if m.DryRun {
 		writer = m.Command.OutOrStdout()
 	} else {
-		changeFile, changeErr := m.CreateFile(config.ChangelogPath)
+		changeFile, changeErr := m.CreateFile(changelogPath)
 		if changeErr != nil {
 			return changeErr
 		}
@@ -90,7 +111,7 @@ func (m *Merge) Run(cmd *cobra.Command, args []string) error {
 		writer = changeFile
 	}
 
-	allVersions, err := core.GetAllVersions(m.ReadDir, config, false)
+	allVersions, err := core.GetAllVersions(m.ReadDir, config, false, m.Project)
 	if err != nil {
 		return err
 	}
@@ -112,6 +133,7 @@ func (m *Merge) Run(cmd *cobra.Command, args []string) error {
 			nil,
 			m.ReadDir,
 			m.ReadFile,
+			"",
 		)
 		if unrelErr != nil {
 			return unrelErr
@@ -143,7 +165,7 @@ func (m *Merge) Run(cmd *cobra.Command, args []string) error {
 
 	for _, version := range allVersions {
 		_ = core.WriteNewlines(writer, config.Newlines.BeforeChangelogVersion)
-		versionPath := filepath.Join(config.ChangesDir, version.Original()+"."+config.VersionExt)
+		versionPath := filepath.Join(config.ChangesDir, m.Project, version.Original()+"."+config.VersionExt)
 
 		err = core.AppendFile(m.OpenFile, writer, versionPath)
 		if err != nil {

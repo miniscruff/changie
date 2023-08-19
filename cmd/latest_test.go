@@ -82,6 +82,59 @@ func TestLatestWithoutPrefix(t *testing.T) {
 	then.Equals(t, "0.1.0", builder.String())
 }
 
+func TestLatestVersionWithProject(t *testing.T) {
+	cfg := latestConfig()
+	cfg.Projects = []core.ProjectConfig{
+		{
+			Label: "r project",
+			Key:   "r",
+		},
+	}
+	cfg.ProjectsVersionSeparator = "#"
+	then.WithTempDirConfig(t, cfg)
+
+	then.CreateFile(t, cfg.ChangesDir, "r", "v0.0.1.md")
+	then.CreateFile(t, cfg.ChangesDir, "r", "v0.1.0.md")
+	then.CreateFile(t, cfg.ChangesDir, "r", "v0.2.0-rc1.md")
+	then.CreateFile(t, cfg.ChangesDir, "r", "head.tpl.md")
+
+	builder := strings.Builder{}
+	cmd := NewLatest(os.ReadFile, os.ReadDir)
+	cmd.Project = "r"
+
+	cmd.SetOut(&builder)
+
+	err := cmd.Run(cmd.Command, nil)
+	then.Nil(t, err)
+	then.Equals(t, "r#v0.2.0-rc1", builder.String())
+}
+
+func TestLatestVersionWithBadProject(t *testing.T) {
+	cfg := latestConfig()
+	cfg.Projects = []core.ProjectConfig{
+		{
+			Label: "r project",
+			Key:   "r",
+		},
+	}
+	cfg.ProjectsVersionSeparator = "#"
+	then.WithTempDirConfig(t, cfg)
+
+	then.CreateFile(t, cfg.ChangesDir, "r", "v0.0.1.md")
+	then.CreateFile(t, cfg.ChangesDir, "r", "v0.1.0.md")
+	then.CreateFile(t, cfg.ChangesDir, "r", "v0.2.0-rc1.md")
+	then.CreateFile(t, cfg.ChangesDir, "r", "head.tpl.md")
+
+	cmd := NewLatest(os.ReadFile, os.ReadDir)
+	cmd.Project = "missing_project_again"
+
+	builder := strings.Builder{}
+	cmd.SetOut(&builder)
+
+	err := cmd.Run(cmd.Command, nil)
+	then.NotNil(t, err)
+}
+
 func TestErrorLatestBadConfig(t *testing.T) {
 	then.WithTempDir(t)
 
