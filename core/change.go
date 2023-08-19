@@ -231,10 +231,10 @@ func (change *Change) promptForProject(ctx *PromptContext) error {
 	}
 
 	for _, proj := range ctx.Config.Projects {
-        // Validate our project matches a key or label depending on if label was empty.
+		// Validate our project matches a key or label depending on if label was empty.
 		if change.Project == proj.Label || change.Project == proj.Key {
-            // Make sure our project string is set to our project key regardless of the label.
-            change.Project = proj.Key
+			// Make sure our project string is set to our project key regardless of the label.
+			change.Project = proj.Key
 			return nil
 		}
 	}

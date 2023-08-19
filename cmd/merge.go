@@ -112,7 +112,7 @@ func (m *Merge) Run(cmd *cobra.Command, args []string) error {
 			nil,
 			m.ReadDir,
 			m.ReadFile,
-            "PROJECT_KEY",
+			"PROJECT_KEY",
 		)
 		if unrelErr != nil {
 			return unrelErr

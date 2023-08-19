@@ -193,7 +193,7 @@ func (b *Batch) getBatchData() (*core.BatchData, error) {
 		b.Prerelease,
 		b.Meta,
 		allChanges,
-        b.Project,
+		b.Project,
 	)
 	if err != nil {
 		return nil, err
@@ -230,20 +230,21 @@ func (b *Batch) Run(cmd *cobra.Command, args []string) error {
 			return errors.New("missing project label or key")
 		}
 
-        // make sure our passed in project is the key not the label
-        for _, pc := range b.config.Projects {
-            if b.Project == pc.Label {
-                b.Project = pc.Key
-            }
-            if b.Project == pc.Key {
-                break
-            }
-        }
+		// make sure our passed in project is the key not the label
+		for _, pc := range b.config.Projects {
+			if b.Project == pc.Label {
+				b.Project = pc.Key
+			}
+
+			if b.Project == pc.Key {
+				break
+			}
+		}
 
 		err = b.MkdirAll(filepath.Join(b.config.ChangesDir, b.Project), core.CreateDirMode)
-        if err != nil {
-            return err
-        }
+		if err != nil {
+			return err
+		}
 	}
 
 	data, err := b.getBatchData()
@@ -359,7 +360,7 @@ func (b *Batch) Run(cmd *cobra.Command, args []string) error {
 
 			err = b.Remove(filepath.Join(
 				b.config.ChangesDir,
-                b.Project,
+				b.Project,
 				v.Original()+"."+b.config.VersionExt,
 			))
 			if err != nil {

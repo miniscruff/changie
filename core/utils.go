@@ -54,10 +54,10 @@ func GetAllVersions(
 ) ([]*semver.Version, error) {
 	allVersions := make([]*semver.Version, 0)
 
-    versionsPath := config.ChangesDir
-    if len(projectKey) > 0 {
-        versionsPath = filepath.Join(versionsPath, projectKey)
-    }
+	versionsPath := config.ChangesDir
+	if len(projectKey) > 0 {
+		versionsPath = filepath.Join(versionsPath, projectKey)
+	}
 
 	fileInfos, err := readDir(versionsPath)
 	if err != nil {
@@ -153,7 +153,7 @@ func GetNextVersion(
 	partOrVersion string,
 	prerelease, meta []string,
 	allChanges []Change,
-    projectKey string,
+	projectKey string,
 ) (*semver.Version, error) {
 	var (
 		err  error
@@ -287,7 +287,7 @@ func GetChanges(
 	searchPaths []string,
 	readDir shared.ReadDirer,
 	readFile shared.ReadFiler,
-    projectKey string,
+	projectKey string,
 ) ([]Change, error) {
 	var changes []Change
 
@@ -302,9 +302,9 @@ func GetChanges(
 			return changes, err
 		}
 
-        if len(projectKey) > 0 && c.Project != projectKey {
-            continue
-        }
+		if len(projectKey) > 0 && c.Project != projectKey {
+			continue
+		}
 
 		c.Env = config.EnvVars()
 		changes = append(changes, c)
