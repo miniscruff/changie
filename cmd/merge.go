@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"errors"
 	"io"
 	"path/filepath"
 
@@ -16,6 +17,7 @@ type Merge struct {
 	// cli args
 	DryRun           bool
 	UnreleasedHeader string
+	Project          string
 
 	// dependencies
 	ReadFile      shared.ReadFiler
@@ -65,6 +67,12 @@ Note that a newline is added between each version file.`,
 		"",
 		"Include unreleased changes with this value as the header",
 	)
+	cmd.Flags().StringVarP(
+		&m.Project,
+		"project", "j",
+		"",
+		"Specify which project we are merging",
+	)
 
 	m.Command = cmd
 
@@ -78,11 +86,33 @@ func (m *Merge) Run(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
+    changelogPath := config.ChangelogPath
+
+	if len(config.Projects) > 0 {
+		if len(m.Project) == 0 {
+			return errors.New("missing project label or key")
+		}
+
+		// make sure our passed in project is the key not the label
+		for _, pc := range config.Projects {
+			if m.Project == pc.Label {
+				m.Project = pc.Key
+			}
+
+			if m.Project == pc.Key {
+                changelogPath = pc.ChangelogPath
+				break
+			}
+		}
+
+        // todo: make sure our passed in project actually exists
+	}
+
 	var writer io.Writer
 	if m.DryRun {
 		writer = m.Command.OutOrStdout()
 	} else {
-		changeFile, changeErr := m.CreateFile(config.ChangelogPath)
+		changeFile, changeErr := m.CreateFile(changelogPath)
 		if changeErr != nil {
 			return changeErr
 		}
@@ -90,7 +120,7 @@ func (m *Merge) Run(cmd *cobra.Command, args []string) error {
 		writer = changeFile
 	}
 
-	allVersions, err := core.GetAllVersions(m.ReadDir, config, false, "")
+	allVersions, err := core.GetAllVersions(m.ReadDir, config, false, m.Project)
 	if err != nil {
 		return err
 	}
@@ -144,7 +174,7 @@ func (m *Merge) Run(cmd *cobra.Command, args []string) error {
 
 	for _, version := range allVersions {
 		_ = core.WriteNewlines(writer, config.Newlines.BeforeChangelogVersion)
-		versionPath := filepath.Join(config.ChangesDir, version.Original()+"."+config.VersionExt)
+		versionPath := filepath.Join(config.ChangesDir, m.Project, version.Original()+"."+config.VersionExt)
 
 		err = core.AppendFile(m.OpenFile, writer, versionPath)
 		if err != nil {
