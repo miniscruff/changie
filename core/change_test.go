@@ -8,8 +8,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/miniscruff/changie/then"
 	"gopkg.in/yaml.v2"
+
+	"github.com/miniscruff/changie/then"
 )
 
 var (
@@ -18,7 +19,7 @@ var (
 		time.Date(2017, 5, 24, 3, 30, 10, 5, time.Local),
 		time.Date(2016, 5, 24, 3, 30, 10, 5, time.Local),
 	}
-    changeIncrementer = 0
+	changeIncrementer = 0
 )
 
 // writeChangeFile will write a change file with an auto-incrementing index to prevent

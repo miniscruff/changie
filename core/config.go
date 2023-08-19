@@ -404,7 +404,7 @@ func (c *Config) Project(labelOrKey string) (*ProjectConfig, error) {
 	}
 
 	for _, pc := range c.Projects {
-		if labelOrKey == pc.Label || labelOrKey == pc.Key{
+		if labelOrKey == pc.Label || labelOrKey == pc.Key {
 			return &pc, nil
 		}
 	}

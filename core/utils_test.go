@@ -93,6 +93,7 @@ func TestGetAllVersionsReturnsAllVersionsInProject(t *testing.T) {
 	}
 	mockRead := func(dirname string) ([]os.DirEntry, error) {
 		then.Equals(t, "patcher", dirname)
+
 		return []os.DirEntry{
 			&then.MockDirEntry{MockIsDir: true, MockName: "dir"},
 			&then.MockDirEntry{MockName: "header.md"},
@@ -671,7 +672,7 @@ func TestGetAllChangesWithProject(t *testing.T) {
 
 	changes, err := GetChanges(cfg, nil, os.ReadDir, os.ReadFile, "web_hook_sender")
 	then.Nil(t, err)
-    then.Equals(t, 2, len(changes))
+	then.Equals(t, 2, len(changes))
 	then.Equals(t, "first", changes[0].Body)
 	then.Equals(t, "second", changes[1].Body)
 }
