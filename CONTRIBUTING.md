@@ -29,6 +29,8 @@ If you do decide to contribute code or documentation you will need the following
 * [Hugo](https://gohugo.io/): for documentation, be sure to install hugo-extended
 * [Golang CI](https://golangci-lint.run/): for linting
 
+If you use [aqua](https://aquaproj.github.io/) you can just run `aqua i` and setup all those tools automatically.
+
 ### Fork and create a branch
 If there is an issue you want to propose changes for start by [creating a fork](https://help.github.com/articles/fork-a-repo).
 On your new forked repository create a branch.
