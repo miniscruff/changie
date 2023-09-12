@@ -1,0 +1,6 @@
+kind: Added
+body: Added `AllowSkippedEntries` configuration flag to allow `changie batch auto`
+  behavior and kind configs without AutoLevel simultaniously
+time: 2023-09-12T14:49:36.726309165+02:00
+custom:
+  Issue: "531"

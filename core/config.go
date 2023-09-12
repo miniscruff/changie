@@ -356,6 +356,11 @@ type Config struct {
 	// example: yaml
 	// projectsVersionSeparator: "_"
 	ProjectsVersionSeparator string `yaml:"projectsVersionSeparator,omitempty"`
+	// AllowSkippedEntries is used to allow kindConfigs without auto to be skipped in changie batch auto
+	// this allows `changie batch auto` to work with kindConfigs with empty auto values
+	// example: yaml
+	// allowSkippedEntries: true
+	AllowSkippedEntries bool `yaml:"allowSkippedEntries,omitempty" default:"false"`
 
 	cachedEnvVars map[string]string
 }

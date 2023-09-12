@@ -114,12 +114,13 @@ func ValidBumpLevel(level string) bool {
 		level == AutoLevel
 }
 
-func HighestAutoLevel(config *Config, allChanges []Change) (string, error) {
+func HighestAutoLevel(config *Config, allChanges []Change) (highestLevel string, err error) {
 	if len(allChanges) == 0 {
 		return "", ErrNoChangesFoundForAuto
 	}
 
-	highestLevel := PatchLevel
+	highestLevel = ""
+	err = ErrNoChangesFoundForAuto
 
 	for _, change := range allChanges {
 		for _, kc := range config.Kinds {
@@ -128,7 +129,20 @@ func HighestAutoLevel(config *Config, allChanges []Change) (string, error) {
 			}
 
 			if kc.AutoLevel == "" {
-				return "", ErrMissingAutoLevel
+				// if we have a kind with no auto level and AllowSkippedEntries = false, then we return an error
+				if !config.AllowSkippedEntries {
+					return "", ErrMissingAutoLevel
+				} else {
+					continue
+				}
+			}
+
+			// bump to patch if we have a patch level
+			if kc.AutoLevel == PatchLevel && highestLevel == "" {
+				highestLevel = PatchLevel
+				err = nil
+
+				continue
 			}
 
 			// major is the highest one, so we can just return it
@@ -136,15 +150,16 @@ func HighestAutoLevel(config *Config, allChanges []Change) (string, error) {
 				return MajorLevel, nil
 			}
 
-			// we default to patch level, so just bump to minor if we
-			// were on patch before and the kind is now minor
-			if kc.AutoLevel == MinorLevel && highestLevel == PatchLevel {
+			// bump to minor if we have a minor level
+			if kc.AutoLevel == MinorLevel &&
+				(highestLevel == PatchLevel || highestLevel == "") {
 				highestLevel = MinorLevel
+				err = nil
 			}
 		}
 	}
 
-	return highestLevel, nil
+	return highestLevel, err
 }
 
 func GetNextVersion(

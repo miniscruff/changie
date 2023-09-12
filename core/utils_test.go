@@ -293,7 +293,48 @@ func TestNextVersionOptions(t *testing.T) {
 	}
 }
 
-func TestNextVersionOptionsWithAuto(t *testing.T) {
+func TestNextVersionOptionsWithAutoAllowSkipped(t *testing.T) {
+	config := &Config{
+		AllowSkippedEntries: true,
+		Kinds: []KindConfig{
+			{
+				Label:     "patch",
+				AutoLevel: PatchLevel,
+			},
+			{
+				Label:     "minor",
+				AutoLevel: MinorLevel,
+			},
+			{
+				Label:     "major",
+				AutoLevel: MajorLevel,
+			},
+			{
+				Label: "skip",
+			},
+		},
+	}
+	latestVersion := "v0.2.3"
+	mockRead := func(dirname string) ([]os.DirEntry, error) {
+		return []os.DirEntry{
+			&then.MockDirEntry{MockName: latestVersion + ".md"},
+		}, nil
+	}
+	changes := []Change{
+		{
+			Kind: "minor",
+		},
+		{
+			Kind: "skip",
+		},
+	}
+
+	ver, err := GetNextVersion(mockRead, config, "auto", nil, nil, changes, "")
+	then.Nil(t, err)
+	then.Equals(t, "v0.3.0", ver.Original())
+}
+
+func TestNextVersionOptionsWithAllowSkippedEntriesFalse(t *testing.T) {
 	config := &Config{
 		Kinds: []KindConfig{
 			{
@@ -308,6 +349,9 @@ func TestNextVersionOptionsWithAuto(t *testing.T) {
 				Label:     "major",
 				AutoLevel: MajorLevel,
 			},
+			{
+				Label: "skip",
+			},
 		},
 	}
 	latestVersion := "v0.2.3"
@@ -320,11 +364,40 @@ func TestNextVersionOptionsWithAuto(t *testing.T) {
 		{
 			Kind: "minor",
 		},
+		{
+			Kind: "skip",
+		},
 	}
 
 	ver, err := GetNextVersion(mockRead, config, "auto", nil, nil, changes, "")
-	then.Nil(t, err)
-	then.Equals(t, "v0.3.0", ver.Original())
+	then.Equals(t, err, ErrMissingAutoLevel)
+	then.Equals(t, nil, ver)
+}
+
+func TestNextVersionOptionsWithouthChangesWithAutoSkipped(t *testing.T) {
+	config := &Config{
+		AllowSkippedEntries: true,
+		Kinds: []KindConfig{
+			{
+				Label: "skip",
+			},
+		},
+	}
+	latestVersion := "v0.2.3"
+	mockRead := func(dirname string) ([]os.DirEntry, error) {
+		return []os.DirEntry{
+			&then.MockDirEntry{MockName: latestVersion + ".md"},
+		}, nil
+	}
+	changes := []Change{
+		{
+			Kind: "skip",
+		},
+	}
+
+	ver, err := GetNextVersion(mockRead, config, "auto", nil, nil, changes, "")
+	then.Equals(t, ver, nil)
+	then.Err(t, ErrNoChangesFoundForAuto, err)
 }
 
 func TestErrorNextVersionAutoMissingKind(t *testing.T) {
