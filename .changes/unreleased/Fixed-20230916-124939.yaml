@@ -1,0 +1,5 @@
+kind: Fixed
+body: The 'customs' template function should not error for missing keys.
+time: 2023-09-16T12:49:39.284445175-07:00
+custom:
+  Issue: "536"
