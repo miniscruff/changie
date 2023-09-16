@@ -1,7 +1,6 @@
 package core
 
 import (
-	"fmt"
 	"io"
 	"text/template"
 	"time"
@@ -184,18 +183,14 @@ func (tc *TemplateCache) Times(changes []Change) ([]time.Time, error) {
 }
 
 // Customs will return all the values from the custom map by a key.
+// If a key is missing from a change, it will be an empty string.
 // example: yaml
 // format: "{{ customs .Changes \"Author\" }} authors"
 func (tc *TemplateCache) Customs(changes []Change, key string) ([]string, error) {
-	var ok bool
-
 	values := make([]string, len(changes))
 
 	for i, c := range changes {
-		values[i], ok = c.Custom[key]
-		if !ok {
-			return nil, fmt.Errorf("missing custom key: '%v'", key)
-		}
+		values[i] = c.Custom[key]
 	}
 
 	return values, nil
