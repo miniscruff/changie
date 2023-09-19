@@ -358,7 +358,6 @@ type Config struct {
 	// projectsVersionSeparator: "_"
 	ProjectsVersionSeparator string `yaml:"projectsVersionSeparator,omitempty"`
 
-
 	cachedEnvVars map[string]string
 }
 
