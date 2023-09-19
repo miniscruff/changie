@@ -21,6 +21,7 @@ const (
 	MajorLevel = "major"
 	MinorLevel = "minor"
 	PatchLevel = "patch"
+	NoneLevel  = "none"
 )
 
 var ConfigPaths []string = []string{
@@ -56,8 +57,8 @@ type KindConfig struct {
 	// Skip global post allows skipping the parent post processing.
 	SkipGlobalPost bool `yaml:"skipGlobalPost,omitempty" default:"false"`
 	// Auto determines what value to bump when using `batch auto` or `next auto`.
-	// Possible values are major, minor or patch and the highest one is used if
-	// multiple changes are found.
+	// Possible values are major, minor, patch or none and the highest one is used if
+	// multiple changes are found. none will not bump the version.
 	// example: yaml
 	// auto: minor
 	AutoLevel string `yaml:"auto,omitempty"`
@@ -356,11 +357,7 @@ type Config struct {
 	// example: yaml
 	// projectsVersionSeparator: "_"
 	ProjectsVersionSeparator string `yaml:"projectsVersionSeparator,omitempty"`
-	// AllowSkippedEntries is used to allow kindConfigs without auto to be skipped in changie batch auto
-	// this allows `changie batch auto` to work with kindConfigs with empty auto values
-	// example: yaml
-	// allowSkippedEntries: true
-	AllowSkippedEntries bool `yaml:"allowSkippedEntries,omitempty" default:"false"`
+
 
 	cachedEnvVars map[string]string
 }

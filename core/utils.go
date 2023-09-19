@@ -130,11 +130,11 @@ func HighestAutoLevel(config *Config, allChanges []Change) (highestLevel string,
 
 			if kc.AutoLevel == "" {
 				// if we have a kind with no auto level and AllowSkippedEntries = false, then we return an error
-				if !config.AllowSkippedEntries {
 					return "", ErrMissingAutoLevel
-				} else {
-					continue
-				}
+			}
+
+			if kc.AutoLevel == NoneLevel {
+				continue
 			}
 
 			// bump to patch if we have a patch level
