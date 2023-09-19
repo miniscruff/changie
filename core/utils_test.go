@@ -309,7 +309,7 @@ func TestNextVersionOptionsWithNoneAutoLEvel(t *testing.T) {
 				AutoLevel: MajorLevel,
 			},
 			{
-				Label: "skip",
+				Label:     "skip",
 				AutoLevel: "none",
 			},
 		},
@@ -334,12 +334,11 @@ func TestNextVersionOptionsWithNoneAutoLEvel(t *testing.T) {
 	then.Equals(t, "v0.3.0", ver.Original())
 }
 
-
 func TestNextVersionOptionsNoneAutoLevelOnly(t *testing.T) {
 	config := &Config{
 		Kinds: []KindConfig{
 			{
-				Label: "skip",
+				Label:     "skip",
 				AutoLevel: "none",
 			},
 		},
