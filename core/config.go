@@ -22,6 +22,7 @@ const (
 	MinorLevel = "minor"
 	PatchLevel = "patch"
 	NoneLevel  = "none"
+	EmptyLevel = ""
 )
 
 var ConfigPaths []string = []string{

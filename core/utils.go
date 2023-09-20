@@ -128,32 +128,29 @@ func HighestAutoLevel(config *Config, allChanges []Change) (highestLevel string,
 				continue
 			}
 
-			if kc.AutoLevel == "" {
-				return "", ErrMissingAutoLevel
-			}
-
-			if kc.AutoLevel == NoneLevel {
+			switch kc.AutoLevel {
+			case NoneLevel:
 				continue
-			}
-
-			// bump to patch if we have a patch level
-			if kc.AutoLevel == PatchLevel && highestLevel == "" {
-				highestLevel = PatchLevel
-				err = nil
-
-				continue
-			}
-
-			// major is the highest one, so we can just return it
-			if kc.AutoLevel == MajorLevel {
+			case MajorLevel:
+				// major is the highest one, so we can just return it
 				return MajorLevel, nil
-			}
+			case PatchLevel:
+				if highestLevel == "" {
+					highestLevel = PatchLevel
+					err = nil
 
-			// bump to minor if we have a minor level
-			if kc.AutoLevel == MinorLevel &&
-				(highestLevel == PatchLevel || highestLevel == "") {
-				highestLevel = MinorLevel
-				err = nil
+					continue
+				}
+			case MinorLevel:
+				// bump to minor if we have a minor level
+				if highestLevel == PatchLevel || highestLevel == "" {
+					highestLevel = MinorLevel
+					err = nil
+
+					continue
+				}
+			case EmptyLevel:
+				return "", ErrMissingAutoLevel
 			}
 		}
 	}
