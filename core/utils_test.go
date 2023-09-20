@@ -339,7 +339,7 @@ func TestNextVersionOptionsNoneAutoLevelOnly(t *testing.T) {
 		Kinds: []KindConfig{
 			{
 				Label:     "skip",
-				AutoLevel: "none",
+				AutoLevel: NoneLevel,
 			},
 		},
 	}
