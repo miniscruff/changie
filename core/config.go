@@ -59,6 +59,7 @@ type KindConfig struct {
 	// Auto determines what value to bump when using `batch auto` or `next auto`.
 	// Possible values are major, minor, patch or none and the highest one is used if
 	// multiple changes are found. none will not bump the version.
+	// Only none changes is not a valid bump and will fail to batch.
 	// example: yaml
 	// auto: minor
 	AutoLevel string `yaml:"auto,omitempty"`
