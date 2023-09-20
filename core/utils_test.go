@@ -310,7 +310,7 @@ func TestNextVersionOptionsWithNoneAutoLEvel(t *testing.T) {
 			},
 			{
 				Label:     "skip",
-				AutoLevel: "none",
+				AutoLevel: NoneLevel,
 			},
 		},
 	}
