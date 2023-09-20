@@ -146,6 +146,22 @@ func TestCanGetCustoms(t *testing.T) {
 	then.Equals(t, "[miniscruff rocktavious emmyoop] authors", builder.String())
 }
 
+func TestCanGetCustomsMissingKey(t *testing.T) {
+	cache := NewTemplateCache()
+	builder := &strings.Builder{}
+	data := BatchData{
+		Changes: []Change{
+			{Custom: map[string]string{"Author": "miniscruff"}},
+			{Custom: map[string]string{"NotAuthor": "rocktavious"}},
+			{Custom: map[string]string{"Author": "emmyoop"}},
+		},
+	}
+
+	err := cache.Execute("{{ customs .Changes \"Author\" | compact }} authors", builder, data)
+	then.Nil(t, err)
+	then.Equals(t, "[miniscruff emmyoop] authors", builder.String())
+}
+
 func TestErrorBadTemplate(t *testing.T) {
 	cache := NewTemplateCache()
 	_, err := cache.Load("{{...___..__}}")
@@ -166,20 +182,6 @@ func TestErrorBadExecute(t *testing.T) {
 	builder := &strings.Builder{}
 
 	err := cache.Execute("bad template {{...__.}}", builder, struct{}{})
-	then.NotNil(t, err)
-	then.Equals(t, builder.Len(), 0)
-}
-
-func TestErrorMissingKey(t *testing.T) {
-	cache := NewTemplateCache()
-	builder := &strings.Builder{}
-	data := BatchData{
-		Changes: []Change{
-			{Custom: map[string]string{"Author": "miniscruff"}},
-		},
-	}
-
-	err := cache.Execute("{{ customs .Changes \"MissingKey\" }}", builder, data)
 	then.NotNil(t, err)
 	then.Equals(t, builder.Len(), 0)
 }

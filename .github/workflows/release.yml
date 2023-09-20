@@ -19,7 +19,7 @@ jobs:
         go-version: 1.19
 
     - name: Login to GitHub Container Registry
-      uses: docker/login-action@v2.2.0
+      uses: docker/login-action@v3.0.0
       with:
         registry: ghcr.io
         username: ${{ github.repository_owner }}
@@ -31,7 +31,7 @@ jobs:
         echo RELEASE_NOTES_PATH=.changes/$(go run main.go latest).md >> $GITHUB_ENV
 
     - name: Run GoReleaser
-      uses: goreleaser/goreleaser-action@v4.6.0
+      uses: goreleaser/goreleaser-action@v5.0.0
       with:
         version: latest
         args: --rm-dist --release-notes=${{ env.RELEASE_NOTES_PATH }} --skip-validate --debug
