@@ -1,6 +1,5 @@
 kind: Added
-body: Added possibility to select "none" as AutoLevel to allow change fragments not
-  bumping version
+body: Option to use "none" as auto level to skip changes when calculating bump version
 time: 2023-09-19T13:56:08.71099084+02:00
 custom:
   Issue: "530"
