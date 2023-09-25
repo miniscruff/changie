@@ -114,13 +114,13 @@ func ValidBumpLevel(level string) bool {
 		level == AutoLevel
 }
 
-func HighestAutoLevel(config *Config, allChanges []Change) (highestLevel string, err error) {
+func HighestAutoLevel(config *Config, allChanges []Change) (string, error) {
 	if len(allChanges) == 0 {
 		return "", ErrNoChangesFoundForAuto
 	}
 
-	highestLevel = ""
-	err = ErrNoChangesFoundForAuto
+	highestLevel := EmptyLevel
+	err := ErrNoChangesFoundForAuto
 
 	for _, change := range allChanges {
 		for _, kc := range config.Kinds {
@@ -129,28 +129,22 @@ func HighestAutoLevel(config *Config, allChanges []Change) (highestLevel string,
 			}
 
 			switch kc.AutoLevel {
-			case NoneLevel:
-				continue
 			case MajorLevel:
 				// major is the highest one, so we can just return it
 				return MajorLevel, nil
 			case PatchLevel:
-				if highestLevel == "" {
+				if highestLevel == EmptyLevel {
 					highestLevel = PatchLevel
 					err = nil
-
-					continue
 				}
 			case MinorLevel:
 				// bump to minor if we have a minor level
-				if highestLevel == PatchLevel || highestLevel == "" {
+				if highestLevel == PatchLevel || highestLevel == EmptyLevel {
 					highestLevel = MinorLevel
 					err = nil
-
-					continue
 				}
 			case EmptyLevel:
-				return "", ErrMissingAutoLevel
+				return EmptyLevel, ErrMissingAutoLevel
 			}
 		}
 	}
