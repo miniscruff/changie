@@ -119,7 +119,8 @@ func HighestAutoLevel(config *Config, allChanges []Change) (string, error) {
 		return "", ErrNoChangesFoundForAuto
 	}
 
-	highestLevel := PatchLevel
+	highestLevel := EmptyLevel
+	err := ErrNoChangesFoundForAuto
 
 	for _, change := range allChanges {
 		for _, kc := range config.Kinds {
@@ -127,24 +128,28 @@ func HighestAutoLevel(config *Config, allChanges []Change) (string, error) {
 				continue
 			}
 
-			if kc.AutoLevel == "" {
-				return "", ErrMissingAutoLevel
-			}
-
-			// major is the highest one, so we can just return it
-			if kc.AutoLevel == MajorLevel {
+			switch kc.AutoLevel {
+			case MajorLevel:
+				// major is the highest one, so we can just return it
 				return MajorLevel, nil
-			}
-
-			// we default to patch level, so just bump to minor if we
-			// were on patch before and the kind is now minor
-			if kc.AutoLevel == MinorLevel && highestLevel == PatchLevel {
-				highestLevel = MinorLevel
+			case PatchLevel:
+				if highestLevel == EmptyLevel {
+					highestLevel = PatchLevel
+					err = nil
+				}
+			case MinorLevel:
+				// bump to minor if we have a minor level
+				if highestLevel == PatchLevel || highestLevel == EmptyLevel {
+					highestLevel = MinorLevel
+					err = nil
+				}
+			case EmptyLevel:
+				return EmptyLevel, ErrMissingAutoLevel
 			}
 		}
 	}
 
-	return highestLevel, nil
+	return highestLevel, err
 }
 
 func GetNextVersion(
