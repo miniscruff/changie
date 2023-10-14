@@ -6,12 +6,12 @@
   <p align="center">Separate your changelog from commit messages without conflicts.</p>
 </p>
 
-[![codecov](https://codecov.io/gh/miniscruff/changie/branch/main/graph/badge.svg?token=7HT2E32FMB)](https://codecov.io/gh/miniscruff/changie)
-[![Go Report Card](https://goreportcard.com/badge/github.com/miniscruff/changie)](https://goreportcard.com/report/github.com/miniscruff/changie)
-[![Release](https://img.shields.io/github/v/release/miniscruff/changie?sort=semver)](https://github.com/miniscruff/changie/releases)
-[![GitHub Workflow Status](https://img.shields.io/github/actions/workflow/status/miniscruff/changie/test.yml?branch=main)](https://github.com/miniscruff/changie/actions?query=workflow%3Atest)
-[![PkgGoDev](https://pkg.go.dev/badge/github.com/miniscruff/changie)](https://pkg.go.dev/github.com/miniscruff/changie)
-[![Mentioned in Awesome Go](https://awesome.re/mentioned-badge.svg)](https://github.com/avelino/awesome-go)
+![Codecov](https://img.shields.io/codecov/c/github/miniscruff/changie?style=for-the-badge&logo=codecov)
+![GitHub release](https://img.shields.io/github/v/release/miniscruff/changie?style=for-the-badge&logo=github)
+![GitHub Workflow Status](https://img.shields.io/github/actions/workflow/status/miniscruff/changie/test.yml?event=push&style=for-the-badge&logo=github)
+![Go Report Card](https://goreportcard.com/badge/github.com/miniscruff/changie?style=flat-square)
+[![Go Packge](https://img.shields.io/badge/Go-Reference-grey?style=for-the-badge&logo=go&logoColor=white&label=%20&labelColor=007D9C)](https://pkg.go.dev/github.com/miniscruff/changie)
+[![Mentioned in Awesome Go](https://awesome.re/mentioned-badge-flat.svg)](https://github.com/avelino/awesome-go)
 
 ![getting_started](./examples/getting_started.gif)
 
