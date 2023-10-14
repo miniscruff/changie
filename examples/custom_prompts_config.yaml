@@ -1,0 +1,37 @@
+changesDir: .changes
+unreleasedDir: unreleased
+headerPath: header.tpl.md
+changelogPath: CHANGELOG.md
+versionExt: md
+versionFormat: '## {{.Version}} on {{.Time.Format "2006-01-02"}}'
+kindFormat: '### {{.Kind}}'
+changeFormat: |
+  * {{.Body}}
+  [#{{.Custom.Issue}}](https://github.com/miniscruff/changie/issues/{{.Custom.Issue}})
+  [@{{.Custom.Author}}](https://github.com/{{.Custom.Author}})
+  
+kinds:
+  - label: Added
+    auto: minor
+  - label: Changed
+    auto: major
+  - label: Deprecated
+    auto: minor
+  - label: Removed
+    auto: major
+  - label: Fixed
+    auto: patch
+  - label: Security
+    auto: patch
+newlines:
+  afterChangelogHeader: 1
+  afterKind: 1
+  afterChangelogVersion: 1
+  beforeKind: 1
+  endOfVersion: 1
+custom:
+- key: Issue
+  type: int
+  minInt: 1
+- key: Author
+  type: string
