@@ -13,7 +13,7 @@
 [![PkgGoDev](https://pkg.go.dev/badge/github.com/miniscruff/changie)](https://pkg.go.dev/github.com/miniscruff/changie)
 [![Mentioned in Awesome Go](https://awesome.re/mentioned-badge.svg)](https://github.com/avelino/awesome-go)
 
-![asciicast](./docs/static/recordings/overview.gif)
+![getting_started](./examples/getting_started.gif)
 
 ## Features
 * File based changelog management keeps your commit history and release notes separate.
