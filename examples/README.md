@@ -3,9 +3,9 @@
 ## Getting Started
 Uses the default configuration generated from `changie init`.
 
-![getting_started](./getting_started.webm)
+![getting_started](./getting_started.gif)
 
 ## Custom Prompts
 Uses the [this configuration](./custom_prompts_config.yaml).
 
-![custom_prompts](./custom_prompts.webm)
+![custom_prompts](./custom_prompts.gif)
