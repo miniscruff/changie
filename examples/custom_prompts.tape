@@ -7,8 +7,8 @@ Set TypingSpeed 50ms
 Set Theme "Catppuccin Mocha"
 Set Padding 8
 
-Output examples/custom_prompts.webm
-Output examples/custom_prompts.gif
+Output custom_prompts.webm
+Output custom_prompts.gif
 
 Hide
 Type "changie init"

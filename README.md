@@ -80,6 +80,14 @@ Generate config and CLI docs
 go run main.go gen
 ```
 
+### vhs-gen
+Generate VHS recording videos
+
+```
+cd examples
+ls *.tape | xargs -n 1 vhs
+```
+
 ### docs-serve
 Serve a locally running hugo instance for documentation
 

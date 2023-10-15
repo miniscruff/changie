@@ -7,8 +7,8 @@ Set TypingSpeed 50ms
 Set Theme "Catppuccin Mocha"
 Set Padding 8
 
-Output examples/getting_started.webm
-Output examples/getting_started.gif
+Output getting_started.webm
+Output getting_started.gif
 
 Type "changie init"
 Sleep 1s
