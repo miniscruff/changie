@@ -8,6 +8,7 @@ on:
     - '.changes/'
     - 'resources/'
     - 'docs/'
+    - 'examples/'
   pull_request:
     branches: [ main ]
     paths-ignore:
@@ -15,6 +16,7 @@ on:
     - '.changes/'
     - 'resources/'
     - 'docs/'
+    - 'examples/'
 
 jobs:
 
