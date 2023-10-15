@@ -2,7 +2,6 @@
 Set FontSize 20
 Set Width 800
 Set Height 600
-Set Shell zsh
 Set TypingSpeed 50ms
 Set Theme "Catppuccin Mocha"
 Set Padding 8

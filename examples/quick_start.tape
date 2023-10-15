@@ -1,14 +1,13 @@
 # Configure all our settings
 Set FontSize 20
-Set Width 1000
+Set Width 800
 Set Height 600
-Set Shell zsh
 Set TypingSpeed 50ms
 Set Theme "Catppuccin Mocha"
 Set Padding 8
 
-Output getting_started.webm
-Output getting_started.gif
+Output quick_start.webm
+Output quick_start.gif
 
 Type "changie init"
 Sleep 1s
@@ -21,8 +20,8 @@ Enter
 Sleep 1s
 
 Down@250ms 4
-Enter
 Sleep 1s
+Enter
 
 Type "bugfix details"
 Sleep 1s
@@ -39,6 +38,7 @@ Sleep 1s
 Tab
 Sleep 1s
 Enter
+Sleep 1s
 
 Type "changie merge"
 Sleep 1s
@@ -50,10 +50,6 @@ Sleep 1s
 Enter
 Sleep 1s
 
-# Slight pause at the end
-Sleep 2s
-
-# Cleanup
 Hide
 Type "rm -rf .changes"
 Enter

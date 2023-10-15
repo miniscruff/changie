@@ -12,7 +12,7 @@
 [![Go Packge](https://img.shields.io/badge/Go-Reference-grey?style=for-the-badge&logo=go&logoColor=white&label=%20&labelColor=007D9C)](https://pkg.go.dev/github.com/miniscruff/changie)
 [![Awesome Go](https://img.shields.io/badge/awesome-awesome?style=for-the-badge&logo=awesomelists&logoColor=white&label=%20&labelColor=CCA6C4&color=494368)](https://github.com/avelino/awesome-go#utilities)
 
-![getting_started](./examples/getting_started.gif)
+![quick_start](./examples/quick_start.gif)
 
 ## Features
 * File based changelog management keeps your commit history and release notes separate.
