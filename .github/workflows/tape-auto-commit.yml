@@ -4,7 +4,7 @@ on:
   pull_request:
     branches: [ main ]
     paths:
-    - 'examples/'
+    - 'examples/**'
 jobs:
   vhs:
     runs-on: ubuntu-20.04
