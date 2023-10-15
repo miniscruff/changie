@@ -1,4 +1,4 @@
-name: vhs
+name: vhs auto commit
 
 on:
   pull_request:
@@ -9,7 +9,7 @@ on:
 jobs:
 
   vhs:
-    name: vhs
+    name: vhs auto commit
     runs-on: ubuntu-20.04
     permissions:
       # Give the default GITHUB_TOKEN write permission to commit and push the changed files back to the repository.
@@ -20,8 +20,16 @@ jobs:
 
     - name: install vhs
       uses: charmbracelet/vhs-action@v1
-      with:
-        path: ''
+
+        # - name: build getting started
+      # uses: charmbracelet/vhs-action@v1
+        # with:
+        # path: 'examples/getting_started.tape'
+
+          # - name: build custom prompts
+      # uses: charmbracelet/vhs-action@v1
+        # with:
+        # path: 'examples/custom_prompts.tape'
 
     - name: build tape files
       run: |
