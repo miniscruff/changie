@@ -4,6 +4,7 @@ on:
   pull_request:
     branches: [ main ]
     paths:
+    - '.github/tape-auto-commit.yml' # temp to run the command again
     - 'examples/**.tape'
 jobs:
   vhs:
@@ -14,8 +15,6 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - uses: charmbracelet/vhs-action@v1
-        with:
-          path: null
       - name: 'build tape files'
         run: |
           cd examples
