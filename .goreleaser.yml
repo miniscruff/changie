@@ -1,7 +1,7 @@
+# yaml-language-server: $schema=https://goreleaser.com/static/schema.json
 # Make sure to check the documentation at http://goreleaser.com
 before:
   hooks:
-    # You may remove this if you don't use go modules.
     - go mod download
 builds:
   - env:
@@ -46,17 +46,18 @@ scoop:
   description: Automated changelog tool for preparing releases with lots of customization options.
   license: MIT
 winget:
-  - name: changie
-    publisher: miniscruff
+ -  publisher: miniscruff
     license: MIT
     homepage: https://changie.dev
+    publisher_support_url: https://github.com/miniscruff/changie/issues/new
     short_description: Automated changelog tool for preparing releases with lots of customization options.
+    release_notes: "{{.Changelog}}"
     repository:
       owner: miniscruff
       name: winget-pkgs
       branch: "changie-{{.Version}}"
       pull_request:
-        enabled: true
+        enabled: false
         draft: true
         base:
           owner: microsoft
