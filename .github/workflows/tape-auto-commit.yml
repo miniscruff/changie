@@ -4,7 +4,7 @@ on:
   pull_request:
     branches: [ main ]
     paths:
-    - 'examples/**'
+    - 'examples/**.tape'
 jobs:
   vhs:
     runs-on: ubuntu-20.04
@@ -14,14 +14,15 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - uses: charmbracelet/vhs-action@v1
+        name: 'install vhs'
         with:
-          path: 'examples/getting_started.tape'
-      - uses: charmbracelet/vhs-action@v1
-        with:
-          path: 'examples/custom_prompts.tape'
+          path: ''
+      - name: 'build tape files'
+        run: |
+          cd examples
+          vhs getting_started.tape
+          vhs custom_prompts.tape
       - uses: stefanzweifel/git-auto-commit-action@v5
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           commit_message: Update generated VHS GIF
           commit_user_name: vhs-action 📼
