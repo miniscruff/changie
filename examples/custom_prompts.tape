@@ -1,6 +1,6 @@
 # Configure all our settings
 Set FontSize 20
-Set Width 1200
+Set Width 800
 Set Height 600
 Set Shell zsh
 Set TypingSpeed 50ms
