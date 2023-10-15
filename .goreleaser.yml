@@ -30,21 +30,21 @@ nfpms:
     - deb
     - rpm
 brews:
-  - tap:
+  - repository:
       owner: miniscruff
       name: changie
     homepage: https://changie.dev
     description: Automated changelog tool for preparing releases with lots of customization options.
     license: MIT
     skip_upload: auto
-scoop:
-  bucket:
-    owner: miniscruff
-    name: changie
-  commit_msg_template: "Scoop update for {{ .ProjectName }} version {{ .Tag }}"
-  homepage: https://changie.dev
-  description: Automated changelog tool for preparing releases with lots of customization options.
-  license: MIT
+scoops:
+  - repository:
+      owner: miniscruff
+      name: changie
+    commit_msg_template: "Scoop update for {{ .ProjectName }} version {{ .Tag }}"
+    homepage: https://changie.dev
+    description: Automated changelog tool for preparing releases with lots of customization options.
+    license: MIT
 winget:
  -  publisher: miniscruff
     license: MIT
@@ -57,7 +57,7 @@ winget:
       name: winget-pkgs
       branch: "changie-{{.Version}}"
       pull_request:
-        enabled: false
+        enabled: true
         draft: true
         base:
           owner: microsoft
