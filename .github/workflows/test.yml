@@ -3,20 +3,22 @@ name: test
 on:
   push:
     branches: [ main ]
-    paths-ignore:
-    - '.github/'
-    - '.changes/'
-    - 'resources/'
-    - 'docs/'
-    - 'examples/'
+    paths:
+    - 'cmd/'
+    - 'core/'
+    - 'shared/'
+    - 'then/'
+    - 'main.go'
+    - 'go.sum'
   pull_request:
     branches: [ main ]
-    paths-ignore:
-    - '.github/'
-    - '.changes/'
-    - 'resources/'
-    - 'docs/'
-    - 'examples/'
+    paths:
+    - 'cmd/'
+    - 'core/'
+    - 'shared/'
+    - 'then/'
+    - 'main.go'
+    - 'go.sum'
 
 jobs:
 
