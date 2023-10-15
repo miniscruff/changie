@@ -18,24 +18,15 @@ jobs:
     - name: Check out code
       uses: actions/checkout@v4
 
-    - name: install vhs
+    - name: build getting started
       uses: charmbracelet/vhs-action@v1
+      with:
+        path: 'examples/getting_started.tape'
 
-        # - name: build getting started
-      # uses: charmbracelet/vhs-action@v1
-        # with:
-        # path: 'examples/getting_started.tape'
-
-          # - name: build custom prompts
-      # uses: charmbracelet/vhs-action@v1
-        # with:
-        # path: 'examples/custom_prompts.tape'
-
-    - name: build tape files
-      run: |
-        cd examples
-        vhs getting_started.tape
-        vhs custom_prompts.tape
+    - name: build custom prompts
+      uses: charmbracelet/vhs-action@v1
+      with:
+        path: 'examples/custom_prompts.tape'
 
     - name: commit new recordings
       uses: stefanzweifel/git-auto-commit-action@v5
