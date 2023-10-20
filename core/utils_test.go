@@ -293,7 +293,7 @@ func TestNextVersionOptions(t *testing.T) {
 	}
 }
 
-func TestNextVersionOptionsWithAuto(t *testing.T) {
+func TestNextVersionOptionsWithNoneAutoLEvel(t *testing.T) {
 	config := &Config{
 		Kinds: []KindConfig{
 			{
@@ -308,6 +308,10 @@ func TestNextVersionOptionsWithAuto(t *testing.T) {
 				Label:     "major",
 				AutoLevel: MajorLevel,
 			},
+			{
+				Label:     "skip",
+				AutoLevel: NoneLevel,
+			},
 		},
 	}
 	latestVersion := "v0.2.3"
@@ -320,11 +324,40 @@ func TestNextVersionOptionsWithAuto(t *testing.T) {
 		{
 			Kind: "minor",
 		},
+		{
+			Kind: "skip",
+		},
 	}
 
 	ver, err := GetNextVersion(mockRead, config, "auto", nil, nil, changes, "")
 	then.Nil(t, err)
 	then.Equals(t, "v0.3.0", ver.Original())
+}
+
+func TestNextVersionOptionsNoneAutoLevelOnly(t *testing.T) {
+	config := &Config{
+		Kinds: []KindConfig{
+			{
+				Label:     "skip",
+				AutoLevel: NoneLevel,
+			},
+		},
+	}
+	latestVersion := "v0.2.3"
+	mockRead := func(dirname string) ([]os.DirEntry, error) {
+		return []os.DirEntry{
+			&then.MockDirEntry{MockName: latestVersion + ".md"},
+		}, nil
+	}
+	changes := []Change{
+		{
+			Kind: "skip",
+		},
+	}
+
+	ver, err := GetNextVersion(mockRead, config, "auto", nil, nil, changes, "")
+	then.Equals(t, ver, nil)
+	then.Err(t, ErrNoChangesFoundForAuto, err)
 }
 
 func TestErrorNextVersionAutoMissingKind(t *testing.T) {
