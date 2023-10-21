@@ -41,50 +41,5 @@ If you need additional help create an issue or post on discussions.
 Changie is focused around the CLI and its configuration options and aims to keep existing CLI commands and options suported in major versions.
 It is possible to use Changie as a dependent package but no support or compability is guaranteed.
 
-## Tasks
-Below is a list of common development tasks, these can easily be run using [xc](https://xcfile.dev/).
-For example `xc test` will run the test suite.
-
-### test
-Run unit test suite with code coverage enabled
-```
-go test -coverprofile=c.out ./...
-```
-
-### coverage
-requires: test
-```
-go tool cover -html=c.out
-```
-
-### lint
-```
-goimports -w -local github.com/miniscruff/changie .
-golangci-lint run ./...
-```
-
-### gen
-Generate config and CLI docs
-
-```
-go run main.go gen
-```
-
-### vhs-gen
-Generate VHS recording videos
-
-```
-cd examples
-ls *.tape | xargs -n 1 vhs
-```
-
-### docs-serve
-Serve a locally running hugo instance for documentation
-
-requires: gen
-```
-hugo serve -s docs
-```
-
 ## License
 Distributed under the [MIT License](LICENSE).
