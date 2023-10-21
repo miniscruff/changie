@@ -94,7 +94,6 @@ func TestMergeVersionsSuccessfullyWithProject(t *testing.T) {
 		os.Create,
 		core.NewTemplateCache(),
 	)
-	cmd.Project = "a"
 
 	err := cmd.Run(cmd.Command, nil)
 	then.Nil(t, err)
@@ -126,7 +125,6 @@ func TestMergeVersionsErrorInvalidProject(t *testing.T) {
 		os.Create,
 		core.NewTemplateCache(),
 	)
-	cmd.Project = "not_found"
 
 	err := cmd.Run(cmd.Command, nil)
 	then.NotNil(t, err)
