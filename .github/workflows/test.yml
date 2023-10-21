@@ -4,19 +4,19 @@ on:
   push:
     branches: [ main ]
     paths:
-    - 'cmd/'
-    - 'core/'
-    - 'shared/'
-    - 'then/'
+    - 'cmd/**'
+    - 'core/**'
+    - 'shared/**'
+    - 'then/**'
     - 'main.go'
     - 'go.sum'
   pull_request:
     branches: [ main ]
     paths:
-    - 'cmd/'
-    - 'core/'
-    - 'shared/'
-    - 'then/'
+    - 'cmd/**'
+    - 'core/**'
+    - 'shared/**'
+    - 'then/**'
     - 'main.go'
     - 'go.sum'
 

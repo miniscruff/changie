@@ -420,12 +420,12 @@ func LoadChange(path string, rf shared.ReadFiler) (Change, error) {
 
 	bs, err := rf(path)
 	if err != nil {
-		return c, err
+		return c, fmt.Errorf("reading change file '%s': %w", path, err)
 	}
 
 	err = yaml.Unmarshal(bs, &c)
 	if err != nil {
-		return c, err
+		return c, fmt.Errorf("unmarshaling change file '%s': %w", path, err)
 	}
 
 	c.Filename = path

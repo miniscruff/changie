@@ -7,11 +7,11 @@
 
 # Test binary, built with `go test -c`
 *.test
-coverage.txt
-coverage.html
 
 # Output of the go coverage tool
 *.out
+coverage.txt
+coverage.html
 
 # hugo builds
 docs/public
