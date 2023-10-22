@@ -1,0 +1,5 @@
+kind: Changed
+body: Merge will merge all projects versions if projects are enabled.
+time: 2023-10-21T14:07:39.098558299-07:00
+custom:
+  Issue: "552"

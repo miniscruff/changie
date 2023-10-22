@@ -16,7 +16,6 @@ type Merge struct {
 	// cli args
 	DryRun           bool
 	UnreleasedHeader string
-	Project          string
 
 	// dependencies
 	ReadFile      shared.ReadFiler
@@ -66,39 +65,34 @@ Note that a newline is added between each version file.`,
 		"",
 		"Include unreleased changes with this value as the header",
 	)
-	cmd.Flags().StringVarP(
-		&m.Project,
-		"project", "j",
-		"",
-		"(Preview) Specify which project we are merging",
-	)
 
 	m.Command = cmd
 
 	return m
 }
 
-//nolint:gocyclo
 func (m *Merge) Run(cmd *cobra.Command, args []string) error {
-	config, err := core.LoadConfig(m.ReadFile)
+	cfg, err := core.LoadConfig(m.ReadFile)
 	if err != nil {
 		return err
 	}
 
-	changelogPath := config.ChangelogPath
-
-	if len(config.Projects) > 0 {
-		var pc *core.ProjectConfig
-
-		pc, err = config.Project(m.Project)
-		if err != nil {
-			return err
+	// If we have projects, merge all of them.
+	if len(cfg.Projects) > 0 {
+		for _, pc := range cfg.Projects {
+			err = m.mergeProject(cfg, pc.Key, pc.ChangelogPath)
+			if err != nil {
+				return err
+			}
 		}
 
-		m.Project = pc.Key
-		changelogPath = pc.ChangelogPath
+		return nil
 	}
 
+	return m.mergeProject(cfg, "", cfg.ChangelogPath)
+}
+
+func (m *Merge) mergeProject(cfg *core.Config, project, changelogPath string) error {
 	var writer io.Writer
 	if m.DryRun {
 		writer = m.Command.OutOrStdout()
@@ -111,25 +105,25 @@ func (m *Merge) Run(cmd *cobra.Command, args []string) error {
 		writer = changeFile
 	}
 
-	allVersions, err := core.GetAllVersions(m.ReadDir, config, false, m.Project)
+	allVersions, err := core.GetAllVersions(m.ReadDir, cfg, false, project)
 	if err != nil {
 		return err
 	}
 
-	if config.HeaderPath != "" {
-		err = core.AppendFile(m.OpenFile, writer, filepath.Join(config.ChangesDir, config.HeaderPath))
+	if cfg.HeaderPath != "" {
+		err = core.AppendFile(m.OpenFile, writer, filepath.Join(cfg.ChangesDir, cfg.HeaderPath))
 		if err != nil {
 			return err
 		}
 
-		_ = core.WriteNewlines(writer, config.Newlines.AfterChangelogHeader)
+		_ = core.WriteNewlines(writer, cfg.Newlines.AfterChangelogHeader)
 	}
 
 	if m.UnreleasedHeader != "" {
 		var unrelErr error
 
 		allChanges, unrelErr := core.GetChanges(
-			config,
+			cfg,
 			nil,
 			m.ReadDir,
 			m.ReadFile,
@@ -141,14 +135,14 @@ func (m *Merge) Run(cmd *cobra.Command, args []string) error {
 
 		// Make sure we have any changes before writing the unreleased content.
 		if len(allChanges) > 0 {
-			_ = core.WriteNewlines(writer, config.Newlines.BeforeChangelogVersion)
-			_ = core.WriteNewlines(writer, config.Newlines.BeforeVersion)
+			_ = core.WriteNewlines(writer, cfg.Newlines.BeforeChangelogVersion)
+			_ = core.WriteNewlines(writer, cfg.Newlines.BeforeVersion)
 			_, _ = writer.Write([]byte(m.UnreleasedHeader))
-			_ = core.WriteNewlines(writer, config.Newlines.AfterVersion)
+			_ = core.WriteNewlines(writer, cfg.Newlines.AfterVersion)
 
 			// create a fake batch to write the changes
 			b := &Batch{
-				config:        config,
+				config:        cfg,
 				writer:        writer,
 				TemplateCache: m.TemplateCache,
 			}
@@ -159,20 +153,20 @@ func (m *Merge) Run(cmd *cobra.Command, args []string) error {
 			}
 
 			_ = core.WriteNewlines(b.writer, b.config.Newlines.EndOfVersion)
-			_ = core.WriteNewlines(writer, config.Newlines.AfterChangelogVersion)
+			_ = core.WriteNewlines(writer, cfg.Newlines.AfterChangelogVersion)
 		}
 	}
 
 	for _, version := range allVersions {
-		_ = core.WriteNewlines(writer, config.Newlines.BeforeChangelogVersion)
-		versionPath := filepath.Join(config.ChangesDir, m.Project, version.Original()+"."+config.VersionExt)
+		_ = core.WriteNewlines(writer, cfg.Newlines.BeforeChangelogVersion)
+		versionPath := filepath.Join(cfg.ChangesDir, project, version.Original()+"."+cfg.VersionExt)
 
 		err = core.AppendFile(m.OpenFile, writer, versionPath)
 		if err != nil {
 			return err
 		}
 
-		_ = core.WriteNewlines(writer, config.Newlines.AfterChangelogVersion)
+		_ = core.WriteNewlines(writer, cfg.Newlines.AfterChangelogVersion)
 	}
 
 	if len(allVersions) == 0 {
@@ -194,7 +188,7 @@ func (m *Merge) Run(cmd *cobra.Command, args []string) error {
 		Metadata:        version.Metadata(),
 	}
 
-	for _, rep := range config.Replacements {
+	for _, rep := range cfg.Replacements {
 		err = rep.Execute(m.ReadFile, m.WriteFile, replaceData)
 		if err != nil {
 			return err
