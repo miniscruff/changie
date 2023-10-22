@@ -71,7 +71,6 @@ Note that a newline is added between each version file.`,
 	return m
 }
 
-//nolint:gocyclo
 func (m *Merge) Run(cmd *cobra.Command, args []string) error {
 	cfg, err := core.LoadConfig(m.ReadFile)
 	if err != nil {
@@ -81,18 +80,19 @@ func (m *Merge) Run(cmd *cobra.Command, args []string) error {
 	// If we have projects, merge all of them.
 	if len(cfg.Projects) > 0 {
 		for _, pc := range cfg.Projects {
-			err = m.mergeProject(cmd, cfg, pc.Key, pc.ChangelogPath)
+			err = m.mergeProject(cfg, pc.Key, pc.ChangelogPath)
 			if err != nil {
 				return err
 			}
 		}
+
 		return nil
 	}
 
-	return m.mergeProject(cmd, cfg, "", cfg.ChangelogPath)
+	return m.mergeProject(cfg, "", cfg.ChangelogPath)
 }
 
-func (m *Merge) mergeProject(cmd *cobra.Command, cfg *core.Config, project, changelogPath string) error {
+func (m *Merge) mergeProject(cfg *core.Config, project, changelogPath string) error {
 	var writer io.Writer
 	if m.DryRun {
 		writer = m.Command.OutOrStdout()
