@@ -18,6 +18,12 @@ jobs:
       with:
         go-version: 1.21
 
+    - name: Setup NPM
+      uses: actions/setup-node@v3
+      with:
+        node-version: '20.x'
+        registry-url: 'https://registry.npmjs.org'
+
     - name: Login to GitHub Container Registry
       uses: docker/login-action@v3.0.0
       with:
@@ -37,6 +43,14 @@ jobs:
         args: --clean --release-notes=${{ env.RELEASE_NOTES_PATH }} --skip=validate --verbose
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      
+    - name: Publish to NPM
+      run: |
+        node npm/prepare-release.mjs
+        cd npm
+        npm publish --access public
+      env:
+        NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
     - name: Setup Hugo
       uses: peaceiris/actions-hugo@v2.6.0

@@ -1,0 +1,34 @@
+{
+  "name": "changie",
+  "version": "1.14.0",
+  "author": "miniscruff",
+  "description": "Automated changelog tool for preparing releases with lots of customization options",
+  "bin": {
+    "changie": "changie"
+  },
+  "scripts": {
+    "postinstall": "postinstall.mjs"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/miniscruff/changie.git"
+  },
+  "keywords": [
+    "changelog"
+  ],
+  "files": [
+    "dist/darwin-arm64",
+    "dist/darwin-x64",
+    "dist/linux-arm64",
+    "dist/linux-x64",
+    "dist/windows-arm64.exe",
+    "dist/windows-x64.exe",
+    "postinstall.mjs",
+    "changie.js"
+  ],
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/miniscruff/changie/issues"
+  },
+  "homepage": "https://github.com/miniscruff/changie#readme"
+}
