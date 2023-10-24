@@ -262,3 +262,45 @@ func TestErrorNewBadBody(t *testing.T) {
 	err := cmd.Run(cmd.Command, nil)
 	then.Err(t, mockErr, err)
 }
+
+func TestNewFragmentTemplateSlash(t *testing.T) {
+	cfg := newTestConfig()
+	cfg.Components = []string{"test/component"}
+	then.WithTempDirConfig(t, cfg)
+	reader, writer := then.WithReadWritePipe(t)
+
+	then.DelayWrite(
+		t, writer,
+		[]byte{106, 13},
+		[]byte{106, 13},
+		[]byte("a message"),
+		[]byte{13},
+	)
+
+	cmd := NewNew(
+		os.ReadFile,
+		os.Create,
+		newMockTime,
+		core.NewTemplateCache(),
+	)
+	cmd.SetIn(reader)
+
+	then.Nil(t, os.MkdirAll(filepath.Join(cfg.ChangesDir, cfg.UnreleasedDir), 0755))
+
+	err := cmd.Run(cmd.Command, nil)
+	then.Nil(t, err)
+
+	futurePath := filepath.Join(cfg.ChangesDir, cfg.UnreleasedDir)
+	fileInfos, err := os.ReadDir(futurePath)
+	then.Nil(t, err)
+	then.Equals(t, 1, len(fileInfos))
+	then.Equals(t, ".yaml", filepath.Ext(fileInfos[0].Name()))
+
+	changeContent := fmt.Sprintf(
+		"component: test/component\nkind: removed\nbody: a message\ntime: %s\n",
+		newMockTime().Format(time.RFC3339Nano),
+	)
+
+	then.FileExists(t, futurePath, fileInfos[0].Name())
+	then.FileContents(t, changeContent, futurePath, fileInfos[0].Name())
+}

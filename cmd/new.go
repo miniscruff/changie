@@ -3,6 +3,7 @@ package cmd
 import (
 	"io"
 	"os"
+	"path/filepath"
 	"strings"
 
 	"github.com/spf13/cobra"
@@ -139,18 +140,20 @@ func (n *New) Run(cmd *cobra.Command, args []string) error {
 	if n.DryRun {
 		writer = n.OutOrStdout()
 	} else {
-		var outputPath strings.Builder
-
-		outputPath.WriteString(config.ChangesDir + "/" + config.UnreleasedDir + "/")
-
-		fileErr := n.TemplateCache.Execute(config.FragmentFileFormat, &outputPath, change)
+		var fragmentWriter strings.Builder
+		fileErr := n.TemplateCache.Execute(config.FragmentFileFormat, &fragmentWriter, change)
 		if fileErr != nil {
 			return fileErr
 		}
+		fragmentWriter.WriteString(".yaml")
+		outputFilename := fragmentWriter.String()
 
-		outputPath.WriteString(".yaml")
+		// Sanatize the filename to remove invalid characters such as slashes
+		replacer := strings.NewReplacer("/", "-", "\\", "-")
+		outputFilename = replacer.Replace(outputFilename)
 
-		newFile, fileErr := n.CreateFile(outputPath.String())
+		outputPath := filepath.Join(config.ChangesDir, config.UnreleasedDir, outputFilename)
+		newFile, fileErr := n.CreateFile(outputPath)
 		if fileErr != nil {
 			return fileErr
 		}

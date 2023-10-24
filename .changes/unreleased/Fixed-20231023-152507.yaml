@@ -1,0 +1,5 @@
+kind: Fixed
+body: Slashes in FragmentFileFormat resulting in unexpected file paths.
+time: 2023-10-23T15:25:07.485221383+01:00
+custom:
+  Issue: "559"
