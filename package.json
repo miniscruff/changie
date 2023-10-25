@@ -5,7 +5,7 @@
   "description": "Automated changelog tool for preparing releases with lots of customization options",
   "bin": "changie",
   "scripts": {
-    "postinstall": "postinstall.mjs",
+    "postinstall": "npm/postinstall.mjs",
     "prepack": "ls `node -e 'console.log((require(\"./package.json\").files||[]).join(\" \"))'`>/dev/null"
   },
   "repository": {
@@ -16,14 +16,16 @@
     "changelog"
   ],
   "files": [
-    "dist/darwin-arm64",
-    "dist/darwin-x64",
-    "dist/linux-arm64",
-    "dist/linux-x64",
-    "dist/win32-ia32.exe",
-    "dist/win32-x64.exe",
-    "postinstall.mjs",
-    "changie.js"
+    "npm/dist/darwin-arm64",
+    "npm/dist/darwin-x64",
+    "npm/dist/linux-arm64",
+    "npm/dist/linux-x64",
+    "npm/dist/win32-ia32.exe",
+    "npm/dist/win32-x64.exe",
+    "npm/postinstall.mjs",
+    "npm/changie.js",
+    "README.md",
+    "LICENSE"
   ],
   "license": "MIT",
   "bugs": {

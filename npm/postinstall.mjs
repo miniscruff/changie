@@ -22,7 +22,8 @@ const copyChangie = async (filename, changie) => {
   }
 }
 
-const DIST = "dist";
+const DIST = "npm/dist";
+const FALLBACK = "npm/changie.js";
 
 const ext = process.platform === 'win32' ? '.exe' : '';
 const target = `${process.platform}-${process.arch}${ext}`
@@ -31,5 +32,5 @@ if (executables[target]) {
   copyChangie(target, executables[target]);
 } else {
   // use `changie.js` which will throw an error when run
-  await fs.copyFile("changie.js", "changie");
+  await fs.copyFile(FALLBACK, "changie");
 }
