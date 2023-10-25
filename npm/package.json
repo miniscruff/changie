@@ -3,11 +3,10 @@
   "version": "1.14.0",
   "author": "miniscruff",
   "description": "Automated changelog tool for preparing releases with lots of customization options",
-  "bin": {
-    "changie": "changie"
-  },
+  "bin": "changie",
   "scripts": {
-    "postinstall": "postinstall.mjs"
+    "postinstall": "postinstall.mjs",
+    "prepack": "ls `node -e 'console.log((require(\"./package.json\").files||[]).join(\" \"))'`>/dev/null"
   },
   "repository": {
     "type": "git",
@@ -21,8 +20,8 @@
     "dist/darwin-x64",
     "dist/linux-arm64",
     "dist/linux-x64",
-    "dist/windows-arm64.exe",
-    "dist/windows-x64.exe",
+    "dist/win32-ia32.exe",
+    "dist/win32-x64.exe",
     "postinstall.mjs",
     "changie.js"
   ],
