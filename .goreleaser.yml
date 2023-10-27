@@ -11,7 +11,7 @@ builds:
       - windows
       - darwin
     goarch:
-      - 386
+      - "386"
       - amd64
       - arm64
 archives:
@@ -19,7 +19,7 @@ archives:
     - goos: windows
       format: zip
 release:
-  github:
+  github: {}
   prerelease: auto
 nfpms:
   - homepage: https://changie.dev
@@ -56,6 +56,7 @@ winget:
       owner: miniscruff
       name: winget-pkgs
       branch: "changie-{{.Version}}"
+      token: "{{.Env.WINGET_PAT}}"
       pull_request:
         enabled: true
         draft: true
