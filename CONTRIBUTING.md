@@ -28,6 +28,7 @@ If you do decide to contribute code or documentation you will need the following
     * Newer versions should also work
 * [Hugo](https://gohugo.io/): for documentation, be sure to install hugo-extended
 * [Golang CI](https://golangci-lint.run/): for linting
+* [goimports](https://pkg.go.dev/golang.org/x/tools/cmd/goimports): for linting
 
 ### Fork and create a branch
 If there is an issue you want to propose changes for start by [creating a fork](https://help.github.com/articles/fork-a-repo).

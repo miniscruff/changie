@@ -70,6 +70,13 @@ docker run \
     ghcr.io/miniscruff/changie \
     new
 ```
+
+## NodeJS
+
+* To add as a dependency of your project: `npm i -D changie`
+* To install globally: `npm i -g changie`
+* To run without adding a dependency: `npx changie`
+
 ## Manual
 * Download from [here](https://github.com/miniscruff/changie/releases).
 * Add executable somewhere in your path depending on your platform.

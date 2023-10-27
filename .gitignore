@@ -21,3 +21,7 @@ docs/content/config/_index.md
 
 # goreleaser builds
 dist/
+
+# NPM publishing
+npm/dist/
+changie-*.tgz
