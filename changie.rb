@@ -5,21 +5,21 @@
 class Changie < Formula
   desc "Automated changelog tool for preparing releases with lots of customization options."
   homepage "https://changie.dev"
-  version "1.14.0"
+  version "1.15.0"
   license "MIT"
 
   on_macos do
-    if Hardware::CPU.arm?
-      url "https://github.com/miniscruff/changie/releases/download/v1.14.0/changie_1.14.0_darwin_arm64.tar.gz"
-      sha256 "a5e692884bd43e318fd3a15df44eb5f2e45cb6ef120eab9845dc41e7d91646af"
+    if Hardware::CPU.intel?
+      url "https://github.com/miniscruff/changie/releases/download/v1.15.0/changie_1.15.0_darwin_amd64.tar.gz"
+      sha256 "13eac87e3572abe354244b4125b206a6c76ab056ad12b4b41035e07ff4c7d909"
 
       def install
         bin.install "changie"
       end
     end
-    if Hardware::CPU.intel?
-      url "https://github.com/miniscruff/changie/releases/download/v1.14.0/changie_1.14.0_darwin_amd64.tar.gz"
-      sha256 "63c1f20c8ebbac46c83dcd0866d1580b080b5d2c4fe917c54e697c0e63fba449"
+    if Hardware::CPU.arm?
+      url "https://github.com/miniscruff/changie/releases/download/v1.15.0/changie_1.15.0_darwin_arm64.tar.gz"
+      sha256 "6a6f5b3a85ac2c014027bd0ef8a2090b067a89050e0b05329738c87333b4fe35"
 
       def install
         bin.install "changie"
@@ -29,16 +29,16 @@ class Changie < Formula
 
   on_linux do
     if Hardware::CPU.intel?
-      url "https://github.com/miniscruff/changie/releases/download/v1.14.0/changie_1.14.0_linux_amd64.tar.gz"
-      sha256 "cd6de2e2a2739f7737fe97a69d2592dad0d18b3abd75553e04ee417a83d0f540"
+      url "https://github.com/miniscruff/changie/releases/download/v1.15.0/changie_1.15.0_linux_amd64.tar.gz"
+      sha256 "ca43b88af697948cea74bdb79617fe2d62df9a1edce894ba834dffb316d19840"
 
       def install
         bin.install "changie"
       end
     end
     if Hardware::CPU.arm? && Hardware::CPU.is_64_bit?
-      url "https://github.com/miniscruff/changie/releases/download/v1.14.0/changie_1.14.0_linux_arm64.tar.gz"
-      sha256 "be0d84304e2286e8010795d3b4d916880eba921f7b2112b99d5de8a0f85e730c"
+      url "https://github.com/miniscruff/changie/releases/download/v1.15.0/changie_1.15.0_linux_arm64.tar.gz"
+      sha256 "28a8972ca67ab058f40eb3a068e02545030357a279d08cbb60540e1dea71ac4c"
 
       def install
         bin.install "changie"
