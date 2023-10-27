@@ -1,34 +1,33 @@
 #!/usr/bin/env node
-import * as fs from "fs/promises";
-import * as path from "path";
+import * as fs from 'node:fs/promises';
+import * as path from 'node:path';
 
-import { execSync } from 'child_process';
-import { fileURLToPath } from 'url';
+import { execSync } from 'node:child_process';
 
 // Mapping from to goarch to Node's `process.arch`
 var ARCH_MAPPING = {
-  "386": "ia32",
-  "amd64": "x64",
-  "arm64": "arm64",
+  '386': 'ia32',
+  'amd64': 'x64',
+  'arm64': 'arm64',
 };
 
 // Mapping between goos and Node's `process.platform`
 var PLATFORM_MAPPING = {
-  "darwin": "darwin",
-  "linux": "linux",
-  "windows": "win32"
+  'darwin': 'darwin',
+  'linux': 'linux',
+  'windows': 'win32'
 };
 
-const npmFolder = path.dirname(fileURLToPath(import.meta.url));
-const NPM_DIST = path.join(npmFolder, "dist");
-const RELEASES = path.join("dist", "artifacts.json");
+const NPM = 'npm';
+const NPM_DIST = path.join(NPM, 'dist');
+const RELEASES = path.join('dist', 'artifacts.json');
 
 // read the goreleaser JSON and filter down to just the binaries
 const json = JSON.parse(await fs.readFile(RELEASES));
-const binaries = json.filter(r => r.type === "Binary");
+const binaries = json.filter(r => r.type === 'Binary');
 
 // clean up any previous runs
-const output = execSync(`git clean -fdX ${npmFolder}`);
+const output = execSync(`git clean -fdX ${NPM}`);
 console.log(output.toString())
 
 // make the dist folder
@@ -45,5 +44,5 @@ await binaries.forEach(async (release) => {
   // copy files even if we don't use them, `package.json` uses a filtered list
   const target = path.join(NPM_DIST, distfile);
   await fs.copyFile(release.path, target);
-  console.log("copied ", release.path, "to", target);
+  console.log('copied ', release.path, 'to', target);
 });

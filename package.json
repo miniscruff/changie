@@ -3,7 +3,9 @@
   "version": "1.14.0",
   "author": "miniscruff",
   "description": "Automated changelog tool for preparing releases with lots of customization options",
-  "bin": "changie",
+  "bin": {
+    "changie": "npm/changie"
+  },
   "scripts": {
     "postinstall": "npm/postinstall.mjs",
     "prepack": "ls `node -e 'console.log((require(\"./package.json\").files||[]).join(\" \"))'`>/dev/null"
@@ -23,7 +25,7 @@
     "npm/dist/win32-ia32.exe",
     "npm/dist/win32-x64.exe",
     "npm/postinstall.mjs",
-    "npm/changie.js",
+    "npm/changie",
     "README.md",
     "LICENSE"
   ],

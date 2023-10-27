@@ -24,3 +24,4 @@ dist/
 
 # NPM publishing
 npm/dist/
+changie-*.tgz
