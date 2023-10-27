@@ -43,6 +43,7 @@ jobs:
         args: --clean --release-notes=${{ env.RELEASE_NOTES_PATH }} --skip=validate --verbose
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        WINGET_PAT: ${{ secrets.WINGET_PAT }}
       
     - name: Publish to NPM
       run: |
