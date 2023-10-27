@@ -11,7 +11,7 @@ class Changie < Formula
   on_macos do
     if Hardware::CPU.intel?
       url "https://github.com/miniscruff/changie/releases/download/v1.15.0/changie_1.15.0_darwin_amd64.tar.gz"
-      sha256 "3238574ee79356302b9beff14908e9aa2fa3962dfd85a45ce7e4a581ec3bbf75"
+      sha256 "8195477c491d66c7f73bb9521e1cc0c08ede8a86b94f5085bed0ecf4b519f661"
 
       def install
         bin.install "changie"
@@ -19,7 +19,7 @@ class Changie < Formula
     end
     if Hardware::CPU.arm?
       url "https://github.com/miniscruff/changie/releases/download/v1.15.0/changie_1.15.0_darwin_arm64.tar.gz"
-      sha256 "f4176608582f4a75da7a971f0256b3d8b398e977ac52dc5ac3300b649da64b69"
+      sha256 "6d0b48b6866f7dda31de09550be5ce77c8acd29d3cfeb35bc4817f8af17113b2"
 
       def install
         bin.install "changie"
@@ -30,7 +30,7 @@ class Changie < Formula
   on_linux do
     if Hardware::CPU.intel?
       url "https://github.com/miniscruff/changie/releases/download/v1.15.0/changie_1.15.0_linux_amd64.tar.gz"
-      sha256 "902729ab9937a1dd04970d84d7f4819bec6a2f242e0a6cfe2e5eb65f394d8bbd"
+      sha256 "f3223820df2eb106f1549a409eb7bedf4dab8601b52f4933af2d09d24b573162"
 
       def install
         bin.install "changie"
@@ -38,7 +38,7 @@ class Changie < Formula
     end
     if Hardware::CPU.arm? && Hardware::CPU.is_64_bit?
       url "https://github.com/miniscruff/changie/releases/download/v1.15.0/changie_1.15.0_linux_arm64.tar.gz"
-      sha256 "d275f40a31ec668e6cf400e61fe4235cf16bcea5ee39c550da8b77a63c0bf77f"
+      sha256 "24fc7cff163b3461ded191c28969b9d4e4d10f139fa76aad53ccc2d90d818961"
 
       def install
         bin.install "changie"
