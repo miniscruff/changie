@@ -1,5 +1,0 @@
-kind: Fixed
-body: Provide a better error message if a change file is invalid.
-time: 2023-10-21T13:23:22.077665894-07:00
-custom:
-  Issue: "554"

@@ -36,6 +36,6 @@ replacements:
 - path: 'docs/static/version.json'
   find: '    "latest": ".*"'
   replace: '    "latest": "{{.Version}}"'
-- path: npm/package.json
+- path: package.json
   find: '  "version": ".*",'
   replace: '  "version": "{{.VersionNoPrefix}}",'
