@@ -1,6 +1,6 @@
 {
   "name": "changie",
-  "version": "1.14.0",
+  "version": "1.15.0",
   "author": "miniscruff",
   "description": "Automated changelog tool for preparing releases with lots of customization options",
   "bin": {
