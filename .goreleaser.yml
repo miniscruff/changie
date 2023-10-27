@@ -45,25 +45,25 @@ scoops:
     homepage: https://changie.dev
     description: Automated changelog tool for preparing releases with lots of customization options.
     license: MIT
-winget:
- -  publisher: miniscruff
-    license: MIT
-    homepage: https://changie.dev
-    publisher_support_url: https://github.com/miniscruff/changie/issues/new
-    short_description: Automated changelog tool for preparing releases with lots of customization options.
-    release_notes: "{{.Changelog}}"
-    repository:
-      owner: miniscruff
-      name: winget-pkgs
-      branch: "changie-{{.Version}}"
-      token: "{{.Env.WINGET_PAT}}"
-      pull_request:
-        enabled: true
-        draft: true
-        base:
-          owner: microsoft
-          name: winget-pkgs
-          branch: master
+# disable until I get the token configured correctly...
+# winget:
+# -  publisher: miniscruff
+# license: MIT
+# homepage: https://changie.dev
+# publisher_support_url: https://github.com/miniscruff/changie/issues/new
+# short_description: Automated changelog tool for preparing releases with lots of customization options.
+# release_notes: "{{.Changelog}}"
+# repository:
+# owner: miniscruff
+# name: winget-pkgs
+# branch: "changie-{{.Version}}"
+# token: "{{.Env.WINGET_PAT}}"
+# pull_request:
+# draft: true
+# base:
+# owner: microsoft
+# name: winget-pkgs
+# branch: master
 dockers:
   - goos: linux
     goarch: amd64
