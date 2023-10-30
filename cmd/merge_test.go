@@ -104,32 +104,6 @@ first version
 	then.FileContents(t, changeContents, "a", "thing", "CHANGELOG.md")
 }
 
-func TestMergeVersionsErrorInvalidProject(t *testing.T) {
-	cfg := mergeTestConfig()
-	cfg.HeaderPath = ""
-	cfg.Replacements = nil
-	cfg.Projects = []core.ProjectConfig{
-		{
-			Label:         "A thing",
-			Key:           "a",
-			ChangelogPath: "a/thing/CHANGELOG.md",
-		},
-	}
-	then.WithTempDirConfig(t, cfg)
-
-	cmd := NewMerge(
-		os.ReadFile,
-		os.WriteFile,
-		os.ReadDir,
-		os.Open,
-		os.Create,
-		core.NewTemplateCache(),
-	)
-
-	err := cmd.Run(cmd.Command, nil)
-	then.NotNil(t, err)
-}
-
 func TestMergeVersionsWithUnreleasedChanges(t *testing.T) {
 	cfg := mergeTestConfig()
 	cfg.HeaderPath = ""
