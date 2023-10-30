@@ -1,5 +1,0 @@
-kind: Fixed
-body: Merge unreleased now only merges project-specific changes into each project.
-time: 2023-10-30T12:40:57.52085+11:00
-custom:
-  Issue: "569"
