@@ -104,7 +104,7 @@ first version
 	then.FileContents(t, changeContents, "a", "thing", "CHANGELOG.md")
 }
 
-func TestMergeVersionsErrorInvalidProject(t *testing.T) {
+func TestMergeVersionsErrorMissingProjectDir(t *testing.T) {
 	cfg := mergeTestConfig()
 	cfg.HeaderPath = ""
 	cfg.Replacements = nil
@@ -218,6 +218,64 @@ func TestMergeVersionsWithUnreleasedChangesErrorsOnBadChangeFormat(t *testing.T)
 	cmd.UnreleasedHeader = "## Coming Soon"
 	err := cmd.Run(cmd.Command, nil)
 	then.NotNil(t, err)
+}
+
+func TestMergeVersionsWithUnreleasedChangesInOneProject(t *testing.T) {
+	cfg := mergeTestConfig()
+	cfg.HeaderPath = ""
+	cfg.Replacements = nil
+	cfg.Projects = []core.ProjectConfig{
+		{
+			Label:         "A thing",
+			Key:           "a",
+			ChangelogPath: "a/thing/CHANGELOG.md",
+		},
+		{
+			Label:         "B thing",
+			Key:           "b",
+			ChangelogPath: "b/thing/CHANGELOG.md",
+		},
+	}
+	then.WithTempDirConfig(t, cfg)
+
+	then.WriteFile(t, []byte("first A version\n"), cfg.ChangesDir, "a", "v0.1.0.md")
+	then.WriteFile(t, []byte("second A version\n"), cfg.ChangesDir, "a", "v0.2.0.md")
+	then.Nil(t, os.MkdirAll(filepath.Join("a", "thing"), core.CreateDirMode))
+	then.WriteFile(t, []byte("first B version\n"), cfg.ChangesDir, "b", "v0.1.0.md")
+	then.WriteFile(t, []byte("second B version\n"), cfg.ChangesDir, "b", "v0.2.0.md")
+	then.Nil(t, os.MkdirAll(filepath.Join("b", "thing"), core.CreateDirMode))
+
+	unrel := core.Change{
+		Kind:    "Added",
+		Body:    "new feature coming soon",
+		Project: "a",
+	}
+	writeChangeFile(t, cfg, &unrel)
+
+	cmd := NewMerge(
+		os.ReadFile,
+		os.WriteFile,
+		os.ReadDir,
+		os.Open,
+		os.Create,
+		core.NewTemplateCache(),
+	)
+	cmd.UnreleasedHeader = "## Coming Soon"
+	err := cmd.Run(cmd.Command, nil)
+	then.Nil(t, err)
+
+	changeContentsA := `## Coming Soon
+### Added
+* new feature coming soon
+second A version
+first A version
+`
+	then.FileContents(t, changeContentsA, "a", "thing", "CHANGELOG.md")
+
+	changeContentsB := `second B version
+first B version
+`
+	then.FileContents(t, changeContentsB, "b", "thing", "CHANGELOG.md")
 }
 
 func TestMergeVersionsWithHeaderAndReplacements(t *testing.T) {

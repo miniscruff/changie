@@ -127,7 +127,7 @@ func (m *Merge) mergeProject(cfg *core.Config, project, changelogPath string) er
 			nil,
 			m.ReadDir,
 			m.ReadFile,
-			"",
+			project,
 		)
 		if unrelErr != nil {
 			return unrelErr
