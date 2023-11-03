@@ -6,6 +6,7 @@ import (
 	"io"
 	"os"
 	"runtime"
+	"slices"
 	"sort"
 	"strings"
 	"time"
@@ -122,6 +123,14 @@ func (change Change) WriteTo(writer io.Writer) (int64, error) {
 	n, err := writer.Write(bs)
 
 	return int64(n), err
+}
+
+func (change Change) RemoveProjectFromChange(project string) Change {
+	change.Projects = slices.DeleteFunc(change.Projects, func(p string) bool {
+		return p == project
+	})
+
+	return change
 }
 
 type PromptContext struct {

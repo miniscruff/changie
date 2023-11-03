@@ -115,7 +115,7 @@ func TestBatchCanBatchWithProject(t *testing.T) {
 
 	writeChangeFile(t, cfg, &core.Change{Kind: "added", Body: "A", Projects: []string{"a"}})
 	writeChangeFile(t, cfg, &core.Change{Kind: "added", Body: "B", Projects: []string{"b"}})
-	writeChangeFile(t, cfg, &core.Change{Kind: "removed", Body: "C", Projects: []string{"a"}})
+	writeChangeFile(t, cfg, &core.Change{Kind: "removed", Body: "C", Projects: []string{"a", "b"}})
 
 	batch := withDefaultBatch()
 	batch.Project = "a"
@@ -129,7 +129,7 @@ func TestBatchCanBatchWithProject(t *testing.T) {
 * C`
 
 	then.FileContents(t, verContents, cfg.ChangesDir, "a", "v0.2.0.md")
-	then.DirectoryFileCount(t, 1, cfg.ChangesDir, cfg.UnreleasedDir)
+	then.DirectoryFileCount(t, 2, cfg.ChangesDir, cfg.UnreleasedDir)
 }
 
 func TestBatchProjectFailsIfUnableToMakeProjectDir(t *testing.T) {
@@ -899,5 +899,39 @@ func TestBatchUnreleasedFailsIfMakeDirFails(t *testing.T) {
 	}
 
 	err := batch.ClearUnreleased(nil)
+	then.Err(t, mockErr, err)
+}
+
+func TestBatchUnreleasedFailsIfUpdateChangeFileFails(t *testing.T) {
+	then.WithTempDir(t)
+
+	cfg := batchTestConfig()
+	cfg.Projects = []core.ProjectConfig{
+		{
+			Label: "A",
+			Key:   "a",
+		},
+		{
+			Label: "B",
+			Key:   "b",
+		},
+	}
+
+	batch := withDefaultBatch()
+	batch.config = cfg
+
+	mockErr := errors.New("bad mock remove")
+	batch.Create = func(p string) (*os.File, error) {
+		return nil, mockErr
+	}
+
+	changes := []core.Change{
+		{Kind: "added", Body: "A", Projects: []string{"a", "b"}},
+	}
+	for i := range changes {
+		writeChangeFile(t, cfg, &changes[i])
+	}
+
+	err := batch.ClearUnreleased(changes)
 	then.Err(t, mockErr, err)
 }

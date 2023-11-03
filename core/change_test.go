@@ -58,6 +58,17 @@ func TestWriteChange(t *testing.T) {
 	then.Nil(t, err)
 }
 
+func TestRemoveProjectFromChange(t *testing.T) {
+	change := Change{
+		Body:     "some body message",
+		Projects: []string{"a", "b"},
+	}
+
+	result := change.RemoveProjectFromChange("a")
+
+	then.SliceEquals(t, result.Projects, []string{"b"})
+}
+
 func TestLoadChangeFromPath(t *testing.T) {
 	mockRf := func(filepath string) ([]byte, error) {
 		then.Equals(t, "some_file.yaml", filepath)
