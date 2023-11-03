@@ -194,6 +194,7 @@ func TestAskPromptsForBodyWithProject(t *testing.T) {
 	reader, writer := then.WithReadWritePipe(t)
 	then.DelayWrite(
 		t, writer,
+		[]byte{32},
 		[]byte{13},
 		[]byte("body stuff"),
 		[]byte{13},
@@ -211,7 +212,7 @@ func TestAskPromptsForBodyWithProject(t *testing.T) {
 		StdinReader: reader,
 	}))
 
-	then.Equals(t, "client", c.Project)
+	then.SliceEquals(t, []string{"client"}, c.Projects)
 	then.Equals(t, "", c.Component)
 	then.Equals(t, "", c.Kind)
 	then.Equals(t, 0, len(c.Custom))
@@ -228,7 +229,7 @@ func TestAskPromptsForBodyWithProjectErrBadProject(t *testing.T) {
 		},
 	}
 	c := &Change{
-		Project: "missing",
+		Projects: []string{},
 	}
 	err := c.AskPrompts(PromptContext{
 		Config:      config,

@@ -113,9 +113,9 @@ func TestBatchCanBatchWithProject(t *testing.T) {
 
 	then.WithTempDirConfig(t, cfg)
 
-	writeChangeFile(t, cfg, &core.Change{Kind: "added", Body: "A", Project: "a"})
-	writeChangeFile(t, cfg, &core.Change{Kind: "added", Body: "B", Project: "b"})
-	writeChangeFile(t, cfg, &core.Change{Kind: "removed", Body: "C", Project: "a"})
+	writeChangeFile(t, cfg, &core.Change{Kind: "added", Body: "A", Projects: []string{"a"}})
+	writeChangeFile(t, cfg, &core.Change{Kind: "added", Body: "B", Projects: []string{"b"}})
+	writeChangeFile(t, cfg, &core.Change{Kind: "removed", Body: "C", Projects: []string{"a"}})
 
 	batch := withDefaultBatch()
 	batch.Project = "a"
@@ -145,8 +145,8 @@ func TestBatchProjectFailsIfUnableToMakeProjectDir(t *testing.T) {
 
 	then.WithTempDirConfig(t, cfg)
 
-	writeChangeFile(t, cfg, &core.Change{Kind: "added", Body: "A", Project: "a"})
-	writeChangeFile(t, cfg, &core.Change{Kind: "removed", Body: "C", Project: "a"})
+	writeChangeFile(t, cfg, &core.Change{Kind: "added", Body: "A", Projects: []string{"a"}})
+	writeChangeFile(t, cfg, &core.Change{Kind: "removed", Body: "C", Projects: []string{"a"}})
 
 	batch := withDefaultBatch()
 	batch.Project = "A"

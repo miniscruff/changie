@@ -246,9 +246,9 @@ func TestMergeVersionsWithUnreleasedChangesInOneProject(t *testing.T) {
 	then.Nil(t, os.MkdirAll(filepath.Join("b", "thing"), core.CreateDirMode))
 
 	unrel := core.Change{
-		Kind:    "Added",
-		Body:    "new feature coming soon",
-		Project: "a",
+		Kind:     "Added",
+		Body:     "new feature coming soon",
+		Projects: []string{"a"},
 	}
 	writeChangeFile(t, cfg, &unrel)
 

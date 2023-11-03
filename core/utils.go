@@ -8,6 +8,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"slices"
 	"sort"
 	"strings"
 
@@ -307,7 +308,7 @@ func GetChanges(
 			return changes, err
 		}
 
-		if len(projectKey) > 0 && c.Project != projectKey {
+		if len(projectKey) > 0 && !slices.Contains(c.Projects, projectKey) {
 			continue
 		}
 

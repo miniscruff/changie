@@ -88,8 +88,8 @@ func (s *ChangesConfigSorter) Less(i, j int) bool {
 
 // Change represents an atomic change to a project.
 type Change struct {
-	// Project of our change, if one was provided.
-	Project string `yaml:",omitempty" default:""`
+	// Projects of our change, if one was provided.
+	Projects []string `yaml:",omitempty" default:""`
 	// Component of our change, if one was provided.
 	Component string `yaml:",omitempty" default:""`
 	// Kind of our change, if one was provided.
@@ -141,7 +141,7 @@ func (change *Change) AskPrompts(ctx PromptContext) error {
 		return err
 	}
 
-	err = change.promptForProject(&ctx)
+	err = change.promptForProjects(&ctx)
 	if err != nil {
 		return err
 	}
@@ -206,32 +206,34 @@ func (change *Change) validateArguments(config *Config) error {
 	return nil
 }
 
-func (change *Change) promptForProject(ctx *PromptContext) error {
+func (change *Change) promptForProjects(ctx *PromptContext) error {
 	if len(ctx.Config.Projects) == 0 {
 		return nil
 	}
 
-	if len(change.Project) == 0 {
+	if len(change.Projects) == 0 {
 		fmt.Println(ProjectsWarning)
 
 		var err error
 
-		change.Project, err = Custom{
+		change.Projects, err = Custom{
 			Type:        CustomEnum,
-			Label:       "Project",
+			Label:       "Projects",
 			EnumOptions: ctx.Config.ProjectLabels(),
-		}.AskPrompt(ctx.StdinReader)
+		}.AskMultiChoosePrompt(ctx.StdinReader)
 		if err != nil {
 			return err
 		}
 	}
 
-	pc, err := ctx.Config.Project(change.Project)
-	if err != nil {
-		return fmt.Errorf("%w: %s", err, change.Project)
-	}
+	for i, p := range change.Projects {
+		pc, err := ctx.Config.Project(p)
+		if err != nil {
+			return fmt.Errorf("%w: %s", err, p)
+		}
 
-	change.Project = pc.Key
+		change.Projects[i] = pc.Key
+	}
 
 	return nil
 }

@@ -17,7 +17,7 @@ type New struct {
 
 	// cli args
 	DryRun     bool
-	Project    string
+	Projects   []string
 	Component  string
 	Kind       string
 	Body       string
@@ -60,11 +60,11 @@ Each version is merged together for the overall project changelog.`,
 		false,
 		"Print new fragment instead of writing to disk",
 	)
-	cmd.Flags().StringVarP(
-		&n.Project,
+	cmd.Flags().StringSliceVarP(
+		&n.Projects,
 		"project", "j",
-		"",
-		"(Preview) Set the change project key without a prompt",
+		[]string{},
+		"(Preview) Set the change project keys without a prompt",
 	)
 	cmd.Flags().StringVarP(
 		&n.Component,
@@ -114,7 +114,7 @@ func (n *New) Run(cmd *cobra.Command, args []string) error {
 	}
 
 	change := core.Change{
-		Project:   n.Project,
+		Projects:  n.Projects,
 		Component: n.Component,
 		Kind:      n.Kind,
 		Body:      n.Body,

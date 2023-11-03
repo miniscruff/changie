@@ -12,6 +12,7 @@ import (
 	"github.com/cqroot/prompt"
 	"github.com/cqroot/prompt/choose"
 	"github.com/cqroot/prompt/input"
+	"github.com/cqroot/prompt/multichoose"
 	"github.com/cqroot/prompt/write"
 )
 
@@ -149,6 +150,15 @@ func (c Custom) askEnum(stdinReader io.Reader) (string, error) {
 		)
 }
 
+func (c Custom) askMultiEnum(stdinReader io.Reader) ([]string, error) {
+	return prompt.New().Ask(c.DisplayLabel()).
+		MultiChoose(
+			c.EnumOptions,
+			multichoose.WithHelp(true),
+			multichoose.WithTeaProgramOpts(tea.WithInput(stdinReader)),
+		)
+}
+
 // CreatePrompt will create a promptui select or prompt from a custom choice
 func (c Custom) AskPrompt(stdinReader io.Reader) (string, error) {
 	switch c.Type {
@@ -163,6 +173,22 @@ func (c Custom) AskPrompt(stdinReader io.Reader) (string, error) {
 	}
 
 	return "", errInvalidPromptType
+}
+
+// CreatePrompt will create a promptui multichoose or prompt from custom choices
+func (c Custom) AskMultiChoosePrompt(stdinReader io.Reader) ([]string, error) {
+	switch c.Type {
+	case CustomString:
+		return []string{}, errInvalidPromptType
+	case CustomBlock:
+		return []string{}, errInvalidPromptType
+	case CustomInt:
+		return []string{}, errInvalidPromptType
+	case CustomEnum:
+		return c.askMultiEnum(stdinReader)
+	}
+
+	return []string{}, errInvalidPromptType
 }
 
 func (c Custom) Validate(input string) error {

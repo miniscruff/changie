@@ -699,9 +699,9 @@ func TestGetAllChangesWithProject(t *testing.T) {
 	}
 	then.WithTempDirConfig(t, cfg)
 
-	writeChangeFile(t, cfg, Change{Kind: "added", Body: "first", Project: "web_hook_sender"})
-	writeChangeFile(t, cfg, Change{Kind: "added", Body: "second", Project: "web_hook_sender"})
-	writeChangeFile(t, cfg, Change{Kind: "removed", Body: "ignored", Project: "skipped"})
+	writeChangeFile(t, cfg, Change{Kind: "added", Body: "first", Projects: []string{"web_hook_sender"}})
+	writeChangeFile(t, cfg, Change{Kind: "added", Body: "second", Projects: []string{"web_hook_sender"}})
+	writeChangeFile(t, cfg, Change{Kind: "removed", Body: "ignored", Projects: []string{"skipped"}})
 
 	changes, err := GetChanges(cfg, nil, os.ReadDir, os.ReadFile, "web_hook_sender")
 	then.Nil(t, err)
