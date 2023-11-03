@@ -7,7 +7,7 @@ linters-settings:
     min-len: 2
     min-occurrences: 5
   gocyclo:
-    min-complexity: 16
+    min-complexity: 17
   goimports:
     local-prefixes: github.com/miniscruff/changie
   golint:

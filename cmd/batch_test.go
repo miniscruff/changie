@@ -920,7 +920,7 @@ func TestBatchUnreleasedFailsIfUpdateChangeFileFails(t *testing.T) {
 	batch := withDefaultBatch()
 	batch.config = cfg
 
-	mockErr := errors.New("bad mock remove")
+	mockErr := errors.New("bad mock create")
 	batch.Create = func(p string) (*os.File, error) {
 		return nil, mockErr
 	}
