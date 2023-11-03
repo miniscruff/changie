@@ -229,7 +229,7 @@ func TestAskPromptsForBodyWithProjectErrBadProject(t *testing.T) {
 		},
 	}
 	c := &Change{
-		Projects: []string{},
+		Projects: []string{"missing"},
 	}
 	err := c.AskPrompts(PromptContext{
 		Config:      config,

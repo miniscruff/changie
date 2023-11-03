@@ -57,6 +57,30 @@ func TestErrorInvalidPromptType(t *testing.T) {
 	then.Err(t, errInvalidPromptType, err)
 }
 
+func TestErrorCustomStringMultiChoosePrompt(t *testing.T) {
+	custom := Custom{Type: CustomString}
+	_, err := custom.AskMultiChoosePrompt(os.Stdin)
+	then.Err(t, errInvalidPromptType, err)
+}
+
+func TestErrorCustomBlockMultiChoosePrompt(t *testing.T) {
+	custom := Custom{Type: CustomBlock}
+	_, err := custom.AskMultiChoosePrompt(os.Stdin)
+	then.Err(t, errInvalidPromptType, err)
+}
+
+func TestErrorCustomIntMultiChoosePrompt(t *testing.T) {
+	custom := Custom{Type: CustomInt}
+	_, err := custom.AskMultiChoosePrompt(os.Stdin)
+	then.Err(t, errInvalidPromptType, err)
+}
+
+func TestErrorInvalidMultiChoosePromptType(t *testing.T) {
+	custom := Custom{Type: "invalid-type"}
+	_, err := custom.AskMultiChoosePrompt(os.Stdin)
+	then.Err(t, errInvalidPromptType, err)
+}
+
 func TestErrorInvalidPromptTypeWhenValidating(t *testing.T) {
 	custom := Custom{Type: "invalid-type"}
 	err := custom.Validate("ignored")
