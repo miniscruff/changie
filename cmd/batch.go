@@ -502,14 +502,7 @@ func (b *Batch) ClearUnreleased(changes []core.Change, otherFiles ...string) err
 	}
 
 	for _, ch := range changes {
-		if len(ch.Projects) > 1 {
-			err = b.ClearProjectFromChangeFile(ch)
-			if err != nil {
-				return err
-			}
-		} else {
-			filesToMove = append(filesToMove, ch.Filename)
-		}
+		filesToMove = append(filesToMove, ch.Filename)
 	}
 
 	for _, f := range filesToMove {
@@ -542,17 +535,4 @@ func (b *Batch) ClearUnreleased(changes []core.Change, otherFiles ...string) err
 	}
 
 	return nil
-}
-
-func (b *Batch) ClearProjectFromChangeFile(change core.Change) error {
-	change = change.RemoveProjectFromChange(b.Project)
-
-	chFile, err := b.Create(change.Filename)
-	if err != nil {
-		return err
-	}
-
-	_, err = change.WriteTo(chFile)
-
-	return err
 }

@@ -246,7 +246,7 @@ type Config struct {
 	// "{{.ChangesDir}}/{{.UnreleasedDir}}/{{.FragmentFileFormat}}.yaml"
 	// example: yaml
 	// fragmentFileFormat: "{{.Kind}}-{{.Custom.Issue}}"
-	FragmentFileFormat string `yaml:"fragmentFileFormat,omitempty" default:"{{.Component}}-{{.Kind}}-{{.Time.Format \"20060102-150405\"}}" templateType:"Change"`
+	FragmentFileFormat string `yaml:"fragmentFileFormat,omitempty" default:"{{.Project}}-{{.Component}}-{{.Kind}}-{{.Time.Format \"20060102-150405\"}}" templateType:"Change"`
 	// Template used to generate version headers.
 	VersionFormat string `yaml:"versionFormat,omitempty" templateType:"BatchData"`
 	// Template used to generate component headers.
@@ -471,6 +471,10 @@ func LoadConfig(rf shared.ReadFiler) (*Config, error) {
 
 	// load backward incompatible configs
 	if c.FragmentFileFormat == "" {
+		if len(c.Projects) > 0 {
+			c.FragmentFileFormat = "{{.Project}}-"
+		}
+
 		if len(c.Components) > 0 {
 			c.FragmentFileFormat = "{{.Component}}-"
 		}
