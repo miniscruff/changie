@@ -7,7 +7,8 @@ summary: Using Changie for NodeJS projects
 
 During the release process it is likely you want to update your package json to
 use the new version.
-This can be handled automatically by Changie using the [replacements configuration](/config/replacements/).
+This can be handled automatically by Changie using the [replacements configuration](/config#config-replacements), which occur when you run `changie merge`.
+
 Below is how you could configure it for NodeJS.
 
 ```yaml
