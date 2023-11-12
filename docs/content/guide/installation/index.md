@@ -72,6 +72,7 @@ docker run \
 ```
 
 ## NodeJS
+Changie is available as an [NPM package](https://www.npmjs.com/package/changie).
 
 * To add as a dependency of your project: `npm i -D changie`
 * To install globally: `npm i -g changie`

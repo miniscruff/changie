@@ -59,6 +59,26 @@ func MapEquals[M1, M2 ~map[K]V, K, V comparable](t *testing.T, expected M1, actu
 	}
 }
 
+// SliceLen compares the length of a slice to a value.
+func SliceLen[T any](t *testing.T, expected int, actual []T) {
+	t.Helper()
+
+	if expected != len(actual) {
+		t.Logf("expected does not equal len actual: %d != %v", expected, len(actual))
+		t.FailNow()
+	}
+}
+
+// MapLen compares the count of key values in a map.
+func MapLen[M1 ~map[K]V, K comparable, V any](t *testing.T, expected int, actual M1) {
+	t.Helper()
+
+	if expected != len(actual) {
+		t.Logf("expected does not equal len actual: %d != %v", expected, len(actual))
+		t.FailNow()
+	}
+}
+
 // SliceEquals compares two slices for same length and same values at each index.
 func SliceEquals[T comparable](t *testing.T, expected, actual []T) {
 	t.Helper()
