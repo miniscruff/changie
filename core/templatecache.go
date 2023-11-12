@@ -186,8 +186,8 @@ func (tc *TemplateCache) Times(changes []Change) ([]time.Time, error) {
 // If a key is missing from a change, it will be an empty string.
 // example: yaml
 // format: "{{ customs .Changes \"Author\" }} authors"
-func (tc *TemplateCache) Customs(changes []Change, key string) ([]any, error) {
-	values := make([]any, len(changes))
+func (tc *TemplateCache) Customs(changes []Change, key string) ([]string, error) {
+	values := make([]string, len(changes))
 
 	for i, c := range changes {
 		values[i] = c.Custom[key]
