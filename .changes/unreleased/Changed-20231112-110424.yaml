@@ -1,6 +1,0 @@
-kind: Changed
-body: Project prompt is now a multichoose prompt to allow one change to affect multiple
-  projects without repeating the prompts
-time: 2023-11-12T11:04:24.749160966-08:00
-custom:
-  Issue: "571"
