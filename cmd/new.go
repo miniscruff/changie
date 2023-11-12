@@ -62,9 +62,9 @@ Each version is merged together for the overall project changelog.`,
 	)
 	cmd.Flags().StringSliceVarP(
 		&n.Projects,
-		"project", "j",
+		"projects", "j",
 		[]string{},
-		"(Preview) Set the change project key without a prompt",
+		"(Preview) Set the change projects without a prompt",
 	)
 	cmd.Flags().StringVarP(
 		&n.Component,

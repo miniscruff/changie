@@ -1,0 +1,6 @@
+kind: Changed
+body: Project command line argument for new is now a list of projects and uses --projects
+  instead of --project
+time: 2023-11-12T11:31:06.748166235-08:00
+custom:
+  Issue: "571"
