@@ -17,7 +17,7 @@ type New struct {
 
 	// cli args
 	DryRun     bool
-	Project    string
+	Projects   []string
 	Component  string
 	Kind       string
 	Body       string
@@ -60,11 +60,11 @@ Each version is merged together for the overall project changelog.`,
 		false,
 		"Print new fragment instead of writing to disk",
 	)
-	cmd.Flags().StringVarP(
-		&n.Project,
-		"project", "j",
-		"",
-		"(Preview) Set the change project key without a prompt",
+	cmd.Flags().StringSliceVarP(
+		&n.Projects,
+		"projects", "j",
+		[]string{},
+		"(Preview) Set the change projects without a prompt",
 	)
 	cmd.Flags().StringVarP(
 		&n.Component,
@@ -113,57 +113,56 @@ func (n *New) Run(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	change := core.Change{
-		Project:   n.Project,
-		Component: n.Component,
-		Kind:      n.Kind,
-		Body:      n.Body,
-		Custom:    customValues,
-		Env:       config.EnvVars(),
-	}
-
-	err = change.AskPrompts(core.PromptContext{
-		Config:           config,
+	prompts := &core.Prompts{
 		StdinReader:      n.InOrStdin(),
 		BodyEditor:       n.BodyEditor,
+		Projects:         n.Projects,
+		Component:        n.Component,
+		Kind:             n.Kind,
+		Body:             n.Body,
+		TimeNow:          n.TimeNow,
+		Config:           config,
+		Customs:          customValues,
 		CreateFiler:      os.Create,
 		EditorCmdBuilder: core.BuildCommand,
-	})
+	}
+
+	changes, err := prompts.BuildChanges()
 	if err != nil {
 		return err
 	}
 
-	change.Time = n.TimeNow()
+	for _, change := range changes {
+		var writer io.Writer
 
-	var writer io.Writer
+		if n.DryRun {
+			writer = n.OutOrStdout()
+		} else {
+			var fragmentWriter strings.Builder
+			fileErr := n.TemplateCache.Execute(config.FragmentFileFormat, &fragmentWriter, change)
+			if fileErr != nil {
+				return fileErr
+			}
+			fragmentWriter.WriteString(".yaml")
+			outputFilename := fragmentWriter.String()
 
-	if n.DryRun {
-		writer = n.OutOrStdout()
-	} else {
-		var fragmentWriter strings.Builder
-		fileErr := n.TemplateCache.Execute(config.FragmentFileFormat, &fragmentWriter, change)
-		if fileErr != nil {
-			return fileErr
+			// Sanatize the filename to remove invalid characters such as slashes
+			replacer := strings.NewReplacer("/", "-", "\\", "-")
+			outputFilename = replacer.Replace(outputFilename)
+
+			outputPath := filepath.Join(config.ChangesDir, config.UnreleasedDir, outputFilename)
+			newFile, fileErr := n.CreateFile(outputPath)
+			if fileErr != nil {
+				return fileErr
+			}
+
+			defer newFile.Close()
+
+			writer = newFile
 		}
-		fragmentWriter.WriteString(".yaml")
-		outputFilename := fragmentWriter.String()
 
-		// Sanatize the filename to remove invalid characters such as slashes
-		replacer := strings.NewReplacer("/", "-", "\\", "-")
-		outputFilename = replacer.Replace(outputFilename)
-
-		outputPath := filepath.Join(config.ChangesDir, config.UnreleasedDir, outputFilename)
-		newFile, fileErr := n.CreateFile(outputPath)
-		if fileErr != nil {
-			return fileErr
-		}
-
-		defer newFile.Close()
-
-		writer = newFile
+		_, err = change.WriteTo(writer)
 	}
-
-	_, err = change.WriteTo(writer)
 
 	return err
 }

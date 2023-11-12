@@ -175,6 +175,36 @@ func TestLoadConfigFromEnvVar(t *testing.T) {
 	then.Equals(t, "header.rst", config.HeaderPath)
 }
 
+func TestDefaultFragmentTemplateWithProjects(t *testing.T) {
+	mockRf := func(filepath string) ([]byte, error) {
+		if filepath == ConfigPaths[0] {
+			return []byte(`kinds:
+- label: B
+- label: C
+- label: E
+components:
+- A
+- D
+- G
+projects:
+  - label: User Feeds
+    key: user_feeds
+    changelog: users/feeds/CHANGELOG.md
+  - label: User Management
+    key: user_management
+    changelog: users/management/CHANGELOG.md
+`), nil
+		}
+
+		return nil, os.ErrNotExist
+	}
+	defaultFragmentFormat := fmt.Sprintf("{{.Project}}-{{.Component}}-{{.Kind}}-{{.Time.Format \"%v\"}}", timeFormat)
+
+	config, err := LoadConfig(mockRf)
+	then.Nil(t, err)
+	then.Equals(t, defaultFragmentFormat, config.FragmentFileFormat)
+}
+
 func TestDefaultFragmentTemplateWithKindsAndComponents(t *testing.T) {
 	mockRf := func(filepath string) ([]byte, error) {
 		if filepath == ConfigPaths[0] {
