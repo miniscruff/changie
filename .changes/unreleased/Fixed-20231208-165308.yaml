@@ -1,6 +1,0 @@
-kind: Fixed
-body: Running changie through NPM did not redirect the input stream, rendering 'changie
-  new' inoperable
-time: 2023-12-08T16:53:08.247254+11:00
-custom:
-  Issue: "582"
