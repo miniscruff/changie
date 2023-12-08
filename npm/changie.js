@@ -21,9 +21,7 @@ const runChangie = (filename) => {
   const executable = path.join(DIST, filename + ext);
   const stat = fs.statSync(executable)
   if (stat.isFile()) {
-    const child = spawn(executable, process.argv.slice(2));
-    child.stdout.pipe(process.stdout);
-    child.stderr.pipe(process.stderr);
+    const child = spawn(executable, process.argv.slice(2), { stdio: 'inherit' });
     child.on('close', (code) => {
       process.exit(code);
     });
