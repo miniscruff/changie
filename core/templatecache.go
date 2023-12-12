@@ -19,6 +19,8 @@ type BatchData struct {
 	Time time.Time
 	// Version of the change, will include "v" prefix if used
 	Version string
+	// Version of the release without the "v" prefix if used
+	VersionNoPrefix string
 	// Previous released version
 	PreviousVersion string
 	// Major value of the version
