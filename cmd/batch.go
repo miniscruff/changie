@@ -202,6 +202,7 @@ func (b *Batch) getBatchData() (*core.BatchData, error) {
 	return &core.BatchData{
 		Time:            b.TimeNow(),
 		Version:         currentVersion.Original(),
+		VersionNoPrefix: currentVersion.String(),
 		PreviousVersion: previousVersion.Original(),
 		Major:           int(currentVersion.Major()),
 		Minor:           int(currentVersion.Minor()),

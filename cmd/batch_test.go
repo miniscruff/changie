@@ -240,6 +240,7 @@ func TestBatchComplexVersion(t *testing.T) {
 * [{{.}}](https://github.com/{{.}})
 {{- end}}
 env: {{.Env.ENV_KEY}}`
+	cfg.VersionFormat = "## {{.VersionNoPrefix}}"
 
 	then.WithTempDirConfig(t, cfg)
 	t.Setenv("TEST_CHANGIE_ENV_KEY", "env value")
@@ -273,7 +274,7 @@ env: {{.Env.ENV_KEY}}`
 	err := batch.Run(batch.Command, []string{"v0.2.0"})
 	then.Nil(t, err)
 
-	verContents := `## v0.2.0-b1+hash
+	verContents := `## 0.2.0-b1+hash
 2 changes this release
 ### added
 * D by miniscruff

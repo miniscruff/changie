@@ -1,0 +1,5 @@
+kind: Added
+body: VersionNoFormat can be used in the VersionFormat configuration
+time: 2023-12-13T19:23:17.487472-05:00
+custom:
+  Issue: "586"
