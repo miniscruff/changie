@@ -1,4 +1,4 @@
-name: Generate release pull request
+name: Run changie from PR comment
 
 on:
   issue_comment:
@@ -8,7 +8,7 @@ jobs:
   # This job only runs for pull request comments
   pr-changie-work:
     name: PR comment
-    if: "${{ github.event.issue.pull_request && startsWith(github.event.issue_comment.comment.body, '/changie')}}"
+    if: "${{ github.event.issue.pull_request}}" # && startsWith(github.event.issue_comment.comment.body, '/changie')}}"
     runs-on: ubuntu-latest
     steps:
     - name: Setup Go
@@ -23,6 +23,8 @@ jobs:
       env:
         COMMENT: "${{ github.event.issue_comment.comment.body }}"
       run: |
+        echo $COMMENT
+        echo "${{ github.event.issue_comment.comment.body }}"
         export CMD=$(echo $COMMENT | cut -c10-)
         go run main.go ${CMD}
         echo $CMD
