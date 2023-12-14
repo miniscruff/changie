@@ -49,7 +49,7 @@ being easy to use for developers and your release team.`,
 	cmd.AddCommand(NewInit(os.MkdirAll, os.WriteFile).Command)
 	cmd.AddCommand(NewLatest(os.ReadFile, os.ReadDir).Command)
 	cmd.AddCommand(merge.Command)
-	cmd.AddCommand(NewNew(os.ReadFile, os.Create, time.Now, templateCache).Command)
+	cmd.AddCommand(NewNew(os.ReadFile, os.Create, time.Now, os.MkdirAll, templateCache).Command)
 	cmd.AddCommand(NewNext(os.ReadDir, os.ReadFile).Command)
 
 	return cmd

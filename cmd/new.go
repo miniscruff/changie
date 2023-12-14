@@ -28,6 +28,7 @@ type New struct {
 	ReadFile      shared.ReadFiler
 	CreateFile    shared.CreateFiler
 	TimeNow       shared.TimeNow
+	MkdirAll      shared.MkdirAller
 	TemplateCache *core.TemplateCache
 }
 
@@ -35,12 +36,14 @@ func NewNew(
 	readFile shared.ReadFiler,
 	createFile shared.CreateFiler,
 	timeNow shared.TimeNow,
+	mkdirAll shared.MkdirAller,
 	templateCache *core.TemplateCache,
 ) *New {
 	n := &New{
 		ReadFile:      readFile,
 		CreateFile:    createFile,
 		TimeNow:       timeNow,
+		MkdirAll:      mkdirAll,
 		TemplateCache: templateCache,
 	}
 
@@ -151,6 +154,11 @@ func (n *New) Run(cmd *cobra.Command, args []string) error {
 			outputFilename = replacer.Replace(outputFilename)
 
 			outputPath := filepath.Join(config.ChangesDir, config.UnreleasedDir, outputFilename)
+			fileErr = n.MkdirAll(filepath.Dir(outputPath), core.CreateDirMode)
+			if fileErr != nil {
+				return fileErr
+			}
+
 			newFile, fileErr := n.CreateFile(outputPath)
 			if fileErr != nil {
 				return fileErr

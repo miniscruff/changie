@@ -57,6 +57,7 @@ func TestNewWithEnvVars(t *testing.T) {
 		os.ReadFile,
 		os.Create,
 		newMockTime,
+		os.MkdirAll,
 		core.NewTemplateCache(),
 	)
 	cmd.SetIn(reader)
@@ -97,11 +98,12 @@ func TestNewCreatesNewFileAfterPrompts(t *testing.T) {
 		os.ReadFile,
 		os.Create,
 		newMockTime,
+		os.MkdirAll,
 		core.NewTemplateCache(),
 	)
 	cmd.SetIn(reader)
 
-	then.Nil(t, os.MkdirAll(filepath.Join(cfg.ChangesDir, cfg.UnreleasedDir), 0755))
+	// Do not create the unreleased dir, let new do it for us.
 
 	err := cmd.Run(cmd.Command, nil)
 	then.Nil(t, err)
@@ -121,6 +123,35 @@ func TestNewCreatesNewFileAfterPrompts(t *testing.T) {
 	then.FileContents(t, changeContent, futurePath, fileInfos[0].Name())
 }
 
+func TestNewErrorOnBadMkdirAll(t *testing.T) {
+	cfg := newTestConfig()
+	then.WithTempDirConfig(t, cfg)
+	reader, writer := then.WithReadWritePipe(t)
+
+	then.DelayWrite(
+		t, writer,
+		[]byte{106, 13},
+		[]byte("a message"),
+		[]byte{13},
+	)
+
+	mockErr := errors.New("bad mkdir all")
+
+	cmd := NewNew(
+		os.ReadFile,
+		os.Create,
+		newMockTime,
+		func(path string, perm os.FileMode) error {
+			return mockErr
+		},
+		core.NewTemplateCache(),
+	)
+	cmd.SetIn(reader)
+
+	err := cmd.Run(cmd.Command, nil)
+	then.Err(t, mockErr, err)
+}
+
 func TestErrorNewBadCustomValues(t *testing.T) {
 	cfg := newTestConfig()
 	then.WithTempDirConfig(t, cfg)
@@ -129,6 +160,7 @@ func TestErrorNewBadCustomValues(t *testing.T) {
 		os.ReadFile,
 		os.Create,
 		newMockTime,
+		os.MkdirAll,
 		core.NewTemplateCache(),
 	)
 	cmd.Custom = []string{"bad-format"}
@@ -144,6 +176,7 @@ func TestErrorOnBadConfig(t *testing.T) {
 		os.ReadFile,
 		os.Create,
 		newMockTime,
+		os.MkdirAll,
 		core.NewTemplateCache(),
 	)
 
@@ -160,6 +193,7 @@ func TestErrorNewOnBadPrompts(t *testing.T) {
 		os.ReadFile,
 		os.Create,
 		newMockTime,
+		os.MkdirAll,
 		core.NewTemplateCache(),
 	)
 	cmd.SetIn(reader)
@@ -185,6 +219,7 @@ func TestErrorNewFragmentTemplate(t *testing.T) {
 		os.ReadFile,
 		os.Create,
 		newMockTime,
+		os.MkdirAll,
 		core.NewTemplateCache(),
 	)
 	cmd.SetIn(reader)
@@ -211,6 +246,7 @@ func TestNewOutputsToCmdOutWhenDry(t *testing.T) {
 		os.ReadFile,
 		os.Create,
 		newMockTime,
+		os.MkdirAll,
 		core.NewTemplateCache(),
 	)
 	cmd.DryRun = true
@@ -248,6 +284,7 @@ func TestErrorNewBadBody(t *testing.T) {
 		os.ReadFile,
 		badCreate,
 		newMockTime,
+		os.MkdirAll,
 		core.NewTemplateCache(),
 	)
 	cmd.SetIn(reader)
@@ -281,6 +318,7 @@ func TestNewFragmentTemplateSlash(t *testing.T) {
 		os.ReadFile,
 		os.Create,
 		newMockTime,
+		os.MkdirAll,
 		core.NewTemplateCache(),
 	)
 	cmd.SetIn(reader)
