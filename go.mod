@@ -5,7 +5,7 @@ go 1.21
 require (
 	github.com/Masterminds/semver/v3 v3.2.1
 	github.com/Masterminds/sprig/v3 v3.2.3
-	github.com/charmbracelet/bubbletea v0.24.2
+	github.com/charmbracelet/bubbletea v0.25.0
 	github.com/cqroot/prompt v0.9.3
 	github.com/icholy/replace v0.6.0
 	github.com/kballard/go-shellquote v0.0.0-20180428030007-95032a82bc51
