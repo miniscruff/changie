@@ -80,7 +80,7 @@ func (m *Merge) Run(cmd *cobra.Command, args []string) error {
 	// If we have projects, merge all of them.
 	if len(cfg.Projects) > 0 {
 		for _, pc := range cfg.Projects {
-			err = m.mergeProject(cfg, pc.Key, pc.ChangelogPath)
+			err = m.mergeProject(cfg, pc.Key, pc.ChangelogPath, pc.Replacements)
 			if err != nil {
 				return err
 			}
@@ -89,10 +89,14 @@ func (m *Merge) Run(cmd *cobra.Command, args []string) error {
 		return nil
 	}
 
-	return m.mergeProject(cfg, "", cfg.ChangelogPath)
+	return m.mergeProject(cfg, "", cfg.ChangelogPath, cfg.Replacements)
 }
 
-func (m *Merge) mergeProject(cfg *core.Config, project, changelogPath string) error {
+func (m *Merge) mergeProject(
+	cfg *core.Config,
+	project, changelogPath string,
+	replacements []core.Replacement,
+) error {
 	var writer io.Writer
 	if m.DryRun {
 		writer = m.Command.OutOrStdout()
@@ -188,7 +192,7 @@ func (m *Merge) mergeProject(cfg *core.Config, project, changelogPath string) er
 		Metadata:        version.Metadata(),
 	}
 
-	for _, rep := range cfg.Replacements {
+	for _, rep := range replacements {
 		err = rep.Execute(m.ReadFile, m.WriteFile, replaceData)
 		if err != nil {
 			return err
