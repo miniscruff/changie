@@ -175,10 +175,18 @@ type ProjectConfig struct {
 	// example: yaml
 	// key: frontend
 	Key string `yaml:"key"`
-	//ChangelogPath is the path to the changelog for this project.
+	// ChangelogPath is the path to the changelog for this project.
 	// example: yaml
 	// changelog: src/frontend/CHANGELOG.md
 	ChangelogPath string `yaml:"changelog"`
+	// Replacements to run when merging a changelog for our project.
+	// example: yaml
+	// # nodejs package.json replacement
+	// replacements:
+	// - path: ui/package.json
+	//   find: '  "version": ".*",'
+	//   replace: '  "version": "{{.VersionNoPrefix}}",'
+	Replacements []Replacement `yaml:"replacements"`
 }
 
 // Config handles configuration for a project.

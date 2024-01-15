@@ -1,0 +1,5 @@
+kind: Added
+body: Replacements can now be configured per project in a monorepo setup
+time: 2024-01-15T13:06:35.399119346-08:00
+custom:
+  Issue: "591"
