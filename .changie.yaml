@@ -14,7 +14,7 @@ kinds:
   - label: Deprecated
     auto: minor
   - label: Removed
-    auto: major
+    auto: minor # temporarily consider removed a minor change
   - label: Fixed
     auto: patch
   - label: Security
