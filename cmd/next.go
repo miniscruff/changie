@@ -64,7 +64,7 @@ Echo the next release version number to be used by CI tools or other commands li
 		&next.Project,
 		"project", "j",
 		"",
-		"(Preview) Specify which project we are interested in",
+		"Specify which project we are interested in",
 	)
 
 	next.Command = cmd

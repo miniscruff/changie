@@ -67,7 +67,7 @@ Each version is merged together for the overall project changelog.`,
 		&n.Projects,
 		"projects", "j",
 		[]string{},
-		"(Preview) Set the change projects without a prompt",
+		"Set the change projects without a prompt",
 	)
 	cmd.Flags().StringVarP(
 		&n.Component,

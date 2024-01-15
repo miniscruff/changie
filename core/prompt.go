@@ -164,8 +164,6 @@ func (p *Prompts) projects() error {
 	}
 
 	if len(p.Projects) == 0 {
-		fmt.Println(ProjectsWarning)
-
 		var err error
 
 		projs, err := prompt.New().Ask("Projects").
