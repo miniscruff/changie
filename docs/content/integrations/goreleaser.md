@@ -12,7 +12,7 @@ First make sure GoReleaser will even generate any changelog by setting skip to f
 
 ```yaml
 changelog:
-  skip: false
+  disable: false
 ```
 
 By default GoReleaser expects to release the current tag but we can let GitHub
