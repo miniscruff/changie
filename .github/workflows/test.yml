@@ -53,5 +53,7 @@ jobs:
     - name: Coverage
       uses: codecov/codecov-action@v4
       with:
+        token: ${{ secrets.CODECOV_TOKEN }}
+        slug: miniscruff/changie
         file: ./c.out
         fail_ci_if_error: true
