@@ -44,6 +44,17 @@ jobs:
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         WINGET_PAT: ${{ secrets.WINGET_PAT }}
+
+    - uses: actions/setup-python@v5
+      with:
+        python-version: 3.x
+    - run: echo "cache_id=$(date --utc '+%V')" >> $GITHUB_ENV 
+    - uses: actions/cache@v4
+      with:
+        key: mkdocs-material-${{ env.cache_id }}
+        path: .cache
+        restore-keys: |
+          mkdocs-material-
       
     - name: Publish to NPM
       run: |
@@ -52,21 +63,15 @@ jobs:
       env:
         NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
-    - name: Setup Hugo
-      uses: peaceiris/actions-hugo@v2.6.0
-      with:
-        hugo-version: 'latest'
-        extended: true
-
     - name: Build docs
       run: |
         go run main.go gen
-        awk 'NR > 1' CHANGELOG.md >> docs/content/guide/changelog/index.md
-        hugo --minify -s docs -b https://changie.dev/
+        pip install -r requirements.txt
+        mkdocs build
 
     - name: Deploy docs
       uses: peaceiris/actions-gh-pages@v3.9.3
       with:
         github_token: ${{ secrets.GITHUB_TOKEN }}
-        publish_dir: ./docs/public
+        publish_dir: ./site
         cname: changie.dev

@@ -9,6 +9,7 @@ coverage.html
 
 # mkdocs files
 .cache/
+site/
 venv/
 
 # goreleaser builds
