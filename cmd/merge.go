@@ -105,6 +105,7 @@ func (m *Merge) mergeProject(
 		if changeErr != nil {
 			return changeErr
 		}
+
 		defer changeFile.Close()
 		writer = changeFile
 	}

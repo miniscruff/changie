@@ -373,6 +373,7 @@ func writeType(writer io.Writer, typeProps TypeProps) error {
 			buildSourceAnchorLink(anchor, typeProps.File, typeProps.Line),
 			typeProps.Doc,
 		)))
+
 		if err != nil {
 			return err
 		}

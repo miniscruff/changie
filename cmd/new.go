@@ -142,10 +142,12 @@ func (n *New) Run(cmd *cobra.Command, args []string) error {
 			writer = n.OutOrStdout()
 		} else {
 			var fragmentWriter strings.Builder
+
 			fileErr := n.TemplateCache.Execute(config.FragmentFileFormat, &fragmentWriter, change)
 			if fileErr != nil {
 				return fileErr
 			}
+
 			fragmentWriter.WriteString(".yaml")
 			outputFilename := fragmentWriter.String()
 
@@ -154,6 +156,7 @@ func (n *New) Run(cmd *cobra.Command, args []string) error {
 			outputFilename = replacer.Replace(outputFilename)
 
 			outputPath := filepath.Join(config.ChangesDir, config.UnreleasedDir, outputFilename)
+
 			fileErr = n.MkdirAll(filepath.Dir(outputPath), core.CreateDirMode)
 			if fileErr != nil {
 				return fileErr

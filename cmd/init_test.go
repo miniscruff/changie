@@ -103,9 +103,11 @@ func TestErrorInitBadWriteFiles(t *testing.T) {
 
 			mockWriteFile := func(path string, data []byte, perm os.FileMode) error {
 				t.Log(path, filepath.Join(tc.path...))
+
 				if path == filepath.Join(tc.path...) {
 					return mockError
 				}
+
 				return nil
 			}
 
