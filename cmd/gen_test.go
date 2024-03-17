@@ -545,4 +545,3 @@ func TestGenBuildField(t *testing.T) {
 		})
 	}
 }
-
