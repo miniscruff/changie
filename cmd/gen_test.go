@@ -1,14 +1,12 @@
 package cmd
 
 import (
-	"fmt"
 	"go/ast"
 	godoc "go/doc"
 	"go/token"
 	"os"
 	"path/filepath"
 	"reflect"
-	"strings"
 	"testing"
 
 	"github.com/miniscruff/changie/then"
@@ -16,16 +14,13 @@ import (
 
 func TestFilePrependerCreatesFrontmatter(t *testing.T) {
 	prepender := filePrepender("my_command.go")
-	then.Contains(t, `date:`, prepender)
 	then.Contains(t, `title: "my command"`, prepender)
-	then.Contains(t, `slug: my_command`, prepender)
-	then.Contains(t, `url: /cli/my_command/`, prepender)
-	then.Contains(t, `summary:`, prepender)
+	then.Contains(t, `description:`, prepender)
 }
 
 func TestLinkHandlerLinksToOtherPages(t *testing.T) {
-	link := linkHandler("my_command.go")
-	then.Equals(t, "/cli/my_command/", link)
+	link := linkHandler("My_Command.go")
+	then.Equals(t, "my_command.md", link)
 }
 
 func TestCanGetFiles(t *testing.T) {
@@ -40,9 +35,8 @@ func TestCanGetFiles(t *testing.T) {
 		then.Nil(t, err)
 	})
 
-	contentPath := filepath.Join("docs", "content")
-	cliDocsPath := filepath.Join(contentPath, "cli")
-	configDocsPath := filepath.Join(contentPath, "config", "_index.md")
+	cliDocsPath := filepath.Join("docs", "cli")
+	configDocsPath := filepath.Join("docs", "config", "index.md")
 
 	// ignore any bad error trying to remove the file, it may not exist and that is ok
 	_ = os.Remove(configDocsPath)
@@ -365,7 +359,7 @@ doSomething: '{{.Body}}'
 				Line:           1,
 				Doc:            "Some func description\n",
 				ExampleLang:    "yaml",
-				ExampleContent: "doSomething: '{{.Body}}'\n",
+				ExampleContent: "doSomething: '{{.Body}}'",
 				TemplateType:   "",
 				IsCustomType:   false,
 				Required:       false,
@@ -446,7 +440,7 @@ func TestGenBuildField(t *testing.T) {
 				Line:           1,
 				Doc:            "This is a slice with an example\n",
 				ExampleLang:    "yaml",
-				ExampleContent: "mySliceVar: [1, 2, 3]\n",
+				ExampleContent: "mySliceVar: [1, 2, 3]",
 				TemplateType:   "",
 				IsCustomType:   false,
 				Required:       true,
@@ -552,193 +546,3 @@ func TestGenBuildField(t *testing.T) {
 	}
 }
 
-func TestGenWriteTypes(t *testing.T) {
-	for _, tc := range []struct {
-		name      string
-		typeProps TypeProps
-		output    string
-	}{
-		{
-			name: "BasicTypeWithField",
-			typeProps: TypeProps{
-				Name: "Minimum",
-				File: "core/mini.go",
-				Line: 22,
-				Doc:  "type description",
-				Fields: []FieldProps{{
-					Name: "MyField",
-					Key:  "myField",
-					File: "core/field.go",
-					Line: 13,
-					Doc:  "field description",
-				}},
-			},
-			output: `## Minimum {{< source name="Minimum" file="core/mini.go" line="22" >}} {#minimum-type}
-type description
-### myField {{< source name="MyField" file="core/field.go" line="13" >}} {#minimum-myfield}
-
-
-field description
-
----
-`},
-		{
-			name: "SkipsConfig",
-			typeProps: TypeProps{
-				Name: "Config",
-				Doc:  "skipped",
-			},
-			output: `
----
-`},
-		{
-			name: "TypeWithExample",
-			typeProps: TypeProps{
-				Name:           "Minimum",
-				File:           "core/config.go",
-				Line:           15,
-				Doc:            "type description",
-				ExampleLang:    "yaml",
-				ExampleContent: "type: '{{.Thing}}'",
-			},
-			output: `## Minimum {{< source name="Minimum" file="core/config.go" line="15" >}} {#minimum-type}
-type description
-
-{{< expand "Example" "yaml" >}}
-type: '{{.Thing}}'
-{{< /expand >}}
-
----
-`},
-	} {
-		t.Run(tc.name, func(t *testing.T) {
-			w := strings.Builder{}
-
-			err := writeType(&w, tc.typeProps)
-			then.Nil(t, err)
-			then.Equals(t, tc.output, w.String())
-		})
-	}
-}
-
-func TestGenWriteField(t *testing.T) {
-	for _, tc := range []struct {
-		name   string
-		field  FieldProps
-		output string
-	}{
-		{
-			name: "BareMinimum",
-			field: FieldProps{
-				Name: "Minimum",
-				Key:  "minimum",
-				File: "mini.go",
-				Line: 29,
-				Doc:  "field description",
-			},
-			output: `### minimum {{< source name="Minimum" file="mini.go" line="29" >}} {#parent-minimum}
-
-
-field description
-`},
-		{
-			name: "CustomTypeAndRequired",
-			field: FieldProps{
-				Name:         "Minimum",
-				Key:          "minimum",
-				File:         "mini.go",
-				Line:         28,
-				Doc:          "field description",
-				TypeName:     "Animal",
-				Required:     true,
-				IsCustomType: true,
-			},
-			output: `### minimum {{< source name="Minimum" file="mini.go" line="28" >}} {#parent-minimum}
-type: [Animal](#animal-type) | required
-
-field description
-`},
-		{
-			name: "WithTypeNameOptionalAndSlice",
-			field: FieldProps{
-				Name:     "Minimum",
-				Key:      "minimum",
-				TypeName: "string",
-				File:     "mini.go",
-				Line:     27,
-				Required: false,
-				Slice:    true,
-				Doc:      "field description",
-			},
-			output: fmt.Sprintf(`### minimum {{< source name="Minimum" file="mini.go" line="27" >}} {#parent-minimum}
-type: %v | optional
-
-field description
-`, "`[]string`")},
-		{
-			name: "MapKeyAndValue",
-			field: FieldProps{
-				Name:             "Minimum",
-				Key:              "minimum",
-				File:             "mini.go",
-				Line:             26,
-				Doc:              "field description",
-				MapKeyTypeName:   "string",
-				MapValueTypeName: "string",
-			},
-			output: fmt.Sprintf(`### minimum {{< source name="Minimum" file="mini.go" line="26" >}} {#parent-minimum}
-type: map [ %v ] %v | optional
-
-field description
-`, "`string`", "`string`")},
-		{
-			name: "WithTemplateType",
-			field: FieldProps{
-				Name:         "Minimum",
-				Key:          "minimum",
-				Doc:          "field description",
-				File:         "mini.go",
-				Line:         25,
-				TypeName:     "string",
-				IsCustomType: false,
-				Required:     false,
-				TemplateType: "Kitchen",
-			},
-			output: fmt.Sprintf(`### minimum {{< source name="Minimum" file="mini.go" line="25" >}} {#parent-minimum}
-type: %v | optional | template type: [Kitchen](#kitchen-type)
-
-field description
-`, "`string`")},
-		{
-			name: "WithExample",
-			field: FieldProps{
-				Name:           "Minimum",
-				Key:            "minimum",
-				File:           "mini.go",
-				Line:           24,
-				Doc:            "field description",
-				ExampleLang:    "yaml",
-				ExampleContent: "format: '{{.Body}}'",
-			},
-			output: `### minimum {{< source name="Minimum" file="mini.go" line="24" >}} {#parent-minimum}
-
-
-field description
-{{< expand "Example" "yaml" >}}
-format: '{{.Body}}'
-{{< /expand >}}
-
-`},
-	} {
-		t.Run(tc.name, func(t *testing.T) {
-			w := strings.Builder{}
-			parent := TypeProps{
-				Name: "Parent",
-			}
-
-			err := writeField(&w, parent, tc.field)
-			then.Nil(t, err)
-			then.Equals(t, tc.output, w.String())
-		})
-	}
-}
