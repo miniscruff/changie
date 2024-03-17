@@ -13,18 +13,14 @@ import (
 	"reflect"
 	"sort"
 	"strings"
-	"time"
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/cobra/doc"
 )
 
 const fmTemplate = `---
-date: %s
 title: "%s"
-slug: %s
-url: %s
-summary: "Help for using the '%s' command"
+description: "Help for using the '%s' command"
 ---
 `
 
@@ -79,7 +75,7 @@ func NewGen() *Gen {
 }
 
 func (g *Gen) Run(cmd *cobra.Command, args []string) error {
-	file, err := os.Create(filepath.Join("docs", "content", "config", "_index.md"))
+	file, err := os.Create(filepath.Join("docs", "config", "index.md"))
 	if err != nil {
 		return fmt.Errorf("unable to create or open config index: %w", err)
 	}
@@ -88,25 +84,26 @@ func (g *Gen) Run(cmd *cobra.Command, args []string) error {
 
 	fset, corePackages := getCorePackages("core")
 
-	writeConfigFrontMatter(file, time.Now)
+	writeConfigFrontMatter(file)
 	genConfigDocs(fset, file, corePackages)
 
-	return doc.GenMarkdownTreeCustom(cmd.Root(), "docs/content/cli", filePrepender, linkHandler)
+	// This auto generates a h4 which is added to our table of contents.
+	cmd.Root().DisableAutoGenTag = true
+
+	return doc.GenMarkdownTreeCustom(cmd.Root(), "docs/cli", filePrepender, linkHandler)
 }
 
 func filePrepender(filename string) string {
-	now := time.Now().Format(time.RFC3339)
 	name := filepath.Base(filename)
 	base := strings.TrimSuffix(name, path.Ext(name))
 	title := strings.ReplaceAll(base, "_", " ")
-	url := "/cli/" + strings.ToLower(base) + "/"
 
-	return fmt.Sprintf(fmTemplate, now, title, base, url, title)
+	return fmt.Sprintf(fmTemplate, title, title)
 }
 
 func linkHandler(name string) string {
 	base := strings.TrimSuffix(name, path.Ext(name))
-	return "/cli/" + strings.ToLower(base) + "/"
+	return strings.ToLower(base) + ".md"
 }
 
 func genConfigDocs(fset *token.FileSet, writer io.Writer, corePackages CoreTypes) {
@@ -188,14 +185,13 @@ func getCorePackages(packageName string) (*token.FileSet, CoreTypes) {
 	return fset, corePackages
 }
 
-func writeConfigFrontMatter(writer io.Writer, nower func() time.Time) {
-	_, _ = writer.Write([]byte(fmt.Sprintf(`---
+func writeConfigFrontMatter(writer io.Writer) {
+	_, _ = writer.Write([]byte(`---
 title: "Configuration"
-date: %v
-layout: single
-singlePage: true
+hide:
+  - navigation
 ---
-`, nower())))
+`))
 }
 
 func buildType(fset *token.FileSet, docType *godoc.Type, coreTypes CoreTypes, queue *[]string) TypeProps {
@@ -225,7 +221,7 @@ func buildType(fset *token.FileSet, docType *godoc.Type, coreTypes CoreTypes, qu
 		typeProps.Doc = before
 		lang, content, _ := strings.Cut(strings.Trim(after, " "), "\n")
 		typeProps.ExampleLang = lang
-		typeProps.ExampleContent = content
+		typeProps.ExampleContent = formatExample(content)
 	}
 
 	for _, spec := range docType.Decl.Specs {
@@ -273,7 +269,7 @@ func buildMethod(fset *token.FileSet, method *godoc.Func) FieldProps {
 		props.Doc = before
 		lang, content, _ := strings.Cut(strings.Trim(after, " "), "\n")
 		props.ExampleLang = lang
-		props.ExampleContent = content
+		props.ExampleContent = formatExample(content)
 	}
 
 	return props
@@ -329,7 +325,7 @@ func buildField(fset *token.FileSet, field *ast.Field, coreTypes CoreTypes, queu
 		props.Doc = before
 		lang, content, _ := strings.Cut(strings.Trim(after, " "), "\n")
 		props.ExampleLang = lang
-		props.ExampleContent = content
+		props.ExampleContent = formatExample(content)
 	}
 
 	_, isCoreType := coreTypes[props.TypeName]
@@ -370,11 +366,11 @@ func parseFieldStructTags(field *ast.Field, props *FieldProps, queue *[]string) 
 func writeType(writer io.Writer, typeProps TypeProps) error {
 	// Do not write our root Config type header
 	if typeProps.Name != "Config" {
+		anchor := strings.ToLower(typeProps.Name) + "-type"
 		_, err := writer.Write([]byte(fmt.Sprintf(
-			"## %s %v {#%s-type}\n%s\n",
+			"## %s %v\n%s\n",
 			typeProps.Name,
-			buildSourceLink(typeProps.Name, typeProps.File, typeProps.Line),
-			strings.ToLower(typeProps.Name),
+			buildSourceAnchorLink(anchor, typeProps.File, typeProps.Line),
 			typeProps.Doc,
 		)))
 		if err != nil {
@@ -383,11 +379,8 @@ func writeType(writer io.Writer, typeProps TypeProps) error {
 	}
 
 	if typeProps.ExampleContent != "" {
-		_, _ = writer.Write([]byte(fmt.Sprintf(`
-{{< expand "Example" "%v" >}}
-%v
-{{< /expand >}}
-`,
+		_, _ = writer.Write([]byte(fmt.Sprintf(
+			"??? Example\n    ```%v\n    %v\n    ```\n",
 			typeProps.ExampleLang,
 			strings.Trim(typeProps.ExampleContent, "\n"),
 		)))
@@ -411,12 +404,12 @@ func writeField(writer io.Writer, parent TypeProps, field FieldProps) error {
 		typePrefix = "[]"
 	}
 
+	anchor := strings.ToLower(parent.Name) + "-" + strings.ToLower(field.Key)
+
 	_, err := writer.Write([]byte(fmt.Sprintf(
-		"### %s %v {#%s-%s}\n",
+		"### %s %v\n",
 		field.Key,
-		buildSourceLink(field.Name, field.File, field.Line),
-		strings.ToLower(parent.Name),
-		strings.ToLower(field.Key),
+		buildSourceAnchorLink(anchor, field.File, field.Line),
 	)))
 	if err != nil {
 		return err
@@ -465,11 +458,8 @@ func writeField(writer io.Writer, parent TypeProps, field FieldProps) error {
 	_, _ = writer.Write([]byte(field.Doc))
 
 	if field.ExampleContent != "" {
-		_, _ = writer.Write([]byte(fmt.Sprintf(`
-{{< expand "Example" "%v" >}}
-%v
-{{< /expand >}}
-`,
+		_, _ = writer.Write([]byte(fmt.Sprintf(
+			"??? Example\n    ```%v\n    %v\n    ```\n",
 			field.ExampleLang,
 			strings.Trim(field.ExampleContent, "\n"),
 		)))
@@ -480,10 +470,13 @@ func writeField(writer io.Writer, parent TypeProps, field FieldProps) error {
 	return nil
 }
 
-func buildSourceLink(name, fileName string, line int) string {
-	return fmt.Sprintf("{{< source name=\"%v\" file=\"%v\" line=\"%v\" >}}",
-		name,
-		strings.ReplaceAll(fileName, "\\", "/"),
-		line,
-	)
+func buildSourceAnchorLink(anchor, fileName string, line int) string {
+	file := strings.ReplaceAll(fileName, "\\", "/")
+	url := fmt.Sprintf("https://github.com/miniscruff/changie/blob/<< current_version >>/%v#L%v", file, line)
+
+	return "[:octicons-code-24:](" + url + ") [:octicons-link-24:](#" + anchor + ") {: #" + anchor + "}"
+}
+
+func formatExample(content string) string {
+	return strings.ReplaceAll(strings.Trim(content, "\n\t "), "\n", "\n    ")
 }

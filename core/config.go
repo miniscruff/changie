@@ -242,10 +242,10 @@ type Config struct {
 	// versionExt: md
 	VersionExt string `yaml:"versionExt" required:"true"`
 	// Filepath for your version header file relative to [unreleasedDir](#config-unreleaseddir).
-	// It is also possible to use the '--header-path' parameter when using the [batch command](/cli/changie_batch).
+	// It is also possible to use the '--header-path' parameter when using the [batch command](../cli/changie_batch.md).
 	VersionHeaderPath string `yaml:"versionHeaderPath,omitempty"`
 	// Filepath for your version footer file relative to [unreleasedDir](#config-unreleaseddir).
-	// It is also possible to use the '--footer-path' parameter when using the [batch command](/cli/changie_batch).
+	// It is also possible to use the '--footer-path' parameter when using the [batch command](../cli/changie_batch.md).
 	VersionFooterPath string `yaml:"versionFooterPath,omitempty"`
 	// Customize the file name generated for new fragments.
 	// The default uses the component and kind only if configured for your project.

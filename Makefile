@@ -29,5 +29,9 @@ vhs-gen: # Generate VHS recording videos
 	ls *.tape | xargs -n 1 vhs
 
 .PHONY: docs-serve
-docs-serve: gen # Serve documentation locally
-	hugo serve -s docs
+docs-serve: # Serve documentation locally with hot reloading
+	mkdocs serve
+
+.PHONY: pip-freeze
+pip-freeze: # Save mkdocs deps to requirements.txt
+	pip freeze > requirements.txt

@@ -1,23 +1,15 @@
 # Binaries for programs and plugins
 *.exe
 *.exe~
-*.dll
-*.so
-*.dylib
-
-# Test binary, built with `go test -c`
-*.test
 
 # Output of the go coverage tool
 *.out
 coverage.txt
 coverage.html
 
-# hugo builds
-docs/public
-docs/resources
-docs/content/config/_index.md
-*.hugo_build.lock
+# mkdocs files
+.cache/
+venv/
 
 # goreleaser builds
 dist/

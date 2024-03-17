@@ -1,0 +1,114 @@
+site_name: Changie
+site_url: https://changie.dev
+site_author: Ronnie Smith
+site_description: >-
+  Changie is a file based changelog management tool.
+
+edit_uri: edit/main/docs
+repo_url: https://github.com/miniscruff/changie
+repo_name: miniscruff/changie
+extra:
+  current_version: v1.18.0
+  social:
+    - icon: fontawesome/brands/mastodon
+      link: https://fosstodon.org/@miniscruff
+    - icon: fontawesome/brands/github
+      link: https://github.com/miniscruff
+    - icon: fontawesome/brands/docker
+      link: https://github.com/miniscruff/changie/pkgs/container/changie
+theme:
+  logo: static/logo.svg
+  favicon: static/favicon.png
+  name: material
+  palette:
+    # Palette toggle for light mode
+    - scheme: default
+      primary: white
+      accent: green
+      media: "(prefers-color-scheme: light)"
+      toggle:
+        icon: material/weather-night
+        name: Switch to dark mode
+
+    # Palette toggle for dark mode
+    - scheme: slate
+      primary: black
+      accent: green
+      media: "(prefers-color-scheme: dark)"
+      toggle:
+        icon: material/weather-sunny
+        name: Switch to light mode
+  features:
+    - navigation.instant
+    - navigation.tracking
+    - navigation.tabs
+    - navigation.sections
+    - navigation.indexes
+    - navigation.top
+    - search.suggest
+    - content.code.copy
+    - content.code.annotate 
+    - content.action.edit
+    - content.action.view
+  icon:
+    repo: simple/github
+plugins:
+  - search
+  - macros:
+      j2_variable_start_string: "<<"
+      j2_variable_end_string: ">>"
+  - social:
+      cards_layout_options:
+        title: Changie Documentation
+        description: Changie is a file based changelog management tool.
+
+markdown_extensions:
+  - pymdownx.highlight:
+      anchor_linenums: true
+      line_spans: __span
+      pygments_lang_class: true
+  - pymdownx.tabbed:
+      alternate_style: true
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
+  - pymdownx.emoji:
+      emoji_index: !!python/name:material.extensions.emoji.twemoji
+      emoji_generator: !!python/name:material.extensions.emoji.to_svg
+  - pymdownx.details
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - pymdownx.superfences
+  - attr_list
+
+nav:
+  - Home: index.md
+  - Guide:
+      - guide/index.md
+      - Installation: guide/installation.md
+      - Quick Start: guide/quick_start.md
+      - Backup: guide/backup.md
+      - Upgrade: guide/upgrade.md
+      - Changelog: guide/CHANGELOG.md
+  - Integrations:
+      - integrations/index.md
+      - NodeJS: integrations/nodejs.md
+      - Goreleaser: integrations/goreleaser.md
+      - Release Trigger: integrations/release_trigger.md
+  - Config:
+      - config/index.md
+  - CLI:
+      - cli/changie.md
+      - cli/changie_batch.md
+      - cli/changie_completion.md
+      - cli/changie_completion_bash.md
+      - cli/changie_completion_fish.md
+      - cli/changie_completion_powershell.md
+      - cli/changie_completion_zsh.md
+      - cli/changie_init.md
+      - cli/changie_latest.md
+      - cli/changie_merge.md
+      - cli/changie_new.md
+      - cli/changie_next.md
