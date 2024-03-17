@@ -30,6 +30,7 @@ func WithReadWritePipe(t *testing.T) (*os.File, *os.File) {
 		if err := reader.Close(); err != nil {
 			t.Fatal("failure to close reader:", err)
 		}
+
 		if err := writer.Close(); err != nil {
 			t.Fatal("failure to close writer:", err)
 		}
