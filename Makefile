@@ -32,6 +32,10 @@ vhs-gen: # Generate VHS recording videos
 docs-serve: # Serve documentation locally with hot reloading
 	mkdocs serve
 
+.PHONY: pip-install
+pip-install: # Install python packages using pip
+	pip install -r requirements.txt
+
 .PHONY: pip-freeze
-pip-freeze: # Save mkdocs deps to requirements.txt
+pip-freeze: # Save python dependencies to requirements.txt
 	pip freeze > requirements.txt
