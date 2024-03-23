@@ -35,5 +35,5 @@ six==1.16.0
 termcolor==2.4.0
 tinycss2==1.2.1
 urllib3==2.1.0
-watchdog==3.0.0
+watchdog==4.0.0
 webencodings==0.5.1
