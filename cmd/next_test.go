@@ -20,7 +20,7 @@ func nextTestConfig() *core.Config {
 		VersionFormat: "",
 		KindFormat:    "",
 		ChangeFormat:  "",
-		Kinds:         []core.KindConfig{},
+		Kinds:         []core.KindConfigOld{},
 	}
 }
 
@@ -47,7 +47,7 @@ func TestNextVersionWithPatch(t *testing.T) {
 func TestNextVersionWithProject(t *testing.T) {
 	cfg := nextTestConfig()
 	cfg.ProjectsVersionSeparator = "|"
-	cfg.Projects = []core.ProjectConfig{
+	cfg.Projects = []core.ProjectConfigOptions{
 		{
 			Label: "W things",
 			Key:   "w",
@@ -75,7 +75,7 @@ func TestNextVersionWithProject(t *testing.T) {
 func TestNextVersionWithProjectBadProject(t *testing.T) {
 	cfg := nextTestConfig()
 	cfg.ProjectsVersionSeparator = "|"
-	cfg.Projects = []core.ProjectConfig{
+	cfg.Projects = []core.ProjectConfigOptions{
 		{
 			Label: "W things",
 			Key:   "w",
@@ -101,7 +101,7 @@ func TestNextVersionWithProjectBadProject(t *testing.T) {
 
 func TestNextVersionWithAuto(t *testing.T) {
 	cfg := nextTestConfig()
-	cfg.Kinds = []core.KindConfig{
+	cfg.Kinds = []core.KindConfigOld{
 		{
 			Label:     "Feature",
 			AutoLevel: core.MinorLevel,

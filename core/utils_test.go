@@ -26,7 +26,7 @@ func utilsTestConfig() *Config {
 		KindFormat:         "### {{.Kind}}",
 		ChangeFormat:       "* {{.Body}}",
 		FragmentFileFormat: "",
-		Kinds: []KindConfig{
+		Kinds: []KindConfigOld{
 			{Label: "added"},
 			{Label: "removed"},
 			{Label: "other"},
@@ -295,7 +295,7 @@ func TestNextVersionOptions(t *testing.T) {
 
 func TestNextVersionOptionsWithNoneAutoLEvel(t *testing.T) {
 	config := &Config{
-		Kinds: []KindConfig{
+		Kinds: []KindConfigOld{
 			{
 				Label:     "patch",
 				AutoLevel: PatchLevel,
@@ -336,7 +336,7 @@ func TestNextVersionOptionsWithNoneAutoLEvel(t *testing.T) {
 
 func TestNextVersionOptionsNoneAutoLevelOnly(t *testing.T) {
 	config := &Config{
-		Kinds: []KindConfig{
+		Kinds: []KindConfigOld{
 			{
 				Label:     "skip",
 				AutoLevel: NoneLevel,
@@ -362,7 +362,7 @@ func TestNextVersionOptionsNoneAutoLevelOnly(t *testing.T) {
 
 func TestErrorNextVersionAutoMissingKind(t *testing.T) {
 	config := &Config{
-		Kinds: []KindConfig{
+		Kinds: []KindConfigOld{
 			{
 				Label: "missing",
 			},
@@ -549,7 +549,7 @@ func TestInvalidBumpLevel(t *testing.T) {
 
 func TestHighestAutoLevel(t *testing.T) {
 	cfg := &Config{
-		Kinds: []KindConfig{
+		Kinds: []KindConfigOld{
 			{
 				Label:     "patch",
 				AutoLevel: PatchLevel,
@@ -617,7 +617,7 @@ func TestHighestAutoLevel(t *testing.T) {
 
 func TestErrorHighestAutoLevelMissingKindConfig(t *testing.T) {
 	cfg := &Config{
-		Kinds: []KindConfig{
+		Kinds: []KindConfigOld{
 			{
 				Label: "missing",
 			},
@@ -634,7 +634,7 @@ func TestErrorHighestAutoLevelMissingKindConfig(t *testing.T) {
 
 func TestErrorHighestAutoLevelWithNoChanges(t *testing.T) {
 	cfg := &Config{
-		Kinds: []KindConfig{
+		Kinds: []KindConfigOld{
 			{
 				Label: "missing",
 			},
@@ -691,7 +691,7 @@ func TestGetAllChanges(t *testing.T) {
 
 func TestGetAllChangesWithProject(t *testing.T) {
 	cfg := utilsTestConfig()
-	cfg.Projects = []ProjectConfig{
+	cfg.Projects = []ProjectConfigOptions{
 		{
 			Label: "Web Hook",
 			Key:   "web_hook_sender",

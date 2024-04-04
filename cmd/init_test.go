@@ -20,7 +20,7 @@ func initConfig() *core.Config {
 		VersionFormat: "",
 		KindFormat:    "",
 		ChangeFormat:  "",
-		Kinds:         []core.KindConfig{},
+		Kinds:         []core.KindConfigOld{},
 	}
 }
 

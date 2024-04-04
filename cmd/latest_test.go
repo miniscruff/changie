@@ -20,7 +20,7 @@ func latestConfig() *core.Config {
 		VersionFormat: "",
 		KindFormat:    "",
 		ChangeFormat:  "",
-		Kinds:         []core.KindConfig{},
+		Kinds:         []core.KindConfigOld{},
 	}
 }
 
@@ -84,7 +84,7 @@ func TestLatestWithoutPrefix(t *testing.T) {
 
 func TestLatestVersionWithProject(t *testing.T) {
 	cfg := latestConfig()
-	cfg.Projects = []core.ProjectConfig{
+	cfg.Projects = []core.ProjectConfigOptions{
 		{
 			Label: "r project",
 			Key:   "r",
@@ -111,7 +111,7 @@ func TestLatestVersionWithProject(t *testing.T) {
 
 func TestLatestVersionWithBadProject(t *testing.T) {
 	cfg := latestConfig()
-	cfg.Projects = []core.ProjectConfig{
+	cfg.Projects = []core.ProjectConfigOptions{
 		{
 			Label: "r project",
 			Key:   "r",

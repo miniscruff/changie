@@ -110,10 +110,10 @@ func (change Change) WriteTo(writer io.Writer) (int64, error) {
 	return int64(n), err
 }
 
-func (change *Change) PostProcess(cfg *Config, kind *KindConfig) error {
+func (change *Change) PostProcess(cfg *Config, kind *KindOptions) error {
 	postConfigs := make([]PostProcessConfig, 0)
 
-	if kind == nil || !kind.SkipGlobalPost {
+	if kind == nil || !kind.Skip.DefaultPost {
 		postConfigs = append(postConfigs, cfg.Post...)
 	}
 

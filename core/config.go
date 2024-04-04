@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/Masterminds/semver/v3"
 	"gopkg.in/yaml.v2"
 
 	"github.com/miniscruff/changie/shared"
@@ -30,194 +29,6 @@ var ConfigPaths []string = []string{
 	".changie.yml",
 }
 
-// GetVersions will return, in semver sorted order, all released versions
-type GetVersions func(shared.ReadDirer, Config) ([]*semver.Version, error)
-
-// Kind config allows you to customize the options depending on what kind was selected.
-type KindConfig struct {
-	// Label is the value used in the prompt when selecting a kind.
-	// example: yaml
-	// label: Feature
-	Label string `yaml:",omitempty" required:"true"`
-	// Format will override the root kind format when building the kind header.
-	// example: yaml
-	// format: '### {{.Kind}} **Breaking Changes**'
-	Format string `yaml:",omitempty"`
-	// Change format will override the root change format when building changes specific to this kind.
-	// example: yaml
-	// changeFormat: 'Breaking: {{.Custom.Body}}
-	ChangeFormat string `yaml:"changeFormat,omitempty"`
-	// Additional choices allows adding choices per kind
-	AdditionalChoices []Custom `yaml:"additionalChoices,omitempty"`
-	// Post process options when saving a new change fragment specific to this kind.
-	Post []PostProcessConfig `yaml:"post,omitempty"`
-	// Skip global choices allows skipping the parent choices options.
-	SkipGlobalChoices bool `yaml:"skipGlobalChoices,omitempty" default:"false"`
-	// Skip body allows skipping the parent body prompt.
-	SkipBody bool `yaml:"skipBody,omitempty" default:"false"`
-	// Skip global post allows skipping the parent post processing.
-	SkipGlobalPost bool `yaml:"skipGlobalPost,omitempty" default:"false"`
-	// Auto determines what value to bump when using `batch auto` or `next auto`.
-	// Possible values are major, minor, patch or none and the highest one is used if
-	// multiple changes are found. none will not bump the version.
-	// Only none changes is not a valid bump and will fail to batch.
-	// example: yaml
-	// auto: minor
-	AutoLevel string `yaml:"auto,omitempty"`
-}
-
-// Body config allows you to customize the default body prompt
-type BodyConfig struct {
-	// Min length specifies the minimum body length
-	MinLength *int64 `yaml:"minLength,omitempty" default:"no min"`
-	// Max length specifies the maximum body length
-	MaxLength *int64 `yaml:"maxLength,omitempty" default:"no max"`
-	// Block allows multiline text inputs for body messages
-	UseBlock bool `yaml:"block,omitempty" default:"false"`
-}
-
-func (b BodyConfig) CreateCustom() *Custom {
-	customType := CustomString
-	if b.UseBlock {
-		customType = CustomBlock
-	}
-
-	return &Custom{
-		Label:     "Body",
-		Type:      customType,
-		MinLength: b.MinLength,
-		MaxLength: b.MaxLength,
-	}
-}
-
-func (b BodyConfig) Validate(input string) error {
-	c := Custom{
-		Label:     "Body",
-		Type:      CustomString,
-		MinLength: b.MinLength,
-		MaxLength: b.MaxLength,
-	}
-
-	return c.Validate(input)
-}
-
-// Configuration options for newlines before and after different elements.
-type NewlinesConfigOld struct {
-	// Add newlines after change fragment
-	AfterChange int `yaml:"afterChange,omitempty" default:"0"`
-	// Add newlines after the header file in the merged changelog
-	AfterChangelogHeader int `yaml:"afterChangelogHeader,omitempty" default:"0"`
-	// Add newlines after adding a version to the changelog
-	AfterChangelogVersion int `yaml:"afterChangelogVersion,omitempty" default:"0"`
-	// Add newlines after component
-	AfterComponent int `yaml:"afterComponent,omitempty" default:"0"`
-	// Add newlines after footer file
-	AfterFooterFile int `yaml:"afterFooterFile,omitempty" default:"0"`
-	// Add newlines after footer template
-	AfterFooterTemplate int `yaml:"afterFooter,omitempty" default:"0"`
-	// Add newlines after header file
-	AfterHeaderFile int `yaml:"afterHeaderFile,omitempty" default:"0"`
-	// Add newlines after header template
-	AfterHeaderTemplate int `yaml:"afterHeaderTemplate,omitempty" default:"0"`
-	// Add newlines after kind
-	AfterKind int `yaml:"afterKind,omitempty" default:"0"`
-	// Add newlines after version
-	AfterVersion int `yaml:"afterVersion,omitempty" default:"0"`
-	// Add newlines before change fragment
-	BeforeChange int `yaml:"beforeChange,omitempty" default:"0"`
-	// Add newlines before adding a version to the changelog
-	BeforeChangelogVersion int `yaml:"beforeChangelogVersion,omitempty" default:"0"`
-	// Add newlines before component
-	BeforeComponent int `yaml:"beforeComponent,omitempty" default:"0"`
-	// Add newlines before footer file
-	BeforeFooterFile int `yaml:"beforeFooterFile,omitempty" default:"0"`
-	// Add newlines before footer template
-	BeforeFooterTemplate int `yaml:"beforeFooterTemplate,omitempty" default:"0"`
-	// Add newlines before header file
-	BeforeHeaderFile int `yaml:"beforeHeaderFile,omitempty" default:"0"`
-	// Add newlines before header template
-	BeforeHeaderTemplate int `yaml:"beforeHeaderTemplate,omitempty" default:"0"`
-	// Add newlines before kind
-	BeforeKind int `yaml:"beforeKind,omitempty" default:"0"`
-	// Add newlines before version
-	BeforeVersion int `yaml:"beforeVersion,omitempty" default:"0"`
-	// Add newlines at the end of the version file
-	EndOfVersion int `yaml:"endOfVersion,omitempty" default:"0"`
-}
-
-// PostProcessConfig allows adding additional custom values to a change fragment
-// after all the other inputs are complete.
-// This will add additional keys to the `custom` section of the fragment.
-// If the key already exists as part of a custom choice the value will be overridden.
-type PostProcessConfig struct {
-	// Key to save the custom value with
-	Key string `yaml:"key"`
-	// Value of the custom value as a go template
-	Value string `yaml:"value" templateType:"Change"`
-}
-
-// ProjectConfig extends changie to support multiple changelog files for different projects
-// inside one repository.
-// example: yaml
-// projects:
-//   - label: UI
-//     key: ui
-//     changelog: ui/CHANGELOG.md
-//   - label: Email Sender
-//     key: email_sender
-//     changelog: services/email/CHANGELOG.md
-type ProjectConfig struct {
-	// Label is the value used in the prompt when selecting a project.
-	// example: yaml
-	// label: Frontend
-	Label string `yaml:"label"`
-	// Key is the value used for unreleased and version output paths.
-	// example: yaml
-	// key: frontend
-	Key string `yaml:"key"`
-	// ChangelogPath is the path to the changelog for this project.
-	// example: yaml
-	// changelog: src/frontend/CHANGELOG.md
-	ChangelogPath string `yaml:"changelog"`
-	// Replacements to run when merging a changelog for our project.
-	// example: yaml
-	// # nodejs package.json replacement
-	// replacements:
-	// - path: ui/package.json
-	//   find: '  "version": ".*",'
-	//   replace: '  "version": "{{.VersionNoPrefix}}",'
-	Replacements []Replacement `yaml:"replacements"`
-}
-
-// NewlineConfig configures how we add newlines before and after templates.
-type NewlinesConfig struct {
-	// Before is the amount of newlines to add before writing text.
-	Before int `yaml:"before"`
-	// After is the amount of newlines to add after writing text.
-	After int `yaml:"after"`
-}
-
-// LinePromptConfig TODO:
-type LinePromptConfig struct {
-	// Key of our prompt output used in file/fragment templates
-	Key string `yaml:"key"`
-	// Label is the display text when asking users for prompt values.
-	// If not defined, the key is used.
-	Label string `yaml:"label"`
-	// Line format ...
-	// ??? can projects have line formats? What would that do?
-	LineFormat string `yaml:"lineFormat"`
-}
-
-// FileWriterConfig TODO:
-// TODO: ( custom type for what data to pass to template cache, we need to document )
-type FileWriterConfig struct {
-	Filepath   string `yaml:"filepath"`
-	LineFormat string `yaml:"lineFormat"`
-
-	NewlinesConfig `yaml:"newlines"`
-}
-
 // Config handles configuration for a project.
 //
 // Custom configuration path:
@@ -239,64 +50,16 @@ type FileWriterConfig struct {
 //
 // All elements are optional and will be added together if all are provided.
 type Config struct {
-	RootDir string `yaml:"changesDir" required:"true"`
-	/*
-	   rootDir: .changes ( from ChangesDir )
-	   env prefix: CHANGIE_ ( unchanged )
-	   fragment:
-	       dir: directory for unrelease fragments relative to root dir ( from UnreleasedDir )
-	       file format: template format for generating the file name of fragments ( from FragmentFileFormat )
-	       posts: post processing ( from root posts )
-	       prompts: ( from Customs )
-	   project:
-	       version separator: ( from project version separator )
-	       options: ( from Projects )
-	           - key: key of our component used in file/fragment outputs
-	             label: output label when selecting in prompts ( defaults to key if empty )
-	             ( maybe inline file_writer_type if projects have a use for line_prompt_type )
-	             replacements: ( unchanged )
-	             changelog: ( matches the root changelog config and will merge the root with each project )
-	   component:
-	       line format: output format of our component line, can be empty
-	       newlines: see newline_type
-	       options:
-	       - line_prompt_type ( inline these values )
-	         post: post process options ( just like kind config, ran before kinds if both configured )
-	   kind:
-	       line format: output format of our kind line, required
-	       newlines: see type
-	       options:
-	           - line_prompt_type ( inline these values )
-	             change format: per kind option of the change format ( takes precedence over default change line format )
-	             post: post process options (unchanged kind config)
-	             auto level: unchanged
-	             skip: ( extra level needed? )
-	               body: unchanged
-	               default prompts: unchanged
-	               default post: unchanged
-	             ??? prompts: ( from additional choices )
-	             ??? should this be wrapped in a prompts and have skip global under it?
-	   change: ( renamed from body? )
-	       line_prompt_type ( inline these values ) ( default to body )
-	       min_length: min length validation
-	       max_length: max length validation
-	       skip: true/false
-	       newlines: see type
-	   releaseNotes:
-	       extension: File extension for release notes ( from VersionExt )
-	       version: see file_writer_type
-	       header: see file_writer_type
-	       footer: see file_writer_type
-	       newlines: see newline_type
-	   changelog: ( shared type between root and project.options[*].changelog )
-	       output: output path to changelog file ( from ChangelogPath )
-	       header: see file_writer_type
-	       footer: see file_writer_type
-	       newlines: see newline_type
-	       replacements: moved to better support projects
-	*/
-
-	// Leave comments for redirects / renames later.
+	// TODO: Leave comments for redirects / renames later.
+	RootDir      string             `yaml:"rootDir" required:"true"`
+	EnvPrefix    string             `yaml:"envPrefix,omitempty"`
+	Fragment     FragmentConfig     `yaml:"fragment"`
+	Project      ProjectConfig      `yaml:"project"`
+	Component    ComponentConfig    `yaml:"component"`
+	Kind         KindConfig         `yaml:"kind"`
+	Change       ChangeConfig       `yaml:"change"`
+	ReleaseNotes ReleaseNotesConfig `yaml:"releaseNotes"`
+	Changelog    ChangelogConfig    `yaml:"changelog"`
 
 	// Directory for change files, header file and unreleased files.
 	// Relative to project root.
@@ -399,7 +162,7 @@ type Config struct {
 	// - label: Removed
 	// - label: Fixed
 	// - label: Security
-	Kinds []KindConfig `yaml:"kinds,omitempty"`
+	Kinds []KindConfigOld `yaml:"kinds,omitempty"`
 	// Custom choices allow you to ask for additional information when creating a new change fragment.
 	// These custom choices are included in the [change custom](#change-custom) value.
 	// example: yaml
@@ -431,15 +194,6 @@ type Config struct {
 	//   value: "https://github.com/{{.Custom.Author}}
 	// changeFormat: "* {{.Body}} by [{{.Custom.Author}}]({{.Custom.AuthorLink}})"
 	Post []PostProcessConfig `yaml:"post,omitempty"`
-	// Prefix of environment variables to load for templates.
-	// The prefix is removed from resulting key map.
-	// example: yaml
-	// # if we have an environment variable like so:
-	// # export CHANGIE_PROJECT=changie
-	// # we can use that in our templates if we set the prefix
-	// envPrefix: "CHANGIE_"
-	// versionFormat: "New release for {{.Env.PROJECT}}"
-	EnvPrefix string `yaml:"envPrefix,omitempty"`
 	// Projects allow you to specify child projects as part of a monorepo setup.
 	// example: yaml
 	// projects:
@@ -449,7 +203,7 @@ type Config struct {
 	//   - label: Email Sender
 	//     key: email_sender
 	//     changelog: services/email/CHANGELOG.md
-	Projects []ProjectConfig `yaml:"projects,omitempty"`
+	Projects []ProjectConfigOptions `yaml:"projects,omitempty"`
 	// ProjectsVersionSeparator is used to determine the final version when using projects.
 	// The result is: project key + projectVersionSeparator + latest/next version.
 	// example: yaml
@@ -493,9 +247,9 @@ func (c *Config) Save(wf shared.WriteFiler) error {
 	return wf(ConfigPaths[0], bs, CreateFileMode)
 }
 
-func (c *Config) Project(labelOrKey string) (*ProjectConfig, error) {
+func (c *Config) ProjectFromLabel(labelOrKey string) (*ProjectConfigOptions, error) {
 	if len(c.Projects) == 0 {
-		return &ProjectConfig{}, nil
+		return &ProjectConfigOptions{}, nil
 	}
 
 	if len(labelOrKey) == 0 {

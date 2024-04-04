@@ -28,7 +28,7 @@ func batchTestConfig() *core.Config {
 		KindFormat:         "### {{.Kind}}",
 		ChangeFormat:       "* {{.Body}}",
 		FragmentFileFormat: "",
-		Kinds: []core.KindConfig{
+		Kinds: []core.KindConfigOld{
 			{Label: "added"},
 			{Label: "removed"},
 			{Label: "other"},
@@ -102,7 +102,7 @@ func TestBatchCanBatch(t *testing.T) {
 
 func TestBatchCanBatchWithProject(t *testing.T) {
 	cfg := batchTestConfig()
-	cfg.Projects = []core.ProjectConfig{
+	cfg.Projects = []core.ProjectConfigOptions{
 		{
 			Label: "A",
 			Key:   "a",
@@ -134,7 +134,7 @@ func TestBatchCanBatchWithProject(t *testing.T) {
 
 func TestBatchProjectFailsIfUnableToMakeProjectDir(t *testing.T) {
 	cfg := batchTestConfig()
-	cfg.Projects = []core.ProjectConfig{
+	cfg.Projects = []core.ProjectConfigOptions{
 		{
 			Label: "A",
 			Key:   "a",
@@ -162,7 +162,7 @@ func TestBatchProjectFailsIfUnableToMakeProjectDir(t *testing.T) {
 
 func TestBatchProjectFailsIfUnableToFindProject(t *testing.T) {
 	cfg := batchTestConfig()
-	cfg.Projects = []core.ProjectConfig{
+	cfg.Projects = []core.ProjectConfigOptions{
 		{
 			Label: "A",
 			Key:   "a",

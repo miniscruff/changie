@@ -68,9 +68,9 @@ func (l *Latest) Run(cmd *cobra.Command, args []string) error {
 	}
 
 	if len(config.Projects) > 0 {
-		var pc *core.ProjectConfig
+		var pc *core.ProjectConfigOptions
 
-		pc, err = config.Project(l.Project)
+		pc, err = config.ProjectFromLabel(l.Project)
 		if err != nil {
 			return err
 		}

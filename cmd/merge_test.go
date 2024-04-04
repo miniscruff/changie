@@ -21,12 +21,12 @@ func mergeTestConfig() *core.Config {
 		VersionFormat: "## {{.Version}}",
 		KindFormat:    "### {{.Kind}}",
 		ChangeFormat:  "* {{.Body}}",
-		Kinds: []core.KindConfig{
+		Kinds: []core.KindConfigOld{
 			{Label: "added"},
 			{Label: "removed"},
 			{Label: "other"},
 		},
-		Newlines: core.NewlinesConfig{
+		Newlines: core.NewlinesConfigOld{
 			// BeforeVersion: 1,
 			// AfterVersion: 1,
 			AfterChange:            1,
@@ -73,16 +73,18 @@ func TestMergeVersionsSuccessfullyWithProject(t *testing.T) {
 	cfg := mergeTestConfig()
 	cfg.HeaderPath = ""
 	cfg.Replacements = nil
-	cfg.Projects = []core.ProjectConfig{
+	cfg.Projects = []core.ProjectConfigOptions{
 		{
-			Label:         "A thing",
-			Key:           "a",
-			ChangelogPath: "a/thing/CHANGELOG.md",
-			Replacements: []core.Replacement{
-				{
-					Path:    "a/VERSION",
-					Find:    "version",
-					Replace: "{{.Version}}",
+			Label: "A thing",
+			Key:   "a",
+			Changelog: core.ChangelogConfig{
+				Output: "a/thing/CHANGELOG.md",
+				Replacements: []core.Replacement{
+					{
+						Path:    "a/VERSION",
+						Find:    "version",
+						Replace: "{{.Version}}",
+					},
 				},
 			},
 		},
@@ -117,11 +119,13 @@ func TestMergeVersionsErrorMissingProjectDir(t *testing.T) {
 	cfg := mergeTestConfig()
 	cfg.HeaderPath = ""
 	cfg.Replacements = nil
-	cfg.Projects = []core.ProjectConfig{
+	cfg.Projects = []core.ProjectConfigOptions{
 		{
-			Label:         "A thing",
-			Key:           "a",
-			ChangelogPath: "a/thing/CHANGELOG.md",
+			Label: "A thing",
+			Key:   "a",
+			Changelog: core.ChangelogConfig{
+				Output: "a/thing/CHANGELOG.md",
+			},
 		},
 	}
 	then.WithTempDirConfig(t, cfg)
@@ -233,16 +237,20 @@ func TestMergeVersionsWithUnreleasedChangesInOneProject(t *testing.T) {
 	cfg := mergeTestConfig()
 	cfg.HeaderPath = ""
 	cfg.Replacements = nil
-	cfg.Projects = []core.ProjectConfig{
+	cfg.Projects = []core.ProjectConfigOptions{
 		{
-			Label:         "A thing",
-			Key:           "a",
-			ChangelogPath: "a/thing/CHANGELOG.md",
+			Label: "A thing",
+			Key:   "a",
+			Changelog: core.ChangelogConfig{
+				Output: "a/thing/CHANGELOG.md",
+			},
 		},
 		{
-			Label:         "B thing",
-			Key:           "b",
-			ChangelogPath: "b/thing/CHANGELOG.md",
+			Label: "B thing",
+			Key:   "b",
+			Changelog: core.ChangelogConfig{
+				Output: "b/thing/CHANGELOG.md",
+			},
 		},
 	}
 	then.WithTempDirConfig(t, cfg)

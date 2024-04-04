@@ -28,7 +28,7 @@ var (
 type Prompts struct {
 	Config           *Config
 	StdinReader      io.Reader
-	KindConfig       *KindConfig
+	KindConfig       *KindOptions
 	BodyEditor       bool
 	CreateFiler      shared.CreateFiler
 	EditorCmdBuilder func(string) (EditorRunner, error)
@@ -101,7 +101,7 @@ func (p *Prompts) BuildChanges() ([]*Change, error) {
 	changes := make([]*Change, len(p.Projects))
 	for i := 0; i < len(changes); i++ {
 		// Err is already validated when getting the project above.
-		projConfig, _ := p.Config.Project(p.Projects[i])
+		projConfig, _ := p.Config.ProjectFromLabel(p.Projects[i])
 		changes[i] = &Change{
 			Project:   projConfig.Key,
 			Component: p.Component,
@@ -185,7 +185,7 @@ func (p *Prompts) projects() error {
 
 	// Quickly validate the project exists and lines up before moving on.
 	for _, proj := range p.Projects {
-		_, err := p.Config.Project(proj)
+		_, err := p.Config.ProjectFromLabel(proj)
 		if err != nil {
 			return fmt.Errorf("%w: %s", err, proj)
 		}
@@ -247,10 +247,10 @@ func (p *Prompts) kind() error {
 	}
 
 	for i := range p.Config.Kinds {
-		kindConfig := &p.Config.Kinds[i]
+		kindOption := &p.Config.Kind.Options[i]
 
-		if kindConfig.Label == p.Kind {
-			p.KindConfig = kindConfig
+		if kindOption.LinePrompt.Label == p.Kind {
+			p.KindConfig = kindOption
 			return nil
 		}
 	}
@@ -300,22 +300,22 @@ func (p *Prompts) body() error {
 }
 
 func (p *Prompts) expectsNoBody() bool {
-	return p.KindConfig != nil && p.KindConfig.SkipBody
+	return p.KindConfig != nil && p.KindConfig.Skip.Body
 }
 
 func (p *Prompts) expectsBody() bool {
-	return p.KindConfig == nil || !p.KindConfig.SkipBody
+	return p.KindConfig == nil || !p.KindConfig.Skip.Body
 }
 
 func (p *Prompts) userChoices() error {
 	userChoices := make([]Custom, 0)
 
-	if p.KindConfig == nil || !p.KindConfig.SkipGlobalChoices {
+	if p.KindConfig == nil || !p.KindConfig.Skip.DefaultPrompts {
 		userChoices = append(userChoices, p.Config.CustomChoices...)
 	}
 
 	if p.KindConfig != nil {
-		userChoices = append(userChoices, p.KindConfig.AdditionalChoices...)
+		userChoices = append(userChoices, p.KindConfig.Prompts...)
 	}
 
 	// custom map may be nil, which is fine if we have no choices
