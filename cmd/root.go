@@ -39,7 +39,6 @@ being easy to use for developers and your release team.`,
 		os.ReadFile,
 		os.WriteFile,
 		os.ReadDir,
-		os.Open,
 		os.Create,
 		templateCache,
 	)

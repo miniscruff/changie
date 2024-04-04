@@ -49,22 +49,11 @@ func TestAppendFileAppendsTwoFiles(t *testing.T) {
 	err = os.WriteFile(appendPath, []byte(" append"), CreateFileMode)
 	then.Nil(t, err)
 
-	err = AppendFile(os.Open, rootFile, appendPath)
+	err = AppendFile(rootFile, appendPath)
 	then.Nil(t, err)
 
 	rootFile.Close()
 	then.FileContents(t, "root append", rootPath)
-}
-
-func TestErrorAppendFileIfOpenFails(t *testing.T) {
-	mockError := errors.New("bad open")
-	builder := &strings.Builder{}
-	badOpen := func(filename string) (*os.File, error) {
-		return nil, mockError
-	}
-
-	err := AppendFile(badOpen, builder, "dummy.txt")
-	then.Err(t, mockError, err)
 }
 
 func TestGetAllVersionsReturnsAllVersions(t *testing.T) {

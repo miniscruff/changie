@@ -36,8 +36,8 @@ var (
 	bom = []byte{0xef, 0xbb, 0xbf}
 )
 
-func AppendFile(opener shared.OpenFiler, rootFile io.Writer, path string) error {
-	otherFile, err := opener(path)
+func AppendFile(rootFile io.Writer, path string) error {
+	otherFile, err := os.Open(path)
 	if err != nil {
 		return err
 	}

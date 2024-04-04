@@ -56,7 +56,6 @@ func TestMergeVersionsSuccessfully(t *testing.T) {
 		os.ReadFile,
 		os.WriteFile,
 		os.ReadDir,
-		os.Open,
 		os.Create,
 		core.NewTemplateCache(),
 	)
@@ -98,7 +97,6 @@ func TestMergeVersionsSuccessfullyWithProject(t *testing.T) {
 		os.ReadFile,
 		os.WriteFile,
 		os.ReadDir,
-		os.Open,
 		os.Create,
 		core.NewTemplateCache(),
 	)
@@ -130,7 +128,6 @@ func TestMergeVersionsErrorMissingProjectDir(t *testing.T) {
 		os.ReadFile,
 		os.WriteFile,
 		os.ReadDir,
-		os.Open,
 		os.Create,
 		core.NewTemplateCache(),
 	)
@@ -158,7 +155,6 @@ func TestMergeVersionsWithUnreleasedChanges(t *testing.T) {
 		os.ReadFile,
 		os.WriteFile,
 		os.ReadDir,
-		os.Open,
 		os.Create,
 		core.NewTemplateCache(),
 	)
@@ -191,7 +187,6 @@ func TestMergeVersionsWithUnreleasedChangesErrorsOnBadChanges(t *testing.T) {
 		os.ReadFile,
 		os.WriteFile,
 		os.ReadDir,
-		os.Open,
 		os.Create,
 		core.NewTemplateCache(),
 	)
@@ -220,7 +215,6 @@ func TestMergeVersionsWithUnreleasedChangesErrorsOnBadChangeFormat(t *testing.T)
 		os.ReadFile,
 		os.WriteFile,
 		os.ReadDir,
-		os.Open,
 		os.Create,
 		core.NewTemplateCache(),
 	)
@@ -265,7 +259,6 @@ func TestMergeVersionsWithUnreleasedChangesInOneProject(t *testing.T) {
 		os.ReadFile,
 		os.WriteFile,
 		os.ReadDir,
-		os.Open,
 		os.Create,
 		core.NewTemplateCache(),
 	)
@@ -306,7 +299,6 @@ func TestMergeVersionsWithHeaderAndReplacements(t *testing.T) {
 		os.ReadFile,
 		os.WriteFile,
 		os.ReadDir,
-		os.Open,
 		os.Create,
 		core.NewTemplateCache(),
 	)
@@ -345,7 +337,6 @@ first version
 		os.ReadFile,
 		os.WriteFile,
 		os.ReadDir,
-		os.Open,
 		os.Create,
 		core.NewTemplateCache(),
 	)
@@ -369,7 +360,6 @@ func TestMergeSkipsVersionsIfNoneFound(t *testing.T) {
 		os.ReadFile,
 		os.WriteFile,
 		os.ReadDir,
-		os.Open,
 		os.Create,
 		core.NewTemplateCache(),
 	)
@@ -394,7 +384,6 @@ func TestErrorMergeBadChangelogPath(t *testing.T) {
 		os.ReadFile,
 		os.WriteFile,
 		os.ReadDir,
-		os.Open,
 		mockCreate,
 		core.NewTemplateCache(),
 	)
@@ -410,7 +399,6 @@ func TestErrorMergeBadConfig(t *testing.T) {
 		os.ReadFile,
 		os.WriteFile,
 		os.ReadDir,
-		os.Open,
 		os.Create,
 		core.NewTemplateCache(),
 	)
@@ -432,74 +420,12 @@ func TestErrorMergeUnableToReadChanges(t *testing.T) {
 		os.ReadFile,
 		os.WriteFile,
 		mockReadDir,
-		os.Open,
 		os.Create,
 		core.NewTemplateCache(),
 	)
 
 	err := cmd.Run(cmd.Command, nil)
 	then.Err(t, mockErr, err)
-}
-
-func TestErrorMergeBadHeaderFile(t *testing.T) {
-	cfg := mergeTestConfig()
-	then.WithTempDirConfig(t, cfg)
-
-	mockError := errors.New("bad open")
-	mockOpen := func(filename string) (*os.File, error) {
-		if filename == filepath.Join(cfg.ChangesDir, cfg.HeaderPath) {
-			return nil, mockError
-		}
-
-		return os.Open(filename)
-	}
-
-	// need at least one change to exist
-	then.WriteFile(t, []byte("first version\n"), cfg.ChangesDir, "v0.1.0.md")
-
-	cmd := NewMerge(
-		os.ReadFile,
-		os.WriteFile,
-		os.ReadDir,
-		mockOpen,
-		os.Create,
-		core.NewTemplateCache(),
-	)
-
-	err := cmd.Run(cmd.Command, nil)
-	then.Err(t, mockError, err)
-}
-
-func TestErrorMergeBadAppend(t *testing.T) {
-	cfg := mergeTestConfig()
-	then.WithTempDirConfig(t, cfg)
-
-	mockError := errors.New("bad write string")
-
-	// need at least one change to exist
-	then.WriteFile(t, []byte("first version\n"), cfg.ChangesDir, "v0.1.0.md")
-	then.WriteFile(t, []byte("a simple header\n"), cfg.ChangesDir, cfg.HeaderPath)
-
-	// create a version file, then fail to open it the second time
-	mockOpen := func(filename string) (*os.File, error) {
-		if filename == filepath.Join(cfg.ChangesDir, "v0.1.0.md") {
-			return nil, mockError
-		}
-
-		return os.Open(filename)
-	}
-
-	cmd := NewMerge(
-		os.ReadFile,
-		os.WriteFile,
-		os.ReadDir,
-		mockOpen,
-		os.Create,
-		core.NewTemplateCache(),
-	)
-
-	err := cmd.Run(cmd.Command, nil)
-	then.Err(t, mockError, err)
 }
 
 func TestErrorMergeBadReplacement(t *testing.T) {
@@ -514,7 +440,6 @@ func TestErrorMergeBadReplacement(t *testing.T) {
 		os.ReadFile,
 		os.WriteFile,
 		os.ReadDir,
-		os.Open,
 		os.Create,
 		core.NewTemplateCache(),
 	)

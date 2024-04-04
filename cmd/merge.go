@@ -21,7 +21,6 @@ type Merge struct {
 	ReadFile      shared.ReadFiler
 	WriteFile     shared.WriteFiler
 	ReadDir       shared.ReadDirer
-	OpenFile      shared.OpenFiler
 	CreateFile    shared.CreateFiler
 	TemplateCache *core.TemplateCache
 }
@@ -30,7 +29,6 @@ func NewMerge(
 	readFile shared.ReadFiler,
 	writeFile shared.WriteFiler,
 	readDir shared.ReadDirer,
-	openFile shared.OpenFiler,
 	createFile shared.CreateFiler,
 	templateCache *core.TemplateCache,
 ) *Merge {
@@ -38,7 +36,6 @@ func NewMerge(
 		ReadFile:      readFile,
 		WriteFile:     writeFile,
 		ReadDir:       readDir,
-		OpenFile:      openFile,
 		CreateFile:    createFile,
 		TemplateCache: templateCache,
 	}
@@ -116,7 +113,7 @@ func (m *Merge) mergeProject(
 	}
 
 	if cfg.HeaderPath != "" {
-		err = core.AppendFile(m.OpenFile, writer, filepath.Join(cfg.ChangesDir, cfg.HeaderPath))
+		err = core.AppendFile(writer, filepath.Join(cfg.ChangesDir, cfg.HeaderPath))
 		if err != nil {
 			return err
 		}
@@ -166,7 +163,7 @@ func (m *Merge) mergeProject(
 		_ = core.WriteNewlines(writer, cfg.Newlines.BeforeChangelogVersion)
 		versionPath := filepath.Join(cfg.ChangesDir, project, version.Original()+"."+cfg.VersionExt)
 
-		err = core.AppendFile(m.OpenFile, writer, versionPath)
+		err = core.AppendFile(writer, versionPath)
 		if err != nil {
 			return err
 		}
