@@ -7,12 +7,6 @@ import (
 // MkdirAller is a func type for os.MkdirAll
 type MkdirAller func(path string, perm os.FileMode) error
 
-// OpenFiler is a func type for os.Open
-// type OpenFiler func(filename string) (*os.File, error)
-
-// CreateFiler is a func type for os.CreateFile
-type CreateFiler func(filename string) (*os.File, error)
-
 // WriteFiler is a func type for os.WriteFile
 type WriteFiler func(filename string, data []byte, perm os.FileMode) error
 

@@ -23,7 +23,6 @@ being easy to use for developers and your release team.`,
 	templateCache := core.NewTemplateCache()
 
 	batch := NewBatch(
-		os.Create,
 		os.ReadFile,
 		os.ReadDir,
 		os.Rename,
@@ -39,7 +38,6 @@ being easy to use for developers and your release team.`,
 		os.ReadFile,
 		os.WriteFile,
 		os.ReadDir,
-		os.Create,
 		templateCache,
 	)
 
@@ -48,7 +46,7 @@ being easy to use for developers and your release team.`,
 	cmd.AddCommand(NewInit(os.MkdirAll, os.WriteFile).Command)
 	cmd.AddCommand(NewLatest(os.ReadFile, os.ReadDir).Command)
 	cmd.AddCommand(merge.Command)
-	cmd.AddCommand(NewNew(os.ReadFile, os.Create, time.Now, os.MkdirAll, templateCache).Command)
+	cmd.AddCommand(NewNew(os.ReadFile, time.Now, os.MkdirAll, templateCache).Command)
 	cmd.AddCommand(NewNext(os.ReadDir, os.ReadFile).Command)
 
 	return cmd

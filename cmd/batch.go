@@ -33,7 +33,6 @@ type Batch struct {
 	Force             bool
 
 	// Dependencies
-	Create        shared.CreateFiler
 	ReadFile      shared.ReadFiler
 	ReadDir       shared.ReadDirer
 	Rename        shared.Renamer
@@ -51,7 +50,6 @@ type Batch struct {
 }
 
 func NewBatch(
-	create shared.CreateFiler,
 	readFile shared.ReadFiler,
 	readDir shared.ReadDirer,
 	rename shared.Renamer,
@@ -63,7 +61,6 @@ func NewBatch(
 	templateCache *core.TemplateCache,
 ) *Batch {
 	b := &Batch{
-		Create:        create,
 		ReadFile:      readFile,
 		ReadDir:       readDir,
 		Rename:        rename,
@@ -258,7 +255,7 @@ func (b *Batch) Run(cmd *cobra.Command, args []string) error {
 			}
 		}
 
-		versionFile, createErr := b.Create(versionPath)
+		versionFile, createErr := os.Create(versionPath)
 		if createErr != nil {
 			return createErr
 		}

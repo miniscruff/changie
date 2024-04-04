@@ -11,7 +11,6 @@ import (
 
 	"gopkg.in/yaml.v3"
 
-	"github.com/miniscruff/changie/shared"
 	"github.com/miniscruff/changie/then"
 )
 
@@ -763,35 +762,11 @@ func TestFileExistError(t *testing.T) {
 }
 
 func TestCreateTempFileSuccess(t *testing.T) {
-	file, err := createTempFile(os.Create, "windows", "txt")
+	file, err := createTempFile("windows", "txt")
 	defer os.Remove(file)
 
 	then.Nil(t, err)
 	then.FileContents(t, string(bom), file)
-}
-
-func TestCreateTempFileUnableToWriteBom(t *testing.T) {
-	var cf shared.CreateFiler = func(filename string) (*os.File, error) {
-		return nil, nil // returning nil so that write bom fails
-	}
-
-	runt := "windows"
-	ext := ".md"
-
-	_, err := createTempFile(cf, runt, ext)
-	then.Err(t, os.ErrInvalid, err)
-}
-
-func TestCreateTempFileUnableToCreateFile(t *testing.T) {
-	var cf shared.CreateFiler = func(filename string) (*os.File, error) {
-		return nil, os.ErrPermission // simulating permission denied err
-	}
-
-	runt := "windows"
-	ext := ".md"
-
-	_, err := createTempFile(cf, runt, ext)
-	then.Err(t, os.ErrPermission, err)
 }
 
 func TestBuildCommandToEditFile(t *testing.T) {

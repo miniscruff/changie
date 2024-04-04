@@ -339,8 +339,8 @@ func FileExists(path string) (bool, error) {
 
 // createTempFile will create a new temporary file, writing a BOM header if we need to.
 // It will return the path to that file or an error.
-func createTempFile(cf shared.CreateFiler, runtime string, ext string) (string, error) {
-	file, err := cf(filepath.Join(os.TempDir(), "changie-body-txt."+ext))
+func createTempFile(runtime string, ext string) (string, error) {
+	file, err := os.CreateTemp("", "changie-body-txt-*."+ext)
 	if err != nil {
 		return "", err
 	}

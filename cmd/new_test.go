@@ -55,7 +55,6 @@ func TestNewWithEnvVars(t *testing.T) {
 
 	cmd := NewNew(
 		os.ReadFile,
-		os.Create,
 		newMockTime,
 		os.MkdirAll,
 		core.NewTemplateCache(),
@@ -96,7 +95,6 @@ func TestNewCreatesNewFileAfterPrompts(t *testing.T) {
 
 	cmd := NewNew(
 		os.ReadFile,
-		os.Create,
 		newMockTime,
 		os.MkdirAll,
 		core.NewTemplateCache(),
@@ -139,7 +137,6 @@ func TestNewErrorOnBadMkdirAll(t *testing.T) {
 
 	cmd := NewNew(
 		os.ReadFile,
-		os.Create,
 		newMockTime,
 		func(path string, perm os.FileMode) error {
 			return mockErr
@@ -158,7 +155,6 @@ func TestErrorNewBadCustomValues(t *testing.T) {
 
 	cmd := NewNew(
 		os.ReadFile,
-		os.Create,
 		newMockTime,
 		os.MkdirAll,
 		core.NewTemplateCache(),
@@ -174,7 +170,6 @@ func TestErrorOnBadConfig(t *testing.T) {
 
 	cmd := NewNew(
 		os.ReadFile,
-		os.Create,
 		newMockTime,
 		os.MkdirAll,
 		core.NewTemplateCache(),
@@ -191,7 +186,6 @@ func TestErrorNewOnBadPrompts(t *testing.T) {
 
 	cmd := NewNew(
 		os.ReadFile,
-		os.Create,
 		newMockTime,
 		os.MkdirAll,
 		core.NewTemplateCache(),
@@ -217,7 +211,6 @@ func TestErrorNewFragmentTemplate(t *testing.T) {
 
 	cmd := NewNew(
 		os.ReadFile,
-		os.Create,
 		newMockTime,
 		os.MkdirAll,
 		core.NewTemplateCache(),
@@ -244,7 +237,6 @@ func TestNewOutputsToCmdOutWhenDry(t *testing.T) {
 	outWriter := strings.Builder{}
 	cmd := NewNew(
 		os.ReadFile,
-		os.Create,
 		newMockTime,
 		os.MkdirAll,
 		core.NewTemplateCache(),
@@ -270,36 +262,6 @@ func TestNewOutputsToCmdOutWhenDry(t *testing.T) {
 	then.Equals(t, changeContent, outWriter.String())
 }
 
-func TestErrorNewBadBody(t *testing.T) {
-	cfg := newTestConfig()
-	then.WithTempDirConfig(t, cfg)
-	reader, writer := then.WithReadWritePipe(t)
-
-	mockErr := errors.New("bad create file")
-	badCreate := func(filename string) (*os.File, error) {
-		return nil, mockErr
-	}
-
-	cmd := NewNew(
-		os.ReadFile,
-		badCreate,
-		newMockTime,
-		os.MkdirAll,
-		core.NewTemplateCache(),
-	)
-	cmd.SetIn(reader)
-
-	then.DelayWrite(
-		t, writer,
-		[]byte{106, 13},
-		[]byte("a message"),
-		[]byte{13},
-	)
-
-	err := cmd.Run(cmd.Command, nil)
-	then.Err(t, mockErr, err)
-}
-
 func TestNewFragmentTemplateSlash(t *testing.T) {
 	cfg := newTestConfig()
 	cfg.Components = []string{"test/component"}
@@ -316,7 +278,6 @@ func TestNewFragmentTemplateSlash(t *testing.T) {
 
 	cmd := NewNew(
 		os.ReadFile,
-		os.Create,
 		newMockTime,
 		os.MkdirAll,
 		core.NewTemplateCache(),

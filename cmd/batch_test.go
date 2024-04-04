@@ -38,7 +38,6 @@ func batchTestConfig() *core.Config {
 
 func withDefaultBatch() *Batch {
 	return NewBatch(
-		os.Create,
 		os.ReadFile,
 		os.ReadDir,
 		os.Rename,
@@ -500,23 +499,6 @@ func TestBatchErrorBadLatestVersion(t *testing.T) {
 	// fail trying to read a bad directory
 	err := batch.Run(batch.Command, []string{"v0.2.0"})
 	then.NotNil(t, err)
-}
-
-func TestBatchErrorBadCreateFile(t *testing.T) {
-	cfg := batchTestConfig()
-	then.WithTempDirConfig(t, cfg)
-
-	batch := withDefaultBatch()
-
-	writeChangeFile(t, cfg, &core.Change{Kind: "added", Body: "C"})
-
-	mockErr := errors.New("bad create")
-	batch.Create = func(name string) (*os.File, error) {
-		return nil, mockErr
-	}
-
-	err := batch.Run(batch.Command, []string{"v0.1.1"})
-	then.Err(t, mockErr, err)
 }
 
 func TestBatchErrorBadConfig(t *testing.T) {

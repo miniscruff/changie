@@ -26,7 +26,6 @@ type New struct {
 
 	// dependencies
 	ReadFile      shared.ReadFiler
-	CreateFile    shared.CreateFiler
 	TimeNow       core.TimeNow
 	MkdirAll      shared.MkdirAller
 	TemplateCache *core.TemplateCache
@@ -34,14 +33,12 @@ type New struct {
 
 func NewNew(
 	readFile shared.ReadFiler,
-	createFile shared.CreateFiler,
 	timeNow core.TimeNow,
 	mkdirAll shared.MkdirAller,
 	templateCache *core.TemplateCache,
 ) *New {
 	n := &New{
 		ReadFile:      readFile,
-		CreateFile:    createFile,
 		TimeNow:       timeNow,
 		MkdirAll:      mkdirAll,
 		TemplateCache: templateCache,
@@ -126,7 +123,6 @@ func (n *New) Run(cmd *cobra.Command, args []string) error {
 		TimeNow:          n.TimeNow,
 		Config:           config,
 		Customs:          customValues,
-		CreateFiler:      os.Create,
 		EditorCmdBuilder: core.BuildCommand,
 	}
 
@@ -162,7 +158,7 @@ func (n *New) Run(cmd *cobra.Command, args []string) error {
 				return fileErr
 			}
 
-			newFile, fileErr := n.CreateFile(outputPath)
+			newFile, fileErr := os.Create(outputPath)
 			if fileErr != nil {
 				return fileErr
 			}

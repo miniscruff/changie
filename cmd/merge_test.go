@@ -56,7 +56,6 @@ func TestMergeVersionsSuccessfully(t *testing.T) {
 		os.ReadFile,
 		os.WriteFile,
 		os.ReadDir,
-		os.Create,
 		core.NewTemplateCache(),
 	)
 	err := cmd.Run(cmd.Command, nil)
@@ -97,7 +96,6 @@ func TestMergeVersionsSuccessfullyWithProject(t *testing.T) {
 		os.ReadFile,
 		os.WriteFile,
 		os.ReadDir,
-		os.Create,
 		core.NewTemplateCache(),
 	)
 
@@ -128,7 +126,6 @@ func TestMergeVersionsErrorMissingProjectDir(t *testing.T) {
 		os.ReadFile,
 		os.WriteFile,
 		os.ReadDir,
-		os.Create,
 		core.NewTemplateCache(),
 	)
 
@@ -155,7 +152,6 @@ func TestMergeVersionsWithUnreleasedChanges(t *testing.T) {
 		os.ReadFile,
 		os.WriteFile,
 		os.ReadDir,
-		os.Create,
 		core.NewTemplateCache(),
 	)
 	cmd.UnreleasedHeader = "## Coming Soon"
@@ -187,7 +183,6 @@ func TestMergeVersionsWithUnreleasedChangesErrorsOnBadChanges(t *testing.T) {
 		os.ReadFile,
 		os.WriteFile,
 		os.ReadDir,
-		os.Create,
 		core.NewTemplateCache(),
 	)
 	cmd.UnreleasedHeader = "## Coming Soon"
@@ -215,7 +210,6 @@ func TestMergeVersionsWithUnreleasedChangesErrorsOnBadChangeFormat(t *testing.T)
 		os.ReadFile,
 		os.WriteFile,
 		os.ReadDir,
-		os.Create,
 		core.NewTemplateCache(),
 	)
 	cmd.UnreleasedHeader = "## Coming Soon"
@@ -259,7 +253,6 @@ func TestMergeVersionsWithUnreleasedChangesInOneProject(t *testing.T) {
 		os.ReadFile,
 		os.WriteFile,
 		os.ReadDir,
-		os.Create,
 		core.NewTemplateCache(),
 	)
 	cmd.UnreleasedHeader = "## Coming Soon"
@@ -299,7 +292,6 @@ func TestMergeVersionsWithHeaderAndReplacements(t *testing.T) {
 		os.ReadFile,
 		os.WriteFile,
 		os.ReadDir,
-		os.Create,
 		core.NewTemplateCache(),
 	)
 	err := cmd.Run(cmd.Command, nil)
@@ -337,7 +329,6 @@ first version
 		os.ReadFile,
 		os.WriteFile,
 		os.ReadDir,
-		os.Create,
 		core.NewTemplateCache(),
 	)
 	cmd.DryRun = true
@@ -360,7 +351,6 @@ func TestMergeSkipsVersionsIfNoneFound(t *testing.T) {
 		os.ReadFile,
 		os.WriteFile,
 		os.ReadDir,
-		os.Create,
 		core.NewTemplateCache(),
 	)
 	cmd.DryRun = true
@@ -371,27 +361,6 @@ func TestMergeSkipsVersionsIfNoneFound(t *testing.T) {
 	then.Equals(t, changeContents, builder.String())
 }
 
-func TestErrorMergeBadChangelogPath(t *testing.T) {
-	cfg := mergeTestConfig()
-	then.WithTempDirConfig(t, cfg)
-
-	badError := errors.New("bad create")
-	mockCreate := func(filename string) (*os.File, error) {
-		return nil, badError
-	}
-
-	cmd := NewMerge(
-		os.ReadFile,
-		os.WriteFile,
-		os.ReadDir,
-		mockCreate,
-		core.NewTemplateCache(),
-	)
-
-	err := cmd.Run(cmd.Command, nil)
-	then.Err(t, badError, err)
-}
-
 func TestErrorMergeBadConfig(t *testing.T) {
 	then.WithTempDir(t)
 
@@ -399,7 +368,6 @@ func TestErrorMergeBadConfig(t *testing.T) {
 		os.ReadFile,
 		os.WriteFile,
 		os.ReadDir,
-		os.Create,
 		core.NewTemplateCache(),
 	)
 
@@ -420,7 +388,6 @@ func TestErrorMergeUnableToReadChanges(t *testing.T) {
 		os.ReadFile,
 		os.WriteFile,
 		mockReadDir,
-		os.Create,
 		core.NewTemplateCache(),
 	)
 
@@ -440,7 +407,6 @@ func TestErrorMergeBadReplacement(t *testing.T) {
 		os.ReadFile,
 		os.WriteFile,
 		os.ReadDir,
-		os.Create,
 		core.NewTemplateCache(),
 	)
 

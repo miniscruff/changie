@@ -1,8 +1,6 @@
 package core
 
 import (
-	"errors"
-	"os"
 	"testing"
 	"time"
 
@@ -806,10 +804,9 @@ func TestGetBodyTxtWithEditor(t *testing.T) {
 	config := &Config{}
 
 	prompts := &Prompts{
-		Config:      config,
-		BodyEditor:  true,
-		TimeNow:     specificTimeNow,
-		CreateFiler: os.Create,
+		Config:     config,
+		BodyEditor: true,
+		TimeNow:    specificTimeNow,
 		EditorCmdBuilder: func(filename string) (EditorRunner, error) {
 			return &dummyEditorRunner{
 				filename: filename,
@@ -836,10 +833,9 @@ func TestGetBodyTxtWithEditorUnableToCreateCmd(t *testing.T) {
 
 	config := &Config{}
 	prompts := &Prompts{
-		Config:      config,
-		BodyEditor:  true,
-		TimeNow:     specificTimeNow,
-		CreateFiler: os.Create,
+		Config:     config,
+		BodyEditor: true,
+		TimeNow:    specificTimeNow,
 		EditorCmdBuilder: func(s string) (EditorRunner, error) {
 			return BuildCommand(s)
 		},
@@ -847,20 +843,4 @@ func TestGetBodyTxtWithEditorUnableToCreateCmd(t *testing.T) {
 
 	_, err := prompts.BuildChanges()
 	then.NotNil(t, err)
-}
-
-func TestGetBodyTxtWithEditorUnableToCreateTempFile(t *testing.T) {
-	mockErr := errors.New("bad create file")
-	config := &Config{}
-	prompts := &Prompts{
-		Config:     config,
-		BodyEditor: true,
-		TimeNow:    specificTimeNow,
-		CreateFiler: func(filename string) (*os.File, error) {
-			return nil, mockErr
-		},
-	}
-
-	_, err := prompts.BuildChanges()
-	then.Err(t, mockErr, err)
 }

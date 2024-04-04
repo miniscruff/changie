@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"io"
+	"os"
 	"path/filepath"
 
 	"github.com/spf13/cobra"
@@ -21,7 +22,6 @@ type Merge struct {
 	ReadFile      shared.ReadFiler
 	WriteFile     shared.WriteFiler
 	ReadDir       shared.ReadDirer
-	CreateFile    shared.CreateFiler
 	TemplateCache *core.TemplateCache
 }
 
@@ -29,14 +29,12 @@ func NewMerge(
 	readFile shared.ReadFiler,
 	writeFile shared.WriteFiler,
 	readDir shared.ReadDirer,
-	createFile shared.CreateFiler,
 	templateCache *core.TemplateCache,
 ) *Merge {
 	m := &Merge{
 		ReadFile:      readFile,
 		WriteFile:     writeFile,
 		ReadDir:       readDir,
-		CreateFile:    createFile,
 		TemplateCache: templateCache,
 	}
 
@@ -98,7 +96,7 @@ func (m *Merge) mergeProject(
 	if m.DryRun {
 		writer = m.Command.OutOrStdout()
 	} else {
-		changeFile, changeErr := m.CreateFile(changelogPath)
+		changeFile, changeErr := os.Create(changelogPath)
 		if changeErr != nil {
 			return changeErr
 		}
