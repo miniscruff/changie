@@ -74,7 +74,7 @@ func TestNewWithEnvVars(t *testing.T) {
 	then.Equals(t, ".yaml", filepath.Ext(fileInfos[0].Name()))
 
 	changeContent := fmt.Sprintf(
-		"kind: removed\nbody: a message with testcontent\ntime: %s\ncustom:\n  TestPost: Test content\n",
+		"kind: removed\nbody: a message with testcontent\ntime: %s\ncustom:\n    TestPost: Test content\n",
 		newMockTime().Format(time.RFC3339Nano),
 	)
 

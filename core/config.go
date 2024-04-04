@@ -5,7 +5,7 @@ import (
 	"os"
 
 	"github.com/Masterminds/semver/v3"
-	"gopkg.in/yaml.v2"
+	"gopkg.in/yaml.v3"
 
 	"github.com/miniscruff/changie/shared"
 )
