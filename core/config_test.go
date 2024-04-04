@@ -84,17 +84,17 @@ changeFormat: chng
 headerFormat: head
 footerFormat: foot
 components:
-- A
-- D
-- G
+    - A
+    - D
+    - G
 kinds:
-- label: B
-- label: C
-- label: E
+    - label: B
+    - label: C
+    - label: E
 custom:
-- key: first
-  type: string
-  label: First name
+    - key: first
+      type: string
+      label: First name
 `
 
 	mockWf := func(filepath string, bytes []byte, perm os.FileMode) error {
