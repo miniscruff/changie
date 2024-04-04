@@ -61,6 +61,8 @@ type Config struct {
 	ReleaseNotes ReleaseNotesConfig `yaml:"releaseNotes"`
 	Changelog    ChangelogConfig    `yaml:"changelog"`
 
+	// TODO: redirect old configs to there new values
+
 	// Directory for change files, header file and unreleased files.
 	// Relative to project root.
 	// example: yaml
@@ -213,6 +215,7 @@ type Config struct {
 	cachedEnvVars map[string]string
 }
 
+// TODO: Move this to the kind config
 func (c *Config) KindHeader(label string) string {
 	for _, kindConfig := range c.Kinds {
 		if kindConfig.Format != "" && kindConfig.Label == label {
@@ -223,6 +226,7 @@ func (c *Config) KindHeader(label string) string {
 	return c.KindFormat
 }
 
+// TODO: move this to the kind config
 func (c *Config) ChangeFormatForKind(label string) string {
 	for _, kindConfig := range c.Kinds {
 		if kindConfig.ChangeFormat != "" && kindConfig.Label == label {
@@ -247,6 +251,7 @@ func (c *Config) Save(wf shared.WriteFiler) error {
 	return wf(ConfigPaths[0], bs, CreateFileMode)
 }
 
+// TODO: Move this to the project config type
 func (c *Config) ProjectFromLabel(labelOrKey string) (*ProjectConfigOptions, error) {
 	if len(c.Projects) == 0 {
 		return &ProjectConfigOptions{}, nil
@@ -265,6 +270,7 @@ func (c *Config) ProjectFromLabel(labelOrKey string) (*ProjectConfigOptions, err
 	return nil, errProjectNotFound
 }
 
+// TODO: move this to the ProjectConfig type
 func (c *Config) ProjectLabels() []string {
 	projectLabels := make([]string, len(c.Projects))
 
