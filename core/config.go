@@ -102,7 +102,7 @@ func (b BodyConfig) Validate(input string) error {
 }
 
 // Configuration options for newlines before and after different elements.
-type NewlinesConfig struct {
+type NewlinesConfigOld struct {
 	// Add newlines after change fragment
 	AfterChange int `yaml:"afterChange,omitempty" default:"0"`
 	// Add newlines after the header file in the merged changelog
@@ -189,6 +189,35 @@ type ProjectConfig struct {
 	Replacements []Replacement `yaml:"replacements"`
 }
 
+// NewlineConfig configures how we add newlines before and after templates.
+type NewlinesConfig struct {
+	// Before is the amount of newlines to add before writing text.
+	Before int `yaml:"before"`
+	// After is the amount of newlines to add after writing text.
+	After int `yaml:"after"`
+}
+
+// LinePromptConfig TODO:
+type LinePromptConfig struct {
+	// Key of our prompt output used in file/fragment templates
+	Key string `yaml:"key"`
+	// Label is the display text when asking users for prompt values.
+	// If not defined, the key is used.
+	Label string `yaml:"label"`
+	// Line format ...
+	// ??? can projects have line formats? What would that do?
+	LineFormat string `yaml:"lineFormat"`
+}
+
+// FileWriterConfig TODO:
+// TODO: ( custom type for what data to pass to template cache, we need to document )
+type FileWriterConfig struct {
+	Filepath   string `yaml:"filepath"`
+	LineFormat string `yaml:"lineFormat"`
+
+	NewlinesConfig `yaml:"newlines"`
+}
+
 // Config handles configuration for a project.
 //
 // Custom configuration path:
@@ -210,6 +239,65 @@ type ProjectConfig struct {
 //
 // All elements are optional and will be added together if all are provided.
 type Config struct {
+	RootDir string `yaml:"changesDir" required:"true"`
+	/*
+	   rootDir: .changes ( from ChangesDir )
+	   env prefix: CHANGIE_ ( unchanged )
+	   fragment:
+	       dir: directory for unrelease fragments relative to root dir ( from UnreleasedDir )
+	       file format: template format for generating the file name of fragments ( from FragmentFileFormat )
+	       posts: post processing ( from root posts )
+	       prompts: ( from Customs )
+	   project:
+	       version separator: ( from project version separator )
+	       options: ( from Projects )
+	           - key: key of our component used in file/fragment outputs
+	             label: output label when selecting in prompts ( defaults to key if empty )
+	             ( maybe inline file_writer_type if projects have a use for line_prompt_type )
+	             replacements: ( unchanged )
+	             changelog: ( matches the root changelog config and will merge the root with each project )
+	   component:
+	       line format: output format of our component line, can be empty
+	       newlines: see newline_type
+	       options:
+	       - line_prompt_type ( inline these values )
+	         post: post process options ( just like kind config, ran before kinds if both configured )
+	   kind:
+	       line format: output format of our kind line, required
+	       newlines: see type
+	       options:
+	           - line_prompt_type ( inline these values )
+	             change format: per kind option of the change format ( takes precedence over default change line format )
+	             post: post process options (unchanged kind config)
+	             auto level: unchanged
+	             skip: ( extra level needed? )
+	               body: unchanged
+	               default prompts: unchanged
+	               default post: unchanged
+	             ??? prompts: ( from additional choices )
+	             ??? should this be wrapped in a prompts and have skip global under it?
+	   change: ( renamed from body? )
+	       line_prompt_type ( inline these values ) ( default to body )
+	       min_length: min length validation
+	       max_length: max length validation
+	       skip: true/false
+	       newlines: see type
+	   releaseNotes:
+	       extension: File extension for release notes ( from VersionExt )
+	       version: see file_writer_type
+	       header: see file_writer_type
+	       footer: see file_writer_type
+	       newlines: see newline_type
+	   changelog: ( shared type between root and project.options[*].changelog )
+	       output: output path to changelog file ( from ChangelogPath )
+	       header: see file_writer_type
+	       footer: see file_writer_type
+	       newlines: see newline_type
+	       replacements: moved to better support projects
+	*/
+
+	// Leave comments for redirects / renames later.
+
 	// Directory for change files, header file and unreleased files.
 	// Relative to project root.
 	// example: yaml
@@ -334,7 +422,7 @@ type Config struct {
 	//   replace: '  "version": "{{.VersionNoPrefix}}",'
 	Replacements []Replacement `yaml:"replacements,omitempty"`
 	// Newline options allow you to add extra lines between elements written by changie.
-	Newlines NewlinesConfig `yaml:"newlines,omitempty"`
+	Newlines NewlinesConfigOld `yaml:"newlines,omitempty"`
 	// Post process options when saving a new change fragment.
 	// example: yaml
 	// # build a GitHub link from author choice
