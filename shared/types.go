@@ -2,11 +2,7 @@ package shared
 
 import (
 	"os"
-	"time"
 )
-
-// TimeNow is a func type for time.Now
-type TimeNow func() time.Time
 
 // MkdirAller is a func type for os.MkdirAll
 type MkdirAller func(path string, perm os.FileMode) error

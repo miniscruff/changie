@@ -32,7 +32,7 @@ type Prompts struct {
 	BodyEditor       bool
 	CreateFiler      shared.CreateFiler
 	EditorCmdBuilder func(string) (EditorRunner, error)
-	TimeNow          shared.TimeNow
+	TimeNow          TimeNow
 
 	// Values can be submitted from the environment or shell arguments.
 	Projects  []string

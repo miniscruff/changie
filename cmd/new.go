@@ -27,7 +27,7 @@ type New struct {
 	// dependencies
 	ReadFile      shared.ReadFiler
 	CreateFile    shared.CreateFiler
-	TimeNow       shared.TimeNow
+	TimeNow       core.TimeNow
 	MkdirAll      shared.MkdirAller
 	TemplateCache *core.TemplateCache
 }
@@ -35,7 +35,7 @@ type New struct {
 func NewNew(
 	readFile shared.ReadFiler,
 	createFile shared.CreateFiler,
-	timeNow shared.TimeNow,
+	timeNow core.TimeNow,
 	mkdirAll shared.MkdirAller,
 	templateCache *core.TemplateCache,
 ) *New {

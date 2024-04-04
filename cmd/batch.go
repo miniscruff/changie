@@ -41,7 +41,7 @@ type Batch struct {
 	MkdirAll      shared.MkdirAller
 	Remove        shared.Remover
 	RemoveAll     shared.RemoveAller
-	TimeNow       shared.TimeNow
+	TimeNow       core.TimeNow
 	TemplateCache *core.TemplateCache
 
 	// Computed values
@@ -59,7 +59,7 @@ func NewBatch(
 	mkdirAll shared.MkdirAller,
 	remove shared.Remover,
 	removeAll shared.RemoveAller,
-	timeNow shared.TimeNow,
+	timeNow core.TimeNow,
 	templateCache *core.TemplateCache,
 ) *Batch {
 	b := &Batch{

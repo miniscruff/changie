@@ -10,6 +10,7 @@ import (
 	"path/filepath"
 	"sort"
 	"strings"
+	"time"
 
 	"github.com/Masterminds/semver/v3"
 
@@ -17,6 +18,9 @@ import (
 
 	shellquote "github.com/kballard/go-shellquote"
 )
+
+// TimeNow is a func type for time.Now
+type TimeNow func() time.Time
 
 type EditorRunner interface {
 	Run() error
