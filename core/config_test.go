@@ -56,7 +56,7 @@ func TestSaveConfigWithCustomChoicesAndOptionals(t *testing.T) {
 		Components:        []string{"A", "D", "G"},
 		HeaderFormat:      "head",
 		FooterFormat:      "foot",
-		Kinds: []KindConfig{
+		Kinds: []KindConfigOld{
 			{Label: "B"},
 			{Label: "C"},
 			{Label: "E"},
@@ -283,7 +283,7 @@ func TestErrorBadYamlFile(t *testing.T) {
 
 func TestGetHeaderFromKindLabel(t *testing.T) {
 	config := Config{
-		Kinds: []KindConfig{
+		Kinds: []KindConfigOld{
 			{Label: "A", Format: "unused"},
 			{Label: "unused", Format: ""},
 			{Label: "C", Format: "KF"},
@@ -295,7 +295,7 @@ func TestGetHeaderFromKindLabel(t *testing.T) {
 
 func TestGetDefaultHeaderForKind(t *testing.T) {
 	config := Config{
-		Kinds: []KindConfig{
+		Kinds: []KindConfigOld{
 			{Label: "ignored"},
 		},
 		KindFormat: "KF",
@@ -306,7 +306,7 @@ func TestGetDefaultHeaderForKind(t *testing.T) {
 
 func TestGetChangeFormatFromKindLabel(t *testing.T) {
 	config := Config{
-		Kinds: []KindConfig{
+		Kinds: []KindConfigOld{
 			{Label: "A", ChangeFormat: "unused"},
 			{Label: "unused", ChangeFormat: ""},
 			{Label: "C", ChangeFormat: "CF"},
@@ -318,7 +318,7 @@ func TestGetChangeFormatFromKindLabel(t *testing.T) {
 
 func TestGetDefaultChangeFormatIfNoCustomOnesExist(t *testing.T) {
 	config := Config{
-		Kinds: []KindConfig{
+		Kinds: []KindConfigOld{
 			{Label: "unused", ChangeFormat: "ignored"},
 		},
 		ChangeFormat: "CF",
@@ -352,7 +352,7 @@ func TestBodyConfigWithMinAndMax(t *testing.T) {
 
 func TestConfigProjectFindsProjectByLabel(t *testing.T) {
 	cfg := &Config{
-		Projects: []ProjectConfig{
+		Projects: []ProjectConfigOptions{
 			{
 				Label: "Other",
 				Key:   "other",
@@ -364,14 +364,14 @@ func TestConfigProjectFindsProjectByLabel(t *testing.T) {
 		},
 	}
 
-	proj, err := cfg.Project("CLI")
+	proj, err := cfg.ProjectFromLabel("CLI")
 	then.Nil(t, err)
 	then.Equals(t, "cli", proj.Key)
 }
 
 func TestConfigProjectFindsProjectByKey(t *testing.T) {
 	cfg := &Config{
-		Projects: []ProjectConfig{
+		Projects: []ProjectConfigOptions{
 			{
 				Label: "Other",
 				Key:   "other",
@@ -383,7 +383,7 @@ func TestConfigProjectFindsProjectByKey(t *testing.T) {
 		},
 	}
 
-	proj, err := cfg.Project("cli")
+	proj, err := cfg.ProjectFromLabel("cli")
 	then.Nil(t, err)
 	then.Equals(t, "CLI", proj.Label)
 }
@@ -391,16 +391,16 @@ func TestConfigProjectFindsProjectByKey(t *testing.T) {
 func TestConfigProjectNoProjectsReturnsEmptyConfig(t *testing.T) {
 	cfg := &Config{}
 
-	proj, err := cfg.Project("")
+	proj, err := cfg.ProjectFromLabel("")
 	then.Nil(t, err)
 	then.Equals(t, "", proj.Label)
 	then.Equals(t, "", proj.Key)
-	then.Equals(t, "", proj.ChangelogPath)
+	then.Equals(t, "", proj.Changelog.Output)
 }
 
 func TestConfigProjectCanGetLabels(t *testing.T) {
 	cfg := &Config{
-		Projects: []ProjectConfig{
+		Projects: []ProjectConfigOptions{
 			{
 				Label: "Labeled",
 				Key:   "labeled",
@@ -417,7 +417,7 @@ func TestConfigProjectCanGetLabels(t *testing.T) {
 
 func TestConfigProjectErrorNoLabelOrKeyAndRequired(t *testing.T) {
 	cfg := &Config{
-		Projects: []ProjectConfig{
+		Projects: []ProjectConfigOptions{
 			{
 				Label: "Other",
 				Key:   "other",
@@ -425,13 +425,13 @@ func TestConfigProjectErrorNoLabelOrKeyAndRequired(t *testing.T) {
 		},
 	}
 
-	_, err := cfg.Project("")
+	_, err := cfg.ProjectFromLabel("")
 	then.Err(t, errProjectRequired, err)
 }
 
 func TestConfigProjectErrorNotFound(t *testing.T) {
 	cfg := &Config{
-		Projects: []ProjectConfig{
+		Projects: []ProjectConfigOptions{
 			{
 				Label: "Other",
 				Key:   "other",
@@ -439,6 +439,6 @@ func TestConfigProjectErrorNotFound(t *testing.T) {
 		},
 	}
 
-	_, err := cfg.Project("emailer")
+	_, err := cfg.ProjectFromLabel("emailer")
 	then.Err(t, errProjectNotFound, err)
 }

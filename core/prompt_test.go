@@ -49,7 +49,7 @@ func TestAskPromptsForBodyWithProject(t *testing.T) {
 	)
 
 	config := &Config{
-		Projects: []ProjectConfig{
+		Projects: []ProjectConfigOptions{
 			{Label: "Client", Key: "client"},
 			{Label: "Other", Key: "other"},
 		},
@@ -76,7 +76,7 @@ func TestAskPromptsForBodyWithProjectErrBadProject(t *testing.T) {
 	reader, _ := then.WithReadWritePipe(t)
 
 	config := &Config{
-		Projects: []ProjectConfig{
+		Projects: []ProjectConfigOptions{
 			{Label: "Client", Key: "client"},
 			{Label: "Other", Key: "other"},
 		},
@@ -101,7 +101,7 @@ func TestAskPromptsForBodyWithProjectErrBadInput(t *testing.T) {
 	)
 
 	config := &Config{
-		Projects: []ProjectConfig{
+		Projects: []ProjectConfigOptions{
 			{Label: "Client", Key: "client"},
 			{Label: "Other", Key: "other"},
 		},
@@ -124,7 +124,7 @@ func TestAskPromptsForBodyWithProjectErrNoProject(t *testing.T) {
 	)
 
 	config := &Config{
-		Projects: []ProjectConfig{
+		Projects: []ProjectConfigOptions{
 			{Label: "Client", Key: "client"},
 			{Label: "Other", Key: "other"},
 		},
@@ -151,7 +151,7 @@ func TestAskComponentKindBody(t *testing.T) {
 
 	config := &Config{
 		Components: []string{"cli", "tests", "utils"},
-		Kinds: []KindConfig{
+		Kinds: []KindConfigOld{
 			{Label: "added"},
 			{Label: "changed"},
 			{Label: "removed"},
@@ -176,7 +176,7 @@ func TestBodyKindPostProcess(t *testing.T) {
 	reader, _ := then.WithReadWritePipe(t)
 
 	config := &Config{
-		Kinds: []KindConfig{
+		Kinds: []KindConfigOld{
 			{
 				Label: "added",
 				Post: []PostProcessConfig{
@@ -290,7 +290,7 @@ func TestSkippedBodyGlobalChoicesKindWithAdditional(t *testing.T) {
 		CustomChoices: []Custom{
 			{Key: "skipped", Type: CustomString, Label: "a"},
 		},
-		Kinds: []KindConfig{
+		Kinds: []KindConfigOld{
 			{
 				Label:             "added",
 				SkipBody:          true,
@@ -349,7 +349,7 @@ func TestBodyAndPostProcess(t *testing.T) {
 func TestBodyAndPostProcessSkipGlobalPost(t *testing.T) {
 	reader, _ := then.WithReadWritePipe(t)
 	config := &Config{
-		Kinds: []KindConfig{
+		Kinds: []KindConfigOld{
 			{
 				Label:          "added",
 				SkipGlobalPost: true,
@@ -439,7 +439,7 @@ func TestErrorInvalidPostWithProjects(t *testing.T) {
 		Post: []PostProcessConfig{
 			{Key: "Post", Value: "invalid {{++...thing}}"},
 		},
-		Projects: []ProjectConfig{
+		Projects: []ProjectConfigOptions{
 			{Label: "Client", Key: "client"},
 			{Label: "Other", Key: "other"},
 		},
@@ -508,7 +508,7 @@ func TestErrorInvalidKind(t *testing.T) {
 	)
 
 	config := &Config{
-		Kinds: []KindConfig{
+		Kinds: []KindConfigOld{
 			{Label: "a"},
 			{Label: "b"},
 		},
@@ -569,7 +569,7 @@ func TestErrorInvalidCustomValue(t *testing.T) {
 func TestErrorBadKindLabel(t *testing.T) {
 	reader, _ := then.WithReadWritePipe(t)
 	config := &Config{
-		Kinds: []KindConfig{
+		Kinds: []KindConfigOld{
 			{Label: "kind"},
 		},
 	}
@@ -676,7 +676,7 @@ func TestErrorCustomGivenDoesNotPassValidation(t *testing.T) {
 func TestErrorBodyGivenWithNoConfiguration(t *testing.T) {
 	reader, _ := then.WithReadWritePipe(t)
 	config := &Config{
-		Kinds: []KindConfig{
+		Kinds: []KindConfigOld{
 			{Label: "kind", SkipBody: true},
 		},
 	}
@@ -697,7 +697,7 @@ func TestErrorBodyGivenDoesNotPassValidation(t *testing.T) {
 
 	reader, _ := then.WithReadWritePipe(t)
 	config := &Config{
-		Kinds: []KindConfig{
+		Kinds: []KindConfigOld{
 			{Label: "kind"},
 		},
 		Body: BodyConfig{
@@ -751,7 +751,7 @@ func TestSkipPromptForKindIfSet(t *testing.T) {
 	)
 
 	config := &Config{
-		Kinds: []KindConfig{
+		Kinds: []KindConfigOld{
 			{Label: "kind"},
 		},
 	}
@@ -779,7 +779,7 @@ func TestSkipPromptForBodyIfSet(t *testing.T) {
 	)
 
 	config := &Config{
-		Kinds: []KindConfig{
+		Kinds: []KindConfigOld{
 			{Label: "kind"},
 		},
 	}

@@ -80,7 +80,7 @@ func (m *Merge) Run(cmd *cobra.Command, args []string) error {
 	// If we have projects, merge all of them.
 	if len(cfg.Projects) > 0 {
 		for _, pc := range cfg.Projects {
-			err = m.mergeProject(cfg, pc.Key, pc.ChangelogPath, pc.Replacements)
+			err = m.mergeProject(cfg, pc.Key, pc.Changelog.Output, pc.Changelog.Replacements)
 			if err != nil {
 				return err
 			}

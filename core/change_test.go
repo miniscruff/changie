@@ -108,7 +108,7 @@ func TestSortByTime(t *testing.T) {
 
 func TestSortByKindThenTime(t *testing.T) {
 	config := &Config{
-		Kinds: []KindConfig{
+		Kinds: []KindConfigOld{
 			{Label: "A"},
 			{Label: "B"},
 		},
@@ -129,7 +129,7 @@ func TestSortByKindThenTime(t *testing.T) {
 
 func TestSortByComponentThenKind(t *testing.T) {
 	config := &Config{
-		Kinds: []KindConfig{
+		Kinds: []KindConfigOld{
 			{Label: "D"},
 			{Label: "E"},
 		},

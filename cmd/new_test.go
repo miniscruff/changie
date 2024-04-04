@@ -24,7 +24,7 @@ func newTestConfig() *core.Config {
 		KindFormat:    "### {{.Kind}}",
 		ChangeFormat:  "* {{.Body}}",
 		EnvPrefix:     "ENVPREFIX_",
-		Kinds: []core.KindConfig{
+		Kinds: []core.KindConfigOld{
 			{Label: "added"},
 			{Label: "removed"},
 			{Label: "other"},
@@ -237,7 +237,7 @@ func TestErrorNewFragmentTemplate(t *testing.T) {
 
 func TestNewOutputsToCmdOutWhenDry(t *testing.T) {
 	cfg := newTestConfig()
-	cfg.Kinds = []core.KindConfig{}
+	cfg.Kinds = []core.KindConfigOld{}
 	then.WithTempDirConfig(t, cfg)
 	reader, writer := then.WithReadWritePipe(t)
 

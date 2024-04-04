@@ -80,6 +80,7 @@ func testMerge(t *testing.T, cmd *cobra.Command) {
 	then.FileContents(t, changeContents, "CHANGELOG.md")
 }
 
+// TODO: create a second test with the old init before the new config format
 func TestFullRun(t *testing.T) {
 	cmd := RootCmd()
 

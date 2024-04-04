@@ -68,6 +68,7 @@ Default values follow keep a changelog and semver specs but are customizable.`,
 func (i *Init) Run(cmd *cobra.Command, args []string) error {
 	config := core.Config{
 		ChangesDir:    i.ChangesDir,
+		EnvPrefix:     "CHANGIE_",
 		UnreleasedDir: "unreleased",
 		HeaderPath:    "header.tpl.md",
 		ChangelogPath: i.ChangelogPath,
@@ -75,38 +76,39 @@ func (i *Init) Run(cmd *cobra.Command, args []string) error {
 		VersionFormat: "## {{.Version}} - {{.Time.Format \"2006-01-02\"}}",
 		KindFormat:    "### {{.Kind}}",
 		ChangeFormat:  "* {{.Body}}",
-		Kinds: []core.KindConfig{
-			{
-				Label:     "Added",
-				AutoLevel: core.MinorLevel,
+		/*
+			Kinds: []core.KindConfig{
+				{
+					Label:     "Added",
+					AutoLevel: core.MinorLevel,
+				},
+				{
+					Label:     "Changed",
+					AutoLevel: core.MajorLevel,
+				},
+				{
+					Label:     "Deprecated",
+					AutoLevel: core.MinorLevel,
+				},
+				{
+					Label:     "Removed",
+					AutoLevel: core.MajorLevel,
+				},
+				{
+					Label:     "Fixed",
+					AutoLevel: core.PatchLevel,
+				},
+				{
+					Label:     "Security",
+					AutoLevel: core.PatchLevel,
+				},
 			},
-			{
-				Label:     "Changed",
-				AutoLevel: core.MajorLevel,
+			Newlines: core.NewlinesConfig{
+				AfterChangelogHeader:   1,
+				BeforeChangelogVersion: 1,
+				EndOfVersion:           1,
 			},
-			{
-				Label:     "Deprecated",
-				AutoLevel: core.MinorLevel,
-			},
-			{
-				Label:     "Removed",
-				AutoLevel: core.MajorLevel,
-			},
-			{
-				Label:     "Fixed",
-				AutoLevel: core.PatchLevel,
-			},
-			{
-				Label:     "Security",
-				AutoLevel: core.PatchLevel,
-			},
-		},
-		Newlines: core.NewlinesConfig{
-			AfterChangelogHeader:   1,
-			BeforeChangelogVersion: 1,
-			EndOfVersion:           1,
-		},
-		EnvPrefix: "CHANGIE_",
+		*/
 	}
 
 	headerPath := filepath.Join(config.ChangesDir, config.HeaderPath)

@@ -83,9 +83,9 @@ func (n *Next) Run(cmd *cobra.Command, args []string) error {
 	}
 
 	if len(config.Projects) > 0 {
-		var pc *core.ProjectConfig
+		var pc *core.ProjectConfigOptions
 
-		pc, err = config.Project(n.Project)
+		pc, err = config.ProjectFromLabel(n.Project)
 		if err != nil {
 			return err
 		}

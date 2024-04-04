@@ -227,9 +227,9 @@ func (b *Batch) Run(cmd *cobra.Command, args []string) error {
 	}
 
 	if len(b.config.Projects) > 0 {
-		var pc *core.ProjectConfig
+		var pc *core.ProjectConfigOptions
 
-		pc, err = b.config.Project(b.Project)
+		pc, err = b.config.ProjectFromLabel(b.Project)
 		if err != nil {
 			return err
 		}
