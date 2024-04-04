@@ -6,7 +6,7 @@ Be sure to read the CONTRIBUTING guide.
 Closes #NNN
 
 **Check the following**
-- [ ] Keep 100% code coverage
+- [ ] Maintain high code coverage
 - [ ] Be properly formatted
 - [ ] Documentation changes are included
 - [ ] Include a change file if expected
