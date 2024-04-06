@@ -23,7 +23,7 @@ paginate==0.5.6
 pathspec==0.12.1
 Pillow==10.3.0
 platformdirs==4.2.0
-pycparser==2.21
+pycparser==2.22
 Pygments==2.17.2
 pymdown-extensions==10.7.1
 python-dateutil==2.9.0.post0
