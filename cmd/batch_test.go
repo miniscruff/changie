@@ -43,7 +43,6 @@ func withDefaultBatch() *Batch {
 		os.Rename,
 		os.WriteFile,
 		os.MkdirAll,
-		os.Remove,
 		time.Now,
 		core.NewTemplateCache(),
 	)
@@ -460,34 +459,6 @@ func TestBatchErrorBadVersion(t *testing.T) {
 	then.Err(t, core.ErrBadVersionOrPart, err)
 }
 
-func TestBatchErrorTryingToGetAllVersionsWithRemovingPrereleases(t *testing.T) {
-	cfg := batchTestConfig()
-	cfg.VersionExt = "txt"
-	then.WithTempDirConfig(t, cfg)
-
-	batch := withDefaultBatch()
-	batch.RemovePrereleases = true
-
-	writeChangeFile(t, cfg, &core.Change{Kind: "added", Body: "A"})
-	writeChangeFile(t, cfg, &core.Change{Kind: "added", Body: "B"})
-	writeChangeFile(t, cfg, &core.Change{Kind: "removed", Body: "C"})
-
-	prePath := filepath.Join(cfg.ChangesDir, "v0.1.2-a1.txt")
-	then.CreateFile(t, prePath)
-
-	mockErr := errors.New("remove failed")
-	batch.Remove = func(name string) error {
-		if name == prePath {
-			return mockErr
-		}
-
-		return os.Remove(name)
-	}
-
-	err := batch.Run(batch.Command, []string{"v0.2.0"})
-	then.Err(t, mockErr, err)
-}
-
 func TestBatchErrorBadLatestVersion(t *testing.T) {
 	cfg := batchTestConfig()
 	cfg.ChangesDir = "../../opt/apt/not/real"
@@ -564,22 +535,6 @@ func TestBatchErrorBadFilesAndTemplates(t *testing.T) {
 		err := batch.Run(batch.Command, []string{"v0.1.1"})
 		then.NotNil(t, err)
 	}
-}
-
-func TestBatchErrorBadDelete(t *testing.T) {
-	cfg := batchTestConfig()
-	batch := withDefaultBatch()
-
-	then.WithTempDirConfig(t, cfg)
-	writeChangeFile(t, cfg, &core.Change{Kind: "added", Body: "C"})
-
-	mockErr := errors.New("bad clear unreleased")
-	batch.Remove = func(path string) error {
-		return mockErr
-	}
-
-	err := batch.Run(batch.Command, []string{"v0.2.3"})
-	then.Err(t, mockErr, err)
 }
 
 func TestBatchErrorBadKindFormat(t *testing.T) {
@@ -785,29 +740,6 @@ func TestBatchClearUnreleasedMovesFilesIncludingHeaderIfSpecified(t *testing.T) 
 	then.DirectoryFileCount(t, 4, cfg.ChangesDir, "beta")
 	// .gitkeep should remain
 	then.DirectoryFileCount(t, 1, cfg.ChangesDir, cfg.UnreleasedDir)
-}
-
-func TestBatchErrorClearUnreleasedIfMoveFails(t *testing.T) {
-	then.WithTempDir(t)
-
-	cfg := batchTestConfig()
-	batch := withDefaultBatch()
-	batch.config = cfg
-
-	mockErr := errors.New("bad mock remove")
-	batch.Remove = func(name string) error {
-		return mockErr
-	}
-
-	changes := []core.Change{
-		{Kind: "added", Body: "A"},
-	}
-	for i := range changes {
-		writeChangeFile(t, cfg, &changes[i])
-	}
-
-	err := batch.ClearUnreleased(changes)
-	then.Err(t, mockErr, err)
 }
 
 func TestBatchUnreleasedFailsIfMoveFails(t *testing.T) {

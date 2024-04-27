@@ -28,7 +28,6 @@ being easy to use for developers and your release team.`,
 		os.Rename,
 		os.WriteFile,
 		os.MkdirAll,
-		os.Remove,
 		time.Now,
 		templateCache,
 	)

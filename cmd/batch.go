@@ -38,7 +38,6 @@ type Batch struct {
 	Rename        shared.Renamer
 	WriteFile     shared.WriteFiler
 	MkdirAll      shared.MkdirAller
-	Remove        shared.Remover
 	TimeNow       core.TimeNow
 	TemplateCache *core.TemplateCache
 
@@ -54,7 +53,6 @@ func NewBatch(
 	rename shared.Renamer,
 	writeFile shared.WriteFiler,
 	mkdirAll shared.MkdirAller,
-	remove shared.Remover,
 	timeNow core.TimeNow,
 	templateCache *core.TemplateCache,
 ) *Batch {
@@ -64,7 +62,6 @@ func NewBatch(
 		Rename:        rename,
 		WriteFile:     writeFile,
 		MkdirAll:      mkdirAll,
-		Remove:        remove,
 		TimeNow:       timeNow,
 		TemplateCache: templateCache,
 	}
@@ -348,7 +345,7 @@ func (b *Batch) Run(cmd *cobra.Command, args []string) error {
 				continue
 			}
 
-			err = b.Remove(filepath.Join(
+			err = os.Remove(filepath.Join(
 				b.config.ChangesDir,
 				b.Project,
 				v.Original()+"."+b.config.VersionExt,
@@ -508,7 +505,7 @@ func (b *Batch) ClearUnreleased(changes []core.Change, otherFiles ...string) err
 				return err
 			}
 		} else {
-			err = b.Remove(f)
+			err = os.Remove(f)
 			if err != nil {
 				return err
 			}

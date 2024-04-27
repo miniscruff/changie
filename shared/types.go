@@ -18,6 +18,3 @@ type Renamer func(oldPath, newPath string) error
 
 // ReadDirer is a func type for os.ReadDir
 type ReadDirer func(dirname string) ([]os.DirEntry, error)
-
-// Remover is a func type for os.Remove
-type Remover func(path string) error
