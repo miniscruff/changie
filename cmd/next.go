@@ -19,13 +19,11 @@ type Next struct {
 	Project     string
 
 	// dependencies
-	ReadDir  shared.ReadDirer
 	ReadFile shared.ReadFiler
 }
 
-func NewNext(readDir shared.ReadDirer, readFile shared.ReadFiler) *Next {
+func NewNext(readFile shared.ReadFiler) *Next {
 	next := &Next{
-		ReadDir:  readDir,
 		ReadFile: readFile,
 	}
 
@@ -97,13 +95,13 @@ func (n *Next) Run(cmd *cobra.Command, args []string) error {
 	var changes []core.Change
 	// only worry about loading changes, if we are in auto mode
 	if part == core.AutoLevel {
-		changes, err = core.GetChanges(config, n.IncludeDirs, n.ReadDir, n.ReadFile, n.Project)
+		changes, err = core.GetChanges(config, n.IncludeDirs, n.ReadFile, n.Project)
 		if err != nil {
 			return err
 		}
 	}
 
-	next, err := core.GetNextVersion(n.ReadDir, config, part, n.Prerelease, n.Meta, changes, n.Project)
+	next, err := core.GetNextVersion(config, part, n.Prerelease, n.Meta, changes, n.Project)
 	if err != nil {
 		return err
 	}

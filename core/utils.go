@@ -51,7 +51,6 @@ func AppendFile(rootFile io.Writer, path string) error {
 }
 
 func GetAllVersions(
-	readDir shared.ReadDirer,
 	config *Config,
 	skipPrereleases bool,
 	projectKey string,
@@ -63,9 +62,9 @@ func GetAllVersions(
 		versionsPath = filepath.Join(versionsPath, projectKey)
 	}
 
-	fileInfos, err := readDir(versionsPath)
+	fileInfos, err := os.ReadDir(versionsPath)
 	if err != nil {
-		return allVersions, err
+		return allVersions, fmt.Errorf("reading files from '%s': %w", versionsPath, err)
 	}
 
 	for _, file := range fileInfos {
@@ -93,12 +92,11 @@ func GetAllVersions(
 }
 
 func GetLatestVersion(
-	readDir shared.ReadDirer,
 	config *Config,
 	skipPrereleases bool,
 	projectKey string,
 ) (*semver.Version, error) {
-	allVersions, err := GetAllVersions(readDir, config, skipPrereleases, projectKey)
+	allVersions, err := GetAllVersions(config, skipPrereleases, projectKey)
 	if err != nil {
 		return nil, err
 	}
@@ -157,7 +155,6 @@ func HighestAutoLevel(config *Config, allChanges []Change) (string, error) {
 }
 
 func GetNextVersion(
-	readDir shared.ReadDirer,
 	config *Config,
 	partOrVersion string,
 	prerelease, meta []string,
@@ -178,7 +175,7 @@ func GetNextVersion(
 		}
 
 		// otherwise use a bump type command
-		next, err = GetLatestVersion(readDir, config, false, projectKey)
+		next, err = GetLatestVersion(config, false, projectKey)
 		if err != nil {
 			return nil, err
 		}
@@ -225,7 +222,6 @@ func GetNextVersion(
 
 func FindChangeFiles(
 	config *Config,
-	readDir shared.ReadDirer,
 	searchPaths []string,
 ) ([]string, error) {
 	var yamlFiles []string
@@ -237,7 +233,7 @@ func FindChangeFiles(
 	for _, searchPath := range searchPaths {
 		rootPath := filepath.Join(config.ChangesDir, searchPath)
 
-		fileInfos, err := readDir(rootPath)
+		fileInfos, err := os.ReadDir(rootPath)
 		if err != nil {
 			return yamlFiles, err
 		}
@@ -294,13 +290,12 @@ func LoadEnvVars(config *Config, envs []string) map[string]string {
 func GetChanges(
 	config *Config,
 	searchPaths []string,
-	readDir shared.ReadDirer,
 	readFile shared.ReadFiler,
 	projectKey string,
 ) ([]Change, error) {
 	var changes []Change
 
-	changeFiles, err := FindChangeFiles(config, readDir, searchPaths)
+	changeFiles, err := FindChangeFiles(config, searchPaths)
 	if err != nil {
 		return changes, err
 	}

@@ -15,6 +15,3 @@ type ReadFiler func(filename string) ([]byte, error)
 
 // Renamer is a func type for os.Rename
 type Renamer func(oldPath, newPath string) error
-
-// ReadDirer is a func type for os.ReadDir
-type ReadDirer func(dirname string) ([]os.DirEntry, error)

@@ -28,7 +28,7 @@ func TestNextVersionWithPatch(t *testing.T) {
 	cfg := nextTestConfig()
 	then.WithTempDirConfig(t, cfg)
 
-	next := NewNext(os.ReadDir, os.ReadFile)
+	next := NewNext(os.ReadFile)
 	builder := strings.Builder{}
 
 	next.SetOut(&builder)
@@ -56,7 +56,7 @@ func TestNextVersionWithProject(t *testing.T) {
 	then.WithTempDirConfig(t, cfg)
 
 	builder := strings.Builder{}
-	next := NewNext(os.ReadDir, os.ReadFile)
+	next := NewNext(os.ReadFile)
 	next.Project = "w"
 
 	next.SetOut(&builder)
@@ -84,7 +84,7 @@ func TestNextVersionWithProjectBadProject(t *testing.T) {
 	then.WithTempDirConfig(t, cfg)
 
 	builder := strings.Builder{}
-	next := NewNext(os.ReadDir, os.ReadFile)
+	next := NewNext(os.ReadFile)
 	next.Project = "missing_proj"
 
 	next.SetOut(&builder)
@@ -111,7 +111,7 @@ func TestNextVersionWithAuto(t *testing.T) {
 	then.WithTempDirConfig(t, cfg)
 
 	builder := strings.Builder{}
-	next := NewNext(os.ReadDir, os.ReadFile)
+	next := NewNext(os.ReadFile)
 
 	next.SetOut(&builder)
 	then.CreateFile(t, cfg.ChangesDir, "v0.0.1.md")
@@ -136,7 +136,7 @@ func TestNextVersionWithPrereleaseAndMeta(t *testing.T) {
 	cfg := nextTestConfig()
 	then.WithTempDirConfig(t, cfg)
 
-	next := NewNext(os.ReadDir, os.ReadFile)
+	next := NewNext(os.ReadFile)
 	builder := strings.Builder{}
 
 	next.Prerelease = []string{"b1"}
@@ -155,7 +155,7 @@ func TestNextVersionWithPrereleaseAndMeta(t *testing.T) {
 func TestErrorNextVersionBadConfig(t *testing.T) {
 	then.WithTempDir(t)
 
-	next := NewNext(os.ReadDir, os.ReadFile)
+	next := NewNext(os.ReadFile)
 	builder := strings.Builder{}
 
 	next.SetOut(&builder)
@@ -168,7 +168,7 @@ func TestErrorNextPartNotSupported(t *testing.T) {
 	cfg := nextTestConfig()
 	then.WithTempDirConfig(t, cfg)
 
-	next := NewNext(os.ReadDir, os.ReadFile)
+	next := NewNext(os.ReadFile)
 	builder := strings.Builder{}
 
 	next.SetOut(&builder)
@@ -182,7 +182,7 @@ func TestErrorNextUnableToGetChanges(t *testing.T) {
 	cfg := nextTestConfig()
 	then.WithTempDirConfig(t, cfg)
 
-	next := NewNext(os.ReadDir, os.ReadFile)
+	next := NewNext(os.ReadFile)
 	builder := strings.Builder{}
 	aVer := []byte("not a valid change")
 
@@ -197,7 +197,7 @@ func TestErrorNextUnableToGetChanges(t *testing.T) {
 func TestErrorNextUnableToGetVersions(t *testing.T) {
 	then.WithTempDirConfig(t, nextTestConfig())
 
-	next := NewNext(os.ReadDir, os.ReadFile)
+	next := NewNext(os.ReadFile)
 	builder := strings.Builder{}
 
 	next.SetOut(&builder)

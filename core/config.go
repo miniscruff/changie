@@ -31,7 +31,7 @@ var ConfigPaths []string = []string{
 }
 
 // GetVersions will return, in semver sorted order, all released versions
-type GetVersions func(shared.ReadDirer, Config) ([]*semver.Version, error)
+type GetVersions func(Config) ([]*semver.Version, error)
 
 // Kind config allows you to customize the options depending on what kind was selected.
 type KindConfig struct {

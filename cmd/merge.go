@@ -21,20 +21,17 @@ type Merge struct {
 	// dependencies
 	ReadFile      shared.ReadFiler
 	WriteFile     shared.WriteFiler
-	ReadDir       shared.ReadDirer
 	TemplateCache *core.TemplateCache
 }
 
 func NewMerge(
 	readFile shared.ReadFiler,
 	writeFile shared.WriteFiler,
-	readDir shared.ReadDirer,
 	templateCache *core.TemplateCache,
 ) *Merge {
 	m := &Merge{
 		ReadFile:      readFile,
 		WriteFile:     writeFile,
-		ReadDir:       readDir,
 		TemplateCache: templateCache,
 	}
 
@@ -105,7 +102,7 @@ func (m *Merge) mergeProject(
 		writer = changeFile
 	}
 
-	allVersions, err := core.GetAllVersions(m.ReadDir, cfg, false, project)
+	allVersions, err := core.GetAllVersions(cfg, false, project)
 	if err != nil {
 		return err
 	}
@@ -125,7 +122,6 @@ func (m *Merge) mergeProject(
 		allChanges, unrelErr := core.GetChanges(
 			cfg,
 			nil,
-			m.ReadDir,
 			m.ReadFile,
 			project,
 		)

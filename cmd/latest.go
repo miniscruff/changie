@@ -19,13 +19,11 @@ type Latest struct {
 
 	// dependencies
 	ReadFile shared.ReadFiler
-	ReadDir  shared.ReadDirer
 }
 
-func NewLatest(readFile shared.ReadFiler, readDir shared.ReadDirer) *Latest {
+func NewLatest(readFile shared.ReadFiler) *Latest {
 	l := &Latest{
 		ReadFile: readFile,
-		ReadDir:  readDir,
 	}
 
 	cmd := &cobra.Command{
@@ -79,7 +77,7 @@ func (l *Latest) Run(cmd *cobra.Command, args []string) error {
 		projPrefix = pc.Key + config.ProjectsVersionSeparator
 	}
 
-	ver, err := core.GetLatestVersion(l.ReadDir, config, l.SkipPrereleases, l.Project)
+	ver, err := core.GetLatestVersion(config, l.SkipPrereleases, l.Project)
 	if err != nil {
 		return err
 	}

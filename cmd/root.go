@@ -24,7 +24,6 @@ being easy to use for developers and your release team.`,
 
 	batch := NewBatch(
 		os.ReadFile,
-		os.ReadDir,
 		os.Rename,
 		os.WriteFile,
 		os.MkdirAll,
@@ -35,17 +34,16 @@ being easy to use for developers and your release team.`,
 	merge := NewMerge(
 		os.ReadFile,
 		os.WriteFile,
-		os.ReadDir,
 		templateCache,
 	)
 
 	cmd.AddCommand(batch.Command)
 	cmd.AddCommand(NewGen().Command)
 	cmd.AddCommand(NewInit(os.MkdirAll, os.WriteFile).Command)
-	cmd.AddCommand(NewLatest(os.ReadFile, os.ReadDir).Command)
+	cmd.AddCommand(NewLatest(os.ReadFile).Command)
 	cmd.AddCommand(merge.Command)
 	cmd.AddCommand(NewNew(os.ReadFile, time.Now, os.MkdirAll, templateCache).Command)
-	cmd.AddCommand(NewNext(os.ReadDir, os.ReadFile).Command)
+	cmd.AddCommand(NewNext(os.ReadFile).Command)
 
 	return cmd
 }

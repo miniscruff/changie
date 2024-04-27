@@ -34,7 +34,6 @@ type Batch struct {
 
 	// Dependencies
 	ReadFile      shared.ReadFiler
-	ReadDir       shared.ReadDirer
 	Rename        shared.Renamer
 	WriteFile     shared.WriteFiler
 	MkdirAll      shared.MkdirAller
@@ -49,7 +48,6 @@ type Batch struct {
 
 func NewBatch(
 	readFile shared.ReadFiler,
-	readDir shared.ReadDirer,
 	rename shared.Renamer,
 	writeFile shared.WriteFiler,
 	mkdirAll shared.MkdirAller,
@@ -58,7 +56,6 @@ func NewBatch(
 ) *Batch {
 	b := &Batch{
 		ReadFile:      readFile,
-		ReadDir:       readDir,
 		Rename:        rename,
 		WriteFile:     writeFile,
 		MkdirAll:      mkdirAll,
@@ -167,18 +164,17 @@ Changes are sorted in the following order:
 }
 
 func (b *Batch) getBatchData() (*core.BatchData, error) {
-	previousVersion, err := core.GetLatestVersion(b.ReadDir, b.config, false, b.Project)
+	previousVersion, err := core.GetLatestVersion(b.config, false, b.Project)
 	if err != nil {
 		return nil, err
 	}
 
-	allChanges, err := core.GetChanges(b.config, b.IncludeDirs, b.ReadDir, b.ReadFile, b.Project)
+	allChanges, err := core.GetChanges(b.config, b.IncludeDirs, b.ReadFile, b.Project)
 	if err != nil {
 		return nil, err
 	}
 
 	currentVersion, err := core.GetNextVersion(
-		b.ReadDir,
 		b.config,
 		b.version,
 		b.Prerelease,
@@ -338,7 +334,7 @@ func (b *Batch) Run(cmd *cobra.Command, args []string) error {
 
 	if !b.DryRun && b.RemovePrereleases {
 		// only chance we fail is already checked above
-		allVers, _ := core.GetAllVersions(b.ReadDir, b.config, false, b.Project)
+		allVers, _ := core.GetAllVersions(b.config, false, b.Project)
 
 		for _, v := range allVers {
 			if v.Prerelease() == "" {
@@ -515,7 +511,7 @@ func (b *Batch) ClearUnreleased(changes []core.Change, otherFiles ...string) err
 	for _, include := range b.IncludeDirs {
 		fullInclude := filepath.Join(b.config.ChangesDir, include)
 
-		files, _ := b.ReadDir(fullInclude)
+		files, _ := os.ReadDir(fullInclude)
 		if len(files) == 0 {
 			err = os.RemoveAll(fullInclude)
 			if err != nil {

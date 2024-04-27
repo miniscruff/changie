@@ -1,7 +1,6 @@
 package cmd
 
 import (
-	"errors"
 	"os"
 	"path/filepath"
 	"strings"
@@ -55,7 +54,6 @@ func TestMergeVersionsSuccessfully(t *testing.T) {
 	cmd := NewMerge(
 		os.ReadFile,
 		os.WriteFile,
-		os.ReadDir,
 		core.NewTemplateCache(),
 	)
 	err := cmd.Run(cmd.Command, nil)
@@ -95,7 +93,6 @@ func TestMergeVersionsSuccessfullyWithProject(t *testing.T) {
 	cmd := NewMerge(
 		os.ReadFile,
 		os.WriteFile,
-		os.ReadDir,
 		core.NewTemplateCache(),
 	)
 
@@ -125,7 +122,6 @@ func TestMergeVersionsErrorMissingProjectDir(t *testing.T) {
 	cmd := NewMerge(
 		os.ReadFile,
 		os.WriteFile,
-		os.ReadDir,
 		core.NewTemplateCache(),
 	)
 
@@ -151,7 +147,6 @@ func TestMergeVersionsWithUnreleasedChanges(t *testing.T) {
 	cmd := NewMerge(
 		os.ReadFile,
 		os.WriteFile,
-		os.ReadDir,
 		core.NewTemplateCache(),
 	)
 	cmd.UnreleasedHeader = "## Coming Soon"
@@ -182,7 +177,6 @@ func TestMergeVersionsWithUnreleasedChangesErrorsOnBadChanges(t *testing.T) {
 	cmd := NewMerge(
 		os.ReadFile,
 		os.WriteFile,
-		os.ReadDir,
 		core.NewTemplateCache(),
 	)
 	cmd.UnreleasedHeader = "## Coming Soon"
@@ -209,7 +203,6 @@ func TestMergeVersionsWithUnreleasedChangesErrorsOnBadChangeFormat(t *testing.T)
 	cmd := NewMerge(
 		os.ReadFile,
 		os.WriteFile,
-		os.ReadDir,
 		core.NewTemplateCache(),
 	)
 	cmd.UnreleasedHeader = "## Coming Soon"
@@ -252,7 +245,6 @@ func TestMergeVersionsWithUnreleasedChangesInOneProject(t *testing.T) {
 	cmd := NewMerge(
 		os.ReadFile,
 		os.WriteFile,
-		os.ReadDir,
 		core.NewTemplateCache(),
 	)
 	cmd.UnreleasedHeader = "## Coming Soon"
@@ -291,7 +283,6 @@ func TestMergeVersionsWithHeaderAndReplacements(t *testing.T) {
 	cmd := NewMerge(
 		os.ReadFile,
 		os.WriteFile,
-		os.ReadDir,
 		core.NewTemplateCache(),
 	)
 	err := cmd.Run(cmd.Command, nil)
@@ -328,7 +319,6 @@ first version
 	cmd := NewMerge(
 		os.ReadFile,
 		os.WriteFile,
-		os.ReadDir,
 		core.NewTemplateCache(),
 	)
 	cmd.DryRun = true
@@ -350,7 +340,6 @@ func TestMergeSkipsVersionsIfNoneFound(t *testing.T) {
 	cmd := NewMerge(
 		os.ReadFile,
 		os.WriteFile,
-		os.ReadDir,
 		core.NewTemplateCache(),
 	)
 	cmd.DryRun = true
@@ -367,32 +356,11 @@ func TestErrorMergeBadConfig(t *testing.T) {
 	cmd := NewMerge(
 		os.ReadFile,
 		os.WriteFile,
-		os.ReadDir,
 		core.NewTemplateCache(),
 	)
 
 	err := cmd.Run(cmd.Command, nil)
 	then.NotNil(t, err)
-}
-
-func TestErrorMergeUnableToReadChanges(t *testing.T) {
-	cfg := mergeTestConfig()
-	then.WithTempDirConfig(t, cfg)
-
-	mockErr := errors.New("bad read dir")
-	mockReadDir := func(name string) ([]os.DirEntry, error) {
-		return nil, mockErr
-	}
-
-	cmd := NewMerge(
-		os.ReadFile,
-		os.WriteFile,
-		mockReadDir,
-		core.NewTemplateCache(),
-	)
-
-	err := cmd.Run(cmd.Command, nil)
-	then.Err(t, mockErr, err)
 }
 
 func TestErrorMergeBadReplacement(t *testing.T) {
@@ -406,7 +374,6 @@ func TestErrorMergeBadReplacement(t *testing.T) {
 	cmd := NewMerge(
 		os.ReadFile,
 		os.WriteFile,
-		os.ReadDir,
 		core.NewTemplateCache(),
 	)
 

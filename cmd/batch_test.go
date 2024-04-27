@@ -39,7 +39,6 @@ func batchTestConfig() *core.Config {
 func withDefaultBatch() *Batch {
 	return NewBatch(
 		os.ReadFile,
-		os.ReadDir,
 		os.Rename,
 		os.WriteFile,
 		os.MkdirAll,
