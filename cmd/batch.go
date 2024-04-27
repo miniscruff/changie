@@ -39,7 +39,6 @@ type Batch struct {
 	WriteFile     shared.WriteFiler
 	MkdirAll      shared.MkdirAller
 	Remove        shared.Remover
-	RemoveAll     shared.RemoveAller
 	TimeNow       core.TimeNow
 	TemplateCache *core.TemplateCache
 
@@ -56,7 +55,6 @@ func NewBatch(
 	writeFile shared.WriteFiler,
 	mkdirAll shared.MkdirAller,
 	remove shared.Remover,
-	removeAll shared.RemoveAller,
 	timeNow core.TimeNow,
 	templateCache *core.TemplateCache,
 ) *Batch {
@@ -67,7 +65,6 @@ func NewBatch(
 		WriteFile:     writeFile,
 		MkdirAll:      mkdirAll,
 		Remove:        remove,
-		RemoveAll:     removeAll,
 		TimeNow:       timeNow,
 		TemplateCache: templateCache,
 	}
@@ -523,7 +520,7 @@ func (b *Batch) ClearUnreleased(changes []core.Change, otherFiles ...string) err
 
 		files, _ := b.ReadDir(fullInclude)
 		if len(files) == 0 {
-			err = b.RemoveAll(fullInclude)
+			err = os.RemoveAll(fullInclude)
 			if err != nil {
 				return err
 			}

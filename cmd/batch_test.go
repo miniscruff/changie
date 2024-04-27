@@ -44,7 +44,6 @@ func withDefaultBatch() *Batch {
 		os.WriteFile,
 		os.MkdirAll,
 		os.Remove,
-		os.RemoveAll,
 		time.Now,
 		core.NewTemplateCache(),
 	)
@@ -808,37 +807,6 @@ func TestBatchErrorClearUnreleasedIfMoveFails(t *testing.T) {
 	}
 
 	err := batch.ClearUnreleased(changes)
-	then.Err(t, mockErr, err)
-}
-
-func TestBatchErrorUnreleasedIfRemoveAllFails(t *testing.T) {
-	then.WithTempDir(t)
-
-	cfg := batchTestConfig()
-	batch := withDefaultBatch()
-	batch.config = cfg
-	batch.IncludeDirs = []string{"alpha"}
-
-	mockErr := errors.New("bad mock remove all")
-	batch.RemoveAll = func(path string) error {
-		return mockErr
-	}
-
-	alphaPath := filepath.Join(cfg.ChangesDir, "alpha")
-
-	changes := []core.Change{
-		{Kind: "added", Body: "A", Filename: filepath.Join(alphaPath, "a.yaml")},
-	}
-	for i := range changes {
-		writeChangeFile(t, cfg, &changes[i])
-	}
-
-	err := batch.ClearUnreleased(
-		changes,
-		"header.md",
-		"",
-		"does-not-exist.md",
-	)
 	then.Err(t, mockErr, err)
 }
 

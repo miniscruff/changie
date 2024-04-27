@@ -21,6 +21,3 @@ type ReadDirer func(dirname string) ([]os.DirEntry, error)
 
 // Remover is a func type for os.Remove
 type Remover func(path string) error
-
-// RemoveAller is a func type for os.RemoveAll
-type RemoveAller func(path string) error
