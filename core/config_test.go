@@ -192,57 +192,41 @@ components:
 	then.Equals(t, defaultFragmentFormat, config.FragmentFileFormat)
 }
 
-/*
 func TestDefaultFragmentTemplateWithKinds(t *testing.T) {
-	mockRf := func(filepath string) ([]byte, error) {
-		if filepath == ConfigPaths[0] {
-			return []byte(`kinds:
+    then.WithTempDir(t)
+
+    cfgYaml := []byte(`kinds:
   - label: B
   - label: C
   - label: E
-`), nil
-		}
+    `)
+    then.WriteFile(t, cfgYaml, ConfigPaths[0])
 
-		return nil, os.ErrNotExist
-	}
 	defaultFragmentFormat := fmt.Sprintf("{{.Kind}}-{{.Time.Format \"%v\"}}", timeFormat)
 
-	config, err := LoadConfig(mockRf)
+	config, err := LoadConfig()
 	then.Nil(t, err)
 	then.Equals(t, defaultFragmentFormat, config.FragmentFileFormat)
 }
 
 func TestDefaultFragmentTemplateWithoutKindsOrComponents(t *testing.T) {
-	mockRf := func(filepath string) ([]byte, error) {
-		if filepath == ConfigPaths[0] {
-			return []byte("unreleasedDir: unrel"), nil
-		}
+    then.WithTempDir(t)
+    then.WriteFile(t,[]byte("unreleasedDir: unrel"), ConfigPaths[0])
 
-		return nil, os.ErrNotExist
-	}
 	defaultFragmentFormat := fmt.Sprintf("{{.Time.Format \"%v\"}}", timeFormat)
 
-	config, err := LoadConfig(mockRf)
+	config, err := LoadConfig()
 	then.Nil(t, err)
 	then.Equals(t, defaultFragmentFormat, config.FragmentFileFormat)
 }
 
-func TestErrorBadRead(t *testing.T) {
-	mockErr := errors.New("bad file")
-	mockRf := func(filepath string) ([]byte, error) {
-		return []byte(""), mockErr
-	}
-
-	_, err := LoadConfig(mockRf)
-	then.Err(t, mockErr, err)
-}
-
 func TestErrorBadYamlFile(t *testing.T) {
-	mockRf := func(filepath string) ([]byte, error) {
-		return []byte("not a valid yaml file---"), nil
-	}
+    then.WithTempDir(t)
 
-	_, err := LoadConfig(mockRf)
+    cfgYaml := []byte("not a valid yaml file---")
+    then.WriteFile(t, cfgYaml, ConfigPaths[0])
+
+	_, err := LoadConfig()
 	then.NotNil(t, err)
 }
 
@@ -407,4 +391,3 @@ func TestConfigProjectErrorNotFound(t *testing.T) {
 	_, err := cfg.Project("emailer")
 	then.Err(t, errProjectNotFound, err)
 }
-*/

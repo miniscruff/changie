@@ -1,8 +1,6 @@
 package core
 
-/*
 import (
-	"errors"
 	"os"
 	"testing"
 
@@ -30,7 +28,7 @@ ignore me`
 		Find:    "second line",
 		Replace: "replaced here",
 	}
-	err = rep.Execute(os.ReadFile, os.WriteFile, ReplaceData{})
+	err = rep.Execute(ReplaceData{})
 	then.Nil(t, err)
 	then.FileContents(t, endData, filepath)
 }
@@ -56,7 +54,7 @@ func TestFindAndReplaceWithTemplate(t *testing.T) {
 		Find:    `  "version": ".*",`,
 		Replace: `  "version": "{{.VersionNoPrefix}}",`,
 	}
-	err = rep.Execute(os.ReadFile, os.WriteFile, ReplaceData{
+	err = rep.Execute(ReplaceData{
 		VersionNoPrefix: "1.1.0",
 	})
 	then.Nil(t, err)
@@ -88,7 +86,7 @@ level1:
 		Find:    "^version: .*",
 		Replace: "version: {{.VersionNoPrefix}}",
 	}
-	err = rep.Execute(os.ReadFile, os.WriteFile, ReplaceData{
+	err = rep.Execute(ReplaceData{
 		VersionNoPrefix: "1.2.3",
 	})
 	then.Nil(t, err)
@@ -121,7 +119,7 @@ level1:
 		Replace: "version: {{.VersionNoPrefix}}",
 		Flags:   "im",
 	}
-	err = rep.Execute(os.ReadFile, os.WriteFile, ReplaceData{
+	err = rep.Execute(ReplaceData{
 		VersionNoPrefix: "1.2.3",
 	})
 	then.Nil(t, err)
@@ -134,7 +132,7 @@ func TestErrorBadFileRead(t *testing.T) {
 	rep := Replacement{
 		Path: "does not exist",
 	}
-	err := rep.Execute(os.ReadFile, os.WriteFile, ReplaceData{})
+	err := rep.Execute(ReplaceData{})
 	then.NotNil(t, err)
 }
 
@@ -144,7 +142,7 @@ func TestErrorBadTemplateParse(t *testing.T) {
 	rep := Replacement{
 		Replace: "{{.bad..}}",
 	}
-	err := rep.Execute(os.ReadFile, os.WriteFile, ReplaceData{})
+	err := rep.Execute(ReplaceData{})
 	then.NotNil(t, err)
 }
 
@@ -154,29 +152,6 @@ func TestErrorBadTemplateExec(t *testing.T) {
 	rep := Replacement{
 		Replace: "{{.bad}}",
 	}
-	err := rep.Execute(os.ReadFile, os.WriteFile, ReplaceData{})
+	err := rep.Execute(ReplaceData{})
 	then.NotNil(t, err)
 }
-
-func TestErrorBadWriteFile(t *testing.T) {
-	then.WithTempDir(t)
-
-	filepath := "err.txt"
-	startData := "some data"
-	mockError := errors.New("bad write")
-	badWrite := func(path string, data []byte, mode os.FileMode) error {
-		return mockError
-	}
-
-	err := os.WriteFile(filepath, []byte(startData), os.ModePerm)
-	then.Nil(t, err)
-
-	rep := Replacement{
-		Path:    filepath,
-		Find:    "some",
-		Replace: "none",
-	}
-	err = rep.Execute(os.ReadFile, badWrite, ReplaceData{})
-	then.Err(t, mockError, err)
-}
-*/

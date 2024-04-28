@@ -1,6 +1,5 @@
 package core
 
-/*
 import (
 	"testing"
 	"time"
@@ -845,4 +844,3 @@ func TestGetBodyTxtWithEditorUnableToCreateCmd(t *testing.T) {
 	_, err := prompts.BuildChanges()
 	then.NotNil(t, err)
 }
-*/
