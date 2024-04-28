@@ -1,16 +1,14 @@
 package core
 
-/*
 import (
 	"errors"
+	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"strings"
 	"testing"
 	"time"
-
-	"gopkg.in/yaml.v3"
 
 	"github.com/miniscruff/changie/then"
 )
@@ -81,115 +79,109 @@ func TestGetAllVersionsReturnsAllVersions(t *testing.T) {
 	then.Equals(t, "v0.1.0", vers[1].Original())
 }
 
-/*
 func TestGetAllVersionsReturnsAllVersionsInProject(t *testing.T) {
+	then.WithTempDir(t)
+	then.CreateFile(t, "patcher", "header.md")
+	then.CreateFile(t, "patcher", "v0.1.0.md")
+	then.CreateFile(t, "patcher", "v0.2.0.md")
+	then.CreateFile(t, "patcher", "not-sem-ver.md")
+
 	config := &Config{
 		HeaderPath: "header.md",
-	}
-	mockRead := func(dirname string) ([]os.DirEntry, error) {
-		then.Equals(t, "patcher", dirname)
-
-		return []os.DirEntry{
-			&then.MockDirEntry{MockIsDir: true, MockName: "dir"},
-			&then.MockDirEntry{MockName: "header.md"},
-			&then.MockDirEntry{MockName: "v0.1.0.md"},
-			&then.MockDirEntry{MockName: "v0.2.0.md"},
-			&then.MockDirEntry{MockName: "not-sem-ver.md"},
-		}, nil
+		ChangesDir: ".",
 	}
 
-	vers, err := GetAllVersions(mockRead, config, false, "patcher")
+	vers, err := GetAllVersions(config, false, "patcher")
 	then.Nil(t, err)
 	then.Equals(t, "v0.2.0", vers[0].Original())
 	then.Equals(t, "v0.1.0", vers[1].Original())
 }
 
 func TestGetLatestVersionReturnsMostRecent(t *testing.T) {
-	config := &Config{}
-	mockRead := func(dirname string) ([]os.DirEntry, error) {
-		return []os.DirEntry{
-			&then.MockDirEntry{MockName: "v0.1.0.md"},
-			&then.MockDirEntry{MockName: "v0.2.0.md"},
-		}, nil
+	then.WithTempDir(t)
+	then.CreateFile(t, "header.md")
+	then.CreateFile(t, "v0.1.0.md")
+	then.CreateFile(t, "v0.2.0.md")
+	then.CreateFile(t, "not-sem-ver.md")
+
+	config := &Config{
+		ChangesDir: ".",
 	}
 
-	ver, err := GetLatestVersion(mockRead, config, false, "")
+	ver, err := GetLatestVersion(config, false, "")
 	then.Nil(t, err)
 	then.Equals(t, "v0.2.0", ver.Original())
 }
 
 func TestGetLatestReturnsRC(t *testing.T) {
-	config := &Config{}
-	mockRead := func(dirname string) ([]os.DirEntry, error) {
-		return []os.DirEntry{
-			&then.MockDirEntry{MockName: "v0.1.0.md"},
-			&then.MockDirEntry{MockName: "v0.2.0-rc1.md"},
-		}, nil
+	then.WithTempDir(t)
+	then.CreateFile(t, "header.md")
+	then.CreateFile(t, "v0.1.0.md")
+	then.CreateFile(t, "v0.2.0-rc1.md")
+	then.CreateFile(t, "not-sem-ver.md")
+
+	config := &Config{
+		ChangesDir: ".",
 	}
 
-	ver, err := GetLatestVersion(mockRead, config, false, "")
+	ver, err := GetLatestVersion(config, false, "")
 	then.Nil(t, err)
 	then.Equals(t, "v0.2.0-rc1", ver.Original())
 }
 
 func TestGetLatestCanSkipRC(t *testing.T) {
-	config := &Config{}
-	mockRead := func(dirname string) ([]os.DirEntry, error) {
-		return []os.DirEntry{
-			&then.MockDirEntry{MockName: "v0.1.0.md"},
-			&then.MockDirEntry{MockName: "v0.2.0-rc1.md"},
-		}, nil
+	then.WithTempDir(t)
+	then.CreateFile(t, "header.md")
+	then.CreateFile(t, "v0.1.0.md")
+	then.CreateFile(t, "v0.2.0-rc1.md")
+	then.CreateFile(t, "not-sem-ver.md")
+
+	config := &Config{
+		ChangesDir: ".",
 	}
 
-	ver, err := GetLatestVersion(mockRead, config, true, "")
+	ver, err := GetLatestVersion(config, true, "")
 	then.Nil(t, err)
 	then.Equals(t, "v0.1.0", ver.Original())
 }
 
 func TestGetLatestReturnsZerosIfNoVersionsExist(t *testing.T) {
-	config := &Config{}
-	mockRead := func(dirname string) ([]os.DirEntry, error) {
-		return []os.DirEntry{}, nil
-	}
+	then.WithTempDir(t)
 
-	ver, err := GetLatestVersion(mockRead, config, false, "")
+	config := &Config{ChangesDir: "."}
+
+	ver, err := GetLatestVersion(config, false, "")
 	then.Nil(t, err)
 	then.Equals(t, "v0.0.0", ver.Original())
 }
 
 func TestErrorLatestVersionBadReadDir(t *testing.T) {
-	config := &Config{}
-	mockError := errors.New("bad stuff")
-	mockRead := func(dirname string) ([]os.DirEntry, error) {
-		return []os.DirEntry{}, mockError
-	}
+	then.WithTempDir(t)
 
-	ver, err := GetLatestVersion(mockRead, config, false, "")
+	config := &Config{ChangesDir: "\\."}
+
+	ver, err := GetLatestVersion(config, false, "")
 	then.Equals(t, nil, ver)
-	then.Err(t, mockError, err)
+	then.NotNil(t, err)
 }
 
 func TestErrorNextVersionBadReadDir(t *testing.T) {
-	config := &Config{}
-	mockError := errors.New("bad stuff")
-	mockRead := func(dirname string) ([]os.DirEntry, error) {
-		return []os.DirEntry{}, mockError
-	}
+	then.WithTempDir(t)
 
-	ver, err := GetNextVersion(mockRead, config, "major", nil, nil, nil, "")
+	config := &Config{ChangesDir: "\\."}
+
+	ver, err := GetNextVersion(config, "major", nil, nil, nil, "")
 	then.Equals(t, nil, ver)
-	then.Err(t, mockError, err)
+	then.NotNil(t, err)
 }
 
 func TestErrorNextVersionBadVersion(t *testing.T) {
-	config := &Config{}
-	mockRead := func(dirname string) ([]os.DirEntry, error) {
-		return []os.DirEntry{
-			&then.MockDirEntry{MockName: "v0.1.0.md"},
-		}, nil
-	}
+	then.WithTempDir(t)
+	then.CreateFile(t, "v0.1.0.md")
 
-	ver, err := GetNextVersion(mockRead, config, "a", []string{}, []string{}, nil, "")
+	config := &Config{ChangesDir: "."}
+
+	ver, err := GetNextVersion(config, "a", []string{}, []string{}, nil, "")
 	then.Equals(t, ver, nil)
 	then.Err(t, ErrBadVersionOrPart, err)
 }
@@ -278,7 +270,7 @@ func TestNextVersionOptions(t *testing.T) {
 	}
 }
 
-func TestNextVersionOptionsWithNoneAutoLEvel(t *testing.T) {
+func TestNextVersionOptionsWithNoneAutoLevel(t *testing.T) {
 	then.WithTempDir(t)
 
 	config := &Config{
@@ -374,25 +366,21 @@ func TestErrorNextVersionAutoMissingKind(t *testing.T) {
 
 func TestErrorNextVersionBadPrerelease(t *testing.T) {
 	then.WithTempDir(t)
+	then.CreateFile(t, "v0.2.5.md")
 
-	_, err := os.Create("v0.2.5.md")
-	then.Nil(t, err)
+	config := &Config{ChangesDir: "."}
 
-	config := &Config{}
-
-	_, err = GetNextVersion(config, "patch", []string{"0005"}, nil, nil, "")
+	_, err := GetNextVersion(config, "patch", []string{"0005"}, nil, nil, "")
 	then.NotNil(t, err)
 }
 
 func TestErrorNextVersionBadMeta(t *testing.T) {
 	then.WithTempDir(t)
+	then.CreateFile(t, "v0.2.5.md")
 
-	_, err := os.Create("v0.2.5.md")
-	then.Nil(t, err)
+	config := &Config{ChangesDir: "."}
 
-	config := &Config{}
-
-	_, err = GetNextVersion(config, "patch", nil, []string{"&&*&"}, nil, "")
+	_, err := GetNextVersion(config, "patch", nil, []string{"&&*&"}, nil, "")
 	then.NotNil(t, err)
 }
 
@@ -614,8 +602,9 @@ func TestErrorHighestAutoLevelWithNoChanges(t *testing.T) {
 }
 
 func TestGetAllChanges(t *testing.T) {
+	then.WithTempDir(t)
+
 	cfg := utilsTestConfig()
-	then.WithTempDirConfig(t, cfg)
 
 	orderedTimes := []time.Time{
 		time.Date(2019, 5, 25, 20, 45, 0, 0, time.UTC),
@@ -623,31 +612,18 @@ func TestGetAllChanges(t *testing.T) {
 		time.Date(2015, 3, 25, 10, 5, 0, 0, time.UTC),
 	}
 
-	then.Nil(t, os.MkdirAll(filepath.Join(cfg.ChangesDir, cfg.UnreleasedDir), CreateDirMode))
-
-	for _, changeName := range []string{"a.yaml", "b.yaml", "c.yaml"} {
-		_, err := os.Create(filepath.Join(cfg.ChangesDir, cfg.UnreleasedDir, changeName))
-		then.Nil(t, err)
+	changes := []Change{
+		{Kind: "removed", Body: "third", Time: orderedTimes[2]},
+		{Kind: "added", Body: "first", Time: orderedTimes[0]},
+		{Kind: "added", Body: "second", Time: orderedTimes[1]},
 	}
-
-	readFile := func(filename string) ([]byte, error) {
-		var c Change
-
-		switch {
-		case strings.HasSuffix(filename, "a.yaml"):
-			c = Change{Kind: "removed", Body: "third", Time: orderedTimes[2]}
-		case strings.HasSuffix(filename, "b.yaml"):
-			c = Change{Kind: "added", Body: "first", Time: orderedTimes[0]}
-		case strings.HasSuffix(filename, "c.yaml"):
-			c = Change{Kind: "added", Body: "second", Time: orderedTimes[1]}
-		}
-
-		return yaml.Marshal(&c)
+	for i, c := range changes {
+		then.WriteFileTo(t, c, cfg.ChangesDir, cfg.UnreleasedDir, fmt.Sprintf("%d.yaml", i))
 	}
 
 	then.CreateFile(t, cfg.ChangesDir, cfg.UnreleasedDir, "ignored.txt")
 
-	changes, err := GetChanges(cfg, nil, readFile, "")
+	changes, err := GetChanges(cfg, nil, "")
 	then.Nil(t, err)
 	then.SliceLen(t, 3, changes)
 	then.Equals(t, "second", changes[0].Body)
@@ -655,8 +631,9 @@ func TestGetAllChanges(t *testing.T) {
 	then.Equals(t, "third", changes[2].Body)
 }
 
-/*
 func TestGetAllChangesWithProject(t *testing.T) {
+	then.WithTempDir(t)
+
 	cfg := utilsTestConfig()
 	cfg.Projects = []ProjectConfig{
 		{
@@ -664,55 +641,21 @@ func TestGetAllChangesWithProject(t *testing.T) {
 			Key:   "web_hook_sender",
 		},
 	}
-	then.WithTempDirConfig(t, cfg)
 
-	writeChangeFile(t, cfg, Change{Kind: "added", Body: "first", Project: "web_hook_sender"})
-	writeChangeFile(t, cfg, Change{Kind: "added", Body: "second", Project: "web_hook_sender"})
-	writeChangeFile(t, cfg, Change{Kind: "removed", Body: "ignored", Project: "skipped"})
+	changes := []Change{
+		{Kind: "added", Body: "first", Project: "web_hook_sender"},
+		{Kind: "added", Body: "second", Project: "web_hook_sender"},
+		{Kind: "removed", Body: "ignored", Project: "skipped"},
+	}
+	for i, c := range changes {
+		then.WriteFileTo(t, c, cfg.ChangesDir, cfg.UnreleasedDir, fmt.Sprintf("%d.yaml", i))
+	}
 
-	changes, err := GetChanges(cfg, nil, os.ReadDir, os.ReadFile, "web_hook_sender")
+	changes, err := GetChanges(cfg, nil, "web_hook_sender")
 	then.Nil(t, err)
 	then.Equals(t, 2, len(changes))
 	then.Equals(t, "first", changes[0].Body)
 	then.Equals(t, "second", changes[1].Body)
-}
-
-func TestBatchErrorIfUnableToReadDir(t *testing.T) {
-	cfg := utilsTestConfig()
-	then.WithTempDirConfig(t, cfg)
-
-	mockErr := errors.New("bad mock open")
-	readDir := func(dirname string) ([]os.DirEntry, error) {
-		return nil, mockErr
-	}
-	readFile := func(filename string) ([]byte, error) {
-		return nil, nil
-	}
-
-	then.CreateFile(t, cfg.ChangesDir, cfg.UnreleasedDir, "ignored.txt")
-
-	_, err := GetChanges(cfg, nil, readDir, readFile, "")
-	then.Err(t, mockErr, err)
-}
-
-func TestBatchErrorBadChangesFile(t *testing.T) {
-	cfg := utilsTestConfig()
-	then.WithTempDirConfig(t, cfg)
-
-	readDir := func(dirname string) ([]os.DirEntry, error) {
-		return []os.DirEntry{
-			&then.MockDirEntry{MockName: "a.yaml"},
-		}, nil
-	}
-	mockErr := errors.New("bad mock open")
-	readFile := func(filename string) ([]byte, error) {
-		return nil, mockErr
-	}
-
-	then.CreateFile(t, cfg.ChangesDir, cfg.UnreleasedDir, "ignored.txt")
-
-	_, err := GetChanges(cfg, nil, readDir, readFile, "")
-	then.Err(t, mockErr, err)
 }
 
 func TestFileExists(t *testing.T) {
@@ -781,7 +724,7 @@ func TestGetBodyFromEditorSuccess(t *testing.T) {
 		t:        t,
 	}
 
-	body, err := getBodyTextWithEditor(mockRunner, "body.txt", os.ReadFile)
+	body, err := getBodyTextWithEditor(mockRunner, "body.txt")
 	then.Nil(t, err)
 	then.Equals(t, "some body text", body)
 }
@@ -792,7 +735,7 @@ func TestGetBodyFromEditorBadRunner(t *testing.T) {
 	mockErr := errors.New("bad runner")
 	mockRunner := &errRunner{err: mockErr}
 
-	_, err := getBodyTextWithEditor(mockRunner, "body.txt", os.ReadFile)
+	_, err := getBodyTextWithEditor(mockRunner, "body.txt")
 	then.Err(t, mockErr, err)
 }
 
@@ -804,7 +747,7 @@ func TestGetBodyFromEditorBadReadFile(t *testing.T) {
 		t:        t,
 	}
 
-	_, err := getBodyTextWithEditor(mockRunner, "diff_file.txt", os.ReadFile)
+	_, err := getBodyTextWithEditor(mockRunner, "diff_file.txt")
 	then.NotNil(t, err)
 }
 
@@ -826,4 +769,3 @@ type errRunner struct {
 func (r *errRunner) Run() error {
 	return r.err
 }
-*/

@@ -131,3 +131,65 @@ func TestLoadEnvVars(t *testing.T) {
 	t.Setenv("TEST_CHANGIE_UNUSED", "NotRead")
 	then.MapEquals(t, expectedEnvVars, config.EnvVars())
 }
+
+func TestPostProcess_NoPostConfigs(t *testing.T) {
+	cfg := &Config{}
+	change := &Change{}
+
+	then.Nil(t, change.PostProcess(cfg, nil))
+	then.MapLen(t, 0, change.Custom)
+}
+
+func TestPostProcess_NilKindGlobalPost(t *testing.T) {
+	cfg := &Config{
+		Post: []PostProcessConfig{
+			{
+				Key:   "NilKind",
+				Value: "Yes",
+			},
+		},
+	}
+	change := &Change{
+		Custom: make(map[string]string),
+	}
+
+	then.Nil(t, change.PostProcess(cfg, nil))
+	then.MapLen(t, 1, change.Custom)
+	then.Equals(t, "Yes", change.Custom["NilKind"])
+}
+
+func TestPostProcess_KindPost(t *testing.T) {
+	cfg := &Config{}
+	change := &Change{
+		Custom: make(map[string]string),
+	}
+	kindCfg := &KindConfig{
+		Post: []PostProcessConfig{
+			{
+				Key:   "NotNilKind",
+				Value: "AlsoYes",
+			},
+		},
+	}
+
+	then.Nil(t, change.PostProcess(cfg, kindCfg))
+	then.MapLen(t, 1, change.Custom)
+	then.Equals(t, "AlsoYes", change.Custom["NotNilKind"])
+}
+
+func TestPostProcess_InvalidPostTemplate(t *testing.T) {
+	cfg := &Config{}
+	change := &Change{
+		Custom: make(map[string]string),
+	}
+	kindCfg := &KindConfig{
+		Post: []PostProcessConfig{
+			{
+				Key:   "BrokenTemplate",
+				Value: "{{ ..-... }}",
+			},
+		},
+	}
+
+	then.NotNil(t, change.PostProcess(cfg, kindCfg))
+}

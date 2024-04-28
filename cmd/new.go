@@ -162,6 +162,9 @@ func (n *New) Run(cmd *cobra.Command, args []string) error {
 		}
 
 		_, err = change.WriteTo(writer)
+		if err != nil {
+			return err
+		}
 	}
 
 	return err
