@@ -12,7 +12,11 @@ updates:
     labels:
       - "skip changelog"
       - "dependencies"
-
+    groups:
+      pip-deps:
+        patterns:
+          - "*"
+          
   - package-ecosystem: "gomod"
     directory: "/"
     schedule:
@@ -34,3 +38,7 @@ updates:
     labels:
       - "skip changelog"
       - "dependencies"
+    groups:
+      action-deps:
+        patterns:
+          - "*"
