@@ -7,6 +7,9 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+	"time"
+
+	"gopkg.in/yaml.v3"
 
 	"github.com/miniscruff/changie/then"
 )
@@ -279,6 +282,7 @@ func TestNextVersionOptionsWithNoneAutoLEvel(t *testing.T) {
 	then.WithTempDir(t)
 
 	config := &Config{
+		ChangesDir: ".",
 		Kinds: []KindConfig{
 			{
 				Label:     "patch",
@@ -325,6 +329,7 @@ func TestNextVersionOptionsNoneAutoLevelOnly(t *testing.T) {
 	then.Nil(t, err)
 
 	config := &Config{
+		ChangesDir: ".",
 		Kinds: []KindConfig{
 			{
 				Label:     "skip",
@@ -350,6 +355,7 @@ func TestErrorNextVersionAutoMissingKind(t *testing.T) {
 	then.Nil(t, err)
 
 	config := &Config{
+		ChangesDir: ".",
 		Kinds: []KindConfig{
 			{
 				Label: "missing",
@@ -392,6 +398,12 @@ func TestErrorNextVersionBadMeta(t *testing.T) {
 
 func TestCanFindChangeFiles(t *testing.T) {
 	then.WithTempDir(t)
+
+	then.Nil(t, os.Mkdir(".chng", CreateDirMode))
+	then.Nil(t, os.Mkdir(filepath.Join(".chng", "alpha"), CreateDirMode))
+	then.Nil(t, os.Mkdir(filepath.Join(".chng", "beta"), CreateDirMode))
+	then.Nil(t, os.Mkdir(filepath.Join(".chng", "unrel"), CreateDirMode))
+	then.Nil(t, os.Mkdir(filepath.Join(".chng", "ignored"), CreateDirMode))
 
 	expected := []string{
 		filepath.Join(".chng", "alpha", "c.yaml"),
@@ -601,7 +613,6 @@ func TestErrorHighestAutoLevelWithNoChanges(t *testing.T) {
 	then.Err(t, ErrNoChangesFoundForAuto, err)
 }
 
-/*
 func TestGetAllChanges(t *testing.T) {
 	cfg := utilsTestConfig()
 	then.WithTempDirConfig(t, cfg)
@@ -611,26 +622,23 @@ func TestGetAllChanges(t *testing.T) {
 		time.Date(2017, 4, 25, 15, 20, 0, 0, time.UTC),
 		time.Date(2015, 3, 25, 10, 5, 0, 0, time.UTC),
 	}
-	aPath := filepath.Join(cfg.ChangesDir, cfg.UnreleasedDir, "a.yaml")
-	bPath := filepath.Join(cfg.ChangesDir, cfg.UnreleasedDir, "b.yaml")
-	cPath := filepath.Join(cfg.ChangesDir, cfg.UnreleasedDir, "c.yaml")
 
-	readDir := func(dirname string) ([]os.DirEntry, error) {
-		return []os.DirEntry{
-			&then.MockDirEntry{MockName: "a.yaml"},
-			&then.MockDirEntry{MockName: "b.yaml"},
-			&then.MockDirEntry{MockName: "c.yaml"},
-		}, nil
+	then.Nil(t, os.MkdirAll(filepath.Join(cfg.ChangesDir, cfg.UnreleasedDir), CreateDirMode))
+
+	for _, changeName := range []string{"a.yaml", "b.yaml", "c.yaml"} {
+		_, err := os.Create(filepath.Join(cfg.ChangesDir, cfg.UnreleasedDir, changeName))
+		then.Nil(t, err)
 	}
+
 	readFile := func(filename string) ([]byte, error) {
 		var c Change
 
-		switch filename {
-		case aPath:
+		switch {
+		case strings.HasSuffix(filename, "a.yaml"):
 			c = Change{Kind: "removed", Body: "third", Time: orderedTimes[2]}
-		case bPath:
+		case strings.HasSuffix(filename, "b.yaml"):
 			c = Change{Kind: "added", Body: "first", Time: orderedTimes[0]}
-		case cPath:
+		case strings.HasSuffix(filename, "c.yaml"):
 			c = Change{Kind: "added", Body: "second", Time: orderedTimes[1]}
 		}
 
@@ -641,11 +649,13 @@ func TestGetAllChanges(t *testing.T) {
 
 	changes, err := GetChanges(cfg, nil, readFile, "")
 	then.Nil(t, err)
+	then.SliceLen(t, 3, changes)
 	then.Equals(t, "second", changes[0].Body)
 	then.Equals(t, "first", changes[1].Body)
 	then.Equals(t, "third", changes[2].Body)
 }
 
+/*
 func TestGetAllChangesWithProject(t *testing.T) {
 	cfg := utilsTestConfig()
 	cfg.Projects = []ProjectConfig{

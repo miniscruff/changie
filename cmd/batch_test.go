@@ -39,9 +39,7 @@ func batchTestConfig() *core.Config {
 func withDefaultBatch() *Batch {
 	return NewBatch(
 		os.ReadFile,
-		os.Rename,
 		os.WriteFile,
-		os.MkdirAll,
 		time.Now,
 		core.NewTemplateCache(),
 	)
@@ -126,34 +124,6 @@ func TestBatchCanBatchWithProject(t *testing.T) {
 
 	then.FileContents(t, verContents, cfg.ChangesDir, "a", "v0.2.0.md")
 	then.DirectoryFileCount(t, 1, cfg.ChangesDir, cfg.UnreleasedDir)
-}
-
-func TestBatchProjectFailsIfUnableToMakeProjectDir(t *testing.T) {
-	cfg := batchTestConfig()
-	cfg.Projects = []core.ProjectConfig{
-		{
-			Label: "A",
-			Key:   "a",
-		},
-	}
-	// declared path but missing is accepted
-	cfg.VersionHeaderPath = "header.md"
-
-	then.WithTempDirConfig(t, cfg)
-
-	writeChangeFile(t, cfg, &core.Change{Kind: "added", Body: "A", Project: "a"})
-	writeChangeFile(t, cfg, &core.Change{Kind: "removed", Body: "C", Project: "a"})
-
-	batch := withDefaultBatch()
-	batch.Project = "A"
-
-	mockErr := errors.New("bad mkdir all")
-	batch.MkdirAll = func(path string, perm os.FileMode) error {
-		return mockErr
-	}
-
-	err := batch.Run(batch.Command, []string{"v0.2.0"})
-	then.Err(t, mockErr, err)
 }
 
 func TestBatchProjectFailsIfUnableToFindProject(t *testing.T) {
@@ -741,45 +711,3 @@ func TestBatchClearUnreleasedMovesFilesIncludingHeaderIfSpecified(t *testing.T) 
 	then.DirectoryFileCount(t, 1, cfg.ChangesDir, cfg.UnreleasedDir)
 }
 
-func TestBatchUnreleasedFailsIfMoveFails(t *testing.T) {
-	then.WithTempDir(t)
-
-	cfg := batchTestConfig()
-	batch := withDefaultBatch()
-	batch.config = cfg
-	batch.MoveDir = "beta"
-
-	changes := []core.Change{
-		{Kind: "added", Body: "A"},
-	}
-	for i := range changes {
-		writeChangeFile(t, cfg, &changes[i])
-	}
-
-	mockErr := errors.New("bad mock rename")
-	batch.Rename = func(before, after string) error {
-		return mockErr
-	}
-
-	err := batch.ClearUnreleased(changes)
-	then.Err(t, mockErr, err)
-}
-
-func TestBatchUnreleasedFailsIfMakeDirFails(t *testing.T) {
-	then.WithTempDir(t)
-
-	cfg := batchTestConfig()
-	batch := withDefaultBatch()
-	batch.config = cfg
-	batch.MoveDir = "delta"
-
-	then.CreateFile(t, cfg.ChangesDir, cfg.UnreleasedDir, "a.yaml")
-
-	mockErr := errors.New("bad mock mkdir all")
-	batch.MkdirAll = func(p string, mode os.FileMode) error {
-		return mockErr
-	}
-
-	err := batch.ClearUnreleased(nil)
-	then.Err(t, mockErr, err)
-}

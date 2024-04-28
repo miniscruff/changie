@@ -28,7 +28,7 @@ func TestInitBuildsDefaultSkeleton(t *testing.T) {
 	then.WithTempDir(t)
 
 	cfg := initConfig()
-	cmd := NewInit(os.MkdirAll, os.WriteFile)
+	cmd := NewInit(os.WriteFile)
 	err := cmd.Run(cmd.Command, nil)
 
 	then.Nil(t, err)
@@ -41,7 +41,7 @@ func TestInitBuildsConfigIfConfigExistsIfForced(t *testing.T) {
 	cfg := initConfig()
 	then.WithTempDirConfig(t, cfg)
 
-	cmd := NewInit(os.MkdirAll, os.WriteFile)
+	cmd := NewInit(os.WriteFile)
 	cmd.Force = true
 	err := cmd.Run(cmd.Command, nil)
 
@@ -51,24 +51,11 @@ func TestInitBuildsConfigIfConfigExistsIfForced(t *testing.T) {
 	then.FileContents(t, "", cfg.ChangesDir, cfg.UnreleasedDir, ".gitkeep")
 }
 
-func TestErrorInitBadMkdir(t *testing.T) {
-	then.WithTempDir(t)
-
-	mockError := errors.New("bad mkdir")
-	badMkdir := func(path string, mode os.FileMode) error {
-		return mockError
-	}
-
-	cmd := NewInit(badMkdir, os.WriteFile)
-	err := cmd.Run(cmd.Command, nil)
-	then.Err(t, mockError, err)
-}
-
 func TestErrorInitFileExists(t *testing.T) {
 	cfg := initConfig()
 	then.WithTempDirConfig(t, cfg)
 
-	cmd := NewInit(os.MkdirAll, os.WriteFile)
+	cmd := NewInit(os.WriteFile)
 	err := cmd.Run(cmd.Command, nil)
 	then.Err(t, errConfigExists, err)
 }
@@ -111,7 +98,7 @@ func TestErrorInitBadWriteFiles(t *testing.T) {
 				return nil
 			}
 
-			cmd := NewInit(os.MkdirAll, mockWriteFile)
+			cmd := NewInit(mockWriteFile)
 			err := cmd.Run(cmd.Command, nil)
 			then.Err(t, mockError, err)
 		})

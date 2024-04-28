@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"errors"
+	"os"
 	"path/filepath"
 
 	"github.com/spf13/cobra"
@@ -21,16 +22,13 @@ type Init struct {
 	Force         bool
 
 	// dependencies
-	MkdirAll  shared.MkdirAller
 	WriteFile shared.WriteFiler
 }
 
 func NewInit(
-	mkdirAll shared.MkdirAller,
 	writeFile shared.WriteFiler,
 ) *Init {
 	i := &Init{
-		MkdirAll:  mkdirAll,
 		WriteFile: writeFile,
 	}
 
@@ -125,7 +123,7 @@ func (i *Init) Run(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	err = i.MkdirAll(unreleasedPath, core.CreateDirMode)
+	err = os.MkdirAll(unreleasedPath, core.CreateDirMode)
 	if err != nil {
 		return err
 	}

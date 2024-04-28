@@ -34,9 +34,7 @@ type Batch struct {
 
 	// Dependencies
 	ReadFile      shared.ReadFiler
-	Rename        shared.Renamer
 	WriteFile     shared.WriteFiler
-	MkdirAll      shared.MkdirAller
 	TimeNow       core.TimeNow
 	TemplateCache *core.TemplateCache
 
@@ -48,17 +46,13 @@ type Batch struct {
 
 func NewBatch(
 	readFile shared.ReadFiler,
-	rename shared.Renamer,
 	writeFile shared.WriteFiler,
-	mkdirAll shared.MkdirAller,
 	timeNow core.TimeNow,
 	templateCache *core.TemplateCache,
 ) *Batch {
 	b := &Batch{
 		ReadFile:      readFile,
-		Rename:        rename,
 		WriteFile:     writeFile,
-		MkdirAll:      mkdirAll,
 		TimeNow:       timeNow,
 		TemplateCache: templateCache,
 	}
@@ -223,7 +217,7 @@ func (b *Batch) Run(cmd *cobra.Command, args []string) error {
 
 		b.Project = pc.Key
 
-		err = b.MkdirAll(filepath.Join(b.config.ChangesDir, b.Project), core.CreateDirMode)
+		err = os.MkdirAll(filepath.Join(b.config.ChangesDir, b.Project), core.CreateDirMode)
 		if err != nil {
 			return err
 		}
@@ -469,7 +463,7 @@ func (b *Batch) ClearUnreleased(changes []core.Change, otherFiles ...string) err
 	)
 
 	if b.MoveDir != "" {
-		err = b.MkdirAll(filepath.Join(b.config.ChangesDir, b.MoveDir), core.CreateDirMode)
+		err = os.MkdirAll(filepath.Join(b.config.ChangesDir, b.MoveDir), core.CreateDirMode)
 		if err != nil {
 			return err
 		}
@@ -493,7 +487,7 @@ func (b *Batch) ClearUnreleased(changes []core.Change, otherFiles ...string) err
 
 	for _, f := range filesToMove {
 		if b.MoveDir != "" {
-			err = b.Rename(
+			err = os.Rename(
 				f,
 				filepath.Join(b.config.ChangesDir, b.MoveDir, filepath.Base(f)),
 			)

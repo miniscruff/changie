@@ -27,20 +27,17 @@ type New struct {
 	// dependencies
 	ReadFile      shared.ReadFiler
 	TimeNow       core.TimeNow
-	MkdirAll      shared.MkdirAller
 	TemplateCache *core.TemplateCache
 }
 
 func NewNew(
 	readFile shared.ReadFiler,
 	timeNow core.TimeNow,
-	mkdirAll shared.MkdirAller,
 	templateCache *core.TemplateCache,
 ) *New {
 	n := &New{
 		ReadFile:      readFile,
 		TimeNow:       timeNow,
-		MkdirAll:      mkdirAll,
 		TemplateCache: templateCache,
 	}
 
@@ -153,7 +150,7 @@ func (n *New) Run(cmd *cobra.Command, args []string) error {
 
 			outputPath := filepath.Join(config.ChangesDir, config.UnreleasedDir, outputFilename)
 
-			fileErr = n.MkdirAll(filepath.Dir(outputPath), core.CreateDirMode)
+			fileErr = os.MkdirAll(filepath.Dir(outputPath), core.CreateDirMode)
 			if fileErr != nil {
 				return fileErr
 			}
