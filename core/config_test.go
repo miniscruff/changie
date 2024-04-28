@@ -193,14 +193,14 @@ components:
 }
 
 func TestDefaultFragmentTemplateWithKinds(t *testing.T) {
-    then.WithTempDir(t)
+	then.WithTempDir(t)
 
-    cfgYaml := []byte(`kinds:
+	cfgYaml := []byte(`kinds:
   - label: B
   - label: C
   - label: E
     `)
-    then.WriteFile(t, cfgYaml, ConfigPaths[0])
+	then.WriteFile(t, cfgYaml, ConfigPaths[0])
 
 	defaultFragmentFormat := fmt.Sprintf("{{.Kind}}-{{.Time.Format \"%v\"}}", timeFormat)
 
@@ -210,8 +210,8 @@ func TestDefaultFragmentTemplateWithKinds(t *testing.T) {
 }
 
 func TestDefaultFragmentTemplateWithoutKindsOrComponents(t *testing.T) {
-    then.WithTempDir(t)
-    then.WriteFile(t,[]byte("unreleasedDir: unrel"), ConfigPaths[0])
+	then.WithTempDir(t)
+	then.WriteFile(t, []byte("unreleasedDir: unrel"), ConfigPaths[0])
 
 	defaultFragmentFormat := fmt.Sprintf("{{.Time.Format \"%v\"}}", timeFormat)
 
@@ -221,10 +221,10 @@ func TestDefaultFragmentTemplateWithoutKindsOrComponents(t *testing.T) {
 }
 
 func TestErrorBadYamlFile(t *testing.T) {
-    then.WithTempDir(t)
+	then.WithTempDir(t)
 
-    cfgYaml := []byte("not a valid yaml file---")
-    then.WriteFile(t, cfgYaml, ConfigPaths[0])
+	cfgYaml := []byte("not a valid yaml file---")
+	then.WriteFile(t, cfgYaml, ConfigPaths[0])
 
 	_, err := LoadConfig()
 	then.NotNil(t, err)
