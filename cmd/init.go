@@ -8,7 +8,6 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/miniscruff/changie/core"
-	"github.com/miniscruff/changie/shared"
 )
 
 var errConfigExists = errors.New("changie config already exists")
@@ -20,17 +19,10 @@ type Init struct {
 	ChangesDir    string
 	ChangelogPath string
 	Force         bool
-
-	// dependencies
-	WriteFile shared.WriteFiler
 }
 
-func NewInit(
-	writeFile shared.WriteFiler,
-) *Init {
-	i := &Init{
-		WriteFile: writeFile,
-	}
+func NewInit() *Init {
+	i := &Init{}
 
 	cmd := &cobra.Command{
 		Use:   "init",
@@ -118,7 +110,7 @@ func (i *Init) Run(cmd *cobra.Command, args []string) error {
 		}
 	}
 
-	err := config.Save(i.WriteFile)
+	err := config.Save()
 	if err != nil {
 		return err
 	}
@@ -128,17 +120,17 @@ func (i *Init) Run(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	err = i.WriteFile(keepPath, []byte{}, core.CreateFileMode)
+	err = os.WriteFile(keepPath, []byte{}, core.CreateFileMode)
 	if err != nil {
 		return err
 	}
 
-	err = i.WriteFile(headerPath, []byte(defaultHeader), core.CreateFileMode)
+	err = os.WriteFile(headerPath, []byte(defaultHeader), core.CreateFileMode)
 	if err != nil {
 		return err
 	}
 
-	err = i.WriteFile(config.ChangelogPath, []byte(defaultChangelog), core.CreateFileMode)
+	err = os.WriteFile(config.ChangelogPath, []byte(defaultChangelog), core.CreateFileMode)
 	if err != nil {
 		return err
 	}

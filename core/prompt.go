@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"os"
 	"runtime"
 
 	tea "github.com/charmbracelet/bubbletea"
@@ -272,7 +271,7 @@ func (p *Prompts) body() error {
 				return err
 			}
 
-			p.Body, err = getBodyTextWithEditor(runner, file, os.ReadFile)
+			p.Body, err = getBodyTextWithEditor(runner, file)
 
 			return err
 		} else {

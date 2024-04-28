@@ -53,7 +53,6 @@ func TestNewWithEnvVars(t *testing.T) {
 	)
 
 	cmd := NewNew(
-		os.ReadFile,
 		newMockTime,
 		core.NewTemplateCache(),
 	)
@@ -92,7 +91,6 @@ func TestNewCreatesNewFileAfterPrompts(t *testing.T) {
 	)
 
 	cmd := NewNew(
-		os.ReadFile,
 		newMockTime,
 		core.NewTemplateCache(),
 	)
@@ -123,7 +121,6 @@ func TestErrorNewBadCustomValues(t *testing.T) {
 	then.WithTempDirConfig(t, cfg)
 
 	cmd := NewNew(
-		os.ReadFile,
 		newMockTime,
 		core.NewTemplateCache(),
 	)
@@ -137,7 +134,6 @@ func TestErrorOnBadConfig(t *testing.T) {
 	then.WithTempDir(t)
 
 	cmd := NewNew(
-		os.ReadFile,
 		newMockTime,
 		core.NewTemplateCache(),
 	)
@@ -152,7 +148,6 @@ func TestErrorNewOnBadPrompts(t *testing.T) {
 	reader, writer := then.WithReadWritePipe(t)
 
 	cmd := NewNew(
-		os.ReadFile,
 		newMockTime,
 		core.NewTemplateCache(),
 	)
@@ -176,7 +171,6 @@ func TestErrorNewFragmentTemplate(t *testing.T) {
 	reader, writer := then.WithReadWritePipe(t)
 
 	cmd := NewNew(
-		os.ReadFile,
 		newMockTime,
 		core.NewTemplateCache(),
 	)
@@ -201,7 +195,6 @@ func TestNewOutputsToCmdOutWhenDry(t *testing.T) {
 
 	outWriter := strings.Builder{}
 	cmd := NewNew(
-		os.ReadFile,
 		newMockTime,
 		core.NewTemplateCache(),
 	)
@@ -241,7 +234,6 @@ func TestNewFragmentTemplateSlash(t *testing.T) {
 	)
 
 	cmd := NewNew(
-		os.ReadFile,
 		newMockTime,
 		core.NewTemplateCache(),
 	)

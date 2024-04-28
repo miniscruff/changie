@@ -1,7 +1,6 @@
 package cmd
 
 import (
-	"os"
 	"strings"
 	"testing"
 
@@ -34,7 +33,7 @@ func TestLatestVersionEchosLatestVersion(t *testing.T) {
 	then.CreateFile(t, cfg.ChangesDir, "v0.2.0-rc1.md")
 	then.CreateFile(t, cfg.ChangesDir, "head.tpl.md")
 
-	cmd := NewLatest(os.ReadFile)
+	cmd := NewLatest()
 	cmd.SetOut(&builder)
 
 	err := cmd.Run(cmd.Command, nil)
@@ -53,7 +52,7 @@ func TestLatestEchoLatestNonPrerelease(t *testing.T) {
 	then.CreateFile(t, cfg.ChangesDir, "v0.2.0-rc1.md")
 	then.CreateFile(t, cfg.ChangesDir, "head.tpl.md")
 
-	cmd := NewLatest(os.ReadFile)
+	cmd := NewLatest()
 	cmd.SkipPrereleases = true
 	cmd.SetOut(&builder)
 
@@ -72,7 +71,7 @@ func TestLatestWithoutPrefix(t *testing.T) {
 	then.CreateFile(t, cfg.ChangesDir, "v0.1.0.md")
 	then.CreateFile(t, cfg.ChangesDir, "head.tpl.md")
 
-	cmd := NewLatest(os.ReadFile)
+	cmd := NewLatest()
 	cmd.RemovePrefix = true
 	cmd.SetOut(&builder)
 
@@ -98,7 +97,7 @@ func TestLatestVersionWithProject(t *testing.T) {
 	then.CreateFile(t, cfg.ChangesDir, "r", "head.tpl.md")
 
 	builder := strings.Builder{}
-	cmd := NewLatest(os.ReadFile)
+	cmd := NewLatest()
 	cmd.Project = "r"
 
 	cmd.SetOut(&builder)
@@ -124,7 +123,7 @@ func TestLatestVersionWithBadProject(t *testing.T) {
 	then.CreateFile(t, cfg.ChangesDir, "r", "v0.2.0-rc1.md")
 	then.CreateFile(t, cfg.ChangesDir, "r", "head.tpl.md")
 
-	cmd := NewLatest(os.ReadFile)
+	cmd := NewLatest()
 	cmd.Project = "missing_project_again"
 
 	builder := strings.Builder{}
@@ -137,7 +136,7 @@ func TestLatestVersionWithBadProject(t *testing.T) {
 func TestErrorLatestBadConfig(t *testing.T) {
 	then.WithTempDir(t)
 
-	cmd := NewLatest(os.ReadFile)
+	cmd := NewLatest()
 	err := cmd.Run(cmd.Command, nil)
 	then.NotNil(t, err)
 }
@@ -150,7 +149,7 @@ func TestErrorLatestBadWrite(t *testing.T) {
 	then.CreateFile(t, cfg.ChangesDir, "v0.0.1.md")
 	then.CreateFile(t, cfg.ChangesDir, "v0.1.0.md")
 
-	cmd := NewLatest(os.ReadFile)
+	cmd := NewLatest()
 	cmd.SetOut(w)
 	w.Raised(t, cmd.Run(cmd.Command, nil))
 }

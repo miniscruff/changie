@@ -1,7 +1,6 @@
 package cmd
 
 import (
-	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -36,15 +35,6 @@ func batchTestConfig() *core.Config {
 	}
 }
 
-func withDefaultBatch() *Batch {
-	return NewBatch(
-		os.ReadFile,
-		os.WriteFile,
-		time.Now,
-		core.NewTemplateCache(),
-	)
-}
-
 // writeChangeFile will write a change file with an auto-incrementing index to prevent
 // same second clobbering
 func writeChangeFile(t *testing.T, cfg *core.Config, change *core.Change) {
@@ -66,8 +56,6 @@ func writeChangeFile(t *testing.T, cfg *core.Config, change *core.Change) {
 	then.WriteFile(t, bs, change.Filename)
 }
 
-type testCaseOption func(*core.Config, *Batch)
-
 func TestBatchCanBatch(t *testing.T) {
 	cfg := batchTestConfig()
 	// declared path but missing is accepted
@@ -79,7 +67,7 @@ func TestBatchCanBatch(t *testing.T) {
 	writeChangeFile(t, cfg, &core.Change{Kind: "added", Body: "B"})
 	writeChangeFile(t, cfg, &core.Change{Kind: "removed", Body: "C"})
 
-	batch := withDefaultBatch()
+	batch := NewBatch(time.Now, core.NewTemplateCache())
 	err := batch.Run(batch.Command, []string{"v0.2.0"})
 	then.Nil(t, err)
 
@@ -111,7 +99,7 @@ func TestBatchCanBatchWithProject(t *testing.T) {
 	writeChangeFile(t, cfg, &core.Change{Kind: "added", Body: "B", Project: "b"})
 	writeChangeFile(t, cfg, &core.Change{Kind: "removed", Body: "C", Project: "a"})
 
-	batch := withDefaultBatch()
+	batch := NewBatch(time.Now, core.NewTemplateCache())
 	batch.Project = "a"
 	err := batch.Run(batch.Command, []string{"v0.2.0"})
 	then.Nil(t, err)
@@ -137,7 +125,7 @@ func TestBatchProjectFailsIfUnableToFindProject(t *testing.T) {
 
 	then.WithTempDirConfig(t, cfg)
 
-	batch := withDefaultBatch()
+	batch := NewBatch(time.Now, core.NewTemplateCache())
 	batch.Project = "not found"
 
 	err := batch.Run(batch.Command, []string{"v0.2.0"})
@@ -157,7 +145,7 @@ func TestBatchCanAddNewLinesBeforeAndAfterKindHeader(t *testing.T) {
 	writeChangeFile(t, cfg, &core.Change{Kind: "added", Body: "B"})
 	writeChangeFile(t, cfg, &core.Change{Kind: "removed", Body: "C"})
 
-	batch := withDefaultBatch()
+	batch := NewBatch(time.Now, core.NewTemplateCache())
 	err := batch.Run(batch.Command, []string{"v0.2.0"})
 	then.Nil(t, err)
 
@@ -185,7 +173,7 @@ func TestBatchErrorStandardBadWriter(t *testing.T) {
 	then.WithTempDirConfig(t, cfg)
 	w := then.NewErrWriter()
 
-	batch := withDefaultBatch()
+	batch := NewBatch(time.Now, core.NewTemplateCache())
 	batch.writer = w
 	err := batch.WriteTemplate(
 		cfg.VersionFormat,
@@ -211,7 +199,7 @@ env: {{.Env.ENV_KEY}}`
 	then.WithTempDirConfig(t, cfg)
 	t.Setenv("TEST_CHANGIE_ENV_KEY", "env value")
 
-	batch := withDefaultBatch()
+	batch := NewBatch(time.Now, core.NewTemplateCache())
 	batch.IncludeDirs = []string{"beta"}
 	batch.Prerelease = []string{"b1"}
 	batch.Meta = []string{"hash"}
@@ -258,7 +246,7 @@ func TestBatchDryRun(t *testing.T) {
 	cfg := batchTestConfig()
 	then.WithTempDirConfig(t, cfg)
 
-	batch := withDefaultBatch()
+	batch := NewBatch(time.Now, core.NewTemplateCache())
 	batch.DryRun = true
 
 	var builder strings.Builder
@@ -285,7 +273,7 @@ func TestBatchRemovePrereleases(t *testing.T) {
 	cfg := batchTestConfig()
 	then.WithTempDirConfig(t, cfg)
 
-	batch := withDefaultBatch()
+	batch := NewBatch(time.Now, core.NewTemplateCache())
 	batch.RemovePrereleases = true
 
 	writeChangeFile(t, cfg, &core.Change{Kind: "added", Body: "A"})
@@ -309,7 +297,7 @@ func TestBatchKeepChangeFiles(t *testing.T) {
 	cfg := batchTestConfig()
 	then.WithTempDirConfig(t, cfg)
 
-	batch := withDefaultBatch()
+	batch := NewBatch(time.Now, core.NewTemplateCache())
 	batch.KeepFragments = true
 
 	writeChangeFile(t, cfg, &core.Change{Kind: "added", Body: "A"})
@@ -329,7 +317,7 @@ func TestBatchWithHeadersAndFooters(t *testing.T) {
 	cfg.FooterFormat = "footer format"
 	then.WithTempDirConfig(t, cfg)
 
-	batch := withDefaultBatch()
+	batch := NewBatch(time.Now, core.NewTemplateCache())
 	batch.VersionHeaderPath = "h1.md"
 	batch.VersionFooterPath = "f1.md"
 
@@ -368,7 +356,7 @@ func TestBatchErrorBadChanges(t *testing.T) {
 	cfg := batchTestConfig()
 	then.WithTempDirConfig(t, cfg)
 
-	batch := withDefaultBatch()
+	batch := NewBatch(time.Now, core.NewTemplateCache())
 	aVer := []byte("not a valid change")
 	then.WriteFile(t, aVer, cfg.ChangesDir, cfg.UnreleasedDir, "a.yaml")
 
@@ -380,7 +368,7 @@ func TestBatchOverrideIfForced(t *testing.T) {
 	cfg := batchTestConfig()
 	then.WithTempDirConfig(t, cfg)
 
-	batch := withDefaultBatch()
+	batch := NewBatch(time.Now, core.NewTemplateCache())
 	batch.Force = true
 
 	writeChangeFile(t, cfg, &core.Change{Kind: "added", Body: "A"})
@@ -403,7 +391,7 @@ func TestBatchErrorIfBatchExists(t *testing.T) {
 	cfg := batchTestConfig()
 	then.WithTempDirConfig(t, cfg)
 
-	batch := withDefaultBatch()
+	batch := NewBatch(time.Now, core.NewTemplateCache())
 
 	writeChangeFile(t, cfg, &core.Change{Kind: "added", Body: "A"})
 
@@ -420,7 +408,7 @@ func TestBatchErrorBadVersion(t *testing.T) {
 	cfg := batchTestConfig()
 	then.WithTempDirConfig(t, cfg)
 
-	batch := withDefaultBatch()
+	batch := NewBatch(time.Now, core.NewTemplateCache())
 
 	writeChangeFile(t, cfg, &core.Change{Kind: "added", Body: "A"})
 
@@ -433,7 +421,7 @@ func TestBatchErrorBadLatestVersion(t *testing.T) {
 	cfg.ChangesDir = "../../opt/apt/not/real"
 	then.WithTempDirConfig(t, cfg)
 
-	batch := withDefaultBatch()
+	batch := NewBatch(time.Now, core.NewTemplateCache())
 
 	// fail trying to read a bad directory
 	err := batch.Run(batch.Command, []string{"v0.2.0"})
@@ -444,7 +432,7 @@ func TestBatchErrorBadConfig(t *testing.T) {
 	then.WithTempDir(t)
 	then.WriteFile(t, []byte("not a proper config"), core.ConfigPaths[0])
 
-	batch := withDefaultBatch()
+	batch := NewBatch(time.Now, core.NewTemplateCache())
 	err := batch.Run(batch.Command, []string{"v0.1.0"})
 	then.NotNil(t, err)
 }
@@ -454,7 +442,7 @@ func TestBatchErrorBadVersionFormat(t *testing.T) {
 	cfg.VersionFormat = "{{bad.format}"
 	then.WithTempDirConfig(t, cfg)
 
-	batch := withDefaultBatch()
+	batch := NewBatch(time.Now, core.NewTemplateCache())
 
 	writeChangeFile(t, cfg, &core.Change{Kind: "removed", Body: "C"})
 
@@ -462,54 +450,10 @@ func TestBatchErrorBadVersionFormat(t *testing.T) {
 	then.NotNil(t, err)
 }
 
-func TestBatchErrorBadFilesAndTemplates(t *testing.T) {
-	mockErr := errors.New("bad file read")
-	expectedFile := "exp.md"
-
-	for _, opt := range []testCaseOption{
-		func(c *core.Config, b *Batch) {
-			b.VersionHeaderPath = expectedFile
-		},
-		func(c *core.Config, b *Batch) {
-			c.VersionHeaderPath = expectedFile
-		},
-		func(c *core.Config, b *Batch) {
-			b.VersionFooterPath = expectedFile
-		},
-		func(c *core.Config, b *Batch) {
-			c.VersionFooterPath = expectedFile
-		},
-		func(c *core.Config, b *Batch) {
-			c.HeaderFormat = "bad format {{...bah}}"
-		},
-		func(c *core.Config, b *Batch) {
-			c.FooterFormat = "bad format {{...bah}}"
-		},
-	} {
-		cfg := batchTestConfig()
-		batch := withDefaultBatch()
-		opt(cfg, batch)
-
-		then.WithTempDirConfig(t, cfg)
-		writeChangeFile(t, cfg, &core.Change{Kind: "added", Body: "A"})
-
-		batch.ReadFile = func(filename string) ([]byte, error) {
-			if strings.HasSuffix(filename, expectedFile) {
-				return nil, mockErr
-			}
-
-			return os.ReadFile(filename)
-		}
-
-		err := batch.Run(batch.Command, []string{"v0.1.1"})
-		then.NotNil(t, err)
-	}
-}
-
 func TestBatchErrorBadKindFormat(t *testing.T) {
 	cfg := batchTestConfig()
 	cfg.KindFormat = "bad {{...buh}}"
-	batch := withDefaultBatch()
+	batch := NewBatch(time.Now, core.NewTemplateCache())
 
 	then.WithTempDirConfig(t, cfg)
 	writeChangeFile(t, cfg, &core.Change{Kind: "added", Body: "C"})
@@ -521,7 +465,7 @@ func TestBatchErrorBadKindFormat(t *testing.T) {
 func TestBatchErrorBadComponentFormat(t *testing.T) {
 	cfg := batchTestConfig()
 	cfg.ComponentFormat = "bad {{...buh}}"
-	batch := withDefaultBatch()
+	batch := NewBatch(time.Now, core.NewTemplateCache())
 
 	then.WithTempDirConfig(t, cfg)
 	writeChangeFile(t, cfg, &core.Change{Component: "ui", Body: "C"})
@@ -533,7 +477,7 @@ func TestBatchErrorBadComponentFormat(t *testing.T) {
 func TestBatchErrorBadChangeFormat(t *testing.T) {
 	cfg := batchTestConfig()
 	cfg.ChangeFormat = "bad {{...buh}}"
-	batch := withDefaultBatch()
+	batch := NewBatch(time.Now, core.NewTemplateCache())
 
 	then.WithTempDirConfig(t, cfg)
 	writeChangeFile(t, cfg, &core.Change{Component: "ui", Body: "C"})
@@ -548,7 +492,7 @@ func TestBatchWriteChanges(t *testing.T) {
 
 	var builder strings.Builder
 
-	batch := withDefaultBatch()
+	batch := NewBatch(time.Now, core.NewTemplateCache())
 	batch.config = cfg
 	batch.writer = &builder
 
@@ -579,7 +523,7 @@ func TestBatchCreateVersionsWithoutKindHeaders(t *testing.T) {
 
 	var builder strings.Builder
 
-	batch := withDefaultBatch()
+	batch := NewBatch(time.Now, core.NewTemplateCache())
 	batch.config = cfg
 	batch.writer = &builder
 
@@ -610,7 +554,7 @@ func TestBatchVersionFileWithComponentHeaders(t *testing.T) {
 
 	var builder strings.Builder
 
-	batch := withDefaultBatch()
+	batch := NewBatch(time.Now, core.NewTemplateCache())
 	batch.config = cfg
 	batch.writer = &builder
 
@@ -641,7 +585,7 @@ func TestBatchClearUnreleasedRemovesUnreleasedFilesIncludingHeader(t *testing.T)
 	then.WithTempDir(t)
 
 	cfg := batchTestConfig()
-	batch := withDefaultBatch()
+	batch := NewBatch(time.Now, core.NewTemplateCache())
 	batch.config = cfg
 
 	alphaPath := filepath.Join(cfg.ChangesDir, "alpha")
@@ -680,7 +624,7 @@ func TestBatchClearUnreleasedMovesFilesIncludingHeaderIfSpecified(t *testing.T) 
 	then.WithTempDir(t)
 
 	cfg := batchTestConfig()
-	batch := withDefaultBatch()
+	batch := NewBatch(time.Now, core.NewTemplateCache())
 	batch.config = cfg
 	batch.MoveDir = "beta"
 
@@ -710,4 +654,3 @@ func TestBatchClearUnreleasedMovesFilesIncludingHeaderIfSpecified(t *testing.T) 
 	// .gitkeep should remain
 	then.DirectoryFileCount(t, 1, cfg.ChangesDir, cfg.UnreleasedDir)
 }
-

@@ -14,8 +14,6 @@ import (
 
 	"github.com/Masterminds/semver/v3"
 
-	"github.com/miniscruff/changie/shared"
-
 	shellquote "github.com/kballard/go-shellquote"
 )
 
@@ -290,7 +288,6 @@ func LoadEnvVars(config *Config, envs []string) map[string]string {
 func GetChanges(
 	config *Config,
 	searchPaths []string,
-	readFile shared.ReadFiler,
 	projectKey string,
 ) ([]Change, error) {
 	var changes []Change
@@ -301,7 +298,7 @@ func GetChanges(
 	}
 
 	for _, cf := range changeFiles {
-		c, err := LoadChange(cf, readFile)
+		c, err := LoadChange(cf)
 		if err != nil {
 			return changes, err
 		}
@@ -383,12 +380,12 @@ func BuildCommand(editorFilePath string) (EditorRunner, error) {
 }
 
 // getBodyTextWithEditor will run the provided editor runner and read the final file.
-func getBodyTextWithEditor(runner EditorRunner, editorFile string, rf shared.ReadFiler) (string, error) {
+func getBodyTextWithEditor(runner EditorRunner, editorFile string) (string, error) {
 	if err := runner.Run(); err != nil {
 		return "", fmt.Errorf("opening the editor: %w", err)
 	}
 
-	buf, err := rf(editorFile)
+	buf, err := os.ReadFile(editorFile)
 	if err != nil {
 		return "", err
 	}

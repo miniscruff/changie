@@ -9,7 +9,6 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/miniscruff/changie/core"
-	"github.com/miniscruff/changie/shared"
 )
 
 type New struct {
@@ -25,18 +24,15 @@ type New struct {
 	Custom     []string
 
 	// dependencies
-	ReadFile      shared.ReadFiler
 	TimeNow       core.TimeNow
 	TemplateCache *core.TemplateCache
 }
 
 func NewNew(
-	readFile shared.ReadFiler,
 	timeNow core.TimeNow,
 	templateCache *core.TemplateCache,
 ) *New {
 	n := &New{
-		ReadFile:      readFile,
 		TimeNow:       timeNow,
 		TemplateCache: templateCache,
 	}
@@ -100,7 +96,7 @@ Each version is merged together for the overall project changelog.`,
 }
 
 func (n *New) Run(cmd *cobra.Command, args []string) error {
-	config, err := core.LoadConfig(n.ReadFile)
+	config, err := core.LoadConfig()
 	if err != nil {
 		return err
 	}

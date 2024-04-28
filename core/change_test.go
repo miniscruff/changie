@@ -1,13 +1,11 @@
 package core
 
 import (
-	"errors"
 	"fmt"
+	"os"
 	"strings"
 	"testing"
 	"time"
-
-	"gopkg.in/yaml.v3"
 
 	"github.com/miniscruff/changie/then"
 )
@@ -18,25 +16,7 @@ var (
 		time.Date(2017, 5, 24, 3, 30, 10, 5, time.Local),
 		time.Date(2016, 5, 24, 3, 30, 10, 5, time.Local),
 	}
-	changeIncrementer = 0
 )
-
-// writeChangeFile will write a change file with an auto-incrementing index to prevent
-// same second clobbering
-func writeChangeFile(t *testing.T, cfg *Config, change Change) {
-	// set our time as an arbitrary amount from jan 1 2000 so
-	// each change is 1 hour later then the last
-	if change.Time.Year() == 0 {
-		diff := time.Duration(changeIncrementer) * time.Hour
-		change.Time = time.Date(2000, 0, 0, 0, 0, 0, 0, time.UTC).Add(diff)
-	}
-
-	bs, _ := yaml.Marshal(&change)
-	name := fmt.Sprintf("change-%d.yaml", changeIncrementer)
-	changeIncrementer++
-
-	then.WriteFile(t, bs, cfg.ChangesDir, cfg.UnreleasedDir, name)
-}
 
 func TestWriteChange(t *testing.T) {
 	mockTime := time.Date(2016, 5, 24, 3, 30, 10, 5, time.Local)
@@ -58,37 +38,21 @@ func TestWriteChange(t *testing.T) {
 }
 
 func TestLoadChangeFromPath(t *testing.T) {
-	mockRf := func(filepath string) ([]byte, error) {
-		then.Equals(t, "some_file.yaml", filepath)
-		return []byte("kind: A\nbody: hey\n"), nil
-	}
+	then.WithTempDir(t)
+	then.Nil(t, os.WriteFile("some_file.yaml", []byte("kind: A\nbody: hey\n"), CreateFileMode))
 
-	change, err := LoadChange("some_file.yaml", mockRf)
+	change, err := LoadChange("some_file.yaml")
 
 	then.Nil(t, err)
 	then.Equals(t, "A", change.Kind)
 	then.Equals(t, "hey", change.Body)
 }
 
-func TestBadRead(t *testing.T) {
-	mockErr := errors.New("bad file")
-
-	mockRf := func(filepath string) ([]byte, error) {
-		then.Equals(t, "some_file.yaml", filepath)
-		return []byte(""), mockErr
-	}
-
-	_, err := LoadChange("some_file.yaml", mockRf)
-	then.Err(t, mockErr, err)
-}
-
 func TestBadYamlFile(t *testing.T) {
-	mockRf := func(filepath string) ([]byte, error) {
-		then.Equals(t, "some_file.yaml", filepath)
-		return []byte("not a yaml file---"), nil
-	}
+	then.WithTempDir(t)
+	then.Nil(t, os.WriteFile("some_file.yaml", []byte("not a yaml file---"), CreateFileMode))
 
-	_, err := LoadChange("some_file.yaml", mockRf)
+	_, err := LoadChange("some_file.yaml")
 	then.NotNil(t, err)
 }
 

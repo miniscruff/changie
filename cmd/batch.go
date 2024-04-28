@@ -10,7 +10,6 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/miniscruff/changie/core"
-	"github.com/miniscruff/changie/shared"
 )
 
 var errVersionExists = errors.New("version already exists")
@@ -33,8 +32,6 @@ type Batch struct {
 	Force             bool
 
 	// Dependencies
-	ReadFile      shared.ReadFiler
-	WriteFile     shared.WriteFiler
 	TimeNow       core.TimeNow
 	TemplateCache *core.TemplateCache
 
@@ -45,14 +42,10 @@ type Batch struct {
 }
 
 func NewBatch(
-	readFile shared.ReadFiler,
-	writeFile shared.WriteFiler,
 	timeNow core.TimeNow,
 	templateCache *core.TemplateCache,
 ) *Batch {
 	b := &Batch{
-		ReadFile:      readFile,
-		WriteFile:     writeFile,
 		TimeNow:       timeNow,
 		TemplateCache: templateCache,
 	}
@@ -163,7 +156,7 @@ func (b *Batch) getBatchData() (*core.BatchData, error) {
 		return nil, err
 	}
 
-	allChanges, err := core.GetChanges(b.config, b.IncludeDirs, b.ReadFile, b.Project)
+	allChanges, err := core.GetChanges(b.config, b.IncludeDirs, b.Project)
 	if err != nil {
 		return nil, err
 	}
@@ -202,7 +195,7 @@ func (b *Batch) Run(cmd *cobra.Command, args []string) error {
 	// save our version for later use
 	b.version = args[0]
 
-	b.config, err = core.LoadConfig(b.ReadFile)
+	b.config, err = core.LoadConfig()
 	if err != nil {
 		return err
 	}
@@ -387,7 +380,7 @@ func (b *Batch) WriteTemplateFile(
 
 	var fileBytes []byte
 
-	fileBytes, readErr := b.ReadFile(fullPath)
+	fileBytes, readErr := os.ReadFile(fullPath)
 	if readErr != nil && !os.IsNotExist(readErr) {
 		return readErr
 	}

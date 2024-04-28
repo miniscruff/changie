@@ -6,7 +6,6 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/miniscruff/changie/core"
-	"github.com/miniscruff/changie/shared"
 )
 
 type Latest struct {
@@ -16,15 +15,10 @@ type Latest struct {
 	RemovePrefix    bool
 	SkipPrereleases bool
 	Project         string
-
-	// dependencies
-	ReadFile shared.ReadFiler
 }
 
-func NewLatest(readFile shared.ReadFiler) *Latest {
-	l := &Latest{
-		ReadFile: readFile,
-	}
+func NewLatest() *Latest {
+	l := &Latest{}
 
 	cmd := &cobra.Command{
 		Use:   "latest",
@@ -60,7 +54,7 @@ func NewLatest(readFile shared.ReadFiler) *Latest {
 func (l *Latest) Run(cmd *cobra.Command, args []string) error {
 	projPrefix := ""
 
-	config, err := core.LoadConfig(l.ReadFile)
+	config, err := core.LoadConfig()
 	if err != nil {
 		return err
 	}

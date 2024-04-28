@@ -3,13 +3,12 @@ package core
 import (
 	"fmt"
 	"io"
+	"os"
 	"sort"
 	"strings"
 	"time"
 
 	"gopkg.in/yaml.v3"
-
-	"github.com/miniscruff/changie/shared"
 )
 
 type ChangesConfigSorter struct {
@@ -142,10 +141,10 @@ func (change *Change) PostProcess(cfg *Config, kind *KindConfig) error {
 }
 
 // LoadChange will load a change from file path
-func LoadChange(path string, rf shared.ReadFiler) (Change, error) {
+func LoadChange(path string) (Change, error) {
 	var c Change
 
-	bs, err := rf(path)
+	bs, err := os.ReadFile(path)
 	if err != nil {
 		return c, fmt.Errorf("reading change file '%s': %w", path, err)
 	}

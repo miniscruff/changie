@@ -1,7 +1,6 @@
 package cmd
 
 import (
-	"os"
 	"time"
 
 	"github.com/spf13/cobra"
@@ -22,26 +21,16 @@ being easy to use for developers and your release team.`,
 
 	templateCache := core.NewTemplateCache()
 
-	batch := NewBatch(
-		os.ReadFile,
-		os.WriteFile,
-		time.Now,
-		templateCache,
-	)
-
-	merge := NewMerge(
-		os.ReadFile,
-		os.WriteFile,
-		templateCache,
-	)
+	batch := NewBatch(time.Now, templateCache)
+	merge := NewMerge(templateCache)
 
 	cmd.AddCommand(batch.Command)
 	cmd.AddCommand(NewGen().Command)
-	cmd.AddCommand(NewInit(os.WriteFile).Command)
-	cmd.AddCommand(NewLatest(os.ReadFile).Command)
+	cmd.AddCommand(NewInit().Command)
+	cmd.AddCommand(NewLatest().Command)
 	cmd.AddCommand(merge.Command)
-	cmd.AddCommand(NewNew(os.ReadFile, time.Now, templateCache).Command)
-	cmd.AddCommand(NewNext(os.ReadFile).Command)
+	cmd.AddCommand(NewNew(time.Now, templateCache).Command)
+	cmd.AddCommand(NewNext().Command)
 
 	return cmd
 }

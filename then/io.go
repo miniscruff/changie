@@ -6,12 +6,10 @@ import (
 	"path/filepath"
 	"testing"
 	"time"
-
-	"github.com/miniscruff/changie/shared"
 )
 
 type Saver interface {
-	Save(shared.WriteFiler) error
+	Save() error
 }
 
 // WithTempDir creates a temporary directory and moves our working directory to it.
@@ -38,7 +36,7 @@ func WithTempDirConfig(t *testing.T, cfg Saver) {
 	t.Helper()
 	WithTempDir(t)
 
-	err := cfg.Save(os.WriteFile)
+	err := cfg.Save()
 	Nil(t, err)
 }
 

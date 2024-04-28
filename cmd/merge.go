@@ -8,7 +8,6 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/miniscruff/changie/core"
-	"github.com/miniscruff/changie/shared"
 )
 
 type Merge struct {
@@ -19,19 +18,11 @@ type Merge struct {
 	UnreleasedHeader string
 
 	// dependencies
-	ReadFile      shared.ReadFiler
-	WriteFile     shared.WriteFiler
 	TemplateCache *core.TemplateCache
 }
 
-func NewMerge(
-	readFile shared.ReadFiler,
-	writeFile shared.WriteFiler,
-	templateCache *core.TemplateCache,
-) *Merge {
+func NewMerge(templateCache *core.TemplateCache) *Merge {
 	m := &Merge{
-		ReadFile:      readFile,
-		WriteFile:     writeFile,
 		TemplateCache: templateCache,
 	}
 
@@ -64,7 +55,7 @@ Note that a newline is added between each version file.`,
 }
 
 func (m *Merge) Run(cmd *cobra.Command, args []string) error {
-	cfg, err := core.LoadConfig(m.ReadFile)
+	cfg, err := core.LoadConfig()
 	if err != nil {
 		return err
 	}
@@ -122,7 +113,6 @@ func (m *Merge) mergeProject(
 		allChanges, unrelErr := core.GetChanges(
 			cfg,
 			nil,
-			m.ReadFile,
 			project,
 		)
 		if unrelErr != nil {
@@ -185,7 +175,7 @@ func (m *Merge) mergeProject(
 	}
 
 	for _, rep := range replacements {
-		err = rep.Execute(m.ReadFile, m.WriteFile, replaceData)
+		err = rep.Execute(replaceData)
 		if err != nil {
 			return err
 		}
