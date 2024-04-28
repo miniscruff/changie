@@ -4,71 +4,46 @@ import (
 	"fmt"
 	"io"
 	"os"
-	"sort"
 	"strings"
 	"time"
 
 	"gopkg.in/yaml.v3"
 )
 
-type ChangesConfigSorter struct {
-	changes []Change
-	config  Config
-}
-
-func SortByConfig(config *Config) *ChangesConfigSorter {
-	return &ChangesConfigSorter{
-		config: *config,
-	}
-}
-
-// Sort sorts the argument slice according to the less functions passed to OrderedBy.
-func (s *ChangesConfigSorter) Sort(changes []Change) {
-	s.changes = changes
-	sort.Sort(s)
-}
-
-// Len is part of sort.Interface.
-func (s *ChangesConfigSorter) Len() int {
-	return len(s.changes)
-}
-
-// Swap is part of sort.Interface.
-func (s *ChangesConfigSorter) Swap(i, j int) {
-	s.changes[i], s.changes[j] = s.changes[j], s.changes[i]
-}
-
 // Less will compare two Change values with the config settings.
 // * Components, if enabled, are sorted by index in config
 // * Kind, if enabled, are sorted by index in config
 // * Time sorted newest first
-func (s *ChangesConfigSorter) Less(i, j int) bool {
-	a, b := &s.changes[i], &s.changes[j]
+func ChangeLess(cfg *Config, changes []Change) func(i, j int) bool {
+	return func(i, j int) bool {
+		a := changes[i]
+		b := changes[j]
 
-	// Start by sorting by component index
-	if len(s.config.Components) > 0 && a.Component != b.Component {
-		for _, c := range s.config.Components {
-			if a.Component == c {
-				return true
-			} else if b.Component == c {
-				return false
+		// Start by sorting by component index
+		if len(cfg.Components) > 0 && a.Component != b.Component {
+			for _, c := range cfg.Components {
+				if a.Component == c {
+					return true
+				} else if b.Component == c {
+					return false
+				}
 			}
 		}
-	}
 
-	// Then sort by kind index
-	if len(s.config.Kinds) > 0 && a.Kind != b.Kind {
-		for _, k := range s.config.Kinds {
-			if a.Kind == k.Label {
-				return true
-			} else if b.Kind == k.Label {
-				return false
+		// Then sort by kind index
+		if len(cfg.Kinds) > 0 && a.Kind != b.Kind {
+			for _, k := range cfg.Kinds {
+				if a.Kind == k.Label {
+					return true
+				} else if b.Kind == k.Label {
+					return false
+				}
 			}
 		}
-	}
 
-	// Finish sort by oldest first
-	return b.Time.After(a.Time)
+		// Finish sort by oldest first
+		return b.Time.After(a.Time)
+	}
 }
 
 // Change represents an atomic change to a project.

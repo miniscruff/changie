@@ -3,6 +3,7 @@ package core
 import (
 	"fmt"
 	"os"
+	"sort"
 	"strings"
 	"testing"
 	"time"
@@ -62,8 +63,9 @@ func TestSortByTime(t *testing.T) {
 		{Body: "second", Time: orderedTimes[1]},
 		{Body: "first", Time: orderedTimes[0]},
 	}
-	config := &Config{}
-	SortByConfig(config).Sort(changes)
+	cfg := &Config{}
+
+	sort.Slice(changes, ChangeLess(cfg, changes))
 
 	then.Equals(t, "third", changes[0].Body)
 	then.Equals(t, "second", changes[1].Body)
@@ -71,7 +73,7 @@ func TestSortByTime(t *testing.T) {
 }
 
 func TestSortByKindThenTime(t *testing.T) {
-	config := &Config{
+	cfg := &Config{
 		Kinds: []KindConfig{
 			{Label: "A"},
 			{Label: "B"},
@@ -83,7 +85,7 @@ func TestSortByKindThenTime(t *testing.T) {
 		{Kind: "B", Body: "third", Time: orderedTimes[1]},
 		{Kind: "A", Body: "first", Time: orderedTimes[2]},
 	}
-	SortByConfig(config).Sort(changes)
+	sort.Slice(changes, ChangeLess(cfg, changes))
 
 	then.Equals(t, "first", changes[0].Body)
 	then.Equals(t, "second", changes[1].Body)
@@ -92,7 +94,7 @@ func TestSortByKindThenTime(t *testing.T) {
 }
 
 func TestSortByComponentThenKind(t *testing.T) {
-	config := &Config{
+	cfg := &Config{
 		Kinds: []KindConfig{
 			{Label: "D"},
 			{Label: "E"},
@@ -105,7 +107,7 @@ func TestSortByComponentThenKind(t *testing.T) {
 		{Body: "third", Component: "B", Kind: "D"},
 		{Body: "first", Component: "A", Kind: "D"},
 	}
-	SortByConfig(config).Sort(changes)
+	sort.Slice(changes, ChangeLess(cfg, changes))
 
 	then.Equals(t, "first", changes[0].Body)
 	then.Equals(t, "second", changes[1].Body)

@@ -284,13 +284,13 @@ func LoadEnvVars(config *Config, envs []string) map[string]string {
 }
 
 func GetChanges(
-	config *Config,
+	cfg *Config,
 	searchPaths []string,
 	projectKey string,
 ) ([]Change, error) {
 	var changes []Change
 
-	changeFiles, err := FindChangeFiles(config, searchPaths)
+	changeFiles, err := FindChangeFiles(cfg, searchPaths)
 	if err != nil {
 		return changes, err
 	}
@@ -305,11 +305,11 @@ func GetChanges(
 			continue
 		}
 
-		c.Env = config.EnvVars()
+		c.Env = cfg.EnvVars()
 		changes = append(changes, c)
 	}
 
-	SortByConfig(config).Sort(changes)
+	sort.Slice(changes, ChangeLess(cfg, changes))
 
 	return changes, nil
 }

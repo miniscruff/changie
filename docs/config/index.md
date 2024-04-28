@@ -347,20 +347,20 @@ Block allows multiline text inputs for body messages
 
 
 ---
-## Change [:octicons-code-24:](https://github.com/miniscruff/changie/blob/<< current_version >>/core/change.go#L75) [:octicons-link-24:](#change-type) {: #change-type}
+## Change [:octicons-code-24:](https://github.com/miniscruff/changie/blob/<< current_version >>/core/change.go#L50) [:octicons-link-24:](#change-type) {: #change-type}
 Change represents an atomic change to a project.
 
-### body [:octicons-code-24:](https://github.com/miniscruff/changie/blob/<< current_version >>/core/change.go#L83) [:octicons-link-24:](#change-body) {: #change-body}
+### body [:octicons-code-24:](https://github.com/miniscruff/changie/blob/<< current_version >>/core/change.go#L58) [:octicons-link-24:](#change-body) {: #change-body}
 type: `string` | optional
 
 Body message of our change, if one was provided.
 
-### component [:octicons-code-24:](https://github.com/miniscruff/changie/blob/<< current_version >>/core/change.go#L79) [:octicons-link-24:](#change-component) {: #change-component}
+### component [:octicons-code-24:](https://github.com/miniscruff/changie/blob/<< current_version >>/core/change.go#L54) [:octicons-link-24:](#change-component) {: #change-component}
 type: `string` | optional
 
 Component of our change, if one was provided.
 
-### custom [:octicons-code-24:](https://github.com/miniscruff/changie/blob/<< current_version >>/core/change.go#L93) [:octicons-link-24:](#change-custom) {: #change-custom}
+### custom [:octicons-code-24:](https://github.com/miniscruff/changie/blob/<< current_version >>/core/change.go#L68) [:octicons-link-24:](#change-custom) {: #change-custom}
 type: map [ `string` ] `string` | optional
 
 Custom values corresponding to our options where each key-value pair is the key of the custom option
@@ -373,7 +373,7 @@ and value the one provided in the change.
     changeFormat: "{{.Body}} from #{{.Custom.Issue}}"
     ```
 
-### env [:octicons-code-24:](https://github.com/miniscruff/changie/blob/<< current_version >>/core/change.go#L99) [:octicons-link-24:](#change-env) {: #change-env}
+### env [:octicons-code-24:](https://github.com/miniscruff/changie/blob/<< current_version >>/core/change.go#L74) [:octicons-link-24:](#change-env) {: #change-env}
 type: map [ `string` ] `string` | optional
 
 Env vars configured by the system.
@@ -382,22 +382,22 @@ For example if you want to use an env var in [change format](#config-changeforma
 but env vars configured when executing `changie new` will not be saved.
 See [envPrefix](#config-envprefix) for configuration.
 
-### filename [:octicons-code-24:](https://github.com/miniscruff/changie/blob/<< current_version >>/core/change.go#L101) [:octicons-link-24:](#change-filename) {: #change-filename}
+### filename [:octicons-code-24:](https://github.com/miniscruff/changie/blob/<< current_version >>/core/change.go#L76) [:octicons-link-24:](#change-filename) {: #change-filename}
 type: `string` | optional
 
 Filename the change was saved to.
 
-### kind [:octicons-code-24:](https://github.com/miniscruff/changie/blob/<< current_version >>/core/change.go#L81) [:octicons-link-24:](#change-kind) {: #change-kind}
+### kind [:octicons-code-24:](https://github.com/miniscruff/changie/blob/<< current_version >>/core/change.go#L56) [:octicons-link-24:](#change-kind) {: #change-kind}
 type: `string` | optional
 
 Kind of our change, if one was provided.
 
-### project [:octicons-code-24:](https://github.com/miniscruff/changie/blob/<< current_version >>/core/change.go#L77) [:octicons-link-24:](#change-project) {: #change-project}
+### project [:octicons-code-24:](https://github.com/miniscruff/changie/blob/<< current_version >>/core/change.go#L52) [:octicons-link-24:](#change-project) {: #change-project}
 type: `string` | optional
 
 Project of our change, if one was provided.
 
-### time [:octicons-code-24:](https://github.com/miniscruff/changie/blob/<< current_version >>/core/change.go#L85) [:octicons-link-24:](#change-time) {: #change-time}
+### time [:octicons-code-24:](https://github.com/miniscruff/changie/blob/<< current_version >>/core/change.go#L60) [:octicons-link-24:](#change-time) {: #change-time}
 type: `Time` | required
 
 When our change was made.
