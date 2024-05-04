@@ -10,13 +10,15 @@ import (
 	"path/filepath"
 	"sort"
 	"strings"
+	"time"
 
 	"github.com/Masterminds/semver/v3"
 
-	"github.com/miniscruff/changie/shared"
-
 	shellquote "github.com/kballard/go-shellquote"
 )
+
+// TimeNow is a func type for time.Now
+type TimeNow func() time.Time
 
 type EditorRunner interface {
 	Run() error
@@ -32,22 +34,19 @@ var (
 	bom = []byte{0xef, 0xbb, 0xbf}
 )
 
-func AppendFile(opener shared.OpenFiler, rootFile io.Writer, path string) error {
-	otherFile, err := opener(path)
+func AppendFile(rootFile io.Writer, path string) error {
+	otherFile, err := os.Open(path)
 	if err != nil {
 		return err
 	}
 	defer otherFile.Close()
 
-	// Copy doesn't seem to break in any test I have tried
-	// so ignoring this err return value
-	_, _ = io.Copy(rootFile, otherFile)
+	_, err = io.Copy(rootFile, otherFile)
 
-	return nil
+	return err
 }
 
 func GetAllVersions(
-	readDir shared.ReadDirer,
 	config *Config,
 	skipPrereleases bool,
 	projectKey string,
@@ -59,9 +58,9 @@ func GetAllVersions(
 		versionsPath = filepath.Join(versionsPath, projectKey)
 	}
 
-	fileInfos, err := readDir(versionsPath)
+	fileInfos, err := os.ReadDir(versionsPath)
 	if err != nil {
-		return allVersions, err
+		return allVersions, fmt.Errorf("reading files from '%s': %w", versionsPath, err)
 	}
 
 	for _, file := range fileInfos {
@@ -89,12 +88,11 @@ func GetAllVersions(
 }
 
 func GetLatestVersion(
-	readDir shared.ReadDirer,
 	config *Config,
 	skipPrereleases bool,
 	projectKey string,
 ) (*semver.Version, error) {
-	allVersions, err := GetAllVersions(readDir, config, skipPrereleases, projectKey)
+	allVersions, err := GetAllVersions(config, skipPrereleases, projectKey)
 	if err != nil {
 		return nil, err
 	}
@@ -153,7 +151,6 @@ func HighestAutoLevel(config *Config, allChanges []Change) (string, error) {
 }
 
 func GetNextVersion(
-	readDir shared.ReadDirer,
 	config *Config,
 	partOrVersion string,
 	prerelease, meta []string,
@@ -174,7 +171,7 @@ func GetNextVersion(
 		}
 
 		// otherwise use a bump type command
-		next, err = GetLatestVersion(readDir, config, false, projectKey)
+		next, err = GetLatestVersion(config, false, projectKey)
 		if err != nil {
 			return nil, err
 		}
@@ -221,7 +218,6 @@ func GetNextVersion(
 
 func FindChangeFiles(
 	config *Config,
-	readDir shared.ReadDirer,
 	searchPaths []string,
 ) ([]string, error) {
 	var yamlFiles []string
@@ -233,7 +229,7 @@ func FindChangeFiles(
 	for _, searchPath := range searchPaths {
 		rootPath := filepath.Join(config.ChangesDir, searchPath)
 
-		fileInfos, err := readDir(rootPath)
+		fileInfos, err := os.ReadDir(rootPath)
 		if err != nil {
 			return yamlFiles, err
 		}
@@ -288,21 +284,19 @@ func LoadEnvVars(config *Config, envs []string) map[string]string {
 }
 
 func GetChanges(
-	config *Config,
+	cfg *Config,
 	searchPaths []string,
-	readDir shared.ReadDirer,
-	readFile shared.ReadFiler,
 	projectKey string,
 ) ([]Change, error) {
 	var changes []Change
 
-	changeFiles, err := FindChangeFiles(config, readDir, searchPaths)
+	changeFiles, err := FindChangeFiles(cfg, searchPaths)
 	if err != nil {
 		return changes, err
 	}
 
 	for _, cf := range changeFiles {
-		c, err := LoadChange(cf, readFile)
+		c, err := LoadChange(cf)
 		if err != nil {
 			return changes, err
 		}
@@ -311,11 +305,11 @@ func GetChanges(
 			continue
 		}
 
-		c.Env = config.EnvVars()
+		c.Env = cfg.EnvVars()
 		changes = append(changes, c)
 	}
 
-	SortByConfig(config).Sort(changes)
+	sort.Slice(changes, ChangeLess(cfg, changes))
 
 	return changes, nil
 }
@@ -335,8 +329,8 @@ func FileExists(path string) (bool, error) {
 
 // createTempFile will create a new temporary file, writing a BOM header if we need to.
 // It will return the path to that file or an error.
-func createTempFile(cf shared.CreateFiler, runtime string, ext string) (string, error) {
-	file, err := cf(filepath.Join(os.TempDir(), "changie-body-txt."+ext))
+func createTempFile(runtime string, ext string) (string, error) {
+	file, err := os.CreateTemp("", "changie-body-txt-*."+ext)
 	if err != nil {
 		return "", err
 	}
@@ -384,12 +378,12 @@ func BuildCommand(editorFilePath string) (EditorRunner, error) {
 }
 
 // getBodyTextWithEditor will run the provided editor runner and read the final file.
-func getBodyTextWithEditor(runner EditorRunner, editorFile string, rf shared.ReadFiler) (string, error) {
+func getBodyTextWithEditor(runner EditorRunner, editorFile string) (string, error) {
 	if err := runner.Run(); err != nil {
 		return "", fmt.Errorf("opening the editor: %w", err)
 	}
 
-	buf, err := rf(editorFile)
+	buf, err := os.ReadFile(editorFile)
 	if err != nil {
 		return "", err
 	}

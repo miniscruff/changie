@@ -1,13 +1,12 @@
 package core
 
 import (
-	"errors"
 	"fmt"
+	"os"
+	"sort"
 	"strings"
 	"testing"
 	"time"
-
-	"gopkg.in/yaml.v3"
 
 	"github.com/miniscruff/changie/then"
 )
@@ -18,25 +17,7 @@ var (
 		time.Date(2017, 5, 24, 3, 30, 10, 5, time.Local),
 		time.Date(2016, 5, 24, 3, 30, 10, 5, time.Local),
 	}
-	changeIncrementer = 0
 )
-
-// writeChangeFile will write a change file with an auto-incrementing index to prevent
-// same second clobbering
-func writeChangeFile(t *testing.T, cfg *Config, change Change) {
-	// set our time as an arbitrary amount from jan 1 2000 so
-	// each change is 1 hour later then the last
-	if change.Time.Year() == 0 {
-		diff := time.Duration(changeIncrementer) * time.Hour
-		change.Time = time.Date(2000, 0, 0, 0, 0, 0, 0, time.UTC).Add(diff)
-	}
-
-	bs, _ := yaml.Marshal(&change)
-	name := fmt.Sprintf("change-%d.yaml", changeIncrementer)
-	changeIncrementer++
-
-	then.WriteFile(t, bs, cfg.ChangesDir, cfg.UnreleasedDir, name)
-}
 
 func TestWriteChange(t *testing.T) {
 	mockTime := time.Date(2016, 5, 24, 3, 30, 10, 5, time.Local)
@@ -58,37 +39,21 @@ func TestWriteChange(t *testing.T) {
 }
 
 func TestLoadChangeFromPath(t *testing.T) {
-	mockRf := func(filepath string) ([]byte, error) {
-		then.Equals(t, "some_file.yaml", filepath)
-		return []byte("kind: A\nbody: hey\n"), nil
-	}
+	then.WithTempDir(t)
+	then.Nil(t, os.WriteFile("some_file.yaml", []byte("kind: A\nbody: hey\n"), CreateFileMode))
 
-	change, err := LoadChange("some_file.yaml", mockRf)
+	change, err := LoadChange("some_file.yaml")
 
 	then.Nil(t, err)
 	then.Equals(t, "A", change.Kind)
 	then.Equals(t, "hey", change.Body)
 }
 
-func TestBadRead(t *testing.T) {
-	mockErr := errors.New("bad file")
-
-	mockRf := func(filepath string) ([]byte, error) {
-		then.Equals(t, "some_file.yaml", filepath)
-		return []byte(""), mockErr
-	}
-
-	_, err := LoadChange("some_file.yaml", mockRf)
-	then.Err(t, mockErr, err)
-}
-
 func TestBadYamlFile(t *testing.T) {
-	mockRf := func(filepath string) ([]byte, error) {
-		then.Equals(t, "some_file.yaml", filepath)
-		return []byte("not a yaml file---"), nil
-	}
+	then.WithTempDir(t)
+	then.Nil(t, os.WriteFile("some_file.yaml", []byte("not a yaml file---"), CreateFileMode))
 
-	_, err := LoadChange("some_file.yaml", mockRf)
+	_, err := LoadChange("some_file.yaml")
 	then.NotNil(t, err)
 }
 
@@ -98,8 +63,9 @@ func TestSortByTime(t *testing.T) {
 		{Body: "second", Time: orderedTimes[1]},
 		{Body: "first", Time: orderedTimes[0]},
 	}
-	config := &Config{}
-	SortByConfig(config).Sort(changes)
+	cfg := &Config{}
+
+	sort.Slice(changes, ChangeLess(cfg, changes))
 
 	then.Equals(t, "third", changes[0].Body)
 	then.Equals(t, "second", changes[1].Body)
@@ -107,7 +73,7 @@ func TestSortByTime(t *testing.T) {
 }
 
 func TestSortByKindThenTime(t *testing.T) {
-	config := &Config{
+	cfg := &Config{
 		Kinds: []KindConfig{
 			{Label: "A"},
 			{Label: "B"},
@@ -119,7 +85,7 @@ func TestSortByKindThenTime(t *testing.T) {
 		{Kind: "B", Body: "third", Time: orderedTimes[1]},
 		{Kind: "A", Body: "first", Time: orderedTimes[2]},
 	}
-	SortByConfig(config).Sort(changes)
+	sort.Slice(changes, ChangeLess(cfg, changes))
 
 	then.Equals(t, "first", changes[0].Body)
 	then.Equals(t, "second", changes[1].Body)
@@ -128,7 +94,7 @@ func TestSortByKindThenTime(t *testing.T) {
 }
 
 func TestSortByComponentThenKind(t *testing.T) {
-	config := &Config{
+	cfg := &Config{
 		Kinds: []KindConfig{
 			{Label: "D"},
 			{Label: "E"},
@@ -141,7 +107,7 @@ func TestSortByComponentThenKind(t *testing.T) {
 		{Body: "third", Component: "B", Kind: "D"},
 		{Body: "first", Component: "A", Kind: "D"},
 	}
-	SortByConfig(config).Sort(changes)
+	sort.Slice(changes, ChangeLess(cfg, changes))
 
 	then.Equals(t, "first", changes[0].Body)
 	then.Equals(t, "second", changes[1].Body)
@@ -166,4 +132,66 @@ func TestLoadEnvVars(t *testing.T) {
 	// will use the cached results
 	t.Setenv("TEST_CHANGIE_UNUSED", "NotRead")
 	then.MapEquals(t, expectedEnvVars, config.EnvVars())
+}
+
+func TestPostProcess_NoPostConfigs(t *testing.T) {
+	cfg := &Config{}
+	change := &Change{}
+
+	then.Nil(t, change.PostProcess(cfg, nil))
+	then.MapLen(t, 0, change.Custom)
+}
+
+func TestPostProcess_NilKindGlobalPost(t *testing.T) {
+	cfg := &Config{
+		Post: []PostProcessConfig{
+			{
+				Key:   "NilKind",
+				Value: "Yes",
+			},
+		},
+	}
+	change := &Change{
+		Custom: make(map[string]string),
+	}
+
+	then.Nil(t, change.PostProcess(cfg, nil))
+	then.MapLen(t, 1, change.Custom)
+	then.Equals(t, "Yes", change.Custom["NilKind"])
+}
+
+func TestPostProcess_KindPost(t *testing.T) {
+	cfg := &Config{}
+	change := &Change{
+		Custom: make(map[string]string),
+	}
+	kindCfg := &KindConfig{
+		Post: []PostProcessConfig{
+			{
+				Key:   "NotNilKind",
+				Value: "AlsoYes",
+			},
+		},
+	}
+
+	then.Nil(t, change.PostProcess(cfg, kindCfg))
+	then.MapLen(t, 1, change.Custom)
+	then.Equals(t, "AlsoYes", change.Custom["NotNilKind"])
+}
+
+func TestPostProcess_InvalidPostTemplate(t *testing.T) {
+	cfg := &Config{}
+	change := &Change{
+		Custom: make(map[string]string),
+	}
+	kindCfg := &KindConfig{
+		Post: []PostProcessConfig{
+			{
+				Key:   "BrokenTemplate",
+				Value: "{{ ..-... }}",
+			},
+		},
+	}
+
+	then.NotNil(t, change.PostProcess(cfg, kindCfg))
 }

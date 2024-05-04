@@ -9,7 +9,6 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/miniscruff/changie/core"
-	"github.com/miniscruff/changie/shared"
 )
 
 type New struct {
@@ -25,25 +24,16 @@ type New struct {
 	Custom     []string
 
 	// dependencies
-	ReadFile      shared.ReadFiler
-	CreateFile    shared.CreateFiler
-	TimeNow       shared.TimeNow
-	MkdirAll      shared.MkdirAller
+	TimeNow       core.TimeNow
 	TemplateCache *core.TemplateCache
 }
 
 func NewNew(
-	readFile shared.ReadFiler,
-	createFile shared.CreateFiler,
-	timeNow shared.TimeNow,
-	mkdirAll shared.MkdirAller,
+	timeNow core.TimeNow,
 	templateCache *core.TemplateCache,
 ) *New {
 	n := &New{
-		ReadFile:      readFile,
-		CreateFile:    createFile,
 		TimeNow:       timeNow,
-		MkdirAll:      mkdirAll,
 		TemplateCache: templateCache,
 	}
 
@@ -106,7 +96,7 @@ Each version is merged together for the overall project changelog.`,
 }
 
 func (n *New) Run(cmd *cobra.Command, args []string) error {
-	config, err := core.LoadConfig(n.ReadFile)
+	config, err := core.LoadConfig()
 	if err != nil {
 		return err
 	}
@@ -126,7 +116,6 @@ func (n *New) Run(cmd *cobra.Command, args []string) error {
 		TimeNow:          n.TimeNow,
 		Config:           config,
 		Customs:          customValues,
-		CreateFiler:      os.Create,
 		EditorCmdBuilder: core.BuildCommand,
 	}
 
@@ -157,12 +146,12 @@ func (n *New) Run(cmd *cobra.Command, args []string) error {
 
 			outputPath := filepath.Join(config.ChangesDir, config.UnreleasedDir, outputFilename)
 
-			fileErr = n.MkdirAll(filepath.Dir(outputPath), core.CreateDirMode)
+			fileErr = os.MkdirAll(filepath.Dir(outputPath), core.CreateDirMode)
 			if fileErr != nil {
 				return fileErr
 			}
 
-			newFile, fileErr := n.CreateFile(outputPath)
+			newFile, fileErr := os.Create(outputPath)
 			if fileErr != nil {
 				return fileErr
 			}
@@ -173,6 +162,9 @@ func (n *New) Run(cmd *cobra.Command, args []string) error {
 		}
 
 		_, err = change.WriteTo(writer)
+		if err != nil {
+			return err
+		}
 	}
 
 	return err

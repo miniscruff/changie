@@ -4,14 +4,11 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"os"
 	"runtime"
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/cqroot/prompt"
 	"github.com/cqroot/prompt/multichoose"
-
-	"github.com/miniscruff/changie/shared"
 )
 
 var (
@@ -30,9 +27,8 @@ type Prompts struct {
 	StdinReader      io.Reader
 	KindConfig       *KindConfig
 	BodyEditor       bool
-	CreateFiler      shared.CreateFiler
 	EditorCmdBuilder func(string) (EditorRunner, error)
-	TimeNow          shared.TimeNow
+	TimeNow          TimeNow
 
 	// Values can be submitted from the environment or shell arguments.
 	Projects  []string
@@ -265,7 +261,7 @@ func (p *Prompts) body() error {
 
 	if p.expectsBody() && len(p.Body) == 0 {
 		if p.BodyEditor {
-			file, err := createTempFile(p.CreateFiler, runtime.GOOS, p.Config.VersionExt)
+			file, err := createTempFile(runtime.GOOS, p.Config.VersionExt)
 			if err != nil {
 				return err
 			}
@@ -275,7 +271,7 @@ func (p *Prompts) body() error {
 				return err
 			}
 
-			p.Body, err = getBodyTextWithEditor(runner, file, os.ReadFile)
+			p.Body, err = getBodyTextWithEditor(runner, file)
 
 			return err
 		} else {

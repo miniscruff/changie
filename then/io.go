@@ -5,13 +5,10 @@ import (
 	"os"
 	"path/filepath"
 	"testing"
-	"time"
-
-	"github.com/miniscruff/changie/shared"
 )
 
 type Saver interface {
-	Save(shared.WriteFiler) error
+	Save() error
 }
 
 // WithTempDir creates a temporary directory and moves our working directory to it.
@@ -38,7 +35,7 @@ func WithTempDirConfig(t *testing.T, cfg Saver) {
 	t.Helper()
 	WithTempDir(t)
 
-	err := cfg.Save(os.WriteFile)
+	err := cfg.Save()
 	Nil(t, err)
 }
 
@@ -155,69 +152,4 @@ func DirectoryFileCount(t *testing.T, count int, paths ...string) {
 
 		t.FailNow()
 	}
-}
-
-type MockDirEntry struct {
-	MockName    string
-	MockIsDir   bool
-	MockInfo    os.FileInfo
-	MockInfoErr error
-}
-
-var _ os.DirEntry = (*MockDirEntry)(nil)
-
-func (m *MockDirEntry) Name() string {
-	return m.MockName
-}
-
-func (m *MockDirEntry) IsDir() bool {
-	return m.MockIsDir
-}
-
-func (m *MockDirEntry) Type() os.FileMode {
-	if m.MockIsDir {
-		return os.ModeDir
-	}
-
-	return os.ModePerm
-}
-
-func (m *MockDirEntry) Info() (os.FileInfo, error) {
-	if m.MockInfoErr != nil {
-		return nil, m.MockInfoErr
-	}
-
-	return m.MockInfo, nil
-}
-
-// MockFileInfo is a simple struct to fake the `os.FileInfo`
-type MockFileInfo struct {
-	MockName  string
-	MockIsDir bool
-}
-
-var _ os.FileInfo = (*MockFileInfo)(nil)
-
-func (m *MockFileInfo) Name() string {
-	return m.MockName
-}
-
-func (m *MockFileInfo) IsDir() bool {
-	return m.MockIsDir
-}
-
-func (m *MockFileInfo) Size() int64 {
-	return 0
-}
-
-func (m *MockFileInfo) Mode() os.FileMode {
-	return os.ModeAppend
-}
-
-func (m *MockFileInfo) ModTime() time.Time {
-	return time.Now()
-}
-
-func (m *MockFileInfo) Sys() any {
-	return nil
 }

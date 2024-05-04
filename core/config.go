@@ -6,8 +6,6 @@ import (
 
 	"github.com/Masterminds/semver/v3"
 	"gopkg.in/yaml.v3"
-
-	"github.com/miniscruff/changie/shared"
 )
 
 const (
@@ -31,7 +29,7 @@ var ConfigPaths []string = []string{
 }
 
 // GetVersions will return, in semver sorted order, all released versions
-type GetVersions func(shared.ReadDirer, Config) ([]*semver.Version, error)
+type GetVersions func(Config) ([]*semver.Version, error)
 
 // Kind config allows you to customize the options depending on what kind was selected.
 type KindConfig struct {
@@ -400,9 +398,9 @@ func (c *Config) EnvVars() map[string]string {
 }
 
 // Save will save the config as a yaml file to the default path
-func (c *Config) Save(wf shared.WriteFiler) error {
+func (c *Config) Save() error {
 	bs, _ := yaml.Marshal(&c)
-	return wf(ConfigPaths[0], bs, CreateFileMode)
+	return os.WriteFile(ConfigPaths[0], bs, CreateFileMode)
 }
 
 func (c *Config) Project(labelOrKey string) (*ProjectConfig, error) {
@@ -449,7 +447,7 @@ func (c *Config) Exists() (bool, error) {
 }
 
 // LoadConfig will load the config from the default path
-func LoadConfig(rf shared.ReadFiler) (*Config, error) {
+func LoadConfig() (*Config, error) {
 	var (
 		c   Config
 		bs  []byte
@@ -458,10 +456,10 @@ func LoadConfig(rf shared.ReadFiler) (*Config, error) {
 
 	customPath := os.Getenv(configEnvVar)
 	if customPath != "" {
-		bs, err = rf(customPath)
+		bs, err = os.ReadFile(customPath)
 	} else {
 		for _, path := range ConfigPaths {
-			bs, err = rf(path)
+			bs, err = os.ReadFile(path)
 			if err == nil {
 				break
 			}

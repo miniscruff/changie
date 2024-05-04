@@ -2,21 +2,8 @@ package then
 
 import (
 	"os"
-	"strings"
 	"testing"
 )
-
-func WithStdout(t *testing.T) *strings.Builder {
-	oldStdout := os.Stdout
-
-	t.Cleanup(func() {
-		os.Stdout = oldStdout
-	})
-
-	w := strings.Builder{}
-
-	return &w
-}
 
 func WithReadWritePipe(t *testing.T) (*os.File, *os.File) {
 	t.Helper()

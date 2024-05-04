@@ -1,7 +1,6 @@
 package cmd
 
 import (
-	"errors"
 	"os"
 	"path/filepath"
 	"strings"
@@ -52,14 +51,7 @@ func TestMergeVersionsSuccessfully(t *testing.T) {
 	then.WriteFile(t, []byte("first version\n"), cfg.ChangesDir, "v0.1.0.md")
 	then.WriteFile(t, []byte("second version\n"), cfg.ChangesDir, "v0.2.0.md")
 
-	cmd := NewMerge(
-		os.ReadFile,
-		os.WriteFile,
-		os.ReadDir,
-		os.Open,
-		os.Create,
-		core.NewTemplateCache(),
-	)
+	cmd := NewMerge(core.NewTemplateCache())
 	err := cmd.Run(cmd.Command, nil)
 	then.Nil(t, err)
 
@@ -94,14 +86,7 @@ func TestMergeVersionsSuccessfullyWithProject(t *testing.T) {
 	then.WriteFile(t, []byte("version\n"), "a", "VERSION")
 	then.Nil(t, os.MkdirAll(filepath.Join("a", "thing"), core.CreateDirMode))
 
-	cmd := NewMerge(
-		os.ReadFile,
-		os.WriteFile,
-		os.ReadDir,
-		os.Open,
-		os.Create,
-		core.NewTemplateCache(),
-	)
+	cmd := NewMerge(core.NewTemplateCache())
 
 	err := cmd.Run(cmd.Command, nil)
 	then.Nil(t, err)
@@ -126,14 +111,7 @@ func TestMergeVersionsErrorMissingProjectDir(t *testing.T) {
 	}
 	then.WithTempDirConfig(t, cfg)
 
-	cmd := NewMerge(
-		os.ReadFile,
-		os.WriteFile,
-		os.ReadDir,
-		os.Open,
-		os.Create,
-		core.NewTemplateCache(),
-	)
+	cmd := NewMerge(core.NewTemplateCache())
 
 	err := cmd.Run(cmd.Command, nil)
 	then.NotNil(t, err)
@@ -154,14 +132,7 @@ func TestMergeVersionsWithUnreleasedChanges(t *testing.T) {
 	}
 	writeChangeFile(t, cfg, &unrel)
 
-	cmd := NewMerge(
-		os.ReadFile,
-		os.WriteFile,
-		os.ReadDir,
-		os.Open,
-		os.Create,
-		core.NewTemplateCache(),
-	)
+	cmd := NewMerge(core.NewTemplateCache())
 	cmd.UnreleasedHeader = "## Coming Soon"
 	err := cmd.Run(cmd.Command, nil)
 	then.Nil(t, err)
@@ -187,14 +158,7 @@ func TestMergeVersionsWithUnreleasedChangesErrorsOnBadChanges(t *testing.T) {
 	aVer := []byte("not a valid change")
 	then.WriteFile(t, aVer, cfg.ChangesDir, cfg.UnreleasedDir, "a.yaml")
 
-	cmd := NewMerge(
-		os.ReadFile,
-		os.WriteFile,
-		os.ReadDir,
-		os.Open,
-		os.Create,
-		core.NewTemplateCache(),
-	)
+	cmd := NewMerge(core.NewTemplateCache())
 	cmd.UnreleasedHeader = "## Coming Soon"
 	err := cmd.Run(cmd.Command, nil)
 	then.NotNil(t, err)
@@ -216,14 +180,7 @@ func TestMergeVersionsWithUnreleasedChangesErrorsOnBadChangeFormat(t *testing.T)
 	}
 	writeChangeFile(t, cfg, &unrel)
 
-	cmd := NewMerge(
-		os.ReadFile,
-		os.WriteFile,
-		os.ReadDir,
-		os.Open,
-		os.Create,
-		core.NewTemplateCache(),
-	)
+	cmd := NewMerge(core.NewTemplateCache())
 	cmd.UnreleasedHeader = "## Coming Soon"
 	err := cmd.Run(cmd.Command, nil)
 	then.NotNil(t, err)
@@ -261,14 +218,7 @@ func TestMergeVersionsWithUnreleasedChangesInOneProject(t *testing.T) {
 	}
 	writeChangeFile(t, cfg, &unrel)
 
-	cmd := NewMerge(
-		os.ReadFile,
-		os.WriteFile,
-		os.ReadDir,
-		os.Open,
-		os.Create,
-		core.NewTemplateCache(),
-	)
+	cmd := NewMerge(core.NewTemplateCache())
 	cmd.UnreleasedHeader = "## Coming Soon"
 	err := cmd.Run(cmd.Command, nil)
 	then.Nil(t, err)
@@ -302,14 +252,7 @@ func TestMergeVersionsWithHeaderAndReplacements(t *testing.T) {
 	then.WriteFile(t, []byte("a simple header\n"), cfg.ChangesDir, cfg.HeaderPath)
 	then.WriteFile(t, []byte(jsonContents), "replace.json")
 
-	cmd := NewMerge(
-		os.ReadFile,
-		os.WriteFile,
-		os.ReadDir,
-		os.Open,
-		os.Create,
-		core.NewTemplateCache(),
-	)
+	cmd := NewMerge(core.NewTemplateCache())
 	err := cmd.Run(cmd.Command, nil)
 	then.Nil(t, err)
 
@@ -341,14 +284,7 @@ first version
 	then.WriteFile(t, []byte("ignored\n"), cfg.ChangesDir, "ignored.txt")
 	then.WriteFile(t, []byte("a simple header\n"), cfg.ChangesDir, cfg.HeaderPath)
 
-	cmd := NewMerge(
-		os.ReadFile,
-		os.WriteFile,
-		os.ReadDir,
-		os.Open,
-		os.Create,
-		core.NewTemplateCache(),
-	)
+	cmd := NewMerge(core.NewTemplateCache())
 	cmd.DryRun = true
 	cmd.Command.SetOut(&writer)
 	err := cmd.Run(cmd.Command, nil)
@@ -365,14 +301,7 @@ func TestMergeSkipsVersionsIfNoneFound(t *testing.T) {
 
 	then.WriteFile(t, []byte("a simple header\n"), cfg.ChangesDir, cfg.HeaderPath)
 
-	cmd := NewMerge(
-		os.ReadFile,
-		os.WriteFile,
-		os.ReadDir,
-		os.Open,
-		os.Create,
-		core.NewTemplateCache(),
-	)
+	cmd := NewMerge(core.NewTemplateCache())
 	cmd.DryRun = true
 	cmd.Command.SetOut(&builder)
 
@@ -381,125 +310,12 @@ func TestMergeSkipsVersionsIfNoneFound(t *testing.T) {
 	then.Equals(t, changeContents, builder.String())
 }
 
-func TestErrorMergeBadChangelogPath(t *testing.T) {
-	cfg := mergeTestConfig()
-	then.WithTempDirConfig(t, cfg)
-
-	badError := errors.New("bad create")
-	mockCreate := func(filename string) (*os.File, error) {
-		return nil, badError
-	}
-
-	cmd := NewMerge(
-		os.ReadFile,
-		os.WriteFile,
-		os.ReadDir,
-		os.Open,
-		mockCreate,
-		core.NewTemplateCache(),
-	)
-
-	err := cmd.Run(cmd.Command, nil)
-	then.Err(t, badError, err)
-}
-
 func TestErrorMergeBadConfig(t *testing.T) {
 	then.WithTempDir(t)
 
-	cmd := NewMerge(
-		os.ReadFile,
-		os.WriteFile,
-		os.ReadDir,
-		os.Open,
-		os.Create,
-		core.NewTemplateCache(),
-	)
-
+	cmd := NewMerge(core.NewTemplateCache())
 	err := cmd.Run(cmd.Command, nil)
 	then.NotNil(t, err)
-}
-
-func TestErrorMergeUnableToReadChanges(t *testing.T) {
-	cfg := mergeTestConfig()
-	then.WithTempDirConfig(t, cfg)
-
-	mockErr := errors.New("bad read dir")
-	mockReadDir := func(name string) ([]os.DirEntry, error) {
-		return nil, mockErr
-	}
-
-	cmd := NewMerge(
-		os.ReadFile,
-		os.WriteFile,
-		mockReadDir,
-		os.Open,
-		os.Create,
-		core.NewTemplateCache(),
-	)
-
-	err := cmd.Run(cmd.Command, nil)
-	then.Err(t, mockErr, err)
-}
-
-func TestErrorMergeBadHeaderFile(t *testing.T) {
-	cfg := mergeTestConfig()
-	then.WithTempDirConfig(t, cfg)
-
-	mockError := errors.New("bad open")
-	mockOpen := func(filename string) (*os.File, error) {
-		if filename == filepath.Join(cfg.ChangesDir, cfg.HeaderPath) {
-			return nil, mockError
-		}
-
-		return os.Open(filename)
-	}
-
-	// need at least one change to exist
-	then.WriteFile(t, []byte("first version\n"), cfg.ChangesDir, "v0.1.0.md")
-
-	cmd := NewMerge(
-		os.ReadFile,
-		os.WriteFile,
-		os.ReadDir,
-		mockOpen,
-		os.Create,
-		core.NewTemplateCache(),
-	)
-
-	err := cmd.Run(cmd.Command, nil)
-	then.Err(t, mockError, err)
-}
-
-func TestErrorMergeBadAppend(t *testing.T) {
-	cfg := mergeTestConfig()
-	then.WithTempDirConfig(t, cfg)
-
-	mockError := errors.New("bad write string")
-
-	// need at least one change to exist
-	then.WriteFile(t, []byte("first version\n"), cfg.ChangesDir, "v0.1.0.md")
-	then.WriteFile(t, []byte("a simple header\n"), cfg.ChangesDir, cfg.HeaderPath)
-
-	// create a version file, then fail to open it the second time
-	mockOpen := func(filename string) (*os.File, error) {
-		if filename == filepath.Join(cfg.ChangesDir, "v0.1.0.md") {
-			return nil, mockError
-		}
-
-		return os.Open(filename)
-	}
-
-	cmd := NewMerge(
-		os.ReadFile,
-		os.WriteFile,
-		os.ReadDir,
-		mockOpen,
-		os.Create,
-		core.NewTemplateCache(),
-	)
-
-	err := cmd.Run(cmd.Command, nil)
-	then.Err(t, mockError, err)
 }
 
 func TestErrorMergeBadReplacement(t *testing.T) {
@@ -510,15 +326,7 @@ func TestErrorMergeBadReplacement(t *testing.T) {
 	then.WriteFile(t, []byte("a simple header\n"), cfg.ChangesDir, cfg.HeaderPath)
 	then.WriteFile(t, []byte("first version\n"), cfg.ChangesDir, "v0.1.0.md")
 
-	cmd := NewMerge(
-		os.ReadFile,
-		os.WriteFile,
-		os.ReadDir,
-		os.Open,
-		os.Create,
-		core.NewTemplateCache(),
-	)
-
+	cmd := NewMerge(core.NewTemplateCache())
 	err := cmd.Run(cmd.Command, nil)
 	then.NotNil(t, err)
 }

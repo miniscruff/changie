@@ -6,7 +6,6 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/miniscruff/changie/core"
-	"github.com/miniscruff/changie/shared"
 )
 
 type Next struct {
@@ -17,17 +16,10 @@ type Next struct {
 	Prerelease  []string
 	Meta        []string
 	Project     string
-
-	// dependencies
-	ReadDir  shared.ReadDirer
-	ReadFile shared.ReadFiler
 }
 
-func NewNext(readDir shared.ReadDirer, readFile shared.ReadFiler) *Next {
-	next := &Next{
-		ReadDir:  readDir,
-		ReadFile: readFile,
-	}
+func NewNext() *Next {
+	next := &Next{}
 
 	cmd := &cobra.Command{
 		Use:   "next major|minor|patch|auto",
@@ -77,7 +69,7 @@ func (n *Next) Run(cmd *cobra.Command, args []string) error {
 	part := strings.ToLower(args[0])
 	projPrefix := ""
 
-	config, err := core.LoadConfig(n.ReadFile)
+	config, err := core.LoadConfig()
 	if err != nil {
 		return err
 	}
@@ -97,13 +89,13 @@ func (n *Next) Run(cmd *cobra.Command, args []string) error {
 	var changes []core.Change
 	// only worry about loading changes, if we are in auto mode
 	if part == core.AutoLevel {
-		changes, err = core.GetChanges(config, n.IncludeDirs, n.ReadDir, n.ReadFile, n.Project)
+		changes, err = core.GetChanges(config, n.IncludeDirs, n.Project)
 		if err != nil {
 			return err
 		}
 	}
 
-	next, err := core.GetNextVersion(n.ReadDir, config, part, n.Prerelease, n.Meta, changes, n.Project)
+	next, err := core.GetNextVersion(config, part, n.Prerelease, n.Meta, changes, n.Project)
 	if err != nil {
 		return err
 	}

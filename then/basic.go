@@ -17,16 +17,6 @@ func Equals[T comparable](t *testing.T, expected, actual T) {
 	}
 }
 
-// NotEquals compares two values are not equal
-func NotEqual[T comparable](t *testing.T, expected, actual T) {
-	t.Helper()
-
-	if expected == actual {
-		t.Logf("expected '%v' not to equal '%v'", expected, actual)
-		t.FailNow()
-	}
-}
-
 // MapEquals compares two map values for same length and same key+value pairs.
 func MapEquals[M1, M2 ~map[K]V, K, V comparable](t *testing.T, expected M1, actual M2) {
 	t.Helper()

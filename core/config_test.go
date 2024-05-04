@@ -1,15 +1,17 @@
 package core
 
 import (
-	"errors"
 	"fmt"
 	"os"
+	"path/filepath"
 	"testing"
 
 	"github.com/miniscruff/changie/then"
 )
 
 func TestSaveConfig(t *testing.T) {
+	then.WithTempDir(t)
+
 	config := Config{
 		ChangesDir:        "Changes",
 		UnreleasedDir:     "Unrel",
@@ -29,18 +31,14 @@ versionHeaderPath: header.md
 changeFormat: chng
 `
 
-	mockWf := func(filepath string, bytes []byte, perm os.FileMode) error {
-		then.Equals(t, ConfigPaths[0], filepath)
-		then.Equals(t, configYaml, string(bytes))
-
-		return nil
-	}
-
-	err := config.Save(mockWf)
+	err := config.Save()
 	then.Nil(t, err)
+	then.FileContents(t, configYaml, ConfigPaths[0])
 }
 
 func TestSaveConfigWithCustomChoicesAndOptionals(t *testing.T) {
+	then.WithTempDir(t)
+
 	config := Config{
 		ChangesDir:        "Changes",
 		UnreleasedDir:     "Unrel",
@@ -97,15 +95,9 @@ custom:
       label: First name
 `
 
-	mockWf := func(filepath string, bytes []byte, perm os.FileMode) error {
-		then.Equals(t, ConfigPaths[0], filepath)
-		then.Equals(t, configYaml, string(bytes))
-
-		return nil
-	}
-
-	err := config.Save(mockWf)
+	err := config.Save()
 	then.Nil(t, err)
+	then.FileContents(t, configYaml, ConfigPaths[0])
 }
 
 func TestCanCheckIfFileDoesExist(t *testing.T) {
@@ -127,65 +119,41 @@ func TestCanCheckIfFileDoesNotExist(t *testing.T) {
 	then.Nil(t, err)
 }
 
-func TestLoadConfigFromPath(t *testing.T) {
-	mockRf := func(filepath string) ([]byte, error) {
-		if filepath == ConfigPaths[0] {
-			return []byte("changesDir: C\nfragmentFileFormat: \"{{.Custom.Issue}}\"\n"), nil
-		}
-
-		return nil, os.ErrNotExist
-	}
-
-	config, err := LoadConfig(mockRf)
-	then.Nil(t, err)
-	then.Equals(t, "C", config.ChangesDir)
-	then.Equals(t, "{{.Custom.Issue}}", config.FragmentFileFormat)
-}
-
 func TestLoadConfigFromAlternatePath(t *testing.T) {
-	mockRf := func(filepath string) ([]byte, error) {
-		if filepath == ConfigPaths[1] {
-			return []byte("changesDir: C\nheaderPath: header.rst\n"), nil
-		}
+	then.WithTempDir(t)
 
-		return nil, os.ErrNotExist
-	}
+	err := os.WriteFile(ConfigPaths[1], []byte("changesDir: C\nheaderPath: header.rst\n"), CreateFileMode)
+	then.Nil(t, err)
 
-	config, err := LoadConfig(mockRf)
+	config, err := LoadConfig()
 	then.Nil(t, err)
 	then.Equals(t, "C", config.ChangesDir)
 	then.Equals(t, "header.rst", config.HeaderPath)
 }
 
 func TestLoadConfigFromEnvVar(t *testing.T) {
-	customPath := "./custom/changie.yaml"
-	mockRf := func(filepath string) ([]byte, error) {
-		if filepath == customPath {
-			return []byte("changesDir: C\nheaderPath: header.rst\n"), nil
-		}
+	then.WithTempDir(t)
+	t.Setenv("CHANGIE_CONFIG_PATH", filepath.Join("custom", "changie.yaml"))
 
-		return nil, os.ErrNotExist
-	}
+	then.WriteFile(t, []byte("changesDir: C\nheaderPath: header.rst\n"), "custom", "changie.yaml")
 
-	t.Setenv("CHANGIE_CONFIG_PATH", customPath)
-
-	config, err := LoadConfig(mockRf)
+	config, err := LoadConfig()
 	then.Nil(t, err)
 	then.Equals(t, "C", config.ChangesDir)
 	then.Equals(t, "header.rst", config.HeaderPath)
 }
 
 func TestDefaultFragmentTemplateWithProjects(t *testing.T) {
-	mockRf := func(filepath string) ([]byte, error) {
-		if filepath == ConfigPaths[0] {
-			return []byte(`kinds:
-- label: B
-- label: C
-- label: E
+	then.WithTempDir(t)
+
+	configYaml := []byte(`kinds:
+  - label: B
+  - label: C
+  - label: E
 components:
-- A
-- D
-- G
+  - A
+  - D
+  - G
 projects:
   - label: User Feeds
     key: user_feeds
@@ -193,91 +161,72 @@ projects:
   - label: User Management
     key: user_management
     changelog: users/management/CHANGELOG.md
-`), nil
-		}
+`)
+	then.WriteFile(t, configYaml, ConfigPaths[0])
 
-		return nil, os.ErrNotExist
-	}
 	defaultFragmentFormat := fmt.Sprintf("{{.Project}}-{{.Component}}-{{.Kind}}-{{.Time.Format \"%v\"}}", timeFormat)
 
-	config, err := LoadConfig(mockRf)
+	config, err := LoadConfig()
 	then.Nil(t, err)
 	then.Equals(t, defaultFragmentFormat, config.FragmentFileFormat)
 }
 
 func TestDefaultFragmentTemplateWithKindsAndComponents(t *testing.T) {
-	mockRf := func(filepath string) ([]byte, error) {
-		if filepath == ConfigPaths[0] {
-			return []byte(`kinds:
-- label: B
-- label: C
-- label: E
-components:
-- A
-- D
-- G
-`), nil
-		}
+	then.WithTempDir(t)
 
-		return nil, os.ErrNotExist
-	}
+	yamlBytes := []byte(`kinds:
+  - label: B
+  - label: C
+  - label: E
+components:
+  - A
+  - D
+  - G
+`)
+	then.WriteFile(t, yamlBytes, ConfigPaths[0])
+
 	defaultFragmentFormat := fmt.Sprintf("{{.Component}}-{{.Kind}}-{{.Time.Format \"%v\"}}", timeFormat)
 
-	config, err := LoadConfig(mockRf)
+	config, err := LoadConfig()
 	then.Nil(t, err)
 	then.Equals(t, defaultFragmentFormat, config.FragmentFileFormat)
 }
 
 func TestDefaultFragmentTemplateWithKinds(t *testing.T) {
-	mockRf := func(filepath string) ([]byte, error) {
-		if filepath == ConfigPaths[0] {
-			return []byte(`kinds:
-- label: B
-- label: C
-- label: E
-`), nil
-		}
+	then.WithTempDir(t)
 
-		return nil, os.ErrNotExist
-	}
+	cfgYaml := []byte(`kinds:
+  - label: B
+  - label: C
+  - label: E
+    `)
+	then.WriteFile(t, cfgYaml, ConfigPaths[0])
+
 	defaultFragmentFormat := fmt.Sprintf("{{.Kind}}-{{.Time.Format \"%v\"}}", timeFormat)
 
-	config, err := LoadConfig(mockRf)
+	config, err := LoadConfig()
 	then.Nil(t, err)
 	then.Equals(t, defaultFragmentFormat, config.FragmentFileFormat)
 }
 
 func TestDefaultFragmentTemplateWithoutKindsOrComponents(t *testing.T) {
-	mockRf := func(filepath string) ([]byte, error) {
-		if filepath == ConfigPaths[0] {
-			return []byte("unreleasedDir: unrel"), nil
-		}
+	then.WithTempDir(t)
+	then.WriteFile(t, []byte("unreleasedDir: unrel"), ConfigPaths[0])
 
-		return nil, os.ErrNotExist
-	}
 	defaultFragmentFormat := fmt.Sprintf("{{.Time.Format \"%v\"}}", timeFormat)
 
-	config, err := LoadConfig(mockRf)
+	config, err := LoadConfig()
 	then.Nil(t, err)
 	then.Equals(t, defaultFragmentFormat, config.FragmentFileFormat)
 }
 
-func TestErrorBadRead(t *testing.T) {
-	mockErr := errors.New("bad file")
-	mockRf := func(filepath string) ([]byte, error) {
-		return []byte(""), mockErr
-	}
-
-	_, err := LoadConfig(mockRf)
-	then.Err(t, mockErr, err)
-}
-
 func TestErrorBadYamlFile(t *testing.T) {
-	mockRf := func(filepath string) ([]byte, error) {
-		return []byte("not a valid yaml file---"), nil
-	}
+	then.WithTempDir(t)
 
-	_, err := LoadConfig(mockRf)
+	cfgYaml := []byte("not a valid yaml file---")
+	then.WriteFile(t, cfgYaml, ConfigPaths[0])
+
+	_, err := LoadConfig()
 	then.NotNil(t, err)
 }
 

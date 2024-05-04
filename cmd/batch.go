@@ -10,7 +10,6 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/miniscruff/changie/core"
-	"github.com/miniscruff/changie/shared"
 )
 
 var errVersionExists = errors.New("version already exists")
@@ -33,15 +32,7 @@ type Batch struct {
 	Force             bool
 
 	// Dependencies
-	Create        shared.CreateFiler
-	ReadFile      shared.ReadFiler
-	ReadDir       shared.ReadDirer
-	Rename        shared.Renamer
-	WriteFile     shared.WriteFiler
-	MkdirAll      shared.MkdirAller
-	Remove        shared.Remover
-	RemoveAll     shared.RemoveAller
-	TimeNow       shared.TimeNow
+	TimeNow       core.TimeNow
 	TemplateCache *core.TemplateCache
 
 	// Computed values
@@ -51,26 +42,10 @@ type Batch struct {
 }
 
 func NewBatch(
-	create shared.CreateFiler,
-	readFile shared.ReadFiler,
-	readDir shared.ReadDirer,
-	rename shared.Renamer,
-	writeFile shared.WriteFiler,
-	mkdirAll shared.MkdirAller,
-	remove shared.Remover,
-	removeAll shared.RemoveAller,
-	timeNow shared.TimeNow,
+	timeNow core.TimeNow,
 	templateCache *core.TemplateCache,
 ) *Batch {
 	b := &Batch{
-		Create:        create,
-		ReadFile:      readFile,
-		ReadDir:       readDir,
-		Rename:        rename,
-		WriteFile:     writeFile,
-		MkdirAll:      mkdirAll,
-		Remove:        remove,
-		RemoveAll:     removeAll,
 		TimeNow:       timeNow,
 		TemplateCache: templateCache,
 	}
@@ -176,18 +151,17 @@ Changes are sorted in the following order:
 }
 
 func (b *Batch) getBatchData() (*core.BatchData, error) {
-	previousVersion, err := core.GetLatestVersion(b.ReadDir, b.config, false, b.Project)
+	previousVersion, err := core.GetLatestVersion(b.config, false, b.Project)
 	if err != nil {
 		return nil, err
 	}
 
-	allChanges, err := core.GetChanges(b.config, b.IncludeDirs, b.ReadDir, b.ReadFile, b.Project)
+	allChanges, err := core.GetChanges(b.config, b.IncludeDirs, b.Project)
 	if err != nil {
 		return nil, err
 	}
 
 	currentVersion, err := core.GetNextVersion(
-		b.ReadDir,
 		b.config,
 		b.version,
 		b.Prerelease,
@@ -221,7 +195,7 @@ func (b *Batch) Run(cmd *cobra.Command, args []string) error {
 	// save our version for later use
 	b.version = args[0]
 
-	b.config, err = core.LoadConfig(b.ReadFile)
+	b.config, err = core.LoadConfig()
 	if err != nil {
 		return err
 	}
@@ -236,7 +210,7 @@ func (b *Batch) Run(cmd *cobra.Command, args []string) error {
 
 		b.Project = pc.Key
 
-		err = b.MkdirAll(filepath.Join(b.config.ChangesDir, b.Project), core.CreateDirMode)
+		err = os.MkdirAll(filepath.Join(b.config.ChangesDir, b.Project), core.CreateDirMode)
 		if err != nil {
 			return err
 		}
@@ -258,7 +232,7 @@ func (b *Batch) Run(cmd *cobra.Command, args []string) error {
 			}
 		}
 
-		versionFile, createErr := b.Create(versionPath)
+		versionFile, createErr := os.Create(versionPath)
 		if createErr != nil {
 			return createErr
 		}
@@ -347,14 +321,14 @@ func (b *Batch) Run(cmd *cobra.Command, args []string) error {
 
 	if !b.DryRun && b.RemovePrereleases {
 		// only chance we fail is already checked above
-		allVers, _ := core.GetAllVersions(b.ReadDir, b.config, false, b.Project)
+		allVers, _ := core.GetAllVersions(b.config, false, b.Project)
 
 		for _, v := range allVers {
 			if v.Prerelease() == "" {
 				continue
 			}
 
-			err = b.Remove(filepath.Join(
+			err = os.Remove(filepath.Join(
 				b.config.ChangesDir,
 				b.Project,
 				v.Original()+"."+b.config.VersionExt,
@@ -406,7 +380,7 @@ func (b *Batch) WriteTemplateFile(
 
 	var fileBytes []byte
 
-	fileBytes, readErr := b.ReadFile(fullPath)
+	fileBytes, readErr := os.ReadFile(fullPath)
 	if readErr != nil && !os.IsNotExist(readErr) {
 		return readErr
 	}
@@ -482,7 +456,7 @@ func (b *Batch) ClearUnreleased(changes []core.Change, otherFiles ...string) err
 	)
 
 	if b.MoveDir != "" {
-		err = b.MkdirAll(filepath.Join(b.config.ChangesDir, b.MoveDir), core.CreateDirMode)
+		err = os.MkdirAll(filepath.Join(b.config.ChangesDir, b.MoveDir), core.CreateDirMode)
 		if err != nil {
 			return err
 		}
@@ -506,7 +480,7 @@ func (b *Batch) ClearUnreleased(changes []core.Change, otherFiles ...string) err
 
 	for _, f := range filesToMove {
 		if b.MoveDir != "" {
-			err = b.Rename(
+			err = os.Rename(
 				f,
 				filepath.Join(b.config.ChangesDir, b.MoveDir, filepath.Base(f)),
 			)
@@ -514,7 +488,7 @@ func (b *Batch) ClearUnreleased(changes []core.Change, otherFiles ...string) err
 				return err
 			}
 		} else {
-			err = b.Remove(f)
+			err = os.Remove(f)
 			if err != nil {
 				return err
 			}
@@ -524,9 +498,9 @@ func (b *Batch) ClearUnreleased(changes []core.Change, otherFiles ...string) err
 	for _, include := range b.IncludeDirs {
 		fullInclude := filepath.Join(b.config.ChangesDir, include)
 
-		files, _ := b.ReadDir(fullInclude)
+		files, _ := os.ReadDir(fullInclude)
 		if len(files) == 0 {
-			err = b.RemoveAll(fullInclude)
+			err = os.RemoveAll(fullInclude)
 			if err != nil {
 				return err
 			}

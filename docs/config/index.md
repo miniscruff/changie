@@ -3,12 +3,12 @@ title: "Configuration"
 hide:
   - navigation
 ---
-### body [:octicons-code-24:](https://github.com/miniscruff/changie/blob/<< current_version >>/core/config.go#L289) [:octicons-link-24:](#config-body) {: #config-body}
+### body [:octicons-code-24:](https://github.com/miniscruff/changie/blob/<< current_version >>/core/config.go#L287) [:octicons-link-24:](#config-body) {: #config-body}
 type: [BodyConfig](#bodyconfig-type) | optional
 
 Options to customize the body prompt
 
-### changeFormat [:octicons-code-24:](https://github.com/miniscruff/changie/blob/<< current_version >>/core/config.go#L272) [:octicons-link-24:](#config-changeformat) {: #config-changeformat}
+### changeFormat [:octicons-code-24:](https://github.com/miniscruff/changie/blob/<< current_version >>/core/config.go#L270) [:octicons-link-24:](#config-changeformat) {: #config-changeformat}
 type: `string` | optional | template type: [Change](#change-type)
 
 Template used to generate change lines in version files and changelog.
@@ -18,7 +18,7 @@ Custom values are created through custom choices and can be accessible through t
     changeFormat: '* [#{{.Custom.Issue}}](https://github.com/miniscruff/changie/issues/{{.Custom.Issue}}) {{.Body}}'
     ```
 
-### changelogPath [:octicons-code-24:](https://github.com/miniscruff/changie/blob/<< current_version >>/core/config.go#L236) [:octicons-link-24:](#config-changelogpath) {: #config-changelogpath}
+### changelogPath [:octicons-code-24:](https://github.com/miniscruff/changie/blob/<< current_version >>/core/config.go#L234) [:octicons-link-24:](#config-changelogpath) {: #config-changelogpath}
 type: `string` | optional
 
 Filepath for the generated changelog file.
@@ -29,7 +29,7 @@ ChangelogPath is not required if you are using projects.
     changelogPath: CHANGELOG.md
     ```
 
-### changesDir [:octicons-code-24:](https://github.com/miniscruff/changie/blob/<< current_version >>/core/config.go#L217) [:octicons-link-24:](#config-changesdir) {: #config-changesdir}
+### changesDir [:octicons-code-24:](https://github.com/miniscruff/changie/blob/<< current_version >>/core/config.go#L215) [:octicons-link-24:](#config-changesdir) {: #config-changesdir}
 type: `string` | required
 
 Directory for change files, header file and unreleased files.
@@ -39,14 +39,14 @@ Relative to project root.
     changesDir: .changes
     ```
 
-### componentFormat [:octicons-code-24:](https://github.com/miniscruff/changie/blob/<< current_version >>/core/config.go#L263) [:octicons-link-24:](#config-componentformat) {: #config-componentformat}
+### componentFormat [:octicons-code-24:](https://github.com/miniscruff/changie/blob/<< current_version >>/core/config.go#L261) [:octicons-link-24:](#config-componentformat) {: #config-componentformat}
 type: `string` | optional | template type: [ComponentData](#componentdata-type)
 
 Template used to generate component headers.
 If format is empty no header will be included.
 If components are disabled, the format is unused.
 
-### components [:octicons-code-24:](https://github.com/miniscruff/changie/blob/<< current_version >>/core/config.go#L300) [:octicons-link-24:](#config-components) {: #config-components}
+### components [:octicons-code-24:](https://github.com/miniscruff/changie/blob/<< current_version >>/core/config.go#L298) [:octicons-link-24:](#config-components) {: #config-components}
 type: `[]string` | optional
 
 Components are an additional layer of organization suited for projects that want to split
@@ -62,7 +62,7 @@ By default no components are configured.
     - Frontend
     ```
 
-### custom [:octicons-code-24:](https://github.com/miniscruff/changie/blob/<< current_version >>/core/config.go#L327) [:octicons-link-24:](#config-custom) {: #config-custom}
+### custom [:octicons-code-24:](https://github.com/miniscruff/changie/blob/<< current_version >>/core/config.go#L325) [:octicons-link-24:](#config-custom) {: #config-custom}
 type: [[]Custom](#custom-type) | optional
 
 Custom choices allow you to ask for additional information when creating a new change fragment.
@@ -80,7 +80,7 @@ These custom choices are included in the [change custom](#change-custom) value.
       minLength: 3
     ```
 
-### envPrefix [:octicons-code-24:](https://github.com/miniscruff/changie/blob/<< current_version >>/core/config.go#L354) [:octicons-link-24:](#config-envprefix) {: #config-envprefix}
+### envPrefix [:octicons-code-24:](https://github.com/miniscruff/changie/blob/<< current_version >>/core/config.go#L352) [:octicons-link-24:](#config-envprefix) {: #config-envprefix}
 type: `string` | optional
 
 Prefix of environment variables to load for templates.
@@ -94,7 +94,7 @@ The prefix is removed from resulting key map.
     versionFormat: "New release for {{.Env.PROJECT}}"
     ```
 
-### footerFormat [:octicons-code-24:](https://github.com/miniscruff/changie/blob/<< current_version >>/core/config.go#L287) [:octicons-link-24:](#config-footerformat) {: #config-footerformat}
+### footerFormat [:octicons-code-24:](https://github.com/miniscruff/changie/blob/<< current_version >>/core/config.go#L285) [:octicons-link-24:](#config-footerformat) {: #config-footerformat}
 type: `string` | optional | template type: [BatchData](#batchdata-type)
 
 Template used to generate a version footer.
@@ -112,7 +112,7 @@ Template used to generate a version footer.
       {{- end}}
     ```
 
-### fragmentFileFormat [:octicons-code-24:](https://github.com/miniscruff/changie/blob/<< current_version >>/core/config.go#L257) [:octicons-link-24:](#config-fragmentfileformat) {: #config-fragmentfileformat}
+### fragmentFileFormat [:octicons-code-24:](https://github.com/miniscruff/changie/blob/<< current_version >>/core/config.go#L255) [:octicons-link-24:](#config-fragmentfileformat) {: #config-fragmentfileformat}
 type: `string` | optional | template type: [Change](#change-type)
 
 Customize the file name generated for new fragments.
@@ -125,12 +125,12 @@ The file is placed in the unreleased directory, so the full path is:
     fragmentFileFormat: "{{.Kind}}-{{.Custom.Issue}}"
     ```
 
-### headerFormat [:octicons-code-24:](https://github.com/miniscruff/changie/blob/<< current_version >>/core/config.go#L274) [:octicons-link-24:](#config-headerformat) {: #config-headerformat}
+### headerFormat [:octicons-code-24:](https://github.com/miniscruff/changie/blob/<< current_version >>/core/config.go#L272) [:octicons-link-24:](#config-headerformat) {: #config-headerformat}
 type: `string` | optional | template type: [BatchData](#batchdata-type)
 
 Template used to generate a version header.
 
-### headerPath [:octicons-code-24:](https://github.com/miniscruff/changie/blob/<< current_version >>/core/config.go#L230) [:octicons-link-24:](#config-headerpath) {: #config-headerpath}
+### headerPath [:octicons-code-24:](https://github.com/miniscruff/changie/blob/<< current_version >>/core/config.go#L228) [:octicons-link-24:](#config-headerpath) {: #config-headerpath}
 type: `string` | optional
 
 Header content included at the top of the merged changelog.
@@ -143,14 +143,14 @@ Relative to [changesDir](#config-changesdir).
     headerPath: header.tpl.md
     ```
 
-### kindFormat [:octicons-code-24:](https://github.com/miniscruff/changie/blob/<< current_version >>/core/config.go#L267) [:octicons-link-24:](#config-kindformat) {: #config-kindformat}
+### kindFormat [:octicons-code-24:](https://github.com/miniscruff/changie/blob/<< current_version >>/core/config.go#L265) [:octicons-link-24:](#config-kindformat) {: #config-kindformat}
 type: `string` | optional | template type: [KindData](#kinddata-type)
 
 Template used to generate kind headers.
 If format is empty no header will be included.
 If kinds are disabled, the format is unused.
 
-### kinds [:octicons-code-24:](https://github.com/miniscruff/changie/blob/<< current_version >>/core/config.go#L314) [:octicons-link-24:](#config-kinds) {: #config-kinds}
+### kinds [:octicons-code-24:](https://github.com/miniscruff/changie/blob/<< current_version >>/core/config.go#L312) [:octicons-link-24:](#config-kinds) {: #config-kinds}
 type: [[]KindConfig](#kindconfig-type) | optional
 
 Kinds are another optional layer of changelogs suited for specifying what type of change we are
@@ -169,12 +169,12 @@ The default list comes from keep a changelog and includes; added, changed, remov
     - label: Security
     ```
 
-### newlines [:octicons-code-24:](https://github.com/miniscruff/changie/blob/<< current_version >>/core/config.go#L337) [:octicons-link-24:](#config-newlines) {: #config-newlines}
+### newlines [:octicons-code-24:](https://github.com/miniscruff/changie/blob/<< current_version >>/core/config.go#L335) [:octicons-link-24:](#config-newlines) {: #config-newlines}
 type: [NewlinesConfig](#newlinesconfig-type) | optional
 
 Newline options allow you to add extra lines between elements written by changie.
 
-### post [:octicons-code-24:](https://github.com/miniscruff/changie/blob/<< current_version >>/core/config.go#L345) [:octicons-link-24:](#config-post) {: #config-post}
+### post [:octicons-code-24:](https://github.com/miniscruff/changie/blob/<< current_version >>/core/config.go#L343) [:octicons-link-24:](#config-post) {: #config-post}
 type: [[]PostProcessConfig](#postprocessconfig-type) | optional
 
 Post process options when saving a new change fragment.
@@ -187,7 +187,7 @@ Post process options when saving a new change fragment.
     changeFormat: "* {{.Body}} by [{{.Custom.Author}}]({{.Custom.AuthorLink}})"
     ```
 
-### projects [:octicons-code-24:](https://github.com/miniscruff/changie/blob/<< current_version >>/core/config.go#L364) [:octicons-link-24:](#config-projects) {: #config-projects}
+### projects [:octicons-code-24:](https://github.com/miniscruff/changie/blob/<< current_version >>/core/config.go#L362) [:octicons-link-24:](#config-projects) {: #config-projects}
 type: [[]ProjectConfig](#projectconfig-type) | optional
 
 Projects allow you to specify child projects as part of a monorepo setup.
@@ -202,7 +202,7 @@ Projects allow you to specify child projects as part of a monorepo setup.
         changelog: services/email/CHANGELOG.md
     ```
 
-### projectsVersionSeparator [:octicons-code-24:](https://github.com/miniscruff/changie/blob/<< current_version >>/core/config.go#L369) [:octicons-link-24:](#config-projectsversionseparator) {: #config-projectsversionseparator}
+### projectsVersionSeparator [:octicons-code-24:](https://github.com/miniscruff/changie/blob/<< current_version >>/core/config.go#L367) [:octicons-link-24:](#config-projectsversionseparator) {: #config-projectsversionseparator}
 type: `string` | optional
 
 ProjectsVersionSeparator is used to determine the final version when using projects.
@@ -212,7 +212,7 @@ The result is: project key + projectVersionSeparator + latest/next version.
     projectsVersionSeparator: "_"
     ```
 
-### replacements [:octicons-code-24:](https://github.com/miniscruff/changie/blob/<< current_version >>/core/config.go#L335) [:octicons-link-24:](#config-replacements) {: #config-replacements}
+### replacements [:octicons-code-24:](https://github.com/miniscruff/changie/blob/<< current_version >>/core/config.go#L333) [:octicons-link-24:](#config-replacements) {: #config-replacements}
 type: [[]Replacement](#replacement-type) | optional
 
 Replacements to run when merging a changelog.
@@ -225,7 +225,7 @@ Replacements to run when merging a changelog.
       replace: '  "version": "{{.VersionNoPrefix}}",'
     ```
 
-### unreleasedDir [:octicons-code-24:](https://github.com/miniscruff/changie/blob/<< current_version >>/core/config.go#L222) [:octicons-link-24:](#config-unreleaseddir) {: #config-unreleaseddir}
+### unreleasedDir [:octicons-code-24:](https://github.com/miniscruff/changie/blob/<< current_version >>/core/config.go#L220) [:octicons-link-24:](#config-unreleaseddir) {: #config-unreleaseddir}
 type: `string` | required
 
 Directory for all unreleased change files.
@@ -235,7 +235,7 @@ Relative to [changesDir](#config-changesdir).
     unreleasedDir: unreleased
     ```
 
-### versionExt [:octicons-code-24:](https://github.com/miniscruff/changie/blob/<< current_version >>/core/config.go#L243) [:octicons-link-24:](#config-versionext) {: #config-versionext}
+### versionExt [:octicons-code-24:](https://github.com/miniscruff/changie/blob/<< current_version >>/core/config.go#L241) [:octicons-link-24:](#config-versionext) {: #config-versionext}
 type: `string` | required
 
 File extension for generated version files.
@@ -247,18 +247,18 @@ Must not include the period.
     versionExt: md
     ```
 
-### versionFooterPath [:octicons-code-24:](https://github.com/miniscruff/changie/blob/<< current_version >>/core/config.go#L249) [:octicons-link-24:](#config-versionfooterpath) {: #config-versionfooterpath}
+### versionFooterPath [:octicons-code-24:](https://github.com/miniscruff/changie/blob/<< current_version >>/core/config.go#L247) [:octicons-link-24:](#config-versionfooterpath) {: #config-versionfooterpath}
 type: `string` | optional
 
 Filepath for your version footer file relative to [unreleasedDir](#config-unreleaseddir).
 It is also possible to use the '--footer-path' parameter when using the [batch command](../cli/changie_batch.md).
 
-### versionFormat [:octicons-code-24:](https://github.com/miniscruff/changie/blob/<< current_version >>/core/config.go#L259) [:octicons-link-24:](#config-versionformat) {: #config-versionformat}
+### versionFormat [:octicons-code-24:](https://github.com/miniscruff/changie/blob/<< current_version >>/core/config.go#L257) [:octicons-link-24:](#config-versionformat) {: #config-versionformat}
 type: `string` | optional | template type: [BatchData](#batchdata-type)
 
 Template used to generate version headers.
 
-### versionHeaderPath [:octicons-code-24:](https://github.com/miniscruff/changie/blob/<< current_version >>/core/config.go#L246) [:octicons-link-24:](#config-versionheaderpath) {: #config-versionheaderpath}
+### versionHeaderPath [:octicons-code-24:](https://github.com/miniscruff/changie/blob/<< current_version >>/core/config.go#L244) [:octicons-link-24:](#config-versionheaderpath) {: #config-versionheaderpath}
 type: `string` | optional
 
 Filepath for your version header file relative to [unreleasedDir](#config-unreleaseddir).
@@ -327,40 +327,40 @@ Version of the release without the "v" prefix if used
 
 
 ---
-## BodyConfig [:octicons-code-24:](https://github.com/miniscruff/changie/blob/<< current_version >>/core/config.go#L70) [:octicons-link-24:](#bodyconfig-type) {: #bodyconfig-type}
+## BodyConfig [:octicons-code-24:](https://github.com/miniscruff/changie/blob/<< current_version >>/core/config.go#L68) [:octicons-link-24:](#bodyconfig-type) {: #bodyconfig-type}
 Body config allows you to customize the default body prompt
 
-### maxLength [:octicons-code-24:](https://github.com/miniscruff/changie/blob/<< current_version >>/core/config.go#L74) [:octicons-link-24:](#bodyconfig-maxlength) {: #bodyconfig-maxlength}
+### maxLength [:octicons-code-24:](https://github.com/miniscruff/changie/blob/<< current_version >>/core/config.go#L72) [:octicons-link-24:](#bodyconfig-maxlength) {: #bodyconfig-maxlength}
 type: `int64` | optional
 
 Max length specifies the maximum body length
 
-### minLength [:octicons-code-24:](https://github.com/miniscruff/changie/blob/<< current_version >>/core/config.go#L72) [:octicons-link-24:](#bodyconfig-minlength) {: #bodyconfig-minlength}
+### minLength [:octicons-code-24:](https://github.com/miniscruff/changie/blob/<< current_version >>/core/config.go#L70) [:octicons-link-24:](#bodyconfig-minlength) {: #bodyconfig-minlength}
 type: `int64` | optional
 
 Min length specifies the minimum body length
 
-### block [:octicons-code-24:](https://github.com/miniscruff/changie/blob/<< current_version >>/core/config.go#L76) [:octicons-link-24:](#bodyconfig-block) {: #bodyconfig-block}
+### block [:octicons-code-24:](https://github.com/miniscruff/changie/blob/<< current_version >>/core/config.go#L74) [:octicons-link-24:](#bodyconfig-block) {: #bodyconfig-block}
 type: `bool` | optional
 
 Block allows multiline text inputs for body messages
 
 
 ---
-## Change [:octicons-code-24:](https://github.com/miniscruff/changie/blob/<< current_version >>/core/change.go#L76) [:octicons-link-24:](#change-type) {: #change-type}
+## Change [:octicons-code-24:](https://github.com/miniscruff/changie/blob/<< current_version >>/core/change.go#L50) [:octicons-link-24:](#change-type) {: #change-type}
 Change represents an atomic change to a project.
 
-### body [:octicons-code-24:](https://github.com/miniscruff/changie/blob/<< current_version >>/core/change.go#L84) [:octicons-link-24:](#change-body) {: #change-body}
+### body [:octicons-code-24:](https://github.com/miniscruff/changie/blob/<< current_version >>/core/change.go#L58) [:octicons-link-24:](#change-body) {: #change-body}
 type: `string` | optional
 
 Body message of our change, if one was provided.
 
-### component [:octicons-code-24:](https://github.com/miniscruff/changie/blob/<< current_version >>/core/change.go#L80) [:octicons-link-24:](#change-component) {: #change-component}
+### component [:octicons-code-24:](https://github.com/miniscruff/changie/blob/<< current_version >>/core/change.go#L54) [:octicons-link-24:](#change-component) {: #change-component}
 type: `string` | optional
 
 Component of our change, if one was provided.
 
-### custom [:octicons-code-24:](https://github.com/miniscruff/changie/blob/<< current_version >>/core/change.go#L94) [:octicons-link-24:](#change-custom) {: #change-custom}
+### custom [:octicons-code-24:](https://github.com/miniscruff/changie/blob/<< current_version >>/core/change.go#L68) [:octicons-link-24:](#change-custom) {: #change-custom}
 type: map [ `string` ] `string` | optional
 
 Custom values corresponding to our options where each key-value pair is the key of the custom option
@@ -373,7 +373,7 @@ and value the one provided in the change.
     changeFormat: "{{.Body}} from #{{.Custom.Issue}}"
     ```
 
-### env [:octicons-code-24:](https://github.com/miniscruff/changie/blob/<< current_version >>/core/change.go#L100) [:octicons-link-24:](#change-env) {: #change-env}
+### env [:octicons-code-24:](https://github.com/miniscruff/changie/blob/<< current_version >>/core/change.go#L74) [:octicons-link-24:](#change-env) {: #change-env}
 type: map [ `string` ] `string` | optional
 
 Env vars configured by the system.
@@ -382,22 +382,22 @@ For example if you want to use an env var in [change format](#config-changeforma
 but env vars configured when executing `changie new` will not be saved.
 See [envPrefix](#config-envprefix) for configuration.
 
-### filename [:octicons-code-24:](https://github.com/miniscruff/changie/blob/<< current_version >>/core/change.go#L102) [:octicons-link-24:](#change-filename) {: #change-filename}
+### filename [:octicons-code-24:](https://github.com/miniscruff/changie/blob/<< current_version >>/core/change.go#L76) [:octicons-link-24:](#change-filename) {: #change-filename}
 type: `string` | optional
 
 Filename the change was saved to.
 
-### kind [:octicons-code-24:](https://github.com/miniscruff/changie/blob/<< current_version >>/core/change.go#L82) [:octicons-link-24:](#change-kind) {: #change-kind}
+### kind [:octicons-code-24:](https://github.com/miniscruff/changie/blob/<< current_version >>/core/change.go#L56) [:octicons-link-24:](#change-kind) {: #change-kind}
 type: `string` | optional
 
 Kind of our change, if one was provided.
 
-### project [:octicons-code-24:](https://github.com/miniscruff/changie/blob/<< current_version >>/core/change.go#L78) [:octicons-link-24:](#change-project) {: #change-project}
+### project [:octicons-code-24:](https://github.com/miniscruff/changie/blob/<< current_version >>/core/change.go#L52) [:octicons-link-24:](#change-project) {: #change-project}
 type: `string` | optional
 
 Project of our change, if one was provided.
 
-### time [:octicons-code-24:](https://github.com/miniscruff/changie/blob/<< current_version >>/core/change.go#L86) [:octicons-link-24:](#change-time) {: #change-time}
+### time [:octicons-code-24:](https://github.com/miniscruff/changie/blob/<< current_version >>/core/change.go#L60) [:octicons-link-24:](#change-time) {: #change-time}
 type: `Time` | required
 
 When our change was made.
@@ -522,15 +522,15 @@ Current values are: `string`, `block`, `int` and `enum`.
 
 
 ---
-## KindConfig [:octicons-code-24:](https://github.com/miniscruff/changie/blob/<< current_version >>/core/config.go#L37) [:octicons-link-24:](#kindconfig-type) {: #kindconfig-type}
+## KindConfig [:octicons-code-24:](https://github.com/miniscruff/changie/blob/<< current_version >>/core/config.go#L35) [:octicons-link-24:](#kindconfig-type) {: #kindconfig-type}
 Kind config allows you to customize the options depending on what kind was selected.
 
-### additionalChoices [:octicons-code-24:](https://github.com/miniscruff/changie/blob/<< current_version >>/core/config.go#L51) [:octicons-link-24:](#kindconfig-additionalchoices) {: #kindconfig-additionalchoices}
+### additionalChoices [:octicons-code-24:](https://github.com/miniscruff/changie/blob/<< current_version >>/core/config.go#L49) [:octicons-link-24:](#kindconfig-additionalchoices) {: #kindconfig-additionalchoices}
 type: [[]Custom](#custom-type) | optional
 
 Additional choices allows adding choices per kind
 
-### auto [:octicons-code-24:](https://github.com/miniscruff/changie/blob/<< current_version >>/core/config.go#L66) [:octicons-link-24:](#kindconfig-auto) {: #kindconfig-auto}
+### auto [:octicons-code-24:](https://github.com/miniscruff/changie/blob/<< current_version >>/core/config.go#L64) [:octicons-link-24:](#kindconfig-auto) {: #kindconfig-auto}
 type: `string` | optional
 
 Auto determines what value to bump when using `batch auto` or `next auto`.
@@ -542,7 +542,7 @@ Only none changes is not a valid bump and will fail to batch.
     auto: minor
     ```
 
-### changeFormat [:octicons-code-24:](https://github.com/miniscruff/changie/blob/<< current_version >>/core/config.go#L49) [:octicons-link-24:](#kindconfig-changeformat) {: #kindconfig-changeformat}
+### changeFormat [:octicons-code-24:](https://github.com/miniscruff/changie/blob/<< current_version >>/core/config.go#L47) [:octicons-link-24:](#kindconfig-changeformat) {: #kindconfig-changeformat}
 type: `string` | optional
 
 Change format will override the root change format when building changes specific to this kind.
@@ -551,7 +551,7 @@ Change format will override the root change format when building changes specifi
     changeFormat: 'Breaking: {{.Custom.Body}}
     ```
 
-### format [:octicons-code-24:](https://github.com/miniscruff/changie/blob/<< current_version >>/core/config.go#L45) [:octicons-link-24:](#kindconfig-format) {: #kindconfig-format}
+### format [:octicons-code-24:](https://github.com/miniscruff/changie/blob/<< current_version >>/core/config.go#L43) [:octicons-link-24:](#kindconfig-format) {: #kindconfig-format}
 type: `string` | optional
 
 Format will override the root kind format when building the kind header.
@@ -560,7 +560,7 @@ Format will override the root kind format when building the kind header.
     format: '### {{.Kind}} **Breaking Changes**'
     ```
 
-### label [:octicons-code-24:](https://github.com/miniscruff/changie/blob/<< current_version >>/core/config.go#L41) [:octicons-link-24:](#kindconfig-label) {: #kindconfig-label}
+### label [:octicons-code-24:](https://github.com/miniscruff/changie/blob/<< current_version >>/core/config.go#L39) [:octicons-link-24:](#kindconfig-label) {: #kindconfig-label}
 type: `string` | required
 
 Label is the value used in the prompt when selecting a kind.
@@ -569,22 +569,22 @@ Label is the value used in the prompt when selecting a kind.
     label: Feature
     ```
 
-### post [:octicons-code-24:](https://github.com/miniscruff/changie/blob/<< current_version >>/core/config.go#L53) [:octicons-link-24:](#kindconfig-post) {: #kindconfig-post}
+### post [:octicons-code-24:](https://github.com/miniscruff/changie/blob/<< current_version >>/core/config.go#L51) [:octicons-link-24:](#kindconfig-post) {: #kindconfig-post}
 type: [[]PostProcessConfig](#postprocessconfig-type) | optional
 
 Post process options when saving a new change fragment specific to this kind.
 
-### skipBody [:octicons-code-24:](https://github.com/miniscruff/changie/blob/<< current_version >>/core/config.go#L57) [:octicons-link-24:](#kindconfig-skipbody) {: #kindconfig-skipbody}
+### skipBody [:octicons-code-24:](https://github.com/miniscruff/changie/blob/<< current_version >>/core/config.go#L55) [:octicons-link-24:](#kindconfig-skipbody) {: #kindconfig-skipbody}
 type: `bool` | optional
 
 Skip body allows skipping the parent body prompt.
 
-### skipGlobalChoices [:octicons-code-24:](https://github.com/miniscruff/changie/blob/<< current_version >>/core/config.go#L55) [:octicons-link-24:](#kindconfig-skipglobalchoices) {: #kindconfig-skipglobalchoices}
+### skipGlobalChoices [:octicons-code-24:](https://github.com/miniscruff/changie/blob/<< current_version >>/core/config.go#L53) [:octicons-link-24:](#kindconfig-skipglobalchoices) {: #kindconfig-skipglobalchoices}
 type: `bool` | optional
 
 Skip global choices allows skipping the parent choices options.
 
-### skipGlobalPost [:octicons-code-24:](https://github.com/miniscruff/changie/blob/<< current_version >>/core/config.go#L59) [:octicons-link-24:](#kindconfig-skipglobalpost) {: #kindconfig-skipglobalpost}
+### skipGlobalPost [:octicons-code-24:](https://github.com/miniscruff/changie/blob/<< current_version >>/core/config.go#L57) [:octicons-link-24:](#kindconfig-skipglobalpost) {: #kindconfig-skipglobalpost}
 type: `bool` | optional
 
 Skip global post allows skipping the parent post processing.
@@ -607,130 +607,130 @@ Name of the kind
 
 
 ---
-## NewlinesConfig [:octicons-code-24:](https://github.com/miniscruff/changie/blob/<< current_version >>/core/config.go#L105) [:octicons-link-24:](#newlinesconfig-type) {: #newlinesconfig-type}
+## NewlinesConfig [:octicons-code-24:](https://github.com/miniscruff/changie/blob/<< current_version >>/core/config.go#L103) [:octicons-link-24:](#newlinesconfig-type) {: #newlinesconfig-type}
 Configuration options for newlines before and after different elements.
 
-### afterChange [:octicons-code-24:](https://github.com/miniscruff/changie/blob/<< current_version >>/core/config.go#L107) [:octicons-link-24:](#newlinesconfig-afterchange) {: #newlinesconfig-afterchange}
+### afterChange [:octicons-code-24:](https://github.com/miniscruff/changie/blob/<< current_version >>/core/config.go#L105) [:octicons-link-24:](#newlinesconfig-afterchange) {: #newlinesconfig-afterchange}
 type: `int` | optional
 
 Add newlines after change fragment
 
-### afterChangelogHeader [:octicons-code-24:](https://github.com/miniscruff/changie/blob/<< current_version >>/core/config.go#L109) [:octicons-link-24:](#newlinesconfig-afterchangelogheader) {: #newlinesconfig-afterchangelogheader}
+### afterChangelogHeader [:octicons-code-24:](https://github.com/miniscruff/changie/blob/<< current_version >>/core/config.go#L107) [:octicons-link-24:](#newlinesconfig-afterchangelogheader) {: #newlinesconfig-afterchangelogheader}
 type: `int` | optional
 
 Add newlines after the header file in the merged changelog
 
-### afterChangelogVersion [:octicons-code-24:](https://github.com/miniscruff/changie/blob/<< current_version >>/core/config.go#L111) [:octicons-link-24:](#newlinesconfig-afterchangelogversion) {: #newlinesconfig-afterchangelogversion}
+### afterChangelogVersion [:octicons-code-24:](https://github.com/miniscruff/changie/blob/<< current_version >>/core/config.go#L109) [:octicons-link-24:](#newlinesconfig-afterchangelogversion) {: #newlinesconfig-afterchangelogversion}
 type: `int` | optional
 
 Add newlines after adding a version to the changelog
 
-### afterComponent [:octicons-code-24:](https://github.com/miniscruff/changie/blob/<< current_version >>/core/config.go#L113) [:octicons-link-24:](#newlinesconfig-aftercomponent) {: #newlinesconfig-aftercomponent}
+### afterComponent [:octicons-code-24:](https://github.com/miniscruff/changie/blob/<< current_version >>/core/config.go#L111) [:octicons-link-24:](#newlinesconfig-aftercomponent) {: #newlinesconfig-aftercomponent}
 type: `int` | optional
 
 Add newlines after component
 
-### afterFooterFile [:octicons-code-24:](https://github.com/miniscruff/changie/blob/<< current_version >>/core/config.go#L115) [:octicons-link-24:](#newlinesconfig-afterfooterfile) {: #newlinesconfig-afterfooterfile}
+### afterFooterFile [:octicons-code-24:](https://github.com/miniscruff/changie/blob/<< current_version >>/core/config.go#L113) [:octicons-link-24:](#newlinesconfig-afterfooterfile) {: #newlinesconfig-afterfooterfile}
 type: `int` | optional
 
 Add newlines after footer file
 
-### afterFooter [:octicons-code-24:](https://github.com/miniscruff/changie/blob/<< current_version >>/core/config.go#L117) [:octicons-link-24:](#newlinesconfig-afterfooter) {: #newlinesconfig-afterfooter}
+### afterFooter [:octicons-code-24:](https://github.com/miniscruff/changie/blob/<< current_version >>/core/config.go#L115) [:octicons-link-24:](#newlinesconfig-afterfooter) {: #newlinesconfig-afterfooter}
 type: `int` | optional
 
 Add newlines after footer template
 
-### afterHeaderFile [:octicons-code-24:](https://github.com/miniscruff/changie/blob/<< current_version >>/core/config.go#L119) [:octicons-link-24:](#newlinesconfig-afterheaderfile) {: #newlinesconfig-afterheaderfile}
+### afterHeaderFile [:octicons-code-24:](https://github.com/miniscruff/changie/blob/<< current_version >>/core/config.go#L117) [:octicons-link-24:](#newlinesconfig-afterheaderfile) {: #newlinesconfig-afterheaderfile}
 type: `int` | optional
 
 Add newlines after header file
 
-### afterHeaderTemplate [:octicons-code-24:](https://github.com/miniscruff/changie/blob/<< current_version >>/core/config.go#L121) [:octicons-link-24:](#newlinesconfig-afterheadertemplate) {: #newlinesconfig-afterheadertemplate}
+### afterHeaderTemplate [:octicons-code-24:](https://github.com/miniscruff/changie/blob/<< current_version >>/core/config.go#L119) [:octicons-link-24:](#newlinesconfig-afterheadertemplate) {: #newlinesconfig-afterheadertemplate}
 type: `int` | optional
 
 Add newlines after header template
 
-### afterKind [:octicons-code-24:](https://github.com/miniscruff/changie/blob/<< current_version >>/core/config.go#L123) [:octicons-link-24:](#newlinesconfig-afterkind) {: #newlinesconfig-afterkind}
+### afterKind [:octicons-code-24:](https://github.com/miniscruff/changie/blob/<< current_version >>/core/config.go#L121) [:octicons-link-24:](#newlinesconfig-afterkind) {: #newlinesconfig-afterkind}
 type: `int` | optional
 
 Add newlines after kind
 
-### afterVersion [:octicons-code-24:](https://github.com/miniscruff/changie/blob/<< current_version >>/core/config.go#L125) [:octicons-link-24:](#newlinesconfig-afterversion) {: #newlinesconfig-afterversion}
+### afterVersion [:octicons-code-24:](https://github.com/miniscruff/changie/blob/<< current_version >>/core/config.go#L123) [:octicons-link-24:](#newlinesconfig-afterversion) {: #newlinesconfig-afterversion}
 type: `int` | optional
 
 Add newlines after version
 
-### beforeChange [:octicons-code-24:](https://github.com/miniscruff/changie/blob/<< current_version >>/core/config.go#L127) [:octicons-link-24:](#newlinesconfig-beforechange) {: #newlinesconfig-beforechange}
+### beforeChange [:octicons-code-24:](https://github.com/miniscruff/changie/blob/<< current_version >>/core/config.go#L125) [:octicons-link-24:](#newlinesconfig-beforechange) {: #newlinesconfig-beforechange}
 type: `int` | optional
 
 Add newlines before change fragment
 
-### beforeChangelogVersion [:octicons-code-24:](https://github.com/miniscruff/changie/blob/<< current_version >>/core/config.go#L129) [:octicons-link-24:](#newlinesconfig-beforechangelogversion) {: #newlinesconfig-beforechangelogversion}
+### beforeChangelogVersion [:octicons-code-24:](https://github.com/miniscruff/changie/blob/<< current_version >>/core/config.go#L127) [:octicons-link-24:](#newlinesconfig-beforechangelogversion) {: #newlinesconfig-beforechangelogversion}
 type: `int` | optional
 
 Add newlines before adding a version to the changelog
 
-### beforeComponent [:octicons-code-24:](https://github.com/miniscruff/changie/blob/<< current_version >>/core/config.go#L131) [:octicons-link-24:](#newlinesconfig-beforecomponent) {: #newlinesconfig-beforecomponent}
+### beforeComponent [:octicons-code-24:](https://github.com/miniscruff/changie/blob/<< current_version >>/core/config.go#L129) [:octicons-link-24:](#newlinesconfig-beforecomponent) {: #newlinesconfig-beforecomponent}
 type: `int` | optional
 
 Add newlines before component
 
-### beforeFooterFile [:octicons-code-24:](https://github.com/miniscruff/changie/blob/<< current_version >>/core/config.go#L133) [:octicons-link-24:](#newlinesconfig-beforefooterfile) {: #newlinesconfig-beforefooterfile}
+### beforeFooterFile [:octicons-code-24:](https://github.com/miniscruff/changie/blob/<< current_version >>/core/config.go#L131) [:octicons-link-24:](#newlinesconfig-beforefooterfile) {: #newlinesconfig-beforefooterfile}
 type: `int` | optional
 
 Add newlines before footer file
 
-### beforeFooterTemplate [:octicons-code-24:](https://github.com/miniscruff/changie/blob/<< current_version >>/core/config.go#L135) [:octicons-link-24:](#newlinesconfig-beforefootertemplate) {: #newlinesconfig-beforefootertemplate}
+### beforeFooterTemplate [:octicons-code-24:](https://github.com/miniscruff/changie/blob/<< current_version >>/core/config.go#L133) [:octicons-link-24:](#newlinesconfig-beforefootertemplate) {: #newlinesconfig-beforefootertemplate}
 type: `int` | optional
 
 Add newlines before footer template
 
-### beforeHeaderFile [:octicons-code-24:](https://github.com/miniscruff/changie/blob/<< current_version >>/core/config.go#L137) [:octicons-link-24:](#newlinesconfig-beforeheaderfile) {: #newlinesconfig-beforeheaderfile}
+### beforeHeaderFile [:octicons-code-24:](https://github.com/miniscruff/changie/blob/<< current_version >>/core/config.go#L135) [:octicons-link-24:](#newlinesconfig-beforeheaderfile) {: #newlinesconfig-beforeheaderfile}
 type: `int` | optional
 
 Add newlines before header file
 
-### beforeHeaderTemplate [:octicons-code-24:](https://github.com/miniscruff/changie/blob/<< current_version >>/core/config.go#L139) [:octicons-link-24:](#newlinesconfig-beforeheadertemplate) {: #newlinesconfig-beforeheadertemplate}
+### beforeHeaderTemplate [:octicons-code-24:](https://github.com/miniscruff/changie/blob/<< current_version >>/core/config.go#L137) [:octicons-link-24:](#newlinesconfig-beforeheadertemplate) {: #newlinesconfig-beforeheadertemplate}
 type: `int` | optional
 
 Add newlines before header template
 
-### beforeKind [:octicons-code-24:](https://github.com/miniscruff/changie/blob/<< current_version >>/core/config.go#L141) [:octicons-link-24:](#newlinesconfig-beforekind) {: #newlinesconfig-beforekind}
+### beforeKind [:octicons-code-24:](https://github.com/miniscruff/changie/blob/<< current_version >>/core/config.go#L139) [:octicons-link-24:](#newlinesconfig-beforekind) {: #newlinesconfig-beforekind}
 type: `int` | optional
 
 Add newlines before kind
 
-### beforeVersion [:octicons-code-24:](https://github.com/miniscruff/changie/blob/<< current_version >>/core/config.go#L143) [:octicons-link-24:](#newlinesconfig-beforeversion) {: #newlinesconfig-beforeversion}
+### beforeVersion [:octicons-code-24:](https://github.com/miniscruff/changie/blob/<< current_version >>/core/config.go#L141) [:octicons-link-24:](#newlinesconfig-beforeversion) {: #newlinesconfig-beforeversion}
 type: `int` | optional
 
 Add newlines before version
 
-### endOfVersion [:octicons-code-24:](https://github.com/miniscruff/changie/blob/<< current_version >>/core/config.go#L145) [:octicons-link-24:](#newlinesconfig-endofversion) {: #newlinesconfig-endofversion}
+### endOfVersion [:octicons-code-24:](https://github.com/miniscruff/changie/blob/<< current_version >>/core/config.go#L143) [:octicons-link-24:](#newlinesconfig-endofversion) {: #newlinesconfig-endofversion}
 type: `int` | optional
 
 Add newlines at the end of the version file
 
 
 ---
-## PostProcessConfig [:octicons-code-24:](https://github.com/miniscruff/changie/blob/<< current_version >>/core/config.go#L152) [:octicons-link-24:](#postprocessconfig-type) {: #postprocessconfig-type}
+## PostProcessConfig [:octicons-code-24:](https://github.com/miniscruff/changie/blob/<< current_version >>/core/config.go#L150) [:octicons-link-24:](#postprocessconfig-type) {: #postprocessconfig-type}
 PostProcessConfig allows adding additional custom values to a change fragment
 after all the other inputs are complete.
 This will add additional keys to the `custom` section of the fragment.
 If the key already exists as part of a custom choice the value will be overridden.
 
-### key [:octicons-code-24:](https://github.com/miniscruff/changie/blob/<< current_version >>/core/config.go#L154) [:octicons-link-24:](#postprocessconfig-key) {: #postprocessconfig-key}
+### key [:octicons-code-24:](https://github.com/miniscruff/changie/blob/<< current_version >>/core/config.go#L152) [:octicons-link-24:](#postprocessconfig-key) {: #postprocessconfig-key}
 type: `string` | optional
 
 Key to save the custom value with
 
-### value [:octicons-code-24:](https://github.com/miniscruff/changie/blob/<< current_version >>/core/config.go#L156) [:octicons-link-24:](#postprocessconfig-value) {: #postprocessconfig-value}
+### value [:octicons-code-24:](https://github.com/miniscruff/changie/blob/<< current_version >>/core/config.go#L154) [:octicons-link-24:](#postprocessconfig-value) {: #postprocessconfig-value}
 type: `string` | optional | template type: [Change](#change-type)
 
 Value of the custom value as a go template
 
 
 ---
-## ProjectConfig [:octicons-code-24:](https://github.com/miniscruff/changie/blob/<< current_version >>/core/config.go#L169) [:octicons-link-24:](#projectconfig-type) {: #projectconfig-type}
+## ProjectConfig [:octicons-code-24:](https://github.com/miniscruff/changie/blob/<< current_version >>/core/config.go#L167) [:octicons-link-24:](#projectconfig-type) {: #projectconfig-type}
 ProjectConfig extends changie to support multiple changelog files for different projects
 inside one repository.
 
@@ -744,7 +744,7 @@ inside one repository.
         key: email_sender
         changelog: services/email/CHANGELOG.md
     ```
-### changelog [:octicons-code-24:](https://github.com/miniscruff/changie/blob/<< current_version >>/core/config.go#L181) [:octicons-link-24:](#projectconfig-changelog) {: #projectconfig-changelog}
+### changelog [:octicons-code-24:](https://github.com/miniscruff/changie/blob/<< current_version >>/core/config.go#L179) [:octicons-link-24:](#projectconfig-changelog) {: #projectconfig-changelog}
 type: `string` | optional
 
 ChangelogPath is the path to the changelog for this project.
@@ -753,7 +753,7 @@ ChangelogPath is the path to the changelog for this project.
     changelog: src/frontend/CHANGELOG.md
     ```
 
-### key [:octicons-code-24:](https://github.com/miniscruff/changie/blob/<< current_version >>/core/config.go#L177) [:octicons-link-24:](#projectconfig-key) {: #projectconfig-key}
+### key [:octicons-code-24:](https://github.com/miniscruff/changie/blob/<< current_version >>/core/config.go#L175) [:octicons-link-24:](#projectconfig-key) {: #projectconfig-key}
 type: `string` | optional
 
 Key is the value used for unreleased and version output paths.
@@ -762,7 +762,7 @@ Key is the value used for unreleased and version output paths.
     key: frontend
     ```
 
-### label [:octicons-code-24:](https://github.com/miniscruff/changie/blob/<< current_version >>/core/config.go#L173) [:octicons-link-24:](#projectconfig-label) {: #projectconfig-label}
+### label [:octicons-code-24:](https://github.com/miniscruff/changie/blob/<< current_version >>/core/config.go#L171) [:octicons-link-24:](#projectconfig-label) {: #projectconfig-label}
 type: `string` | optional
 
 Label is the value used in the prompt when selecting a project.
@@ -771,7 +771,7 @@ Label is the value used in the prompt when selecting a project.
     label: Frontend
     ```
 
-### replacements [:octicons-code-24:](https://github.com/miniscruff/changie/blob/<< current_version >>/core/config.go#L189) [:octicons-link-24:](#projectconfig-replacements) {: #projectconfig-replacements}
+### replacements [:octicons-code-24:](https://github.com/miniscruff/changie/blob/<< current_version >>/core/config.go#L187) [:octicons-link-24:](#projectconfig-replacements) {: #projectconfig-replacements}
 type: [[]Replacement](#replacement-type) | optional
 
 Replacements to run when merging a changelog for our project.
@@ -786,47 +786,47 @@ Replacements to run when merging a changelog for our project.
 
 
 ---
-## ReplaceData [:octicons-code-24:](https://github.com/miniscruff/changie/blob/<< current_version >>/core/replacement.go#L16) [:octicons-link-24:](#replacedata-type) {: #replacedata-type}
+## ReplaceData [:octicons-code-24:](https://github.com/miniscruff/changie/blob/<< current_version >>/core/replacement.go#L15) [:octicons-link-24:](#replacedata-type) {: #replacedata-type}
 Template data used for replacing version values.
 
-### Major [:octicons-code-24:](https://github.com/miniscruff/changie/blob/<< current_version >>/core/replacement.go#L22) [:octicons-link-24:](#replacedata-major) {: #replacedata-major}
+### Major [:octicons-code-24:](https://github.com/miniscruff/changie/blob/<< current_version >>/core/replacement.go#L21) [:octicons-link-24:](#replacedata-major) {: #replacedata-major}
 type: `int` | optional
 
 Major value of the version
 
-### Metadata [:octicons-code-24:](https://github.com/miniscruff/changie/blob/<< current_version >>/core/replacement.go#L30) [:octicons-link-24:](#replacedata-metadata) {: #replacedata-metadata}
+### Metadata [:octicons-code-24:](https://github.com/miniscruff/changie/blob/<< current_version >>/core/replacement.go#L29) [:octicons-link-24:](#replacedata-metadata) {: #replacedata-metadata}
 type: `string` | optional
 
 Metadata value of the version
 
-### Minor [:octicons-code-24:](https://github.com/miniscruff/changie/blob/<< current_version >>/core/replacement.go#L24) [:octicons-link-24:](#replacedata-minor) {: #replacedata-minor}
+### Minor [:octicons-code-24:](https://github.com/miniscruff/changie/blob/<< current_version >>/core/replacement.go#L23) [:octicons-link-24:](#replacedata-minor) {: #replacedata-minor}
 type: `int` | optional
 
 Minor value of the version
 
-### Patch [:octicons-code-24:](https://github.com/miniscruff/changie/blob/<< current_version >>/core/replacement.go#L26) [:octicons-link-24:](#replacedata-patch) {: #replacedata-patch}
+### Patch [:octicons-code-24:](https://github.com/miniscruff/changie/blob/<< current_version >>/core/replacement.go#L25) [:octicons-link-24:](#replacedata-patch) {: #replacedata-patch}
 type: `int` | optional
 
 Patch value of the version
 
-### Prerelease [:octicons-code-24:](https://github.com/miniscruff/changie/blob/<< current_version >>/core/replacement.go#L28) [:octicons-link-24:](#replacedata-prerelease) {: #replacedata-prerelease}
+### Prerelease [:octicons-code-24:](https://github.com/miniscruff/changie/blob/<< current_version >>/core/replacement.go#L27) [:octicons-link-24:](#replacedata-prerelease) {: #replacedata-prerelease}
 type: `string` | optional
 
 Prerelease value of the version
 
-### Version [:octicons-code-24:](https://github.com/miniscruff/changie/blob/<< current_version >>/core/replacement.go#L18) [:octicons-link-24:](#replacedata-version) {: #replacedata-version}
+### Version [:octicons-code-24:](https://github.com/miniscruff/changie/blob/<< current_version >>/core/replacement.go#L17) [:octicons-link-24:](#replacedata-version) {: #replacedata-version}
 type: `string` | optional
 
 Version of the release, will include "v" prefix if used
 
-### VersionNoPrefix [:octicons-code-24:](https://github.com/miniscruff/changie/blob/<< current_version >>/core/replacement.go#L20) [:octicons-link-24:](#replacedata-versionnoprefix) {: #replacedata-versionnoprefix}
+### VersionNoPrefix [:octicons-code-24:](https://github.com/miniscruff/changie/blob/<< current_version >>/core/replacement.go#L19) [:octicons-link-24:](#replacedata-versionnoprefix) {: #replacedata-versionnoprefix}
 type: `string` | optional
 
 Version of the release without the "v" prefix if used
 
 
 ---
-## Replacement [:octicons-code-24:](https://github.com/miniscruff/changie/blob/<< current_version >>/core/replacement.go#L44) [:octicons-link-24:](#replacement-type) {: #replacement-type}
+## Replacement [:octicons-code-24:](https://github.com/miniscruff/changie/blob/<< current_version >>/core/replacement.go#L43) [:octicons-link-24:](#replacement-type) {: #replacement-type}
 Replacement handles the finding and replacing values when merging the changelog.
 This can be used to keep version strings in-sync when preparing a release without having to
 manually update them.
@@ -841,12 +841,12 @@ file.
         find: '  "version": ".*",'
         replace: '  "version": "{{.VersionNoPrefix}}",'
     ```
-### find [:octicons-code-24:](https://github.com/miniscruff/changie/blob/<< current_version >>/core/replacement.go#L48) [:octicons-link-24:](#replacement-find) {: #replacement-find}
+### find [:octicons-code-24:](https://github.com/miniscruff/changie/blob/<< current_version >>/core/replacement.go#L47) [:octicons-link-24:](#replacement-find) {: #replacement-find}
 type: `string` | required
 
 Regular expression to search for in the file.
 
-### flags [:octicons-code-24:](https://github.com/miniscruff/changie/blob/<< current_version >>/core/replacement.go#L57) [:octicons-link-24:](#replacement-flags) {: #replacement-flags}
+### flags [:octicons-code-24:](https://github.com/miniscruff/changie/blob/<< current_version >>/core/replacement.go#L56) [:octicons-link-24:](#replacement-flags) {: #replacement-flags}
 type: `string` | optional
 
 Optional regular expression mode flags.
@@ -856,12 +856,12 @@ and not just the start and end of the string.
 For more details on regular expression flags in Go view the
 [regexp/syntax](https://pkg.go.dev/regexp/syntax).
 
-### path [:octicons-code-24:](https://github.com/miniscruff/changie/blob/<< current_version >>/core/replacement.go#L46) [:octicons-link-24:](#replacement-path) {: #replacement-path}
+### path [:octicons-code-24:](https://github.com/miniscruff/changie/blob/<< current_version >>/core/replacement.go#L45) [:octicons-link-24:](#replacement-path) {: #replacement-path}
 type: `string` | required
 
 Path of the file to find and replace in.
 
-### replace [:octicons-code-24:](https://github.com/miniscruff/changie/blob/<< current_version >>/core/replacement.go#L50) [:octicons-link-24:](#replacement-replace) {: #replacement-replace}
+### replace [:octicons-code-24:](https://github.com/miniscruff/changie/blob/<< current_version >>/core/replacement.go#L49) [:octicons-link-24:](#replacement-replace) {: #replacement-replace}
 type: `string` | required | template type: [ReplaceData](#replacedata-type)
 
 Template string to replace the line with.

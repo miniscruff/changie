@@ -3,13 +3,12 @@ package core
 import (
 	"bytes"
 	"fmt"
+	"os"
 	"regexp"
 	"text/template"
 
 	"github.com/icholy/replace"
 	"golang.org/x/text/transform"
-
-	"github.com/miniscruff/changie/shared"
 )
 
 // Template data used for replacing version values.
@@ -57,11 +56,7 @@ type Replacement struct {
 	Flags string `yaml:"flags,omitempty" default:"m"`
 }
 
-func (r Replacement) Execute(
-	readFile shared.ReadFiler,
-	writeFile shared.WriteFiler,
-	data ReplaceData,
-) error {
+func (r Replacement) Execute(data ReplaceData) error {
 	templ, err := template.New("replacement").Parse(r.Replace)
 	if err != nil {
 		return err
@@ -74,7 +69,7 @@ func (r Replacement) Execute(
 		return err
 	}
 
-	fileData, err := readFile(r.Path)
+	fileData, err := os.ReadFile(r.Path)
 	if err != nil {
 		return err
 	}
@@ -88,7 +83,7 @@ func (r Replacement) Execute(
 	transformer := replace.Regexp(regexp.MustCompile(regexString), buf.Bytes())
 	newData, _, _ := transform.Bytes(transformer, fileData)
 
-	err = writeFile(r.Path, newData, CreateFileMode)
+	err = os.WriteFile(r.Path, newData, CreateFileMode)
 	if err != nil {
 		return err
 	}
