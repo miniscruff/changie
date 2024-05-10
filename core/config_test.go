@@ -143,6 +143,41 @@ func TestLoadConfigFromEnvVar(t *testing.T) {
 	then.Equals(t, "header.rst", config.HeaderPath)
 }
 
+func TestLoadConfigFromEnvVarMissingFile(t *testing.T) {
+	then.WithTempDir(t)
+	t.Setenv("CHANGIE_CONFIG_PATH", filepath.Join("custom", "missing.yaml"))
+
+	_, err := LoadConfig()
+	then.NotNil(t, err)
+}
+
+func TestLoadConfigMultipleLayersWithoutAConfig(t *testing.T) {
+	then.WithTempDir(t)
+
+	then.Nil(t, os.MkdirAll(filepath.Join("a", "b", "c"), CreateDirMode))
+	then.Nil(t, os.Chdir("a"))
+	then.Nil(t, os.Chdir("b"))
+	then.Nil(t, os.Chdir("c"))
+
+	_, err := LoadConfig()
+	then.Err(t, ErrConfigNotFound, err)
+}
+
+func TestLoadConfigMultipleLayersDown(t *testing.T) {
+	then.WithTempDir(t)
+	then.WriteFile(t, []byte("changesDir: C\nheaderPath: header.rst\n"), ".changie.yml")
+
+	then.Nil(t, os.MkdirAll(filepath.Join("a", "b", "c"), CreateDirMode))
+	then.Nil(t, os.Chdir("a"))
+	then.Nil(t, os.Chdir("b"))
+	then.Nil(t, os.Chdir("c"))
+
+	config, err := LoadConfig()
+	then.Nil(t, err)
+	then.Equals(t, "C", config.ChangesDir)
+	then.Equals(t, "header.rst", config.HeaderPath)
+}
+
 func TestDefaultFragmentTemplateWithProjects(t *testing.T) {
 	then.WithTempDir(t)
 

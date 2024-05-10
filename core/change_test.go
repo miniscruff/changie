@@ -38,6 +38,14 @@ func TestWriteChange(t *testing.T) {
 	then.Nil(t, err)
 }
 
+func TestLoadChangeFailsIfNoFile(t *testing.T) {
+	then.WithTempDir(t)
+
+	_, err := LoadChange("missing_file.yaml")
+
+	then.NotNil(t, err)
+}
+
 func TestLoadChangeFromPath(t *testing.T) {
 	then.WithTempDir(t)
 	then.Nil(t, os.WriteFile("some_file.yaml", []byte("kind: A\nbody: hey\n"), CreateFileMode))

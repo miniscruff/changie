@@ -1,8 +1,11 @@
 package core
 
 import (
+	"errors"
 	"fmt"
+	"io/fs"
 	"os"
+	"path/filepath"
 
 	"github.com/Masterminds/semver/v3"
 	"gopkg.in/yaml.v3"
@@ -27,6 +30,8 @@ var ConfigPaths []string = []string{
 	".changie.yaml",
 	".changie.yml",
 }
+
+var ErrConfigNotFound = errors.New("no changie config found")
 
 // GetVersions will return, in semver sorted order, all released versions
 type GetVersions func(Config) ([]*semver.Version, error)
@@ -446,6 +451,40 @@ func (c *Config) Exists() (bool, error) {
 	return false, nil
 }
 
+// findConfigUpwards will recursively look up until we find a changie config file
+func findConfigUpwards() ([]byte, error) {
+	currDir, err := os.Getwd()
+	if err != nil {
+		return nil, err
+	}
+
+	for {
+		for _, path := range ConfigPaths {
+			bs, err := os.ReadFile(filepath.Join(currDir, path))
+			if err == nil || !errors.Is(err, fs.ErrNotExist) {
+				return bs, nil
+			}
+		}
+
+		err := os.Chdir("..")
+		if err != nil {
+			return nil, err
+		}
+
+		lastDir := currDir
+
+		currDir, err = os.Getwd()
+		if err != nil {
+			return nil, err
+		}
+
+		// Keep going up, until going up is unchanged.
+		if lastDir == currDir {
+			return nil, ErrConfigNotFound
+		}
+	}
+}
+
 // LoadConfig will load the config from the default path
 func LoadConfig() (*Config, error) {
 	var (
@@ -458,12 +497,7 @@ func LoadConfig() (*Config, error) {
 	if customPath != "" {
 		bs, err = os.ReadFile(customPath)
 	} else {
-		for _, path := range ConfigPaths {
-			bs, err = os.ReadFile(path)
-			if err == nil {
-				break
-			}
-		}
+		bs, err = findConfigUpwards()
 	}
 
 	if err != nil {
