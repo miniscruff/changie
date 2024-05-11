@@ -49,9 +49,9 @@ jobs:
       run: go test -coverprofile=c.out ./...
 
     - name: Coverage
-      uses: codecov/codecov-action@v4
+      uses: codacy/codacy-coverage-reporter-action@v1
       with:
-        token: ${{ secrets.CODECOV_TOKEN }}
-        slug: miniscruff/changie
-        file: ./c.out
-        fail_ci_if_error: true
+        project-token: ${{ secrets.CODACY_PROJECT_TOKEN }}
+        coverage-reports: ./c.out
+        force-coverage-parser: go
+
