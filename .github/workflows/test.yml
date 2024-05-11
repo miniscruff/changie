@@ -30,7 +30,7 @@ jobs:
     - name: Setup Go
       uses: actions/setup-go@v5
       with:
-        go-version: 1.21
+        go-version: 1.22
 
     - name: Check out code
       uses: actions/checkout@v4
@@ -40,7 +40,7 @@ jobs:
       with:
         # Required: the version of golangci-lint is required and must be specified
         # without patch version: we always use the latest patch version.
-        version: v1.57
+        version: v1.58
 
     - name: Gen
       run: go run main.go gen
@@ -49,9 +49,9 @@ jobs:
       run: go test -coverprofile=c.out ./...
 
     - name: Coverage
-      uses: codecov/codecov-action@v4
+      uses: codacy/codacy-coverage-reporter-action@v1
       with:
-        token: ${{ secrets.CODECOV_TOKEN }}
-        slug: miniscruff/changie
-        file: ./c.out
-        fail_ci_if_error: true
+        project-token: ${{ secrets.CODACY_PROJECT_TOKEN }}
+        coverage-reports: ./c.out
+        force-coverage-parser: go
+

@@ -104,6 +104,8 @@ func WriteFile(t *testing.T, data []byte, paths ...string) {
 	t.Helper()
 
 	fullPath := filepath.Join(paths...)
+	t.Log("writing file to", fullPath)
+
 	err := os.MkdirAll(filepath.Dir(fullPath), 0777)
 	Nil(t, err)
 
