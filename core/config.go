@@ -38,6 +38,11 @@ type GetVersions func(Config) ([]*semver.Version, error)
 
 // Kind config allows you to customize the options depending on what kind was selected.
 type KindConfig struct {
+	// Key is the value used for lookups and file names for kinds.
+	// By default it will use label if no key is provided.
+	// example: yaml
+	// key: feature
+	Key string `yaml:",omitempty"`
 	// Label is the value used in the prompt when selecting a kind.
 	// example: yaml
 	// label: Feature
@@ -67,6 +72,15 @@ type KindConfig struct {
 	// example: yaml
 	// auto: minor
 	AutoLevel string `yaml:"auto,omitempty"`
+}
+
+// KeyOrLabel returns the kind config key if set, otherwise the label
+func (kc *KindConfig) KeyOrLabel() string {
+	if kc.Key != "" {
+		return kc.Key
+	}
+
+	return kc.Label
 }
 
 // Body config allows you to customize the default body prompt
@@ -374,20 +388,30 @@ type Config struct {
 	cachedEnvVars map[string]string
 }
 
-func (c *Config) KindHeader(label string) string {
-	for _, kindConfig := range c.Kinds {
-		if kindConfig.Format != "" && kindConfig.Label == label {
-			return kindConfig.Format
+func (c *Config) KindFromKeyOrLabel(keyOrLabel string) *KindConfig {
+	for _, kc := range c.Kinds {
+		if kc.KeyOrLabel() == keyOrLabel {
+			return &kc
+		}
+	}
+
+	return nil
+}
+
+func (c *Config) KindHeader(keyOrLabel string) string {
+	for _, kc := range c.Kinds {
+		if kc.Format != "" && (kc.Key == keyOrLabel || kc.Label == keyOrLabel) {
+			return kc.Format
 		}
 	}
 
 	return c.KindFormat
 }
 
-func (c *Config) ChangeFormatForKind(label string) string {
-	for _, kindConfig := range c.Kinds {
-		if kindConfig.ChangeFormat != "" && kindConfig.Label == label {
-			return kindConfig.ChangeFormat
+func (c *Config) ChangeFormatForKind(keyOrLabel string) string {
+	for _, kc := range c.Kinds {
+		if kc.ChangeFormat != "" && (kc.Key == keyOrLabel || kc.Label == keyOrLabel) {
+			return kc.ChangeFormat
 		}
 	}
 

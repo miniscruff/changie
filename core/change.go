@@ -33,9 +33,9 @@ func ChangeLess(cfg *Config, changes []Change) func(i, j int) bool {
 		// Then sort by kind index
 		if len(cfg.Kinds) > 0 && a.Kind != b.Kind {
 			for _, k := range cfg.Kinds {
-				if a.Kind == k.Label {
+				if a.Kind == k.KeyOrLabel() {
 					return true
-				} else if b.Kind == k.Label {
+				} else if b.Kind == k.KeyOrLabel() {
 					return false
 				}
 			}

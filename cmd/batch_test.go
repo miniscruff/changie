@@ -269,6 +269,35 @@ func TestBatchDryRun(t *testing.T) {
 	then.DirectoryFileCount(t, 3, cfg.ChangesDir, cfg.UnreleasedDir)
 }
 
+func TestBatchDryRunWithKeys(t *testing.T) {
+	cfg := batchTestConfig()
+	cfg.Kinds[0].Label = ":fire: Added"
+	cfg.Kinds[0].Key = "added"
+	then.WithTempDirConfig(t, cfg)
+
+	batch := NewBatch(time.Now, core.NewTemplateCache())
+	batch.DryRun = true
+
+	var builder strings.Builder
+
+	batch.Command.SetOut(&builder)
+	writeChangeFile(t, cfg, &core.Change{Kind: "added", Body: "D"})
+	writeChangeFile(t, cfg, &core.Change{Kind: "added", Body: "E"})
+	writeChangeFile(t, cfg, &core.Change{Kind: "removed", Body: "F"})
+
+	err := batch.Run(batch.Command, []string{"v0.2.0"})
+	then.Nil(t, err)
+
+	verContents := `## v0.2.0
+### :fire: Added
+* D
+* E
+### removed
+* F`
+	then.Equals(t, verContents, builder.String())
+	then.DirectoryFileCount(t, 3, cfg.ChangesDir, cfg.UnreleasedDir)
+}
+
 func TestBatchRemovePrereleases(t *testing.T) {
 	cfg := batchTestConfig()
 	then.WithTempDirConfig(t, cfg)

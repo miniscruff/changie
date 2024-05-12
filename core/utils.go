@@ -122,7 +122,7 @@ func HighestAutoLevel(config *Config, allChanges []Change) (string, error) {
 
 	for _, change := range allChanges {
 		for _, kc := range config.Kinds {
-			if kc.Label != change.Kind {
+			if kc.KeyOrLabel() != change.Kind {
 				continue
 			}
 

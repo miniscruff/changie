@@ -21,9 +21,9 @@ func mergeTestConfig() *core.Config {
 		KindFormat:    "### {{.Kind}}",
 		ChangeFormat:  "* {{.Body}}",
 		Kinds: []core.KindConfig{
-			{Label: "added"},
-			{Label: "removed"},
-			{Label: "other"},
+			{Label: "Added"},
+			{Label: "Removed"},
+			{Label: "Other"},
 		},
 		Newlines: core.NewlinesConfig{
 			// BeforeVersion: 1,
