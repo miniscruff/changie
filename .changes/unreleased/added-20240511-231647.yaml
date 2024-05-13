@@ -1,5 +1,0 @@
-kind: added
-body: Key option to kind configs to separate visual labels from file names and yaml values
-time: 2024-05-11T23:16:47.587612868-07:00
-custom:
-    Issue: "612"
