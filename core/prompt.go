@@ -245,8 +245,10 @@ func (p *Prompts) kind() error {
 	for i := range p.Config.Kinds {
 		kindConfig := &p.Config.Kinds[i]
 
-		if kindConfig.Label == p.Kind {
+		if kindConfig.Label == p.Kind || kindConfig.Key == p.Kind {
 			p.KindConfig = kindConfig
+			p.Kind = kindConfig.KeyOrLabel()
+
 			return nil
 		}
 	}

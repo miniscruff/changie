@@ -417,6 +417,7 @@ func (b *Batch) WriteChanges(changes []core.Change) error {
 
 		if b.config.KindFormat != "" && lastKind != change.Kind {
 			lastKind = change.Kind
+			newKind := b.config.KindFromKeyOrLabel(change.Kind)
 			kindHeader := b.config.KindHeader(change.Kind)
 
 			err := b.WriteTemplate(
@@ -424,7 +425,7 @@ func (b *Batch) WriteChanges(changes []core.Change) error {
 				b.config.Newlines.BeforeKind+1,
 				b.config.Newlines.AfterKind,
 				core.KindData{
-					Kind: lastKind,
+					Kind: newKind.Label,
 					Env:  b.config.EnvVars(),
 				},
 			)

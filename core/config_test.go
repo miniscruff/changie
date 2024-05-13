@@ -277,6 +277,18 @@ func TestGetHeaderFromKindLabel(t *testing.T) {
 	then.Equals(t, "KF", format)
 }
 
+func TestGetHeaderFromKindKey(t *testing.T) {
+	config := Config{
+		Kinds: []KindConfig{
+			{Label: "A", Format: "unused"},
+			{Label: "unused", Format: ""},
+			{Key: "C", Format: "KF"},
+		},
+	}
+	format := config.KindHeader("C")
+	then.Equals(t, "KF", format)
+}
+
 func TestGetDefaultHeaderForKind(t *testing.T) {
 	config := Config{
 		Kinds: []KindConfig{
@@ -294,6 +306,18 @@ func TestGetChangeFormatFromKindLabel(t *testing.T) {
 			{Label: "A", ChangeFormat: "unused"},
 			{Label: "unused", ChangeFormat: ""},
 			{Label: "C", ChangeFormat: "CF"},
+		},
+	}
+	format := config.ChangeFormatForKind("C")
+	then.Equals(t, "CF", format)
+}
+
+func TestGetChangeFormatFromKindKey(t *testing.T) {
+	config := Config{
+		Kinds: []KindConfig{
+			{Label: "A", ChangeFormat: "unused"},
+			{Label: "unused", ChangeFormat: ""},
+			{Key: "C", ChangeFormat: "CF"},
 		},
 	}
 	format := config.ChangeFormatForKind("C")
