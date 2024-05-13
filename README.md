@@ -6,7 +6,6 @@
   <p align="center">Separate your changelog from commit messages without conflicts.</p>
 </p>
 
-[![Codecov](https://img.shields.io/codecov/c/github/miniscruff/changie?style=for-the-badge&logo=codecov)](https://codecov.io/gh/miniscruff/changie)
 [![GitHub release](https://img.shields.io/github/v/release/miniscruff/changie?style=for-the-badge&logo=github)](https://github.com/miniscruff/changie/releases)
 [![GitHub Workflow Status](https://img.shields.io/github/actions/workflow/status/miniscruff/changie/test.yml?event=push&style=for-the-badge&logo=github)](https://github.com/miniscruff/changie/actions/workflows/test.yml)
 [![Go Packge](https://img.shields.io/badge/Go-Reference-grey?style=for-the-badge&logo=go&logoColor=white&label=%20&labelColor=007D9C)](https://pkg.go.dev/github.com/miniscruff/changie)
