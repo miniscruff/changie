@@ -1,10 +1,3 @@
----
-title: 'NodeJS'
-date: 2021-01-31T18:53:05-08:00
-weight: 4
-summary: Using Changie for NodeJS projects
----
-
 During the release process it is likely you want to update your package json to
 use the new version.
 This can be handled automatically by Changie using the
