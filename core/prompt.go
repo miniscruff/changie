@@ -128,11 +128,27 @@ func (p *Prompts) validateArguments() error {
 		return errKindProvidedWhenNotConfigured
 	}
 
+	configuredCustoms := make([]Custom, 0)
+
+	if len(p.Config.Kinds) > 0 && len(p.Kind) > 0 {
+		kc := p.Config.KindFromKeyOrLabel(p.Kind)
+		if kc == nil {
+			return fmt.Errorf("%w: %s", errInvalidKind, p.Kind)
+		}
+
+		configuredCustoms = append(configuredCustoms, kc.AdditionalChoices...)
+		if !kc.SkipGlobalChoices {
+			configuredCustoms = append(configuredCustoms, p.Config.CustomChoices...)
+		}
+	} else {
+		configuredCustoms = append(configuredCustoms, p.Config.CustomChoices...)
+	}
+
 	// make sure no custom values are assigned that do not exist
 	foundCustoms := map[string]struct{}{}
 
 	for key, value := range p.Customs {
-		for _, choice := range p.Config.CustomChoices {
+		for _, choice := range configuredCustoms {
 			if choice.Key == key {
 				foundCustoms[key] = struct{}{}
 
@@ -140,6 +156,8 @@ func (p *Prompts) validateArguments() error {
 				if err != nil {
 					return err
 				}
+
+				break
 			}
 		}
 	}

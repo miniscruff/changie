@@ -1,6 +1,7 @@
 package core
 
 import (
+	"bytes"
 	"testing"
 	"time"
 
@@ -738,6 +739,50 @@ func TestSkipPromptForComponentIfSet(t *testing.T) {
 	c := changes[0]
 	then.Equals(t, "a", c.Component)
 	then.Equals(t, "skip component body", c.Body)
+}
+
+func TestSkipPromptForPromptsWithCustomPromptsInKindConfig(t *testing.T) {
+	config := &Config{
+		Kinds: []KindConfig{
+			{
+				Key: "dependency",
+				AdditionalChoices: []Custom{
+					{
+						Key:  "name",
+						Type: CustomString,
+					},
+					{
+						Key:  "from",
+						Type: CustomString,
+					},
+					{
+						Key:  "to",
+						Type: CustomString,
+					},
+				},
+				SkipBody: true,
+			},
+		},
+	}
+	prompts := &Prompts{
+		Config:      config,
+		StdinReader: bytes.NewReader(nil),
+		TimeNow:     specificTimeNow,
+		Kind:        "dependency",
+		Customs: map[string]string{
+			"name": "go",
+			"from": "1.20",
+			"to":   "1.22",
+		},
+	}
+
+	changes, err := prompts.BuildChanges()
+	then.Nil(t, err)
+
+	c := changes[0]
+	then.Equals(t, "go", c.Custom["name"])
+	then.Equals(t, "1.20", c.Custom["from"])
+	then.Equals(t, "1.22", c.Custom["to"])
 }
 
 func TestSkipPromptForKindIfSet(t *testing.T) {
