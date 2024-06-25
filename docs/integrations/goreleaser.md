@@ -1,10 +1,3 @@
----
-title: 'GoReleaser'
-date: 2021-01-31T18:53:05-08:00
-weight: 3
-summary: Using Changie for GoReleaser release notes
----
-
 Changie itself uses [GoReleaser](https://goreleaser.com) and can be integrated
 with a few steps.
 

@@ -1,10 +1,3 @@
----
-title: "Release Trigger"
-date: 2021-01-30T23:38:40-08:00
-weight: 2
-summary: Kicking off a release using Changie
----
-
 Changie expects to be the first part of the release process as it modifies files
 that are kept in the repository.
 
