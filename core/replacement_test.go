@@ -20,7 +20,7 @@ replaced here
 third line
 ignore me`
 
-	err := os.WriteFile(filepath, []byte(startData), os.ModeTemporary)
+	err := os.WriteFile(filepath, []byte(startData), os.ModePerm)
 	then.Nil(t, err)
 
 	rep := Replacement{
@@ -46,7 +46,7 @@ func TestFindAndReplaceWithTemplate(t *testing.T) {
   "version": "1.1.0",
 }`
 
-	err := os.WriteFile(filepath, []byte(startData), os.ModeTemporary)
+	err := os.WriteFile(filepath, []byte(startData), os.ModePerm)
 	then.Nil(t, err)
 
 	rep := Replacement{
@@ -78,7 +78,7 @@ level1:
 		version: 0.0.1
 `
 
-	err := os.WriteFile(filepath, []byte(startData), os.ModeTemporary)
+	err := os.WriteFile(filepath, []byte(startData), os.ModePerm)
 	then.Nil(t, err)
 
 	rep := Replacement{
@@ -110,7 +110,7 @@ level1:
 		version: 0.0.1
 `
 
-	err := os.WriteFile(filepath, []byte(startData), os.ModeTemporary)
+	err := os.WriteFile(filepath, []byte(startData), os.ModePerm)
 	then.Nil(t, err)
 
 	rep := Replacement{
