@@ -1,5 +1,0 @@
-kind: fixed
-body: New command can now properly create a fragment via custom CLI arguments if using a kind with custom choices.
-time: 2024-06-24T20:39:27.135679465-07:00
-custom:
-    Issue: "675"
