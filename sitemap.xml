@@ -2,122 +2,127 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
     <url>
          <loc>https://changie.dev/</loc>
-         <lastmod>2024-05-13</lastmod>
+         <lastmod>2024-06-25</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://changie.dev/cli/changie/</loc>
-         <lastmod>2024-05-13</lastmod>
+         <lastmod>2024-06-25</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://changie.dev/cli/changie_batch/</loc>
-         <lastmod>2024-05-13</lastmod>
+         <lastmod>2024-06-25</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://changie.dev/cli/changie_completion/</loc>
-         <lastmod>2024-05-13</lastmod>
+         <lastmod>2024-06-25</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://changie.dev/cli/changie_completion_bash/</loc>
-         <lastmod>2024-05-13</lastmod>
+         <lastmod>2024-06-25</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://changie.dev/cli/changie_completion_fish/</loc>
-         <lastmod>2024-05-13</lastmod>
+         <lastmod>2024-06-25</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://changie.dev/cli/changie_completion_powershell/</loc>
-         <lastmod>2024-05-13</lastmod>
+         <lastmod>2024-06-25</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://changie.dev/cli/changie_completion_zsh/</loc>
-         <lastmod>2024-05-13</lastmod>
+         <lastmod>2024-06-25</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://changie.dev/cli/changie_init/</loc>
-         <lastmod>2024-05-13</lastmod>
+         <lastmod>2024-06-25</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://changie.dev/cli/changie_latest/</loc>
-         <lastmod>2024-05-13</lastmod>
+         <lastmod>2024-06-25</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://changie.dev/cli/changie_merge/</loc>
-         <lastmod>2024-05-13</lastmod>
+         <lastmod>2024-06-25</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://changie.dev/cli/changie_new/</loc>
-         <lastmod>2024-05-13</lastmod>
+         <lastmod>2024-06-25</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://changie.dev/cli/changie_next/</loc>
-         <lastmod>2024-05-13</lastmod>
+         <lastmod>2024-06-25</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://changie.dev/config/</loc>
-         <lastmod>2024-05-13</lastmod>
+         <lastmod>2024-06-25</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://changie.dev/guide/</loc>
-         <lastmod>2024-05-13</lastmod>
+         <lastmod>2024-06-25</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://changie.dev/guide/CHANGELOG/</loc>
-         <lastmod>2024-05-13</lastmod>
+         <lastmod>2024-06-25</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://changie.dev/guide/backup/</loc>
-         <lastmod>2024-05-13</lastmod>
+         <lastmod>2024-06-25</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://changie.dev/guide/installation/</loc>
-         <lastmod>2024-05-13</lastmod>
+         <lastmod>2024-06-25</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://changie.dev/guide/quick_start/</loc>
-         <lastmod>2024-05-13</lastmod>
+         <lastmod>2024-06-25</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://changie.dev/guide/upgrade/</loc>
-         <lastmod>2024-05-13</lastmod>
+         <lastmod>2024-06-25</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://changie.dev/integrations/</loc>
-         <lastmod>2024-05-13</lastmod>
+         <lastmod>2024-06-25</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://changie.dev/integrations/goreleaser/</loc>
-         <lastmod>2024-05-13</lastmod>
+         <lastmod>2024-06-25</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://changie.dev/integrations/nodejs/</loc>
-         <lastmod>2024-05-13</lastmod>
+         <lastmod>2024-06-25</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://changie.dev/integrations/release_trigger/</loc>
-         <lastmod>2024-05-13</lastmod>
+         <lastmod>2024-06-25</lastmod>
+         <changefreq>daily</changefreq>
+    </url>
+    <url>
+         <loc>https://changie.dev/integrations/yq/</loc>
+         <lastmod>2024-06-25</lastmod>
          <changefreq>daily</changefreq>
     </url>
 </urlset>

@@ -6,17 +6,19 @@
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width,initial-scale=1">
       
-        <meta name="description" content="Help for using the 'changie next' command">
+        <meta name="description" content="Changie is a file based changelog management tool.">
       
       
         <meta name="author" content="Ronnie Smith">
       
       
-        <link rel="canonical" href="https://changie.dev/cli/changie_next/">
+        <link rel="canonical" href="https://changie.dev/integrations/yq/">
       
       
-        <link rel="prev" href="../changie_new/">
+        <link rel="prev" href="../release_trigger/">
       
+      
+        <link rel="next" href="../../config/">
       
       
       <link rel="icon" href="../../static/favicon.png">
@@ -24,7 +26,7 @@
     
     
       
-        <title>changie next - Changie</title>
+        <title>yq - Changie</title>
       
     
     
@@ -59,11 +61,11 @@
       
         <meta  property="og:type"  content="website" >
       
-        <meta  property="og:title"  content="changie next - Changie" >
+        <meta  property="og:title"  content="yq - Changie" >
       
-        <meta  property="og:description"  content="Help for using the 'changie next' command" >
+        <meta  property="og:description"  content="Changie is a file based changelog management tool." >
       
-        <meta  property="og:image"  content="https://changie.dev/assets/images/social/cli/changie_next.png" >
+        <meta  property="og:image"  content="https://changie.dev/assets/images/social/integrations/yq.png" >
       
         <meta  property="og:image:type"  content="image/png" >
       
@@ -71,15 +73,15 @@
       
         <meta  property="og:image:height"  content="630" >
       
-        <meta  property="og:url"  content="https://changie.dev/cli/changie_next/" >
+        <meta  property="og:url"  content="https://changie.dev/integrations/yq/" >
       
         <meta  name="twitter:card"  content="summary_large_image" >
       
-        <meta  name="twitter:title"  content="changie next - Changie" >
+        <meta  name="twitter:title"  content="yq - Changie" >
       
-        <meta  name="twitter:description"  content="Help for using the 'changie next' command" >
+        <meta  name="twitter:description"  content="Changie is a file based changelog management tool." >
       
-        <meta  name="twitter:image"  content="https://changie.dev/assets/images/social/cli/changie_next.png" >
+        <meta  name="twitter:image"  content="https://changie.dev/assets/images/social/integrations/yq.png" >
       
     
     
@@ -102,7 +104,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#changie-next" class="md-skip">
+        <a href="#kind-keys" class="md-skip">
           Skip to content
         </a>
       
@@ -135,7 +137,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              changie next
+              yq
             
           </span>
         </div>
@@ -279,11 +281,13 @@
         
   
   
+    
+  
   
     
     
-      <li class="md-tabs__item">
-        <a href="../../integrations/" class="md-tabs__link">
+      <li class="md-tabs__item md-tabs__item--active">
+        <a href="../" class="md-tabs__link">
           
   
     
@@ -319,13 +323,11 @@
         
   
   
-    
-  
   
     
     
-      <li class="md-tabs__item md-tabs__item--active">
-        <a href="../changie/" class="md-tabs__link">
+      <li class="md-tabs__item">
+        <a href="../../cli/changie/" class="md-tabs__link">
           
   
     
@@ -584,6 +586,8 @@
       
   
   
+    
+  
   
   
     
@@ -604,21 +608,24 @@
     
     
       
+        
+        
+      
       
         
       
     
     
-    <li class="md-nav__item md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" checked>
         
           
           
           <div class="md-nav__link md-nav__container">
-            <a href="../../integrations/" class="md-nav__link ">
+            <a href="../" class="md-nav__link ">
               
   
   <span class="md-ellipsis">
@@ -629,13 +636,13 @@
             </a>
             
               
-              <label class="md-nav__link " for="__nav_3" id="__nav_3_label" tabindex="0">
+              <label class="md-nav__link " for="__nav_3" id="__nav_3_label" tabindex="">
                 <span class="md-nav__icon md-icon"></span>
               </label>
             
           </div>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="true">
           <label class="md-nav__title" for="__nav_3">
             <span class="md-nav__icon md-icon"></span>
             Integrations
@@ -651,7 +658,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../integrations/nodejs/" class="md-nav__link">
+      <a href="../nodejs/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -672,7 +679,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../integrations/goreleaser/" class="md-nav__link">
+      <a href="../goreleaser/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -693,7 +700,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../integrations/release_trigger/" class="md-nav__link">
+      <a href="../release_trigger/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -711,10 +718,28 @@
                 
   
   
+    
   
   
-    <li class="md-nav__item">
-      <a href="../../integrations/yq/" class="md-nav__link">
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  <span class="md-ellipsis">
+    yq
+  </span>
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
         
   
   <span class="md-ellipsis">
@@ -723,6 +748,51 @@
   
 
       </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#kind-keys" class="md-nav__link">
+    <span class="md-ellipsis">
+      Kind keys
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#kind-labels" class="md-nav__link">
+    <span class="md-ellipsis">
+      Kind labels
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#custom-keys" class="md-nav__link">
+    <span class="md-ellipsis">
+      Custom keys
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
     </li>
   
 
@@ -797,10 +867,8 @@
       
   
   
-    
   
   
-  
     
     
       
@@ -831,22 +899,19 @@
     
     
       
-        
-        
-      
       
         
       
     
     
-    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--nested">
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" checked>
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
         
           
-          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="">
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
             
   
   <span class="md-ellipsis">
@@ -857,7 +922,7 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="true">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
           <label class="md-nav__title" for="__nav_5">
             <span class="md-nav__icon md-icon"></span>
             CLI
@@ -871,7 +936,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../changie/" class="md-nav__link">
+      <a href="../../cli/changie/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -892,7 +957,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../changie_batch/" class="md-nav__link">
+      <a href="../../cli/changie_batch/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -913,7 +978,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../changie_completion/" class="md-nav__link">
+      <a href="../../cli/changie_completion/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -934,7 +999,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../changie_completion_bash/" class="md-nav__link">
+      <a href="../../cli/changie_completion_bash/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -955,7 +1020,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../changie_completion_fish/" class="md-nav__link">
+      <a href="../../cli/changie_completion_fish/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -976,7 +1041,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../changie_completion_powershell/" class="md-nav__link">
+      <a href="../../cli/changie_completion_powershell/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -997,7 +1062,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../changie_completion_zsh/" class="md-nav__link">
+      <a href="../../cli/changie_completion_zsh/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1018,7 +1083,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../changie_init/" class="md-nav__link">
+      <a href="../../cli/changie_init/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1039,7 +1104,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../changie_latest/" class="md-nav__link">
+      <a href="../../cli/changie_latest/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1060,7 +1125,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../changie_merge/" class="md-nav__link">
+      <a href="../../cli/changie_merge/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1081,7 +1146,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../changie_new/" class="md-nav__link">
+      <a href="../../cli/changie_new/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1099,28 +1164,10 @@
                 
   
   
-    
   
   
-  
-    <li class="md-nav__item md-nav__item--active">
-      
-      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
-      
-      
-      
-        <label class="md-nav__link md-nav__link--active" for="__toc">
-          
-  
-  <span class="md-ellipsis">
-    changie next
-  </span>
-  
-
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-      
-      <a href="./" class="md-nav__link md-nav__link--active">
+    <li class="md-nav__item">
+      <a href="../../cli/changie_next/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1129,66 +1176,6 @@
   
 
       </a>
-      
-        
-
-<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
-  
-  
-  
-  
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Table of contents
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#changie-next" class="md-nav__link">
-    <span class="md-ellipsis">
-      changie next
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="changie next">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#synopsis" class="md-nav__link">
-    <span class="md-ellipsis">
-      Synopsis
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#options" class="md-nav__link">
-    <span class="md-ellipsis">
-      Options
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#see-also" class="md-nav__link">
-    <span class="md-ellipsis">
-      SEE ALSO
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-    </ul>
-  
-</nav>
-      
     </li>
   
 
@@ -1226,44 +1213,29 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#changie-next" class="md-nav__link">
+  <a href="#kind-keys" class="md-nav__link">
     <span class="md-ellipsis">
-      changie next
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="changie next">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#synopsis" class="md-nav__link">
-    <span class="md-ellipsis">
-      Synopsis
+      Kind keys
     </span>
   </a>
   
 </li>
-        
-          <li class="md-nav__item">
-  <a href="#options" class="md-nav__link">
+      
+        <li class="md-nav__item">
+  <a href="#kind-labels" class="md-nav__link">
     <span class="md-ellipsis">
-      Options
+      Kind labels
     </span>
   </a>
   
 </li>
-        
-          <li class="md-nav__item">
-  <a href="#see-also" class="md-nav__link">
+      
+        <li class="md-nav__item">
+  <a href="#custom-keys" class="md-nav__link">
     <span class="md-ellipsis">
-      SEE ALSO
+      Custom keys
     </span>
   </a>
-  
-</li>
-        
-      </ul>
-    </nav>
   
 </li>
       
@@ -1282,7 +1254,7 @@
                   
 
   
-    <a href="https://github.com/miniscruff/changie/edit/main/docs/cli/changie_next.md" title="Edit this page" class="md-content__button md-icon">
+    <a href="https://github.com/miniscruff/changie/edit/main/docs/integrations/yq.md" title="Edit this page" class="md-content__button md-icon">
       
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M10 20H6V4h7v5h5v3.1l2-2V8l-6-6H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h4v-2m10.2-7c.1 0 .3.1.4.2l1.3 1.3c.2.2.2.6 0 .8l-1 1-2.1-2.1 1-1c.1-.1.2-.2.4-.2m0 3.9L14.1 23H12v-2.1l6.1-6.1 2.1 2.1Z"/></svg>
     </a>
@@ -1291,36 +1263,50 @@
     
       
     
-    <a href="https://github.com/miniscruff/changie/raw/main/docs/cli/changie_next.md" title="View source of this page" class="md-content__button md-icon">
+    <a href="https://github.com/miniscruff/changie/raw/main/docs/integrations/yq.md" title="View source of this page" class="md-content__button md-icon">
       
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M17 18c.56 0 1 .44 1 1s-.44 1-1 1-1-.44-1-1 .44-1 1-1m0-3c-2.73 0-5.06 1.66-6 4 .94 2.34 3.27 4 6 4s5.06-1.66 6-4c-.94-2.34-3.27-4-6-4m0 6.5a2.5 2.5 0 0 1-2.5-2.5 2.5 2.5 0 0 1 2.5-2.5 2.5 2.5 0 0 1 2.5 2.5 2.5 2.5 0 0 1-2.5 2.5M9.27 20H6V4h7v5h5v4.07c.7.08 1.36.25 2 .49V8l-6-6H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h4.5a8.15 8.15 0 0 1-1.23-2Z"/></svg>
     </a>
   
 
 
-  <h1>changie next</h1>
+  <h1>yq</h1>
 
-<h2 id="changie-next">changie next</h2>
-<p>Next echos the next version based on semantic versioning</p>
-<h3 id="synopsis">Synopsis</h3>
-<p>Next increments version based on semantic versioning.
-Check latest version and increment part (major, minor, patch).
-If auto is used, it will try and find the next version based on what kinds of changes are
-currently unreleased.
-Echo the next release version number to be used by CI tools or other commands like batch.</p>
-<div class="language-text highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>changie next major|minor|patch|auto [flags]
+<p>If you are familiar with <a href="https://github.com/jqlang/jq">jq</a> you may be interested to know that
+there is a similar tool specifically built for yaml files named
+<a href="https://mikefarah.gitbook.io/yq">yq</a>.</p>
+<p>This tool comes in handy if you are every looking to combine a yaml configuration file
+with any sort of script or tooling.
+For instance, if you ever want to pull your changie kind keys out into a list and process.</p>
+<p>Below is a small sample of commands you can run.</p>
+<h2 id="kind-keys">Kind keys</h2>
+<div class="language-sh highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>yq<span class="w"> </span><span class="s1">&#39;.kinds[].key&#39;</span><span class="w"> </span>.changie.yaml
 </span></code></pre></div>
-<h3 id="options">Options</h3>
-<div class="language-text highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>  -h, --help                 help for next
-</span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>  -i, --include strings      Include extra directories to search for change files, relative to change directory
-</span><span id="__span-1-3"><a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>  -m, --metadata strings     Metadata values to append to version
-</span><span id="__span-1-4"><a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>  -p, --prerelease strings   Prerelease values to append to version
-</span><span id="__span-1-5"><a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a>  -j, --project string       Specify which project we are interested in
+<p>Output
+<div class="language-text highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>added
+</span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>changed
+</span><span id="__span-1-3"><a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>deprecated
+</span><span id="__span-1-4"><a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>removed
+</span><span id="__span-1-5"><a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a>fixed
+</span><span id="__span-1-6"><a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a>security
+</span></code></pre></div></p>
+<h2 id="kind-labels">Kind labels</h2>
+<div class="language-sh highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>yq<span class="w"> </span><span class="s1">&#39;.kinds[].label&#39;</span><span class="w"> </span>.changie.yaml
 </span></code></pre></div>
-<h3 id="see-also">SEE ALSO</h3>
-<ul>
-<li><a href="../changie/">changie</a>  - changie handles conflict-free changelog management</li>
-</ul>
+<p>Output
+<div class="language-text highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>✨ Added
+</span><span id="__span-3-2"><a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>🔥 Changed
+</span><span id="__span-3-3"><a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a>⚰️ Deprecated
+</span><span id="__span-3-4"><a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a>🗑️ Removed
+</span><span id="__span-3-5"><a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a>🪲 Fixed
+</span><span id="__span-3-6"><a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a>🦺 Security
+</span></code></pre></div></p>
+<h2 id="custom-keys">Custom keys</h2>
+<div class="language-sh highlight"><pre><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>yq<span class="w"> </span><span class="s1">&#39;.custom[].key&#39;</span><span class="w"> </span>.changie.yaml
+</span></code></pre></div>
+<p>Output
+<div class="language-text highlight"><pre><span></span><code><span id="__span-5-1"><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>Issue
+</span></code></pre></div></p>
 
 
 
