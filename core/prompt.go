@@ -7,6 +7,7 @@ import (
 	"runtime"
 
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/huh"
 	"github.com/cqroot/prompt"
 	"github.com/cqroot/prompt/multichoose"
 )
@@ -48,27 +49,81 @@ func (p *Prompts) BuildChanges() ([]*Change, error) {
 		return nil, err
 	}
 
-	err = p.projects()
-	if err != nil {
-		return nil, err
+	fields := make([]huh.Field, 0)
+
+	if len(p.Config.Projects) > 0 && len(p.Projects) == 0 {
+		projectOptions := make([]huh.Option[string], len(p.Config.Projects))
+		for i, proj := range p.Config.Projects {
+			projectOptions[i] = huh.NewOption(proj.Label, proj.Key)
+		}
+
+		fields = append(fields, huh.NewMultiSelect[string]().
+			Title("Projects").
+			Options(projectOptions...).
+			Value(&p.Projects),
+		)
 	}
 
-	err = p.component()
-	if err != nil {
-		return nil, err
+	if len(p.Config.Components) > 0 && len(p.Component) == 0 {
+		componentOptions := make([]huh.Option[string], len(p.Config.Components))
+		for i, comp := range p.Config.Components {
+			componentOptions[i] = huh.NewOption(comp, comp)
+		}
+		fields = append(fields, huh.NewSelect[string]().
+			Title("Component").
+			Options(componentOptions...).
+			Value(&p.Component),
+		)
 	}
 
-	err = p.kind()
-	if err != nil {
-		return nil, err
+	if len(p.Config.Kinds) > 0 && len(p.Kind) == 0 {
+		kindOptions := make([]huh.Option[string], len(p.Config.Kinds))
+		for i, kindConfig := range p.Config.Kinds {
+			kindOptions[i] = huh.NewOption(kindConfig.Label, kindConfig.Key)
+		}
+
+		fields = append(fields, huh.NewSelect[string]().
+			Title("Kind").
+			Options(kindOptions...).
+			Value(&p.Kind),
+		)
 	}
 
-	err = p.body()
-	if err != nil {
-		return nil, err
-	}
+	fields = append(fields, huh.NewText().
+		Title("Body").
+		Value(&p.Body),
+	)
 
-	err = p.userChoices()
+	/*
+		        err = p.projects()
+		        if err != nil {
+		            return nil, err
+		        }
+
+		        err = p.component()
+		        if err != nil {
+		            return nil, err
+		        }
+
+		        err = p.kind()
+		        if err != nil {
+		            return nil, err
+		        }
+
+		        err = p.body()
+		        if err != nil {
+		            return nil, err
+		        }
+
+				err = p.userChoices()
+				if err != nil {
+					return nil, err
+				}
+	*/
+
+	form := huh.NewForm(huh.NewGroup(fields...))
+
+	err = form.Run()
 	if err != nil {
 		return nil, err
 	}
