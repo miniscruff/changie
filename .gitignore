@@ -11,6 +11,8 @@ coverage.html
 .cache/
 site/
 venv/
+docs/cli/
+!docs/cli/.gitkeep
 
 # goreleaser builds
 dist/

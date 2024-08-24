@@ -56,6 +56,7 @@ func NewBatch(
 		Long: `Merges all unreleased changes into one version changelog.
 
 Batch takes one argument for the next version to use, below are possible options.
+
 * A specific semantic version value, with optional prefix
 * Major, minor or patch to bump one level by one
 * Auto which will automatically bump based on what changes were found
@@ -66,6 +67,7 @@ Line breaks are added before each formatted line except the first, if you wish t
 add more line breaks include them in your format configurations.
 
 Changes are sorted in the following order:
+
 * Components if enabled, in order specified by config.components
 * Kinds if enabled, in order specified by config.kinds
 * Timestamp oldest first`,
