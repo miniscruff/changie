@@ -180,9 +180,9 @@ func (b *Batch) getBatchData() (*core.BatchData, error) {
 		Version:         currentVersion.Original(),
 		VersionNoPrefix: currentVersion.String(),
 		PreviousVersion: previousVersion.Original(),
-		Major:           int(currentVersion.Major()),
-		Minor:           int(currentVersion.Minor()),
-		Patch:           int(currentVersion.Patch()),
+		Major:           int(currentVersion.Major()), //nolint:gosec
+		Minor:           int(currentVersion.Minor()), //nolint:gosec
+		Patch:           int(currentVersion.Patch()), //nolint:gosec
 		Prerelease:      currentVersion.Prerelease(),
 		Metadata:        currentVersion.Metadata(),
 		Changes:         allChanges,

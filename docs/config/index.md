@@ -796,47 +796,47 @@ Replacements to run when merging a changelog for our project.
 
 
 ---
-## ReplaceData [:octicons-code-24:](https://github.com/miniscruff/changie/blob/<< current_version >>/core/replacement.go#L15) [:octicons-link-24:](#replacedata-type) {: #replacedata-type}
+## ReplaceData [:octicons-code-24:](https://github.com/miniscruff/changie/blob/<< current_version >>/core/replacement.go#L12) [:octicons-link-24:](#replacedata-type) {: #replacedata-type}
 Template data used for replacing version values.
 
-### Major [:octicons-code-24:](https://github.com/miniscruff/changie/blob/<< current_version >>/core/replacement.go#L21) [:octicons-link-24:](#replacedata-major) {: #replacedata-major}
+### Major [:octicons-code-24:](https://github.com/miniscruff/changie/blob/<< current_version >>/core/replacement.go#L18) [:octicons-link-24:](#replacedata-major) {: #replacedata-major}
 type: `int` | optional
 
 Major value of the version
 
-### Metadata [:octicons-code-24:](https://github.com/miniscruff/changie/blob/<< current_version >>/core/replacement.go#L29) [:octicons-link-24:](#replacedata-metadata) {: #replacedata-metadata}
+### Metadata [:octicons-code-24:](https://github.com/miniscruff/changie/blob/<< current_version >>/core/replacement.go#L26) [:octicons-link-24:](#replacedata-metadata) {: #replacedata-metadata}
 type: `string` | optional
 
 Metadata value of the version
 
-### Minor [:octicons-code-24:](https://github.com/miniscruff/changie/blob/<< current_version >>/core/replacement.go#L23) [:octicons-link-24:](#replacedata-minor) {: #replacedata-minor}
+### Minor [:octicons-code-24:](https://github.com/miniscruff/changie/blob/<< current_version >>/core/replacement.go#L20) [:octicons-link-24:](#replacedata-minor) {: #replacedata-minor}
 type: `int` | optional
 
 Minor value of the version
 
-### Patch [:octicons-code-24:](https://github.com/miniscruff/changie/blob/<< current_version >>/core/replacement.go#L25) [:octicons-link-24:](#replacedata-patch) {: #replacedata-patch}
+### Patch [:octicons-code-24:](https://github.com/miniscruff/changie/blob/<< current_version >>/core/replacement.go#L22) [:octicons-link-24:](#replacedata-patch) {: #replacedata-patch}
 type: `int` | optional
 
 Patch value of the version
 
-### Prerelease [:octicons-code-24:](https://github.com/miniscruff/changie/blob/<< current_version >>/core/replacement.go#L27) [:octicons-link-24:](#replacedata-prerelease) {: #replacedata-prerelease}
+### Prerelease [:octicons-code-24:](https://github.com/miniscruff/changie/blob/<< current_version >>/core/replacement.go#L24) [:octicons-link-24:](#replacedata-prerelease) {: #replacedata-prerelease}
 type: `string` | optional
 
 Prerelease value of the version
 
-### Version [:octicons-code-24:](https://github.com/miniscruff/changie/blob/<< current_version >>/core/replacement.go#L17) [:octicons-link-24:](#replacedata-version) {: #replacedata-version}
+### Version [:octicons-code-24:](https://github.com/miniscruff/changie/blob/<< current_version >>/core/replacement.go#L14) [:octicons-link-24:](#replacedata-version) {: #replacedata-version}
 type: `string` | optional
 
 Version of the release, will include "v" prefix if used
 
-### VersionNoPrefix [:octicons-code-24:](https://github.com/miniscruff/changie/blob/<< current_version >>/core/replacement.go#L19) [:octicons-link-24:](#replacedata-versionnoprefix) {: #replacedata-versionnoprefix}
+### VersionNoPrefix [:octicons-code-24:](https://github.com/miniscruff/changie/blob/<< current_version >>/core/replacement.go#L16) [:octicons-link-24:](#replacedata-versionnoprefix) {: #replacedata-versionnoprefix}
 type: `string` | optional
 
 Version of the release without the "v" prefix if used
 
 
 ---
-## Replacement [:octicons-code-24:](https://github.com/miniscruff/changie/blob/<< current_version >>/core/replacement.go#L43) [:octicons-link-24:](#replacement-type) {: #replacement-type}
+## Replacement [:octicons-code-24:](https://github.com/miniscruff/changie/blob/<< current_version >>/core/replacement.go#L40) [:octicons-link-24:](#replacement-type) {: #replacement-type}
 Replacement handles the finding and replacing values when merging the changelog.
 This can be used to keep version strings in-sync when preparing a release without having to
 manually update them.
@@ -851,12 +851,12 @@ file.
         find: '  "version": ".*",'
         replace: '  "version": "{{.VersionNoPrefix}}",'
     ```
-### find [:octicons-code-24:](https://github.com/miniscruff/changie/blob/<< current_version >>/core/replacement.go#L47) [:octicons-link-24:](#replacement-find) {: #replacement-find}
+### find [:octicons-code-24:](https://github.com/miniscruff/changie/blob/<< current_version >>/core/replacement.go#L44) [:octicons-link-24:](#replacement-find) {: #replacement-find}
 type: `string` | required
 
 Regular expression to search for in the file.
 
-### flags [:octicons-code-24:](https://github.com/miniscruff/changie/blob/<< current_version >>/core/replacement.go#L56) [:octicons-link-24:](#replacement-flags) {: #replacement-flags}
+### flags [:octicons-code-24:](https://github.com/miniscruff/changie/blob/<< current_version >>/core/replacement.go#L53) [:octicons-link-24:](#replacement-flags) {: #replacement-flags}
 type: `string` | optional
 
 Optional regular expression mode flags.
@@ -866,12 +866,12 @@ and not just the start and end of the string.
 For more details on regular expression flags in Go view the
 [regexp/syntax](https://pkg.go.dev/regexp/syntax).
 
-### path [:octicons-code-24:](https://github.com/miniscruff/changie/blob/<< current_version >>/core/replacement.go#L45) [:octicons-link-24:](#replacement-path) {: #replacement-path}
+### path [:octicons-code-24:](https://github.com/miniscruff/changie/blob/<< current_version >>/core/replacement.go#L42) [:octicons-link-24:](#replacement-path) {: #replacement-path}
 type: `string` | required
 
 Path of the file to find and replace in.
 
-### replace [:octicons-code-24:](https://github.com/miniscruff/changie/blob/<< current_version >>/core/replacement.go#L49) [:octicons-link-24:](#replacement-replace) {: #replacement-replace}
+### replace [:octicons-code-24:](https://github.com/miniscruff/changie/blob/<< current_version >>/core/replacement.go#L46) [:octicons-link-24:](#replacement-replace) {: #replacement-replace}
 type: `string` | required | template type: [ReplaceData](#replacedata-type)
 
 Template string to replace the line with.

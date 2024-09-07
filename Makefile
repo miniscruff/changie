@@ -19,6 +19,9 @@ lint: # Run linters
 	goimports -w -local github.com/miniscruff/changie .
 	golangci-lint run ./...
 
+.PHONY: format
+format: lint # alias for lint
+
 .PHONY: gen
 gen: # Generate config and CLI docs
 	go run main.go gen
