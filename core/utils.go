@@ -306,6 +306,12 @@ func GetChanges(
 		}
 
 		c.Env = cfg.EnvVars()
+
+		kc := cfg.KindFromKeyOrLabel(c.KindKey)
+		if kc != nil {
+			c.KindLabel = kc.Label
+		}
+
 		changes = append(changes, c)
 	}
 
