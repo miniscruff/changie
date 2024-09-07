@@ -851,12 +851,13 @@ file.
         find: '  "version": ".*",'
         replace: '  "version": "{{.VersionNoPrefix}}",'
     ```
-### find [:octicons-code-24:](https://github.com/miniscruff/changie/blob/<< current_version >>/core/replacement.go#L44) [:octicons-link-24:](#replacement-find) {: #replacement-find}
+### find [:octicons-code-24:](https://github.com/miniscruff/changie/blob/<< current_version >>/core/replacement.go#L45) [:octicons-link-24:](#replacement-find) {: #replacement-find}
 type: `string` | required
 
 Regular expression to search for in the file.
+Capture groups are supported and can be used in the replace value.
 
-### flags [:octicons-code-24:](https://github.com/miniscruff/changie/blob/<< current_version >>/core/replacement.go#L53) [:octicons-link-24:](#replacement-flags) {: #replacement-flags}
+### flags [:octicons-code-24:](https://github.com/miniscruff/changie/blob/<< current_version >>/core/replacement.go#L54) [:octicons-link-24:](#replacement-flags) {: #replacement-flags}
 type: `string` | optional
 
 Optional regular expression mode flags.
@@ -871,7 +872,7 @@ type: `string` | required
 
 Path of the file to find and replace in.
 
-### replace [:octicons-code-24:](https://github.com/miniscruff/changie/blob/<< current_version >>/core/replacement.go#L46) [:octicons-link-24:](#replacement-replace) {: #replacement-replace}
+### replace [:octicons-code-24:](https://github.com/miniscruff/changie/blob/<< current_version >>/core/replacement.go#L47) [:octicons-link-24:](#replacement-replace) {: #replacement-replace}
 type: `string` | required | template type: [ReplaceData](#replacedata-type)
 
 Template string to replace the line with.
