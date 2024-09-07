@@ -6,9 +6,6 @@ import (
 	"os"
 	"regexp"
 	"text/template"
-
-	"github.com/icholy/replace"
-	"golang.org/x/text/transform"
 )
 
 // Template data used for replacing version values.
@@ -44,6 +41,7 @@ type Replacement struct {
 	// Path of the file to find and replace in.
 	Path string `yaml:"path" required:"true"`
 	// Regular expression to search for in the file.
+	// Capture groups are supported and can be used in the replace value.
 	Find string `yaml:"find" required:"true"`
 	// Template string to replace the line with.
 	Replace string `yaml:"replace" required:"true" templateType:"ReplaceData"`
@@ -79,9 +77,12 @@ func (r Replacement) Execute(data ReplaceData) error {
 		flags = "m"
 	}
 
-	regexString := fmt.Sprintf("(?%s)%s", flags, r.Find)
-	transformer := replace.Regexp(regexp.MustCompile(regexString), buf.Bytes())
-	newData, _, _ := transform.Bytes(transformer, fileData)
+	regex, err := regexp.Compile(fmt.Sprintf("(?%s)%s", flags, r.Find))
+	if err != nil {
+		return err
+	}
+
+	newData := regex.ReplaceAll(fileData, buf.Bytes())
 
 	err = os.WriteFile(r.Path, newData, CreateFileMode)
 	if err != nil {

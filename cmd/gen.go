@@ -16,6 +16,8 @@ import (
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/cobra/doc"
+
+	"github.com/miniscruff/changie/core"
 )
 
 const fmTemplate = `---
@@ -75,9 +77,19 @@ func NewGen() *Gen {
 }
 
 func (g *Gen) Run(cmd *cobra.Command, args []string) error {
+	err := os.MkdirAll(filepath.Join("docs", "config"), core.CreateDirMode)
+	if err != nil {
+		return fmt.Errorf("creating docs/config directory: %w", err)
+	}
+
+	err = os.MkdirAll(filepath.Join("docs", "cli"), core.CreateDirMode)
+	if err != nil {
+		return fmt.Errorf("creating docs/cli directory: %w", err)
+	}
+
 	file, err := os.Create(filepath.Join("docs", "config", "index.md"))
 	if err != nil {
-		return fmt.Errorf("unable to create or open config index: %w", err)
+		return fmt.Errorf("creating or opening config index: %w", err)
 	}
 
 	defer file.Close()

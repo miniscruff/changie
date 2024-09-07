@@ -167,9 +167,9 @@ func (m *Merge) mergeProject(
 	replaceData := core.ReplaceData{
 		Version:         version.Original(),
 		VersionNoPrefix: version.String(),
-		Major:           int(version.Major()),
-		Minor:           int(version.Minor()),
-		Patch:           int(version.Patch()),
+		Major:           int(version.Major()), //nolint:gosec
+		Minor:           int(version.Minor()), //nolint:gosec
+		Patch:           int(version.Patch()), //nolint:gosec
 		Prerelease:      version.Prerelease(),
 		Metadata:        version.Metadata(),
 	}

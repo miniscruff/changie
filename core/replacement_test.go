@@ -146,6 +146,31 @@ func TestErrorBadTemplateParse(t *testing.T) {
 	then.NotNil(t, err)
 }
 
+func TestErrorBadRegex(t *testing.T) {
+	then.WithTempDir(t)
+
+	filepath := "insensitive.txt"
+	startData := `# yaml file
+Version: 0.0.1
+level1:
+	level2:
+		version: 0.0.1
+`
+
+	err := os.WriteFile(filepath, []byte(startData), os.ModePerm)
+	then.Nil(t, err)
+
+	rep := Replacement{
+		Path:  filepath,
+		Find:  "a(b",
+		Flags: "im",
+	}
+	err = rep.Execute(ReplaceData{
+		VersionNoPrefix: "1.2.3",
+	})
+	then.NotNil(t, err)
+}
+
 func TestErrorBadTemplateExec(t *testing.T) {
 	then.WithTempDir(t)
 
