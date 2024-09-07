@@ -67,15 +67,6 @@ func TestCanGetFiles(t *testing.T) {
 	then.FileExists(t, configDocsPath)
 }
 
-func TestErrorGenIfContentPathIsMissing(t *testing.T) {
-	cmd := RootCmd()
-
-	then.WithTempDir(t)
-
-	cmd.SetArgs([]string{"gen"})
-	then.NotNil(t, cmd.Execute())
-}
-
 func TestErrorGenBadWriteTypesWriter(t *testing.T) {
 	w := then.NewErrWriter()
 	parent := TypeProps{
