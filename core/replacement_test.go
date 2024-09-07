@@ -161,9 +161,9 @@ level1:
 	then.Nil(t, err)
 
 	rep := Replacement{
-		Path:    filepath,
-		Find:    "a(b",
-		Flags:   "im",
+		Path:  filepath,
+		Find:  "a(b",
+		Flags: "im",
 	}
 	err = rep.Execute(ReplaceData{
 		VersionNoPrefix: "1.2.3",
