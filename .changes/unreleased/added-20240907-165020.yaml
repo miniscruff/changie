@@ -1,0 +1,5 @@
+kind: added
+body: KindKey and KindLabel values to Change data to be used in formats
+time: 2024-09-07T16:50:20.010876435-07:00
+custom:
+    Issue: "706"

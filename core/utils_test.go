@@ -641,6 +641,8 @@ func TestGetAllChangesWithProject(t *testing.T) {
 			Key:   "web_hook_sender",
 		},
 	}
+	cfg.Kinds[0].Key = "added"
+	cfg.Kinds[0].Label = "Added Label"
 
 	changes := []Change{
 		{Kind: "added", Body: "first", Project: "web_hook_sender"},
@@ -656,6 +658,10 @@ func TestGetAllChangesWithProject(t *testing.T) {
 	then.Equals(t, 2, len(changes))
 	then.Equals(t, "first", changes[0].Body)
 	then.Equals(t, "second", changes[1].Body)
+	then.Equals(t, "added", changes[0].KindKey)
+	then.Equals(t, "added", changes[1].KindKey)
+	then.Equals(t, "Added Label", changes[0].KindLabel)
+	then.Equals(t, "Added Label", changes[1].KindLabel)
 }
 
 func TestFileExists(t *testing.T) {

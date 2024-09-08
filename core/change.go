@@ -52,7 +52,8 @@ type Change struct {
 	Project string `yaml:",omitempty" default:""`
 	// Component of our change, if one was provided.
 	Component string `yaml:",omitempty" default:""`
-	// Kind of our change, if one was provided.
+	// Kind key of our change, if one was provided.
+	// Backwards compatible alias for [KindKey].
 	Kind string `yaml:",omitempty" default:""`
 	// Body message of our change, if one was provided.
 	Body string `yaml:",omitempty" default:""`
@@ -74,6 +75,10 @@ type Change struct {
 	Env map[string]string `yaml:"-" default:"nil"`
 	// Filename the change was saved to.
 	Filename string `yaml:"-"`
+	// Kind key of our change, if one was provided.
+	KindKey string `yaml:"-" default:""`
+	// Kind label of our change, if one was provided.
+	KindLabel string `yaml:"-" default:""`
 }
 
 // WriteTo will write a change to the writer as YAML
@@ -130,6 +135,7 @@ func LoadChange(path string) (Change, error) {
 	}
 
 	c.Filename = path
+	c.KindKey = c.Kind
 
 	return c, nil
 }
