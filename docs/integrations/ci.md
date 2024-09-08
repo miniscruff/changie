@@ -12,7 +12,6 @@ changie as part of your CI tests.
 This currently does not validate custom prompts meet validation rules such as min length.
 This is likely to be extended in the future.
 
-
 Below is an example if you are using the github action.
 
 ```yaml
