@@ -78,7 +78,7 @@ type Change struct {
 	// Kind key of our change, if one was provided.
 	KindKey string `yaml:"kindKey,omitempty" default:""`
 	// Kind label of our change, if one was provided.
-	KindLabel string `yaml:"kindLabel,omitempty" default:"nil"`
+	KindLabel string `yaml:"kindLabel,omitempty" default:""`
 }
 
 // WriteTo will write a change to the writer as YAML
