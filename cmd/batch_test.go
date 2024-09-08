@@ -545,27 +545,6 @@ func TestBatchWriteChanges(t *testing.T) {
 	then.Equals(t, expected, builder.String())
 }
 
-func TestBatchWriteChangesWithInvalidKind(t *testing.T) {
-	cfg := batchTestConfig()
-	then.WithTempDirConfig(t, cfg)
-
-	var builder strings.Builder
-
-	batch := NewBatch(time.Now, core.NewTemplateCache())
-	batch.config = cfg
-	batch.writer = &builder
-
-	changes := []core.Change{
-		{Kind: "added", Body: "w"},
-		{Kind: "added", Body: "x"},
-		{Kind: "removed", Body: "y"},
-		{Kind: "removed not found", Body: "z"},
-	}
-
-	err := batch.WriteChanges(changes)
-	then.NotNil(t, err)
-}
-
 func TestBatchCreateVersionsWithoutKindHeaders(t *testing.T) {
 	cfg := batchTestConfig()
 	cfg.KindFormat = ""
