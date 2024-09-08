@@ -48,6 +48,9 @@ jobs:
     - name: Test
       run: go test -coverprofile=c.out ./...
 
+    - name: Validate Changie fragments
+      run: go run main.go batch major --dry-run
+
     - name: Coverage
       uses: codacy/codacy-coverage-reporter-action@v1
       with:

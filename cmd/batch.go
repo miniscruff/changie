@@ -419,7 +419,12 @@ func (b *Batch) WriteChanges(changes []core.Change) error {
 
 		if b.config.KindFormat != "" && lastKind != change.Kind {
 			lastKind = change.Kind
+
 			newKind := b.config.KindFromKeyOrLabel(change.Kind)
+			if newKind == nil {
+				return fmt.Errorf("kind not found by key or label: '%s'", change.Kind)
+			}
+
 			kindHeader := b.config.KindHeader(change.Kind)
 
 			err := b.WriteTemplate(

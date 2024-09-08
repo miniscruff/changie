@@ -28,6 +28,7 @@ var (
 	ErrBadVersionOrPart      = errors.New("part string is not a supported version or version increment")
 	ErrMissingAutoLevel      = errors.New("kind config missing auto level value for auto bumping")
 	ErrNoChangesFoundForAuto = errors.New("no unreleased changes found for automatic bumping")
+	ErrKindNotFound          = errors.New("kind not found but configuration expects one")
 )
 
 var (
@@ -310,6 +311,8 @@ func GetChanges(
 		kc := cfg.KindFromKeyOrLabel(c.KindKey)
 		if kc != nil {
 			c.KindLabel = kc.Label
+		} else if len(cfg.Kinds) > 0 {
+			return nil, fmt.Errorf("%w: '%s'", ErrKindNotFound, c.KindKey)
 		}
 
 		changes = append(changes, c)

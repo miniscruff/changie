@@ -631,6 +631,27 @@ func TestGetAllChanges(t *testing.T) {
 	then.Equals(t, "third", changes[2].Body)
 }
 
+func TestGetAllChangesErrorIfNoKindWhenConfigured(t *testing.T) {
+	then.WithTempDir(t)
+
+	cfg := utilsTestConfig()
+	orderedTimes := []time.Time{
+		time.Date(2019, 5, 25, 20, 45, 0, 0, time.UTC),
+	}
+
+	changes := []Change{
+		{Kind: "added not found", Body: "ignored", Time: orderedTimes[0]},
+	}
+	for i, c := range changes {
+		then.WriteFileTo(t, c, cfg.ChangesDir, cfg.UnreleasedDir, fmt.Sprintf("%d.yaml", i))
+	}
+
+	then.CreateFile(t, cfg.ChangesDir, cfg.UnreleasedDir, "ignored.txt")
+
+	_, err := GetChanges(cfg, nil, "")
+	then.Err(t, ErrKindNotFound, err)
+}
+
 func TestGetAllChangesWithProject(t *testing.T) {
 	then.WithTempDir(t)
 
