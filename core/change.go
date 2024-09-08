@@ -53,7 +53,7 @@ type Change struct {
 	// Component of our change, if one was provided.
 	Component string `yaml:",omitempty" default:""`
 	// Kind key of our change, if one was provided.
-	// Backwards compatible alias for [KindKey].
+	// Backwards compatible alias for KindKey.
 	Kind string `yaml:",omitempty" default:""`
 	// Body message of our change, if one was provided.
 	Body string `yaml:",omitempty" default:""`
@@ -76,9 +76,9 @@ type Change struct {
 	// Filename the change was saved to.
 	Filename string `yaml:"-"`
 	// Kind key of our change, if one was provided.
-	KindKey string `yaml:"-" default:""`
+	KindKey string `yaml:"kindKey,omitempty" default:""`
 	// Kind label of our change, if one was provided.
-	KindLabel string `yaml:"-" default:""`
+	KindLabel string `yaml:"kindLabel,omitempty" default:""`
 }
 
 // WriteTo will write a change to the writer as YAML
