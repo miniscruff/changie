@@ -6,19 +6,19 @@
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width,initial-scale=1">
       
-        <meta name="description" content="Help for using the 'changie init' command">
+        <meta name="description" content="Changie is a file based changelog management tool.">
       
       
         <meta name="author" content="Ronnie Smith">
       
       
-        <link rel="canonical" href="https://changie.dev/cli/changie_init/">
+        <link rel="canonical" href="https://changie.dev/integrations/ci/">
       
       
-        <link rel="prev" href="../changie_completion_zsh/">
+        <link rel="prev" href="../yq/">
       
       
-        <link rel="next" href="../changie_latest/">
+        <link rel="next" href="../../config/">
       
       
       <link rel="icon" href="../../static/favicon.png">
@@ -26,7 +26,7 @@
     
     
       
-        <title>changie init - Changie</title>
+        <title>Continuous Integration - Changie</title>
       
     
     
@@ -61,11 +61,11 @@
       
         <meta  property="og:type"  content="website" >
       
-        <meta  property="og:title"  content="changie init - Changie" >
+        <meta  property="og:title"  content="Continuous Integration - Changie" >
       
-        <meta  property="og:description"  content="Help for using the 'changie init' command" >
+        <meta  property="og:description"  content="Changie is a file based changelog management tool." >
       
-        <meta  property="og:image"  content="https://changie.dev/assets/images/social/cli/changie_init.png" >
+        <meta  property="og:image"  content="https://changie.dev/assets/images/social/integrations/ci.png" >
       
         <meta  property="og:image:type"  content="image/png" >
       
@@ -73,15 +73,15 @@
       
         <meta  property="og:image:height"  content="630" >
       
-        <meta  property="og:url"  content="https://changie.dev/cli/changie_init/" >
+        <meta  property="og:url"  content="https://changie.dev/integrations/ci/" >
       
         <meta  name="twitter:card"  content="summary_large_image" >
       
-        <meta  name="twitter:title"  content="changie init - Changie" >
+        <meta  name="twitter:title"  content="Continuous Integration - Changie" >
       
-        <meta  name="twitter:description"  content="Help for using the 'changie init' command" >
+        <meta  name="twitter:description"  content="Changie is a file based changelog management tool." >
       
-        <meta  name="twitter:image"  content="https://changie.dev/assets/images/social/cli/changie_init.png" >
+        <meta  name="twitter:image"  content="https://changie.dev/assets/images/social/integrations/ci.png" >
       
     
     
@@ -102,11 +102,6 @@
     <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
     <label class="md-overlay" for="__drawer"></label>
     <div data-md-component="skip">
-      
-        
-        <a href="#changie-init" class="md-skip">
-          Skip to content
-        </a>
       
     </div>
     <div data-md-component="announce">
@@ -137,7 +132,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              changie init
+              Continuous Integration
             
           </span>
         </div>
@@ -281,11 +276,13 @@
         
   
   
+    
+  
   
     
     
-      <li class="md-tabs__item">
-        <a href="../../integrations/" class="md-tabs__link">
+      <li class="md-tabs__item md-tabs__item--active">
+        <a href="../" class="md-tabs__link">
           
   
     
@@ -321,13 +318,11 @@
         
   
   
-    
-  
   
     
     
-      <li class="md-tabs__item md-tabs__item--active">
-        <a href="../changie/" class="md-tabs__link">
+      <li class="md-tabs__item">
+        <a href="../../cli/changie/" class="md-tabs__link">
           
   
     
@@ -586,6 +581,8 @@
       
   
   
+    
+  
   
   
     
@@ -608,21 +605,24 @@
     
     
       
+        
+        
+      
       
         
       
     
     
-    <li class="md-nav__item md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" checked>
         
           
           
           <div class="md-nav__link md-nav__container">
-            <a href="../../integrations/" class="md-nav__link ">
+            <a href="../" class="md-nav__link ">
               
   
   <span class="md-ellipsis">
@@ -633,13 +633,13 @@
             </a>
             
               
-              <label class="md-nav__link " for="__nav_3" id="__nav_3_label" tabindex="0">
+              <label class="md-nav__link " for="__nav_3" id="__nav_3_label" tabindex="">
                 <span class="md-nav__icon md-icon"></span>
               </label>
             
           </div>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="true">
           <label class="md-nav__title" for="__nav_3">
             <span class="md-nav__icon md-icon"></span>
             Integrations
@@ -655,7 +655,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../integrations/nodejs/" class="md-nav__link">
+      <a href="../nodejs/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -676,7 +676,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../integrations/goreleaser/" class="md-nav__link">
+      <a href="../goreleaser/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -697,7 +697,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../integrations/release_trigger/" class="md-nav__link">
+      <a href="../release_trigger/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -718,7 +718,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../integrations/yq/" class="md-nav__link">
+      <a href="../yq/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -736,10 +736,17 @@
                 
   
   
+    
   
   
-    <li class="md-nav__item">
-      <a href="../../integrations/ci/" class="md-nav__link">
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
         
   
   <span class="md-ellipsis">
@@ -748,6 +755,7 @@
   
 
       </a>
+      
     </li>
   
 
@@ -822,10 +830,8 @@
       
   
   
-    
   
   
-  
     
     
       
@@ -856,22 +862,19 @@
     
     
       
-        
-        
-      
       
         
       
     
     
-    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--nested">
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" checked>
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
         
           
-          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="">
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
             
   
   <span class="md-ellipsis">
@@ -882,7 +885,7 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="true">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
           <label class="md-nav__title" for="__nav_5">
             <span class="md-nav__icon md-icon"></span>
             CLI
@@ -896,7 +899,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../changie/" class="md-nav__link">
+      <a href="../../cli/changie/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -917,7 +920,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../changie_batch/" class="md-nav__link">
+      <a href="../../cli/changie_batch/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -938,7 +941,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../changie_completion/" class="md-nav__link">
+      <a href="../../cli/changie_completion/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -959,7 +962,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../changie_completion_bash/" class="md-nav__link">
+      <a href="../../cli/changie_completion_bash/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -980,7 +983,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../changie_completion_fish/" class="md-nav__link">
+      <a href="../../cli/changie_completion_fish/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1001,7 +1004,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../changie_completion_powershell/" class="md-nav__link">
+      <a href="../../cli/changie_completion_powershell/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1022,7 +1025,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../changie_completion_zsh/" class="md-nav__link">
+      <a href="../../cli/changie_completion_zsh/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1040,28 +1043,10 @@
                 
   
   
-    
   
   
-  
-    <li class="md-nav__item md-nav__item--active">
-      
-      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
-      
-      
-      
-        <label class="md-nav__link md-nav__link--active" for="__toc">
-          
-  
-  <span class="md-ellipsis">
-    changie init
-  </span>
-  
-
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-      
-      <a href="./" class="md-nav__link md-nav__link--active">
+    <li class="md-nav__item">
+      <a href="../../cli/changie_init/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1070,66 +1055,6 @@
   
 
       </a>
-      
-        
-
-<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
-  
-  
-  
-  
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Table of contents
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#changie-init" class="md-nav__link">
-    <span class="md-ellipsis">
-      changie init
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="changie init">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#synopsis" class="md-nav__link">
-    <span class="md-ellipsis">
-      Synopsis
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#options" class="md-nav__link">
-    <span class="md-ellipsis">
-      Options
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#see-also" class="md-nav__link">
-    <span class="md-ellipsis">
-      SEE ALSO
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-    </ul>
-  
-</nav>
-      
     </li>
   
 
@@ -1142,7 +1067,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../changie_latest/" class="md-nav__link">
+      <a href="../../cli/changie_latest/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1163,7 +1088,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../changie_merge/" class="md-nav__link">
+      <a href="../../cli/changie_merge/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1184,7 +1109,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../changie_new/" class="md-nav__link">
+      <a href="../../cli/changie_new/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1205,7 +1130,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../changie_next/" class="md-nav__link">
+      <a href="../../cli/changie_next/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1244,56 +1169,6 @@
   
   
   
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Table of contents
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#changie-init" class="md-nav__link">
-    <span class="md-ellipsis">
-      changie init
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="changie init">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#synopsis" class="md-nav__link">
-    <span class="md-ellipsis">
-      Synopsis
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#options" class="md-nav__link">
-    <span class="md-ellipsis">
-      Options
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#see-also" class="md-nav__link">
-    <span class="md-ellipsis">
-      SEE ALSO
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-    </ul>
-  
 </nav>
                   </div>
                 </div>
@@ -1307,7 +1182,7 @@
                   
 
   
-    <a href="https://github.com/miniscruff/changie/edit/main/docs/cli/changie_init.md" title="Edit this page" class="md-content__button md-icon">
+    <a href="https://github.com/miniscruff/changie/edit/main/docs/integrations/ci.md" title="Edit this page" class="md-content__button md-icon">
       
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M10 20H6V4h7v5h5v3.1l2-2V8l-6-6H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h4zm10.2-7c.1 0 .3.1.4.2l1.3 1.3c.2.2.2.6 0 .8l-1 1-2.1-2.1 1-1c.1-.1.2-.2.4-.2m0 3.9L14.1 23H12v-2.1l6.1-6.1z"/></svg>
     </a>
@@ -1316,40 +1191,36 @@
     
       
     
-    <a href="https://github.com/miniscruff/changie/raw/main/docs/cli/changie_init.md" title="View source of this page" class="md-content__button md-icon">
+    <a href="https://github.com/miniscruff/changie/raw/main/docs/integrations/ci.md" title="View source of this page" class="md-content__button md-icon">
       
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M17 18c.56 0 1 .44 1 1s-.44 1-1 1-1-.44-1-1 .44-1 1-1m0-3c-2.73 0-5.06 1.66-6 4 .94 2.34 3.27 4 6 4s5.06-1.66 6-4c-.94-2.34-3.27-4-6-4m0 6.5a2.5 2.5 0 0 1-2.5-2.5 2.5 2.5 0 0 1 2.5-2.5 2.5 2.5 0 0 1 2.5 2.5 2.5 2.5 0 0 1-2.5 2.5M9.27 20H6V4h7v5h5v4.07c.7.08 1.36.25 2 .49V8l-6-6H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h4.5a8.2 8.2 0 0 1-1.23-2"/></svg>
     </a>
   
 
 
-  <h1>changie init</h1>
+  <h1>Continuous Integration</h1>
 
-<h2 id="changie-init">changie init</h2>
-<p>Initialize a new changie skeleton</p>
-<h3 id="synopsis">Synopsis</h3>
-<p>Initialize a few changie specifics.</p>
-<ul>
-<li>Folder to place all change files</li>
-<li>Subfolder to place all unreleased changes</li>
-<li>Header file to place on top of the changelog</li>
-<li>Output file when generating a changelog</li>
-<li>Unreleased folder includes a .gitkeep file</li>
-</ul>
-<p>Values will also be saved in a changie config at .changie.yaml.
-Default values follow keep a changelog and semver specs but are customizable.</p>
-<div class="language-text highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>changie init [flags]
+<p>When creating changie fragments as part of your team workflow, you may have
+suggestions or comments about the kind, body or custom fields that are
+changed outside of the changie tool.
+As changie fragments are plain yaml files there is nothing wrong with editing
+these after creating the fragment.
+However, it is possible to create invalid fragments when doing so,
+one such example is if you typo a kind or invalid custom prompt answer.</p>
+<p>One way to prevent this issue from causing later problems is to run
+changie as part of your CI tests.</p>
+<p>This currently does not validate custom prompts meet validation rules such as min length.
+This is likely to be extended in the future.</p>
+<p>Below is an example if you are using the github action.</p>
+<div class="language-yaml highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Validate changie fragment is valid</span>
+</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="w">  </span><span class="nt">uses</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">miniscruff/changie-action@VERSION</span><span class="w"> </span><span class="c1"># view action repo for latest version</span>
+</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="w">  </span><span class="nt">with</span><span class="p">:</span>
+</span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="w">    </span><span class="nt">version</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">latest</span><span class="w"> </span><span class="c1"># use the latest changie version</span>
+</span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="w">    </span><span class="c1"># dry run may not be required as you likely aren&#39;t</span>
+</span><span id="__span-0-6"><a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="w">    </span><span class="c1"># committing the changes anyway, but it will print</span>
+</span><span id="__span-0-7"><a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a><span class="w">    </span><span class="c1"># to stdout this way</span>
+</span><span id="__span-0-8"><a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a><span class="w">    </span><span class="nt">args</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">batch major --dry-run</span><span class="w"> </span>
 </span></code></pre></div>
-<h3 id="options">Options</h3>
-<div class="language-text highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>  -d, --dir string      directory for all changes (default &quot;.changes&quot;)
-</span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>  -f, --force           force initialize even if config already exist
-</span><span id="__span-1-3"><a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>  -h, --help            help for init
-</span><span id="__span-1-4"><a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>  -o, --output string   file path to output our changelog (default &quot;CHANGELOG.md&quot;)
-</span></code></pre></div>
-<h3 id="see-also">SEE ALSO</h3>
-<ul>
-<li><a href="../changie/">changie</a>  - changie handles conflict-free changelog management</li>
-</ul>
 
 
 
