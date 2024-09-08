@@ -98,7 +98,7 @@ nav:
       - Goreleaser: integrations/goreleaser.md
       - Release Trigger: integrations/release_trigger.md
       - yq: integrations/yq.md
-      - ci: integrations/ci.md
+      - Continuous Integration: integrations/ci.md
   - Config:
       - config/index.md
   - CLI:

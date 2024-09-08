@@ -1,4 +1,4 @@
-kind: fixed-typo-checking-ci
+kind: fixed
 body: Validate kinds match config in fragment when batching release notes
 time: 2024-09-08T00:46:31.38990871-07:00
 custom:
