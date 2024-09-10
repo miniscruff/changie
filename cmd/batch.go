@@ -36,9 +36,10 @@ type Batch struct {
 	TemplateCache *core.TemplateCache
 
 	// Computed values
-	config  *core.Config // current configuration
-	writer  io.Writer    // writer we are batching to
-	version string       // the version we are bumping to
+	config          *core.Config // current configuration
+	writer          io.Writer    // writer we are batching to
+	version         string       // the version we are bumping to
+	versionFilePath string       // path to the file we're writing to
 }
 
 func NewBatch(
@@ -226,15 +227,15 @@ func (b *Batch) Run(cmd *cobra.Command, args []string) error {
 	if b.DryRun {
 		b.writer = cmd.OutOrStdout()
 	} else {
-		versionPath := filepath.Join(b.config.ChangesDir, b.Project, data.Version+"."+b.config.VersionExt)
+		b.versionFilePath = filepath.Join(b.config.ChangesDir, b.Project, data.Version+"."+b.config.VersionExt)
 
 		if !b.Force {
-			if exists, existErr := core.FileExists(versionPath); exists || existErr != nil {
-				return fmt.Errorf("%w: %v", errVersionExists, versionPath)
+			if exists, existErr := core.FileExists(b.versionFilePath); exists || existErr != nil {
+				return fmt.Errorf("%w: %v", errVersionExists, b.versionFilePath)
 			}
 		}
 
-		versionFile, createErr := os.Create(versionPath)
+		versionFile, createErr := os.Create(b.versionFilePath)
 		if createErr != nil {
 			return createErr
 		}
@@ -360,6 +361,7 @@ func (b *Batch) WriteTemplate(
 	}
 
 	if err := b.TemplateCache.Execute(template, b.writer, templateData); err != nil {
+		os.Remove(b.versionFilePath)
 		return err
 	}
 
