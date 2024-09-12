@@ -2,6 +2,7 @@ package core
 
 import (
 	"os"
+	"strings"
 	"testing"
 
 	"github.com/miniscruff/changie/then"
@@ -126,16 +127,6 @@ level1:
 	then.FileContents(t, endData, filepath)
 }
 
-func TestErrorBadFileRead(t *testing.T) {
-	then.WithTempDir(t)
-
-	rep := Replacement{
-		Path: "does not exist",
-	}
-	err := rep.Execute(ReplaceData{})
-	then.NotNil(t, err)
-}
-
 func TestErrorBadTemplateParse(t *testing.T) {
 	then.WithTempDir(t)
 
@@ -177,6 +168,69 @@ func TestErrorBadTemplateExec(t *testing.T) {
 	rep := Replacement{
 		Replace: "{{.bad}}",
 	}
+	err := rep.Execute(ReplaceData{})
+	then.NotNil(t, err)
+}
+
+func testGlobs(t *testing.T, paths []string, rep Replacement) {
+	toReplace := `{
+  "version": "1.0.0"
+}`
+	replaceWith := "1.2.3"
+
+	for _, path := range paths {
+		split := strings.Split(path, "/")
+		if split[0] != path {
+			err := os.Mkdir(split[0], os.ModePerm)
+			then.Nil(t, err)
+		}
+		err := os.WriteFile(path, []byte(toReplace), os.ModePerm)
+		then.Nil(t, err)
+	}
+
+	err := rep.Execute(ReplaceData{
+		VersionNoPrefix: replaceWith,
+	})
+	then.Nil(t, err)
+
+	expected := `{
+  "version": "` + replaceWith + `"
+}`
+
+	for _, path := range paths {
+		then.FileContents(t, expected, path)
+	}
+}
+
+func TestGlobs(t *testing.T) {
+	then.WithTempDir(t)
+
+	paths := []string{"a.json", "b.json"}
+	rep := Replacement{
+		Path:    "*.json",
+		Find:    `  "version": ".*"`,
+		Replace: `  "version": "{{.VersionNoPrefix}}"`,
+	}
+	testGlobs(t, paths, rep)
+
+	paths = []string{"c/a.json", "d/b.json"}
+	rep.Path = "*/*.json"
+	testGlobs(t, paths, rep)
+
+	paths = []string{"e/a.json", "f/b.json"}
+	rep.Path = "[ef]/[ab].json"
+	testGlobs(t, paths, rep)
+
+	paths = []string{"f.json", "b.jsop", "c.jsof"}
+	rep.Path = "*.jso?"
+	testGlobs(t, paths, rep)
+}
+
+func TestBadGlob(t *testing.T) {
+	rep := Replacement{
+		Path: `[]`,
+	}
+
 	err := rep.Execute(ReplaceData{})
 	then.NotNil(t, err)
 }
