@@ -2,7 +2,6 @@ package core
 
 import (
 	"os"
-	"strings"
 	"testing"
 
 	"github.com/miniscruff/changie/then"
@@ -172,58 +171,51 @@ func TestErrorBadTemplateExec(t *testing.T) {
 	then.NotNil(t, err)
 }
 
-func testGlobs(t *testing.T, paths []string, rep Replacement) {
-	toReplace := `{
-  "version": "1.0.0"
-}`
-	replaceWith := "1.2.3"
+func TestErrorBadFileRead(t *testing.T) {
+	then.WithTempDir(t)
 
-	for _, path := range paths {
-		split := strings.Split(path, "/")
-		if split[0] != path {
-			err := os.Mkdir(split[0], os.ModePerm)
-			then.Nil(t, err)
-		}
-		err := os.WriteFile(path, []byte(toReplace), os.ModePerm)
-		then.Nil(t, err)
+	rep := Replacement{
+		Path: "does not exist",
 	}
-
-	err := rep.Execute(ReplaceData{
-		VersionNoPrefix: replaceWith,
-	})
-	then.Nil(t, err)
-
-	expected := `{
-  "version": "` + replaceWith + `"
-}`
-
-	for _, path := range paths {
-		then.FileContents(t, expected, path)
-	}
+	err := rep.Execute(ReplaceData{})
+	then.Err(t, ErrNoReplacementFilesFound, err)
 }
 
 func TestGlobs(t *testing.T) {
 	then.WithTempDir(t)
 
-	paths := []string{"a.json", "b.json"}
+	toReplace := []byte(`{
+  "version": "1.0.0"
+}`)
+	then.WriteFile(t, toReplace, "a", "b", "c.json")
+	then.WriteFile(t, toReplace, "a", "b", "d.xml")
+	then.WriteFile(t, toReplace, "a", "b", "e.jsonl")
+	then.WriteFile(t, toReplace, "a", "b", "f.png")
+	then.WriteFile(t, toReplace, "a", "c", "g.json")
+
 	rep := Replacement{
-		Path:    "*.json",
+		Path:    "a/*/*.json",
 		Find:    `  "version": ".*"`,
 		Replace: `  "version": "{{.VersionNoPrefix}}"`,
 	}
-	testGlobs(t, paths, rep)
 
-	paths = []string{"c/a.json", "d/b.json"}
-	rep.Path = "*/*.json"
-	testGlobs(t, paths, rep)
+	err := rep.Execute(ReplaceData{
+		VersionNoPrefix: "1.1.0",
+	})
+	then.Nil(t, err)
 
-	paths = []string{"e/a.json", "f/b.json"}
-	rep.Path = "[ef]/[ab].json"
-	testGlobs(t, paths, rep)
+	changedFile := `{
+  "version": "1.1.0"
+}`
+	unchangedFile := `{
+  "version": "1.0.0"
+}`
 
-	paths = []string{"f.json", "b.jsop", "c.jsof"}
-	rep.Path = "*.jso?"
-	testGlobs(t, paths, rep)
+	then.FileContents(t, changedFile, "a", "b", "c.json")
+	then.FileContents(t, unchangedFile, "a", "b", "d.xml")
+	then.FileContents(t, unchangedFile, "a", "b", "e.jsonl")
+	then.FileContents(t, unchangedFile, "a", "b", "f.png")
+	then.FileContents(t, changedFile, "a", "c", "g.json")
 }
 
 func TestBadGlob(t *testing.T) {

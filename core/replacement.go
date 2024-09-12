@@ -2,12 +2,15 @@ package core
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
 	"regexp"
 	"text/template"
 )
+
+var ErrNoReplacementFilesFound = errors.New("glob pattern did not match any files")
 
 // Template data used for replacing version values.
 type ReplaceData struct {
@@ -78,6 +81,10 @@ func (r Replacement) Execute(data ReplaceData) error {
 	globs, err := filepath.Glob(r.Path)
 	if err != nil {
 		return err
+	}
+
+	if len(globs) == 0 {
+		return fmt.Errorf("%w: %s", ErrNoReplacementFilesFound, r.Path)
 	}
 
 	flags := r.Flags
