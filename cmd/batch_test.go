@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+	"io/fs"
 	"os"
 	"path/filepath"
 	"strings"
@@ -489,6 +490,9 @@ func TestBatchErrorBadKindFormat(t *testing.T) {
 
 	err := batch.Run(batch.Command, []string{"v0.2.3"})
 	then.NotNil(t, err)
+
+	_, err = os.Stat(filepath.Join(cfg.ChangesDir, "v0.2.3.md"))
+	then.Err(t, fs.ErrNotExist, err)
 }
 
 func TestBatchErrorBadComponentFormat(t *testing.T) {

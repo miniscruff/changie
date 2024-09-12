@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"io/fs"
 	"os"
 	"path/filepath"
 
@@ -36,10 +37,9 @@ type Batch struct {
 	TemplateCache *core.TemplateCache
 
 	// Computed values
-	config          *core.Config // current configuration
-	writer          io.Writer    // writer we are batching to
-	version         string       // the version we are bumping to
-	versionFilePath string       // path to the file we're writing to
+	config  *core.Config // current configuration
+	writer  io.Writer    // writer we are batching to
+	version string       // the version we are bumping to
 }
 
 func NewBatch(
@@ -192,9 +192,7 @@ func (b *Batch) getBatchData() (*core.BatchData, error) {
 }
 
 //nolint:gocyclo
-func (b *Batch) Run(cmd *cobra.Command, args []string) error {
-	var err error
-
+func (b *Batch) Run(cmd *cobra.Command, args []string) (err error) {
 	// save our version for later use
 	b.version = args[0]
 
@@ -227,18 +225,27 @@ func (b *Batch) Run(cmd *cobra.Command, args []string) error {
 	if b.DryRun {
 		b.writer = cmd.OutOrStdout()
 	} else {
-		b.versionFilePath = filepath.Join(b.config.ChangesDir, b.Project, data.Version+"."+b.config.VersionExt)
+		versionFilePath := filepath.Join(b.config.ChangesDir, b.Project, data.Version+"."+b.config.VersionExt)
 
 		if !b.Force {
-			if exists, existErr := core.FileExists(b.versionFilePath); exists || existErr != nil {
-				return fmt.Errorf("%w: %v", errVersionExists, b.versionFilePath)
+			if exists, existErr := core.FileExists(versionFilePath); exists || existErr != nil {
+				return fmt.Errorf("%w: %v", errVersionExists, versionFilePath)
 			}
 		}
 
-		versionFile, createErr := os.Create(b.versionFilePath)
+		versionFile, createErr := os.Create(versionFilePath)
 		if createErr != nil {
 			return createErr
 		}
+
+		defer func() {
+			if err != nil {
+				removeErr := os.Remove(versionFilePath)
+				if removeErr != nil {
+					err = fmt.Errorf("batching error: %w, removing new file error: %w", err, removeErr)
+				}
+			}
+		}()
 
 		defer versionFile.Close()
 		b.writer = versionFile
@@ -361,7 +368,6 @@ func (b *Batch) WriteTemplate(
 	}
 
 	if err := b.TemplateCache.Execute(template, b.writer, templateData); err != nil {
-		os.Remove(b.versionFilePath)
 		return err
 	}
 
@@ -385,11 +391,11 @@ func (b *Batch) WriteTemplateFile(
 	var fileBytes []byte
 
 	fileBytes, readErr := os.ReadFile(fullPath)
-	if readErr != nil && !os.IsNotExist(readErr) {
+	if readErr != nil && !errors.Is(readErr, fs.ErrNotExist) {
 		return readErr
 	}
 
-	if os.IsNotExist(readErr) {
+	if errors.Is(readErr, fs.ErrNotExist) {
 		return nil
 	}
 

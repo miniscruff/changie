@@ -1,0 +1,5 @@
+kind: fixed
+body: Clean up release notes files if any error takes place during the batch process
+time: 2024-09-12T00:00:12.120726403-07:00
+custom:
+    Issue: "714"
