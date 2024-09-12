@@ -2,11 +2,15 @@ package core
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 	"os"
+	"path/filepath"
 	"regexp"
 	"text/template"
 )
+
+var ErrNoReplacementFilesFound = errors.New("glob pattern did not match any files")
 
 // Template data used for replacing version values.
 type ReplaceData struct {
@@ -39,6 +43,13 @@ type ReplaceData struct {
 //     replace: '  "version": "{{.VersionNoPrefix}}",'
 type Replacement struct {
 	// Path of the file to find and replace in.
+	// Also supports Go filepath globs.
+	// example: yaml
+	// # Will match any .json file in the current directory
+	// replacements:
+	//   - path: *.json
+	//     find: '  "version": ".*",'
+	//     replace: '  "version": "{{.VersionNoPrefix}}",'
 	Path string `yaml:"path" required:"true"`
 	// Regular expression to search for in the file.
 	// Capture groups are supported and can be used in the replace value.
@@ -67,9 +78,13 @@ func (r Replacement) Execute(data ReplaceData) error {
 		return err
 	}
 
-	fileData, err := os.ReadFile(r.Path)
+	globs, err := filepath.Glob(r.Path)
 	if err != nil {
 		return err
+	}
+
+	if len(globs) == 0 {
+		return fmt.Errorf("%w: %s", ErrNoReplacementFilesFound, r.Path)
 	}
 
 	flags := r.Flags
@@ -82,11 +97,18 @@ func (r Replacement) Execute(data ReplaceData) error {
 		return err
 	}
 
-	newData := regex.ReplaceAll(fileData, buf.Bytes())
+	for _, path := range globs {
+		fileData, err := os.ReadFile(path)
+		if err != nil {
+			return err
+		}
 
-	err = os.WriteFile(r.Path, newData, CreateFileMode)
-	if err != nil {
-		return err
+		newData := regex.ReplaceAll(fileData, buf.Bytes())
+
+		err = os.WriteFile(path, newData, CreateFileMode)
+		if err != nil {
+			return err
+		}
 	}
 
 	return nil
