@@ -41,6 +41,10 @@ func TestCanGetFiles(t *testing.T) {
 	// ignore any bad error trying to remove the file, it may not exist and that is ok
 	_ = os.Remove(configDocsPath)
 
+	// create cli docs directory if it does not already exist
+	err = os.MkdirAll(cliDocsPath, os.ModePerm)
+	then.Nil(t, err)
+
 	cliDocsFiles, err := os.ReadDir(cliDocsPath)
 	then.Nil(t, err)
 
