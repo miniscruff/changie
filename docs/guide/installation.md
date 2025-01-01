@@ -14,11 +14,9 @@ scoop install changie
 
 ## macOS with Homebrew
 
-On macOS, you can use [Homebrew](https://brew.sh/) to install by first tapping
-the repository.
+On macOS, you can use [Homebrew](https://brew.sh/) to install changie from homebrew core.
 
 ```sh
-brew tap miniscruff/changie https://github.com/miniscruff/changie
 brew install changie
 ```
 
