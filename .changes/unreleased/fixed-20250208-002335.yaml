@@ -1,0 +1,5 @@
+kind: fixed
+body: Do not output usage when errors occur
+time: 2025-02-08T00:23:35.875010848-08:00
+custom:
+    Issue: "745"
