@@ -53,7 +53,7 @@ type Custom struct {
 	// This should only contain alpha numeric characters, usually starting with a capital.
 	// example: yaml
 	// key: Issue
-	Key string `yaml:"" required:"true"`
+	Key string `yaml:"key" required:"true"`
 
 	// Specifies the type of choice which changes the prompt.
 	//
@@ -63,7 +63,7 @@ type Custom struct {
 	// block | Multiline text | [minLength](#custom-minlength) and [maxLength](#custom-maxlength)
 	// int | Whole numbers | [minInt](#custom-minint) and [maxInt](#custom-maxint)
 	// enum | Limited set of strings | [enumOptions](#custom-enumoptions) is used to specify values
-	Type CustomType `yaml:"" required:"true"`
+	Type CustomType `yaml:"type" required:"true"`
 
 	// If true, an empty value will not fail validation.
 	// The optional check is handled before min so you can specify that the value is optional but if it
@@ -82,12 +82,12 @@ type Custom struct {
 	// PROJ-{{.Custom.TicketNumber}}
 	// {{- end}}
 	// {{.Body}}
-	Optional bool `yaml:",omitempty" default:"false"`
+	Optional bool `yaml:"optional,omitempty" default:"false"`
 	// Description used in the prompt when asking for the choice.
 	// If empty key is used instead.
 	// example: yaml
 	// label: GitHub Username
-	Label string `yaml:",omitempty" default:""`
+	Label string `yaml:"label,omitempty" default:""`
 	// If specified the input value must be greater than or equal to minInt.
 	MinInt *int64 `yaml:"minInt,omitempty" default:"nil"`
 	// If specified the input value must be less than or equal to maxInt.
