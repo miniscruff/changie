@@ -119,25 +119,6 @@ func TestMergeVersionsSuccessfullyWithProjectAndNoChanges(t *testing.T) {
 	then.FileContents(t, changeContents, "a", "thing", "CHANGELOG.md")
 }
 
-func TestMergeVersionsErrorMissingProjectDir(t *testing.T) {
-	cfg := mergeTestConfig()
-	cfg.HeaderPath = ""
-	cfg.Replacements = nil
-	cfg.Projects = []core.ProjectConfig{
-		{
-			Label:         "A thing",
-			Key:           "a",
-			ChangelogPath: "a/thing/CHANGELOG.md",
-		},
-	}
-	then.WithTempDirConfig(t, cfg)
-
-	cmd := NewMerge(core.NewTemplateCache())
-
-	err := cmd.Run(cmd.Command, nil)
-	then.NotNil(t, err)
-}
-
 func TestMergeVersionsWithUnreleasedChanges(t *testing.T) {
 	cfg := mergeTestConfig()
 	cfg.HeaderPath = ""

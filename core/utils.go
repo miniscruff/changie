@@ -61,9 +61,9 @@ func GetAllVersions(
 	}
 
 	fileInfos, err := os.ReadDir(versionsPath)
-    if err != nil && errors.Is(err, fs.ErrNotExist) {
-        return allVersions, nil
-    }
+	if err != nil && errors.Is(err, fs.ErrNotExist) {
+		return allVersions, nil
+	}
 
 	if err != nil {
 		return allVersions, fmt.Errorf("reading files from '%s': %w", versionsPath, err)

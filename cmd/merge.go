@@ -87,12 +87,12 @@ func (m *Merge) mergeProject(
 	} else {
 		dirErr := os.MkdirAll(filepath.Dir(changelogPath), core.CreateDirMode)
 		if dirErr != nil {
-            return fmt.Errorf("creating changelog file directory: %w", dirErr)
+			return fmt.Errorf("creating changelog file directory: %w", dirErr)
 		}
 
 		changeFile, changeErr := os.Create(changelogPath)
 		if changeErr != nil {
-            return fmt.Errorf("creating changelog file: %w", changeErr)
+			return fmt.Errorf("creating changelog file: %w", changeErr)
 		}
 
 		defer changeFile.Close()
@@ -101,7 +101,7 @@ func (m *Merge) mergeProject(
 
 	allVersions, err := core.GetAllVersions(cfg, false, project)
 	if err != nil {
-        return fmt.Errorf("finding release notes: %w", err)
+		return fmt.Errorf("finding release notes: %w", err)
 	}
 
 	if cfg.HeaderPath != "" {
