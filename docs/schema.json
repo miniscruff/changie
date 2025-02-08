@@ -1,0 +1,421 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/miniscruff/changie/core/config",
+  "$defs": {
+    "BodyConfig": {
+      "properties": {
+        "minLength": {
+          "type": "integer",
+          "description": "Min length specifies the minimum body length"
+        },
+        "maxLength": {
+          "type": "integer",
+          "description": "Max length specifies the maximum body length"
+        },
+        "block": {
+          "type": "boolean",
+          "description": "Block allows multiline text inputs for body messages"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object",
+      "description": "Body config allows you to customize the default body prompt"
+    },
+    "Custom": {
+      "properties": {
+        "key": {
+          "type": "string",
+          "description": "Value used as the key in the custom map for the change format.\nThis should only contain alpha numeric characters, usually starting with a capital.\nexample: yaml\nkey: Issue"
+        },
+        "type": {
+          "type": "string",
+          "description": "Specifies the type of choice which changes the prompt.\n\n| value | description | options\n| -- | -- | -- |\nstring | Freeform text | [minLength](#custom-minlength) and [maxLength](#custom-maxlength)\nblock | Multiline text | [minLength](#custom-minlength) and [maxLength](#custom-maxlength)\nint | Whole numbers | [minInt](#custom-minint) and [maxInt](#custom-maxint)\nenum | Limited set of strings | [enumOptions](#custom-enumoptions) is used to specify values"
+        },
+        "optional": {
+          "type": "boolean",
+          "description": "If true, an empty value will not fail validation.\nThe optional check is handled before min so you can specify that the value is optional but if it\nis used it must have a minimum length or value depending on type.\n\nWhen building templates that allow for optional values you can compare the custom choice to an\nempty string to check for a value or empty.\n\nexample: yaml\ncustom:\n- key: TicketNumber\n  type: int\n  optional: true\nchangeFormat: \u003e-\n{{- if not (eq .Custom.TicketNumber \"\")}}\nPROJ-{{.Custom.TicketNumber}}\n{{- end}}\n{{.Body}}"
+        },
+        "label": {
+          "type": "string",
+          "description": "Description used in the prompt when asking for the choice.\nIf empty key is used instead.\nexample: yaml\nlabel: GitHub Username"
+        },
+        "minInt": {
+          "type": "integer",
+          "description": "If specified the input value must be greater than or equal to minInt."
+        },
+        "maxInt": {
+          "type": "integer",
+          "description": "If specified the input value must be less than or equal to maxInt."
+        },
+        "minLength": {
+          "type": "integer",
+          "description": "If specified the string input must be at least this long"
+        },
+        "maxLength": {
+          "type": "integer",
+          "description": "If specified string input must be no more than this long"
+        },
+        "enumOptions": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array",
+          "description": "When using the enum type, you must also specify what possible options to allow.\nUsers will be given a selection list to select the value they want."
+        }
+      },
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "key",
+        "type"
+      ],
+      "description": "Custom defines a custom choice that is asked when using 'changie new'."
+    },
+    "KindConfig": {
+      "properties": {
+        "key": {
+          "type": "string",
+          "description": "Key is the value used for lookups and file names for kinds.\nBy default it will use label if no key is provided.\nexample: yaml\nkey: feature"
+        },
+        "label": {
+          "type": "string",
+          "description": "Label is the value used in the prompt when selecting a kind.\nexample: yaml\nlabel: Feature"
+        },
+        "format": {
+          "type": "string",
+          "description": "Format will override the root kind format when building the kind header.\nexample: yaml\nformat: '### {{.Kind}} **Breaking Changes**'"
+        },
+        "changeFormat": {
+          "type": "string",
+          "description": "Change format will override the root change format when building changes specific to this kind.\nexample: yaml\nchangeFormat: 'Breaking: {{.Custom.Body}}"
+        },
+        "additionalChoices": {
+          "items": {
+            "$ref": "#/$defs/Custom"
+          },
+          "type": "array",
+          "description": "Additional choices allows adding choices per kind"
+        },
+        "post": {
+          "items": {
+            "$ref": "#/$defs/PostProcessConfig"
+          },
+          "type": "array",
+          "description": "Post process options when saving a new change fragment specific to this kind."
+        },
+        "skipGlobalChoices": {
+          "type": "boolean",
+          "description": "Skip global choices allows skipping the parent choices options."
+        },
+        "skipBody": {
+          "type": "boolean",
+          "description": "Skip body allows skipping the parent body prompt."
+        },
+        "skipGlobalPost": {
+          "type": "boolean",
+          "description": "Skip global post allows skipping the parent post processing."
+        },
+        "auto": {
+          "type": "string",
+          "description": "Auto determines what value to bump when using `batch auto` or `next auto`.\nPossible values are major, minor, patch or none and the highest one is used if\nmultiple changes are found. none will not bump the version.\nOnly none changes is not a valid bump and will fail to batch.\nexample: yaml\nauto: minor"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object",
+      "description": "Kind config allows you to customize the options depending on what kind was selected."
+    },
+    "NewlinesConfig": {
+      "properties": {
+        "afterChange": {
+          "type": "integer",
+          "description": "Add newlines after change fragment"
+        },
+        "afterChangelogHeader": {
+          "type": "integer",
+          "description": "Add newlines after the header file in the merged changelog"
+        },
+        "afterChangelogVersion": {
+          "type": "integer",
+          "description": "Add newlines after adding a version to the changelog"
+        },
+        "afterComponent": {
+          "type": "integer",
+          "description": "Add newlines after component"
+        },
+        "afterFooterFile": {
+          "type": "integer",
+          "description": "Add newlines after footer file"
+        },
+        "afterFooter": {
+          "type": "integer",
+          "description": "Add newlines after footer template"
+        },
+        "afterHeaderFile": {
+          "type": "integer",
+          "description": "Add newlines after header file"
+        },
+        "afterHeaderTemplate": {
+          "type": "integer",
+          "description": "Add newlines after header template"
+        },
+        "afterKind": {
+          "type": "integer",
+          "description": "Add newlines after kind"
+        },
+        "afterVersion": {
+          "type": "integer",
+          "description": "Add newlines after version"
+        },
+        "beforeChange": {
+          "type": "integer",
+          "description": "Add newlines before change fragment"
+        },
+        "beforeChangelogVersion": {
+          "type": "integer",
+          "description": "Add newlines before adding a version to the changelog"
+        },
+        "beforeComponent": {
+          "type": "integer",
+          "description": "Add newlines before component"
+        },
+        "beforeFooterFile": {
+          "type": "integer",
+          "description": "Add newlines before footer file"
+        },
+        "beforeFooterTemplate": {
+          "type": "integer",
+          "description": "Add newlines before footer template"
+        },
+        "beforeHeaderFile": {
+          "type": "integer",
+          "description": "Add newlines before header file"
+        },
+        "beforeHeaderTemplate": {
+          "type": "integer",
+          "description": "Add newlines before header template"
+        },
+        "beforeKind": {
+          "type": "integer",
+          "description": "Add newlines before kind"
+        },
+        "beforeVersion": {
+          "type": "integer",
+          "description": "Add newlines before version"
+        },
+        "endOfVersion": {
+          "type": "integer",
+          "description": "Add newlines at the end of the version file"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object",
+      "description": "Configuration options for newlines before and after different elements."
+    },
+    "PostProcessConfig": {
+      "properties": {
+        "key": {
+          "type": "string",
+          "description": "Key to save the custom value with"
+        },
+        "value": {
+          "type": "string",
+          "description": "Value of the custom value as a go template"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "key",
+        "value"
+      ],
+      "description": "PostProcessConfig allows adding additional custom values to a change fragment after all the other inputs are complete."
+    },
+    "ProjectConfig": {
+      "properties": {
+        "label": {
+          "type": "string",
+          "description": "Label is the value used in the prompt when selecting a project.\nexample: yaml\nlabel: Frontend"
+        },
+        "key": {
+          "type": "string",
+          "description": "Key is the value used for unreleased and version output paths.\nexample: yaml\nkey: frontend"
+        },
+        "changelog": {
+          "type": "string",
+          "description": "ChangelogPath is the path to the changelog for this project.\nexample: yaml\nchangelog: src/frontend/CHANGELOG.md"
+        },
+        "replacements": {
+          "items": {
+            "$ref": "#/$defs/Replacement"
+          },
+          "type": "array",
+          "description": "Replacements to run when merging a changelog for our project.\nexample: yaml\n# nodejs package.json replacement\nreplacements:\n- path: ui/package.json\n  find: '  \"version\": \".*\",'\n  replace: '  \"version\": \"{{.VersionNoPrefix}}\",'"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "label",
+        "key",
+        "changelog",
+        "replacements"
+      ],
+      "description": "ProjectConfig extends changie to support multiple changelog files for different projects inside one repository."
+    },
+    "Replacement": {
+      "properties": {
+        "path": {
+          "type": "string",
+          "description": "Path of the file to find and replace in.\nAlso supports Go filepath globs.\nexample: yaml\n# Will match any .json file in the current directory\nreplacements:\n  - path: *.json\n    find: '  \"version\": \".*\",'\n    replace: '  \"version\": \"{{.VersionNoPrefix}}\",'"
+        },
+        "find": {
+          "type": "string",
+          "description": "Regular expression to search for in the file.\nCapture groups are supported and can be used in the replace value."
+        },
+        "replace": {
+          "type": "string",
+          "description": "Template string to replace the line with."
+        },
+        "flags": {
+          "type": "string",
+          "description": "Optional regular expression mode flags.\nDefaults to the m flag for multiline such that ^ and $ will match the start and end of each line\nand not just the start and end of the string.\n\nFor more details on regular expression flags in Go view the\n[regexp/syntax](https://pkg.go.dev/regexp/syntax)."
+        }
+      },
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "path",
+        "find",
+        "replace"
+      ],
+      "description": "Replacement handles the finding and replacing values when merging the changelog."
+    }
+  },
+  "properties": {
+    "changesDir": {
+      "type": "string",
+      "description": "Directory for change files, header file and unreleased files.\nRelative to project root.\nexample: yaml\nchangesDir: .changes"
+    },
+    "unreleasedDir": {
+      "type": "string",
+      "description": "Directory for all unreleased change files.\nRelative to [changesDir](#config-changesdir).\nexample: yaml\nunreleasedDir: unreleased"
+    },
+    "headerPath": {
+      "type": "string",
+      "description": "Header content included at the top of the merged changelog.\nA default header file is created when initializing that follows \"Keep a Changelog\".\n\nFilepath for your changelog header file.\nRelative to [changesDir](#config-changesdir).\nexample: yaml\nheaderPath: header.tpl.md"
+    },
+    "changelogPath": {
+      "type": "string",
+      "description": "Filepath for the generated changelog file.\nRelative to project root.\nChangelogPath is not required if you are using projects.\nexample: yaml\nchangelogPath: CHANGELOG.md"
+    },
+    "versionExt": {
+      "type": "string",
+      "description": "File extension for generated version files.\nThis should probably match your changelog path file.\nMust not include the period.\nexample: yaml\n# for markdown changelogs\nversionExt: md"
+    },
+    "versionHeaderPath": {
+      "type": "string",
+      "description": "Filepath for your version header file relative to [unreleasedDir](#config-unreleaseddir).\nIt is also possible to use the '--header-path' parameter when using the [batch command](../cli/changie_batch.md)."
+    },
+    "versionFooterPath": {
+      "type": "string",
+      "description": "Filepath for your version footer file relative to [unreleasedDir](#config-unreleaseddir).\nIt is also possible to use the '--footer-path' parameter when using the [batch command](../cli/changie_batch.md)."
+    },
+    "fragmentFileFormat": {
+      "type": "string",
+      "description": "Customize the file name generated for new fragments.\nThe default uses the component and kind only if configured for your project.\nThe file is placed in the unreleased directory, so the full path is:\n\n`{{.ChangesDir}}/{{.UnreleasedDir}}/{{.FragmentFileFormat}}.yaml`\nexample: yaml\nfragmentFileFormat: \"{{.Kind}}-{{.Custom.Issue}}\""
+    },
+    "versionFormat": {
+      "type": "string",
+      "description": "Template used to generate version headers."
+    },
+    "componentFormat": {
+      "type": "string",
+      "description": "Template used to generate component headers.\nIf format is empty no header will be included.\nIf components are disabled, the format is unused."
+    },
+    "kindFormat": {
+      "type": "string",
+      "description": "Template used to generate kind headers.\nIf format is empty no header will be included.\nIf kinds are disabled, the format is unused."
+    },
+    "changeFormat": {
+      "type": "string",
+      "description": "Template used to generate change lines in version files and changelog.\nCustom values are created through custom choices and can be accessible through the Custom argument.\nexample: yaml\nchangeFormat: '* [#{{.Custom.Issue}}](https://github.com/miniscruff/changie/issues/{{.Custom.Issue}}) {{.Body}}'"
+    },
+    "headerFormat": {
+      "type": "string",
+      "description": "Template used to generate a version header."
+    },
+    "footerFormat": {
+      "type": "string",
+      "description": "Template used to generate a version footer.\nexample: yaml\n# config yaml\ncustom:\n- key: Author\n  type: string\n  minLength: 3\nfooterFormat: |\n  ### Contributors\n  {{- range (customs .Changes \"Author\" | uniq) }}\n  * [{{.}}](https://github.com/{{.}})\n  {{- end}}"
+    },
+    "body": {
+      "$ref": "#/$defs/BodyConfig",
+      "description": "Options to customize the body prompt"
+    },
+    "components": {
+      "items": {
+        "type": "string"
+      },
+      "type": "array",
+      "description": "Components are an additional layer of organization suited for projects that want to split\nchange fragments by an area or tag of the project.\nAn example could be splitting your changelogs by packages for a monorepo.\nIf no components are listed then the component prompt will be skipped and no component header included.\nBy default no components are configured.\nexample: yaml\ncomponents:\n- API\n- CLI\n- Frontend"
+    },
+    "kinds": {
+      "items": {
+        "$ref": "#/$defs/KindConfig"
+      },
+      "type": "array",
+      "description": "Kinds are another optional layer of changelogs suited for specifying what type of change we are\nmaking.\nIf configured, developers will be prompted to select a kind.\n\nThe default list comes from keep a changelog and includes; added, changed, removed, deprecated, fixed, and security.\nexample: yaml\nkinds:\n- label: Added\n- label: Changed\n- label: Deprecated\n- label: Removed\n- label: Fixed\n- label: Security"
+    },
+    "custom": {
+      "items": {
+        "$ref": "#/$defs/Custom"
+      },
+      "type": "array",
+      "description": "Custom choices allow you to ask for additional information when creating a new change fragment.\nThese custom choices are included in the [change custom](#change-custom) value.\nexample: yaml\n# github issue and author name\ncustom:\n- key: Issue\n  type: int\n  minInt: 1\n- key: Author\n  label: GitHub Name\n  type: string\n  minLength: 3"
+    },
+    "replacements": {
+      "items": {
+        "$ref": "#/$defs/Replacement"
+      },
+      "type": "array",
+      "description": "Replacements to run when merging a changelog.\nexample: yaml\n# nodejs package.json replacement\nreplacements:\n- path: package.json\n  find: '  \"version\": \".*\",'\n  replace: '  \"version\": \"{{.VersionNoPrefix}}\",'"
+    },
+    "newlines": {
+      "$ref": "#/$defs/NewlinesConfig",
+      "description": "Newline options allow you to add extra lines between elements written by changie."
+    },
+    "post": {
+      "items": {
+        "$ref": "#/$defs/PostProcessConfig"
+      },
+      "type": "array",
+      "description": "Post process options when saving a new change fragment.\nexample: yaml\n# build a GitHub link from author choice\npost:\n- key: AuthorLink\n  value: \"https://github.com/{{.Custom.Author}}\nchangeFormat: \"* {{.Body}} by [{{.Custom.Author}}]({{.Custom.AuthorLink}})\""
+    },
+    "envPrefix": {
+      "type": "string",
+      "description": "Prefix of environment variables to load for templates.\nThe prefix is removed from resulting key map.\nexample: yaml\n# if we have an environment variable like so:\n# export CHANGIE_PROJECT=changie\n# we can use that in our templates if we set the prefix\nenvPrefix: \"CHANGIE_\"\nversionFormat: \"New release for {{.Env.PROJECT}}\""
+    },
+    "projects": {
+      "items": {
+        "$ref": "#/$defs/ProjectConfig"
+      },
+      "type": "array",
+      "description": "Projects allow you to specify child projects as part of a monorepo setup.\nexample: yaml\nprojects:\n  - label: UI\n    key: ui\n    changelog: ui/CHANGELOG.md\n  - label: Email Sender\n    key: email_sender\n    changelog: services/email/CHANGELOG.md"
+    },
+    "projectsVersionSeparator": {
+      "type": "string",
+      "description": "ProjectsVersionSeparator is used to determine the final version when using projects.\nThe result is: project key + projectVersionSeparator + latest/next version.\nexample: yaml\nprojectsVersionSeparator: \"_\""
+    }
+  },
+  "additionalProperties": false,
+  "type": "object",
+  "required": [
+    "changesDir",
+    "unreleasedDir",
+    "headerPath",
+    "changelogPath",
+    "versionExt",
+    "changeFormat"
+  ],
+  "description": "Config handles configuration for a project."
+}

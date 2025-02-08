@@ -1,0 +1,5 @@
+kind: fixed
+body: next version with projects without any releases returns v1.0.0 instead of an error
+time: 2025-02-07T23:17:18.461699249-08:00
+custom:
+    Issue: "743"

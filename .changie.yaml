@@ -1,3 +1,4 @@
+# yaml-language-server: $schema=docs/schema.json
 changesDir: .changes
 unreleasedDir: unreleased
 headerPath: header.tpl.md

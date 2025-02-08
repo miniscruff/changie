@@ -155,24 +155,14 @@ func TestGetLatestReturnsZerosIfNoVersionsExist(t *testing.T) {
 	then.Equals(t, "v0.0.0", ver.Original())
 }
 
-func TestErrorLatestVersionBadReadDir(t *testing.T) {
-	then.WithTempDir(t)
-
-	config := &Config{ChangesDir: "\\."}
-
-	ver, err := GetLatestVersion(config, false, "")
-	then.Equals(t, nil, ver)
-	then.NotNil(t, err)
-}
-
 func TestErrorNextVersionBadReadDir(t *testing.T) {
 	then.WithTempDir(t)
 
 	config := &Config{ChangesDir: "\\."}
 
 	ver, err := GetNextVersion(config, "major", nil, nil, nil, "")
-	then.Equals(t, nil, ver)
-	then.NotNil(t, err)
+	then.Equals(t, "v1.0.0", ver.Original())
+	then.Nil(t, err)
 }
 
 func TestErrorNextVersionBadVersion(t *testing.T) {
