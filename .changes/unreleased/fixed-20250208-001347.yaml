@@ -1,0 +1,5 @@
+kind: fixed
+body: Missing yaml struct tags on a few configs for json schema
+time: 2025-02-08T00:13:47.416161947-08:00
+custom:
+    Issue: "687"
