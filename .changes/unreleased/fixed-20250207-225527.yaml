@@ -1,0 +1,5 @@
+kind: fixed
+body: Merging when configured to use projects but the changelog path does not yet exist
+time: 2025-02-07T22:55:27.570690973-08:00
+custom:
+    Issue: "743"
