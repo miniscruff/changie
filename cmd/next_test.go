@@ -151,6 +151,20 @@ func TestNextVersionWithPrereleaseAndMeta(t *testing.T) {
 	then.Equals(t, "v0.1.1-b1+hash", builder.String())
 }
 
+func TestNextVersionWithoutAnyChangesIsV1(t *testing.T) {
+	cfg := nextTestConfig()
+	then.WithTempDirConfig(t, cfg)
+
+	builder := strings.Builder{}
+
+	next := NewNext()
+	next.SetOut(&builder)
+
+	err := next.Run(next.Command, []string{"major"})
+	then.Nil(t, err)
+	then.Equals(t, "v1.0.0", builder.String())
+}
+
 func TestErrorNextVersionBadConfig(t *testing.T) {
 	then.WithTempDir(t)
 
@@ -190,18 +204,5 @@ func TestErrorNextUnableToGetChanges(t *testing.T) {
 
 	// bad yaml will fail to load changes
 	err := next.Run(next.Command, []string{"auto"})
-	then.NotNil(t, err)
-}
-
-func TestErrorNextUnableToGetVersions(t *testing.T) {
-	then.WithTempDirConfig(t, nextTestConfig())
-
-	next := NewNext()
-	builder := strings.Builder{}
-
-	next.SetOut(&builder)
-
-	// no files, means bad read for get versions
-	err := next.Run(next.Command, []string{"major"})
 	then.NotNil(t, err)
 }

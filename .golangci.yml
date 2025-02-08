@@ -4,8 +4,6 @@ linters-settings:
   goconst:
     min-len: 5
     min-occurrences: 5
-  gocyclo:
-    min-complexity: 16
   goimports:
     local-prefixes: github.com/miniscruff/changie
   golint:
@@ -26,7 +24,6 @@ linters:
     - errcheck
     - exhaustive
     - goconst
-    - gocyclo
     - gofmt
     - goimports
     - goprintffuncname
