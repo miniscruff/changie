@@ -42,15 +42,15 @@ type KindConfig struct {
 	// By default it will use label if no key is provided.
 	// example: yaml
 	// key: feature
-	Key string `yaml:",omitempty"`
+	Key string `yaml:"key,omitempty"`
 	// Label is the value used in the prompt when selecting a kind.
 	// example: yaml
 	// label: Feature
-	Label string `yaml:",omitempty" required:"true"`
+	Label string `yaml:"label,omitempty" required:"true"`
 	// Format will override the root kind format when building the kind header.
 	// example: yaml
 	// format: '### {{.Kind}} **Breaking Changes**'
-	Format string `yaml:",omitempty"`
+	Format string `yaml:"format,omitempty"`
 	// Change format will override the root change format when building changes specific to this kind.
 	// example: yaml
 	// changeFormat: 'Breaking: {{.Custom.Body}}
