@@ -84,7 +84,6 @@ func TestMergeVersionsSuccessfullyWithProject(t *testing.T) {
 	then.WriteFile(t, []byte("first version\n"), cfg.ChangesDir, "a", "v0.1.0.md")
 	then.WriteFile(t, []byte("second version\n"), cfg.ChangesDir, "a", "v0.2.0.md")
 	then.WriteFile(t, []byte("version\n"), "a", "VERSION")
-	then.Nil(t, os.MkdirAll(filepath.Join("a", "thing"), core.CreateDirMode))
 
 	cmd := NewMerge(core.NewTemplateCache())
 
@@ -96,6 +95,28 @@ first version
 `
 	then.FileContents(t, changeContents, "a", "thing", "CHANGELOG.md")
 	then.FileContents(t, "v0.2.0\n", "a", "VERSION")
+}
+
+func TestMergeVersionsSuccessfullyWithProjectAndNoChanges(t *testing.T) {
+	cfg := mergeTestConfig()
+	cfg.HeaderPath = ""
+	cfg.Replacements = nil
+	cfg.Projects = []core.ProjectConfig{
+		{
+			Label:         "A thing",
+			Key:           "a",
+			ChangelogPath: "a/thing/CHANGELOG.md",
+		},
+	}
+	then.WithTempDirConfig(t, cfg)
+
+	cmd := NewMerge(core.NewTemplateCache())
+
+	err := cmd.Run(cmd.Command, nil)
+	then.Nil(t, err)
+
+	changeContents := ``
+	then.FileContents(t, changeContents, "a", "thing", "CHANGELOG.md")
 }
 
 func TestMergeVersionsErrorMissingProjectDir(t *testing.T) {
