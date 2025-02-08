@@ -104,25 +104,26 @@ func (g *Gen) Run(cmd *cobra.Command, args []string) error {
 	// This auto generates a h4 which is added to our table of contents.
 	cmd.Root().DisableAutoGenTag = true
 
-    jsonReflector := jsonschema.Reflector{}
-    jsonReflector.FieldNameTag = "yaml"
-    jsonReflector.ExpandedStruct = true
-    err = jsonReflector.AddGoComments("github.com/miniscruff/changie", "./")
+	jsonReflector := jsonschema.Reflector{}
+	jsonReflector.FieldNameTag = "yaml"
+	jsonReflector.ExpandedStruct = true
+
+	err = jsonReflector.AddGoComments("github.com/miniscruff/changie", "./")
 	if err != nil {
 		return fmt.Errorf("creating jsonschema go comments: %w", err)
 	}
 
 	jsonSchemaFile, err := os.Create(filepath.Join("docs", "schema.json"))
 	if err != nil {
-        return fmt.Errorf("creating or opening json schema file: %w", err)
+		return fmt.Errorf("creating or opening json schema file: %w", err)
 	}
-    defer jsonSchemaFile.Close()
+	defer jsonSchemaFile.Close()
 
-    schema := jsonReflector.Reflect(&core.Config{})
-    schemaEncoder := json.NewEncoder(jsonSchemaFile)
-    schemaEncoder.SetIndent("", "  ")
+	schema := jsonReflector.Reflect(&core.Config{})
+	schemaEncoder := json.NewEncoder(jsonSchemaFile)
+	schemaEncoder.SetIndent("", "  ")
 
-    err = schemaEncoder.Encode(schema)
+	err = schemaEncoder.Encode(schema)
 	if err != nil {
 		return fmt.Errorf("creating or opening config index: %w", err)
 	}
