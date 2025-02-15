@@ -37,7 +37,7 @@ jobs:
         echo RELEASE_NOTES_PATH=.changes/$(go run main.go latest).md >> $GITHUB_ENV
 
     - name: Run GoReleaser
-      uses: goreleaser/goreleaser-action@v6.1.0
+      uses: goreleaser/goreleaser-action@v6.2.1
       with:
         version: latest
         args: --clean --release-notes=${{ env.RELEASE_NOTES_PATH }} --skip=validate --verbose
