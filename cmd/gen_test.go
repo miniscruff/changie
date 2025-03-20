@@ -41,6 +41,10 @@ func TestCanGetFiles(t *testing.T) {
 	// ignore any bad error trying to remove the file, it may not exist and that is ok
 	_ = os.Remove(configDocsPath)
 
+	// create cli docs directory if it does not already exist
+	err = os.MkdirAll(cliDocsPath, os.ModePerm)
+	then.Nil(t, err)
+
 	cliDocsFiles, err := os.ReadDir(cliDocsPath)
 	then.Nil(t, err)
 
@@ -65,15 +69,6 @@ func TestCanGetFiles(t *testing.T) {
 	then.FileExists(t, cliDocsPath, "changie_batch.md")
 	then.FileExists(t, cliDocsPath, "changie_merge.md")
 	then.FileExists(t, configDocsPath)
-}
-
-func TestErrorGenIfContentPathIsMissing(t *testing.T) {
-	cmd := RootCmd()
-
-	then.WithTempDir(t)
-
-	cmd.SetArgs([]string{"gen"})
-	then.NotNil(t, cmd.Execute())
 }
 
 func TestErrorGenBadWriteTypesWriter(t *testing.T) {

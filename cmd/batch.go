@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"io/fs"
 	"os"
 	"path/filepath"
 
@@ -56,6 +57,7 @@ func NewBatch(
 		Long: `Merges all unreleased changes into one version changelog.
 
 Batch takes one argument for the next version to use, below are possible options.
+
 * A specific semantic version value, with optional prefix
 * Major, minor or patch to bump one level by one
 * Auto which will automatically bump based on what changes were found
@@ -66,6 +68,7 @@ Line breaks are added before each formatted line except the first, if you wish t
 add more line breaks include them in your format configurations.
 
 Changes are sorted in the following order:
+
 * Components if enabled, in order specified by config.components
 * Kinds if enabled, in order specified by config.kinds
 * Timestamp oldest first`,
@@ -178,9 +181,9 @@ func (b *Batch) getBatchData() (*core.BatchData, error) {
 		Version:         currentVersion.Original(),
 		VersionNoPrefix: currentVersion.String(),
 		PreviousVersion: previousVersion.Original(),
-		Major:           int(currentVersion.Major()),
-		Minor:           int(currentVersion.Minor()),
-		Patch:           int(currentVersion.Patch()),
+		Major:           int(currentVersion.Major()), //nolint:gosec
+		Minor:           int(currentVersion.Minor()), //nolint:gosec
+		Patch:           int(currentVersion.Patch()), //nolint:gosec
 		Prerelease:      currentVersion.Prerelease(),
 		Metadata:        currentVersion.Metadata(),
 		Changes:         allChanges,
@@ -189,9 +192,7 @@ func (b *Batch) getBatchData() (*core.BatchData, error) {
 }
 
 //nolint:gocyclo
-func (b *Batch) Run(cmd *cobra.Command, args []string) error {
-	var err error
-
+func (b *Batch) Run(cmd *cobra.Command, args []string) (err error) {
 	// save our version for later use
 	b.version = args[0]
 
@@ -224,18 +225,27 @@ func (b *Batch) Run(cmd *cobra.Command, args []string) error {
 	if b.DryRun {
 		b.writer = cmd.OutOrStdout()
 	} else {
-		versionPath := filepath.Join(b.config.ChangesDir, b.Project, data.Version+"."+b.config.VersionExt)
+		versionFilePath := filepath.Join(b.config.ChangesDir, b.Project, data.Version+"."+b.config.VersionExt)
 
 		if !b.Force {
-			if exists, existErr := core.FileExists(versionPath); exists || existErr != nil {
-				return fmt.Errorf("%w: %v", errVersionExists, versionPath)
+			if exists, existErr := core.FileExists(versionFilePath); exists || existErr != nil {
+				return fmt.Errorf("%w: %v", errVersionExists, versionFilePath)
 			}
 		}
 
-		versionFile, createErr := os.Create(versionPath)
+		versionFile, createErr := os.Create(versionFilePath)
 		if createErr != nil {
 			return createErr
 		}
+
+		defer func() {
+			if err != nil {
+				removeErr := os.Remove(versionFilePath)
+				if removeErr != nil {
+					err = fmt.Errorf("batching error: %w, removing new file error: %w", err, removeErr)
+				}
+			}
+		}()
 
 		defer versionFile.Close()
 		b.writer = versionFile
@@ -381,11 +391,11 @@ func (b *Batch) WriteTemplateFile(
 	var fileBytes []byte
 
 	fileBytes, readErr := os.ReadFile(fullPath)
-	if readErr != nil && !os.IsNotExist(readErr) {
+	if readErr != nil && !errors.Is(readErr, fs.ErrNotExist) {
 		return readErr
 	}
 
-	if os.IsNotExist(readErr) {
+	if errors.Is(readErr, fs.ErrNotExist) {
 		return nil
 	}
 

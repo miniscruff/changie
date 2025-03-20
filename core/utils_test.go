@@ -155,24 +155,14 @@ func TestGetLatestReturnsZerosIfNoVersionsExist(t *testing.T) {
 	then.Equals(t, "v0.0.0", ver.Original())
 }
 
-func TestErrorLatestVersionBadReadDir(t *testing.T) {
-	then.WithTempDir(t)
-
-	config := &Config{ChangesDir: "\\."}
-
-	ver, err := GetLatestVersion(config, false, "")
-	then.Equals(t, nil, ver)
-	then.NotNil(t, err)
-}
-
 func TestErrorNextVersionBadReadDir(t *testing.T) {
 	then.WithTempDir(t)
 
 	config := &Config{ChangesDir: "\\."}
 
 	ver, err := GetNextVersion(config, "major", nil, nil, nil, "")
-	then.Equals(t, nil, ver)
-	then.NotNil(t, err)
+	then.Equals(t, "v1.0.0", ver.Original())
+	then.Nil(t, err)
 }
 
 func TestErrorNextVersionBadVersion(t *testing.T) {
@@ -631,6 +621,27 @@ func TestGetAllChanges(t *testing.T) {
 	then.Equals(t, "third", changes[2].Body)
 }
 
+func TestGetAllChangesErrorIfNoKindWhenConfigured(t *testing.T) {
+	then.WithTempDir(t)
+
+	cfg := utilsTestConfig()
+	orderedTimes := []time.Time{
+		time.Date(2019, 5, 25, 20, 45, 0, 0, time.UTC),
+	}
+
+	changes := []Change{
+		{Kind: "added not found", Body: "ignored", Time: orderedTimes[0]},
+	}
+	for i, c := range changes {
+		then.WriteFileTo(t, c, cfg.ChangesDir, cfg.UnreleasedDir, fmt.Sprintf("%d.yaml", i))
+	}
+
+	then.CreateFile(t, cfg.ChangesDir, cfg.UnreleasedDir, "ignored.txt")
+
+	_, err := GetChanges(cfg, nil, "")
+	then.Err(t, ErrKindNotFound, err)
+}
+
 func TestGetAllChangesWithProject(t *testing.T) {
 	then.WithTempDir(t)
 
@@ -641,6 +652,8 @@ func TestGetAllChangesWithProject(t *testing.T) {
 			Key:   "web_hook_sender",
 		},
 	}
+	cfg.Kinds[0].Key = "added"
+	cfg.Kinds[0].Label = "Added Label"
 
 	changes := []Change{
 		{Kind: "added", Body: "first", Project: "web_hook_sender"},
@@ -656,6 +669,10 @@ func TestGetAllChangesWithProject(t *testing.T) {
 	then.Equals(t, 2, len(changes))
 	then.Equals(t, "first", changes[0].Body)
 	then.Equals(t, "second", changes[1].Body)
+	then.Equals(t, "added", changes[0].KindKey)
+	then.Equals(t, "added", changes[1].KindKey)
+	then.Equals(t, "Added Label", changes[0].KindLabel)
+	then.Equals(t, "Added Label", changes[1].KindLabel)
 }
 
 func TestFileExists(t *testing.T) {

@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"io/fs"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -28,6 +29,7 @@ var (
 	ErrBadVersionOrPart      = errors.New("part string is not a supported version or version increment")
 	ErrMissingAutoLevel      = errors.New("kind config missing auto level value for auto bumping")
 	ErrNoChangesFoundForAuto = errors.New("no unreleased changes found for automatic bumping")
+	ErrKindNotFound          = errors.New("kind not found but configuration expects one")
 )
 
 var (
@@ -59,6 +61,10 @@ func GetAllVersions(
 	}
 
 	fileInfos, err := os.ReadDir(versionsPath)
+	if err != nil && errors.Is(err, fs.ErrNotExist) {
+		return allVersions, nil
+	}
+
 	if err != nil {
 		return allVersions, fmt.Errorf("reading files from '%s': %w", versionsPath, err)
 	}
@@ -306,6 +312,14 @@ func GetChanges(
 		}
 
 		c.Env = cfg.EnvVars()
+
+		kc := cfg.KindFromKeyOrLabel(c.KindKey)
+		if kc != nil {
+			c.KindLabel = kc.Label
+		} else if len(cfg.Kinds) > 0 {
+			return nil, fmt.Errorf("%w: '%s'", ErrKindNotFound, c.KindKey)
+		}
+
 		changes = append(changes, c)
 	}
 
