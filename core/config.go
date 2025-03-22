@@ -271,7 +271,7 @@ type Config struct {
 	// `{{.ChangesDir}}/{{.UnreleasedDir}}/{{.FragmentFileFormat}}.yaml`
 	// example: yaml
 	// fragmentFileFormat: "{{.Kind}}-{{.Custom.Issue}}"
-	FragmentFileFormat string `yaml:"fragmentFileFormat,omitempty" default:"{{.Project}}-{{.Component}}-{{.Kind}}-{{.Time.Format \"20060102-150405\"}}" templateType:"Change"`
+	FragmentFileFormat string `yaml:"fragmentFileFormat,omitempty" default:"{{.Project}}-{{.Component}}-{{.Kind}}-{{.Time.Format \"20060102-150405\"}}" templateType:"Change"` //nolint:lll
 	// Template used to generate version headers.
 	VersionFormat string `yaml:"versionFormat,omitempty" templateType:"BatchData"`
 	// Template used to generate component headers.

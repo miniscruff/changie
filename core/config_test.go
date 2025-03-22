@@ -155,9 +155,9 @@ func TestLoadConfigMultipleLayersWithoutAConfig(t *testing.T) {
 	then.WithTempDir(t)
 
 	then.Nil(t, os.MkdirAll(filepath.Join("a", "b", "c"), CreateDirMode))
-	then.Nil(t, os.Chdir("a"))
-	then.Nil(t, os.Chdir("b"))
-	then.Nil(t, os.Chdir("c"))
+	t.Chdir("a")
+	t.Chdir("b")
+	t.Chdir("c")
 
 	_, err := LoadConfig()
 	then.Err(t, ErrConfigNotFound, err)
@@ -168,9 +168,9 @@ func TestLoadConfigMultipleLayersDown(t *testing.T) {
 	then.WriteFile(t, []byte("changesDir: C\nheaderPath: header.rst\n"), ".changie.yml")
 
 	then.Nil(t, os.MkdirAll(filepath.Join("a", "b", "c"), CreateDirMode))
-	then.Nil(t, os.Chdir("a"))
-	then.Nil(t, os.Chdir("b"))
-	then.Nil(t, os.Chdir("c"))
+	t.Chdir("a")
+	t.Chdir("b")
+	t.Chdir("c")
 
 	config, err := LoadConfig()
 	then.Nil(t, err)
