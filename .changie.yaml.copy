@@ -17,18 +17,12 @@ kinds:
   - label: ⚰️ Deprecated
     key: deprecated
     auto: minor
-    skipBody: true
   - label: 🗑️ Removed
     key: removed
     auto: minor
-    additionalChoices:
-    - key: Reason
-      type: int
-      minInt: 1
   - label: 🪲 Fixed
     key: fixed
     auto: patch
-    skipGlobalChoices: true
   - label: 🦺 Security
     key: security
     auto: patch

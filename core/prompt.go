@@ -6,9 +6,7 @@ import (
 	"io"
 	"runtime"
 
-	tea "github.com/charmbracelet/bubbletea"
-	"github.com/cqroot/prompt"
-	"github.com/cqroot/prompt/multichoose"
+	"github.com/charmbracelet/huh"
 )
 
 var (
@@ -48,27 +46,202 @@ func (p *Prompts) BuildChanges() ([]*Change, error) {
 		return nil, err
 	}
 
-	err = p.projects()
-	if err != nil {
-		return nil, err
+	fields := make([]huh.Field, 0)
+
+	if len(p.Config.Projects) > 0 && len(p.Projects) == 0 {
+		projectOptions := make([]huh.Option[string], len(p.Config.Projects))
+		for i, proj := range p.Config.Projects {
+			projectOptions[i] = huh.NewOption(proj.Label, proj.Key)
+		}
+
+		fields = append(fields, huh.NewMultiSelect[string]().
+			Title("Projects").
+			Options(projectOptions...).
+			//TODO validation
+			Value(&p.Projects),
+		)
 	}
 
-	err = p.component()
-	if err != nil {
-		return nil, err
+	if len(p.Config.Components) > 0 && len(p.Component) == 0 {
+		componentOptions := make([]huh.Option[string], len(p.Config.Components))
+		for i, comp := range p.Config.Components {
+			componentOptions[i] = huh.NewOption(comp, comp)
+		}
+		fields = append(fields, huh.NewSelect[string]().
+			Title("Component").
+			Options(componentOptions...).
+			//TODO validation
+			Value(&p.Component),
+		)
 	}
 
-	err = p.kind()
-	if err != nil {
-		return nil, err
+	if len(p.Config.Kinds) > 0 && len(p.Kind) == 0 {
+		kindOptions := make([]huh.Option[string], len(p.Config.Kinds))
+		for i, kindConfig := range p.Config.Kinds {
+			kindOptions[i] = huh.NewOption(kindConfig.Label, kindConfig.Key)
+		}
+
+		fields = append(fields, huh.NewSelect[string]().
+			Title("Kind").
+			Options(kindOptions...).
+			Validate(func(value string) error {
+				kc := p.Config.KindFromKeyOrLabel(p.Kind)
+				if kc == nil {
+					return errInvalidKind
+				}
+
+				p.KindConfig = kc
+				return nil
+			}).
+			Value(&p.Kind),
+		)
 	}
 
-	err = p.body()
-	if err != nil {
-		return nil, err
+	fields = append(fields, huh.NewText().
+		Title("Body").
+		//TODO validation
+		WithHideFunc(func() bool {
+			kc := p.Config.KindFromKeyOrLabel(p.Kind)
+			if kc == nil {
+				return false
+			}
+			return kc.SkipBody
+		}, &p.Kind).
+		Value(&p.Body),
+	)
+
+	for _, choice := range p.Config.CustomChoices {
+		valFunc := func() bool {
+			kc := p.Config.KindFromKeyOrLabel(p.Kind)
+			if kc == nil {
+				return true
+			}
+			return kc.SkipGlobalChoices
+		}
+
+		var f huh.Field
+		switch choice.Type {
+		case CustomString:
+			var s string
+			f = huh.NewText().
+				Title(choice.DisplayLabel()).
+				//TODO validation
+				WithHideFunc(valFunc, &p.Kind).
+				Validate(func(value string) error {
+					if len(value) == 0 {
+						delete(p.Customs, choice.Key)
+					} else {
+						p.Customs[choice.Key] = value
+					}
+
+					return nil
+				}).
+				Value(&s)
+		// case CustomBlock:
+		// return c.askBlock(stdinReader)
+		case CustomInt:
+			var s string
+			f = huh.NewText().
+				Title(choice.DisplayLabel()).
+				WithHideFunc(valFunc, &p.Kind).
+				Validate(func(value string) error {
+					//TODO validation
+					if len(value) == 0 {
+						delete(p.Customs, choice.Key)
+					} else {
+						p.Customs[choice.Key] = value
+					}
+
+					return nil
+				}).
+				Value(&s)
+			// case CustomEnum:
+			// return c.askEnum(stdinReader)
+		}
+		fields = append(fields, f)
 	}
 
-	err = p.userChoices()
+	for _, kc := range p.Config.Kinds {
+		for _, choice := range kc.AdditionalChoices {
+			valFunc := func() bool {
+				configKind := p.Config.KindFromKeyOrLabel(p.Kind)
+				if configKind == nil {
+					return true
+				}
+				return configKind.Key != kc.Key
+			}
+
+			var f huh.Field
+			switch choice.Type {
+			case CustomString:
+				var s string
+				f = huh.NewText().
+					Title(choice.DisplayLabel()).
+					WithHideFunc(valFunc, &p.Kind).
+					Validate(func(value string) error {
+						if len(value) == 0 {
+							delete(p.Customs, choice.Key)
+						} else {
+							p.Customs[choice.Key] = value
+						}
+
+						return nil
+					}).
+					Value(&s)
+			// case CustomBlock:
+			// return c.askBlock(stdinReader)
+			case CustomInt:
+				var s string
+				f = huh.NewText().
+					Title(choice.DisplayLabel()).
+					WithHideFunc(valFunc, &p.Kind).
+					Validate(func(value string) error {
+						//TODO validation
+						if len(value) == 0 {
+							delete(p.Customs, choice.Key)
+						} else {
+							p.Customs[choice.Key] = value
+						}
+
+						return nil
+					}).
+					Value(&s)
+				// case CustomEnum:
+				// return c.askEnum(stdinReader)
+			}
+			fields = append(fields, f)
+		}
+	}
+
+	/*
+		if p.KindConfig != nil {
+			userChoices = append(userChoices, p.KindConfig.AdditionalChoices...)
+		}
+
+		// custom map may be nil, which is fine if we have no choices
+		// otherwise we need to initialize it
+		if len(userChoices) > 0 && p.Customs == nil {
+			p.Customs = make(map[string]string)
+		}
+
+		for _, custom := range userChoices {
+			// skip already provided values
+			if p.Customs[custom.Key] != "" {
+				continue
+			}
+
+			var err error
+
+			p.Customs[custom.Key], err = custom.AskPrompt(p.StdinReader)
+			if err != nil {
+				return err
+			}
+		}
+	*/
+
+	form := huh.NewForm(huh.NewGroup(fields...))
+
+	err = form.Run()
 	if err != nil {
 		return nil, err
 	}
@@ -170,108 +343,6 @@ func (p *Prompts) validateArguments() error {
 	}
 
 	return nil
-}
-
-func (p *Prompts) projects() error {
-	if len(p.Config.Projects) == 0 {
-		return nil
-	}
-
-	if len(p.Projects) == 0 {
-		var err error
-
-		projs, err := prompt.New().Ask("Projects").
-			MultiChoose(
-				p.Config.ProjectLabels(),
-				multichoose.WithHelp(true),
-				multichoose.WithTeaProgramOpts(tea.WithInput(p.StdinReader)),
-			)
-		if err != nil {
-			return err
-		}
-
-		if len(projs) == 0 {
-			return errProjectRequired
-		}
-
-		p.Projects = projs
-	}
-
-	// Quickly validate the project exists and lines up before moving on.
-	for _, proj := range p.Projects {
-		_, err := p.Config.Project(proj)
-		if err != nil {
-			return fmt.Errorf("%w: %s", err, proj)
-		}
-	}
-
-	return nil
-}
-
-func (p *Prompts) component() error {
-	if len(p.Config.Components) == 0 {
-		return nil
-	}
-
-	if len(p.Component) == 0 {
-		var err error
-
-		comp, err := Custom{
-			Type:        CustomEnum,
-			Label:       "Component",
-			EnumOptions: p.Config.Components,
-		}.AskPrompt(p.StdinReader)
-		if err != nil {
-			return err
-		}
-
-		p.Component = comp
-	}
-
-	for _, comp := range p.Config.Components {
-		if comp == p.Component {
-			return nil
-		}
-	}
-
-	return fmt.Errorf("%w: %s", errInvalidComponent, p.Component)
-}
-
-func (p *Prompts) kind() error {
-	if len(p.Config.Kinds) == 0 {
-		return nil
-	}
-
-	if len(p.Kind) == 0 {
-		kindLabels := make([]string, len(p.Config.Kinds))
-		for i, kc := range p.Config.Kinds {
-			kindLabels[i] = kc.Label
-		}
-
-		kind, err := Custom{
-			Type:        CustomEnum,
-			Label:       "Kind",
-			EnumOptions: kindLabels,
-		}.AskPrompt(p.StdinReader)
-		if err != nil {
-			return err
-		}
-
-		p.Kind = kind
-	}
-
-	for i := range p.Config.Kinds {
-		kindConfig := &p.Config.Kinds[i]
-
-		if kindConfig.Label == p.Kind || kindConfig.Key == p.Kind {
-			p.KindConfig = kindConfig
-			p.Kind = kindConfig.KeyOrLabel()
-
-			return nil
-		}
-	}
-
-	return fmt.Errorf("%w: %s", errInvalidKind, p.Kind)
 }
 
 func (p *Prompts) body() error {

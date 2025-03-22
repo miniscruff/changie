@@ -20,7 +20,7 @@ lint: # Run linters
 	golangci-lint run ./...
 
 .PHONY: format
-format: lint # alias for lint
+format: lint # Alias for lint
 
 .PHONY: gen
 gen: # Generate config and CLI docs
