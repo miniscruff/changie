@@ -5,10 +5,12 @@ import (
 	"fmt"
 	"io"
 	"runtime"
+	"slices"
 
-	tea "github.com/charmbracelet/bubbletea"
 	"github.com/cqroot/prompt"
 	"github.com/cqroot/prompt/multichoose"
+
+	tea "github.com/charmbracelet/bubbletea"
 )
 
 var (
@@ -95,7 +97,7 @@ func (p *Prompts) BuildChanges() ([]*Change, error) {
 	}
 
 	changes := make([]*Change, len(p.Projects))
-	for i := 0; i < len(changes); i++ {
+	for i := range len(changes) {
 		// Err is already validated when getting the project above.
 		projConfig, _ := p.Config.Project(p.Projects[i])
 		changes[i] = &Change{
@@ -228,13 +230,11 @@ func (p *Prompts) component() error {
 		p.Component = comp
 	}
 
-	for _, comp := range p.Config.Components {
-		if comp == p.Component {
-			return nil
-		}
+	if !slices.Contains(p.Config.Components, p.Component) {
+		return fmt.Errorf("%w: %s", errInvalidComponent, p.Component)
 	}
 
-	return fmt.Errorf("%w: %s", errInvalidComponent, p.Component)
+	return nil
 }
 
 func (p *Prompts) kind() error {

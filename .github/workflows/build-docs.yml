@@ -21,13 +21,13 @@ on:
 jobs:
   build:
     name: Build Docs
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     steps:
 
     - name: Setup Go
       uses: actions/setup-go@v5
       with:
-        go-version: 1.22
+        go-version: 1.24
 
     - name: Check out code
       uses: actions/checkout@v4

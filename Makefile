@@ -16,8 +16,8 @@ test: # Run unit test suite
 
 .PHONY: lint
 lint: # Run linters
-	goimports -w -local github.com/miniscruff/changie .
-	golangci-lint run ./...
+	go mod tidy
+	golangci-lint run --fix ./...
 
 .PHONY: format
 format: lint # alias for lint

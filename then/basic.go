@@ -78,7 +78,7 @@ func SliceEquals[T comparable](t *testing.T, expected, actual []T) {
 		t.FailNow()
 	}
 
-	for i := 0; i < len(expected); i++ {
+	for i := range len(expected) {
 		if expected[i] != actual[i] {
 			t.Logf(
 				"expected value does not equal actual at index %v: expected '%v' != '%v'",

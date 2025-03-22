@@ -11,26 +11,17 @@ type Saver interface {
 	Save() error
 }
 
-// WithTempDir creates a temporary directory and moves our working directory to it.
-// At the end of our test it will remove the directory and revert our working directory
-// to the original value.
+// WithTempDir creates a temp directory and changes into it for a test.
 func WithTempDir(t *testing.T) {
 	t.Helper()
 
-	startDir, err := os.Getwd()
-	Nil(t, err)
-
 	tempDir := t.TempDir()
-
-	err = os.Chdir(tempDir)
-	Nil(t, err)
-
-	t.Cleanup(func() {
-		err := os.Chdir(startDir)
-		Nil(t, err)
-	})
+	t.Log("creating tempdir:", tempDir)
+	t.Chdir(tempDir)
 }
 
+// WithTempDirConfig creates a temp directory and changes into it for a test.
+// This will also save a config file for use in the test.
 func WithTempDirConfig(t *testing.T, cfg Saver) {
 	t.Helper()
 	WithTempDir(t)

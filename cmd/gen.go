@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"go/ast"
-	godoc "go/doc"
 	"go/parser"
 	"go/token"
 	"io"
@@ -18,6 +17,8 @@ import (
 	"github.com/invopop/jsonschema"
 	"github.com/spf13/cobra"
 	"github.com/spf13/cobra/doc"
+
+	godoc "go/doc"
 
 	"github.com/miniscruff/changie/core"
 )
@@ -405,12 +406,13 @@ func writeType(writer io.Writer, typeProps TypeProps) error {
 	// Do not write our root Config type header
 	if typeProps.Name != "Config" {
 		anchor := strings.ToLower(typeProps.Name) + "-type"
-		_, err := writer.Write([]byte(fmt.Sprintf(
+		_, err := writer.Write(fmt.Appendf(
+			[]byte{},
 			"## %s %v\n%s\n",
 			typeProps.Name,
 			buildSourceAnchorLink(anchor, typeProps.File, typeProps.Line),
 			typeProps.Doc,
-		)))
+		))
 
 		if err != nil {
 			return err
@@ -418,11 +420,12 @@ func writeType(writer io.Writer, typeProps TypeProps) error {
 	}
 
 	if typeProps.ExampleContent != "" {
-		_, _ = writer.Write([]byte(fmt.Sprintf(
+		_, _ = writer.Write(fmt.Appendf(
+			[]byte{},
 			"??? Example\n    ```%v\n    %v\n    ```\n",
 			typeProps.ExampleLang,
 			strings.Trim(typeProps.ExampleContent, "\n"),
-		)))
+		))
 	}
 
 	for _, f := range typeProps.Fields {
@@ -445,33 +448,36 @@ func writeField(writer io.Writer, parent TypeProps, field FieldProps) error {
 
 	anchor := strings.ToLower(parent.Name) + "-" + strings.ToLower(field.Key)
 
-	_, err := writer.Write([]byte(fmt.Sprintf(
+	_, err := writer.Write(fmt.Appendf(
+		[]byte{},
 		"### %s %v\n",
 		field.Key,
 		buildSourceAnchorLink(anchor, field.File, field.Line),
-	)))
+	))
 	if err != nil {
 		return err
 	}
 
 	switch {
 	case field.IsCustomType:
-		_, _ = writer.Write([]byte(fmt.Sprintf(
+		_, _ = writer.Write(fmt.Appendf(
+			[]byte{},
 			"type: [%s%s](#%s-type)",
 			typePrefix,
 			field.TypeName,
 			strings.ToLower(field.TypeName),
-		)))
+		))
 	case field.TypeName != "":
-		_, _ = writer.Write([]byte(fmt.Sprintf("type: `%s%s`", typePrefix, field.TypeName)))
+		_, _ = writer.Write(fmt.Appendf([]byte{}, "type: `%s%s`", typePrefix, field.TypeName))
 	case field.MapKeyTypeName != "":
 		// currently no option of having a map of custom types or slices
 		// but that is not used right now
-		_, _ = writer.Write([]byte(fmt.Sprintf(
+		_, _ = writer.Write(fmt.Appendf(
+			[]byte{},
 			"type: map [ `%s` ] `%s`",
 			field.MapKeyTypeName,
 			field.MapValueTypeName,
-		)))
+		))
 	}
 
 	if field.TypeName != "" || field.MapKeyTypeName != "" {
@@ -486,22 +492,24 @@ func writeField(writer io.Writer, parent TypeProps, field FieldProps) error {
 
 	if field.TemplateType != "" {
 		_, _ = writer.Write([]byte(" | "))
-		_, _ = writer.Write([]byte(fmt.Sprintf(
+		_, _ = writer.Write(fmt.Appendf(
+			[]byte{},
 			"template type: [%s](#%s-type)",
 			field.TemplateType,
 			strings.ToLower(field.TemplateType),
-		)))
+		))
 	}
 
 	_, _ = writer.Write([]byte("\n\n"))
 	_, _ = writer.Write([]byte(field.Doc))
 
 	if field.ExampleContent != "" {
-		_, _ = writer.Write([]byte(fmt.Sprintf(
+		_, _ = writer.Write(fmt.Appendf(
+			[]byte{},
 			"??? Example\n    ```%v\n    %v\n    ```\n",
 			field.ExampleLang,
 			strings.Trim(field.ExampleContent, "\n"),
-		)))
+		))
 	}
 
 	_, _ = writer.Write([]byte("\n"))

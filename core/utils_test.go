@@ -113,6 +113,9 @@ func TestGetLatestVersionReturnsMostRecent(t *testing.T) {
 	then.Equals(t, "v0.2.0", ver.Original())
 }
 
+func TestConfigFileGen(t *testing.T) {
+}
+
 func TestGetLatestReturnsRC(t *testing.T) {
 	then.WithTempDir(t)
 	then.CreateFile(t, "header.md")

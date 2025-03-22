@@ -4,15 +4,16 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"slices"
 	"strconv"
 	"strings"
-
-	tea "github.com/charmbracelet/bubbletea"
 
 	"github.com/cqroot/prompt"
 	"github.com/cqroot/prompt/choose"
 	"github.com/cqroot/prompt/input"
 	"github.com/cqroot/prompt/write"
+
+	tea "github.com/charmbracelet/bubbletea"
 )
 
 // CustomType determines the possible custom choice types.
@@ -219,10 +220,8 @@ func (c Custom) validateInt(input string) error {
 }
 
 func (c Custom) validateEnum(input string) error {
-	for _, value := range c.EnumOptions {
-		if input == value {
-			return nil
-		}
+	if slices.Contains(c.EnumOptions, input) {
+		return nil
 	}
 
 	return fmt.Errorf("%w: %s", errInvalidEnum, input)
