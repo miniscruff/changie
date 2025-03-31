@@ -83,7 +83,7 @@ func (m *Merge) mergeProject(
 ) error {
 	var writer io.Writer
 	if m.DryRun {
-		writer = m.Command.OutOrStdout()
+		writer = m.OutOrStdout()
 	} else {
 		dirErr := os.MkdirAll(filepath.Dir(changelogPath), core.CreateDirMode)
 		if dirErr != nil {

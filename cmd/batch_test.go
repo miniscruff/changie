@@ -252,7 +252,7 @@ func TestBatchDryRun(t *testing.T) {
 
 	var builder strings.Builder
 
-	batch.Command.SetOut(&builder)
+	batch.SetOut(&builder)
 	writeChangeFile(t, cfg, &core.Change{Kind: "added", Body: "D"})
 	writeChangeFile(t, cfg, &core.Change{Kind: "added", Body: "E"})
 	writeChangeFile(t, cfg, &core.Change{Kind: "removed", Body: "F"})
@@ -281,7 +281,7 @@ func TestBatchDryRunWithKeys(t *testing.T) {
 
 	var builder strings.Builder
 
-	batch.Command.SetOut(&builder)
+	batch.SetOut(&builder)
 	writeChangeFile(t, cfg, &core.Change{Kind: "added", Body: "D"})
 	writeChangeFile(t, cfg, &core.Change{Kind: "added", Body: "E"})
 	writeChangeFile(t, cfg, &core.Change{Kind: "removed", Body: "F"})

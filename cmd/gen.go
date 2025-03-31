@@ -179,11 +179,7 @@ func buildUniqueTypes(
 	completed := make(map[string]struct{}, 0)
 	allTypeProps := make([]TypeProps, 0)
 
-	for {
-		if len(typeQueue) == 0 {
-			break
-		}
-
+	for len(typeQueue) != 0 {
 		typeName := typeQueue[0]
 		typeQueue = typeQueue[1:]
 
