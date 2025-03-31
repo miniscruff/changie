@@ -288,7 +288,7 @@ first version
 
 	cmd := NewMerge(core.NewTemplateCache())
 	cmd.DryRun = true
-	cmd.Command.SetOut(&writer)
+	cmd.SetOut(&writer)
 	err := cmd.Run(cmd.Command, nil)
 	then.Nil(t, err)
 	then.Equals(t, changeContents, writer.String())
@@ -305,7 +305,7 @@ func TestMergeSkipsVersionsIfNoneFound(t *testing.T) {
 
 	cmd := NewMerge(core.NewTemplateCache())
 	cmd.DryRun = true
-	cmd.Command.SetOut(&builder)
+	cmd.SetOut(&builder)
 
 	err := cmd.Run(cmd.Command, nil)
 	then.Nil(t, err)
