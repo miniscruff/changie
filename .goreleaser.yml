@@ -1,5 +1,6 @@
 # yaml-language-server: $schema=https://goreleaser.com/static/schema.json
 # Make sure to check the documentation at http://goreleaser.com
+version: 2
 before:
   hooks:
     - go mod download
@@ -17,7 +18,7 @@ builds:
 archives:
   - format_overrides:
     - goos: windows
-      format: zip
+      formats: [ 'zip' ]
 release:
   github: {}
   prerelease: auto
@@ -45,25 +46,25 @@ scoops:
     homepage: https://changie.dev
     description: Automated changelog tool for preparing releases with lots of customization options.
     license: MIT
-# disable until I get the token configured correctly...
-# winget:
-# -  publisher: miniscruff
-# license: MIT
-# homepage: https://changie.dev
-# publisher_support_url: https://github.com/miniscruff/changie/issues/new
-# short_description: Automated changelog tool for preparing releases with lots of customization options.
-# release_notes: "{{.Changelog}}"
-# repository:
-# owner: miniscruff
-# name: winget-pkgs
-# branch: "changie-{{.Version}}"
-# token: "{{.Env.WINGET_PAT}}"
-# pull_request:
-# draft: true
-# base:
-# owner: microsoft
-# name: winget-pkgs
-# branch: master
+winget:
+  - publisher: miniscruff
+    license: MIT
+    homepage: https://changie.dev
+    publisher_support_url: https://github.com/miniscruff/changie/issues/new
+    short_description: "Automated changelog tool for preparing releases with lots of customization options."
+    release_notes: "{{.Changelog}}"
+    repository:
+      owner: miniscruff
+      name: winget-pkgs
+      branch: "changie-{{.Version}}"
+      token: "{{.Env.WINGET_PAT}}"
+      pull_request:
+        enabled: true
+        draft: true
+        base:
+          owner: microsoft
+          name: winget-pkgs
+          branch: master
 dockers:
   - goos: linux
     goarch: amd64
@@ -82,6 +83,6 @@ dockers:
 checksum:
   name_template: 'checksums.txt'
 snapshot:
-  name_template: "{{ .Tag }}-next"
+  version_template: "{{ .Tag }}-next"
 changelog:
   disable: false
