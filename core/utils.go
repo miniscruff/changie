@@ -32,9 +32,7 @@ var (
 	ErrKindNotFound          = errors.New("kind not found but configuration expects one")
 )
 
-var (
-	bom = []byte{0xef, 0xbb, 0xbf}
-)
+var bom = []byte{0xef, 0xbb, 0xbf}
 
 func AppendFile(rootFile io.Writer, path string) error {
 	otherFile, err := os.Open(path)
