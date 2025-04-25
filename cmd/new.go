@@ -1,27 +1,38 @@
 package cmd
 
 import (
+	"fmt"
 	"io"
 	"os"
 	"path/filepath"
 	"strings"
 
 	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 
 	"github.com/miniscruff/changie/core"
+)
+
+const (
+	interactiveFlag = "interactive"
+
+	ciEnvKey       = "CI"
+	noPromptEnvKey = "NO_PROMPT"
+	termEnvKey     = "TERM"
 )
 
 type New struct {
 	*cobra.Command
 
 	// cli args
-	DryRun     bool
-	Projects   []string
-	Component  string
-	Kind       string
-	Body       string
-	BodyEditor bool
-	Custom     []string
+	DryRun      bool
+	Projects    []string
+	Component   string
+	Kind        string
+	Body        string
+	BodyEditor  bool
+	Custom      []string
+	Interactive bool
 
 	// dependencies
 	TimeNow       core.TimeNow
@@ -90,6 +101,33 @@ Each version is merged together for the overall project changelog.`,
 		"Set custom values without a prompt",
 	)
 
+	cmd.Flags().BoolVarP(
+		&n.Interactive,
+		"interactive",
+		"i",
+		true,
+		"Set missing values with prompts",
+	)
+
+	cmd.PersistentPreRun = func(cmd *cobra.Command, args []string) {
+		v := viper.New()
+
+		v.BindEnv("ci", ciEnvKey)
+		v.BindEnv("interactive", noPromptEnvKey)
+		v.BindEnv("term", termEnvKey)
+
+		if cmd.Flags().Lookup("interactive").Changed {
+			return
+		}
+
+		isInteractive := v.GetBool(interactiveFlag)
+		isCI := v.GetBool("ci")
+		isTermDumb := v.GetString("term") == "dumb"
+
+		disablePrompts := !isInteractive || isCI || isTermDumb
+		cmd.Flags().Set(interactiveFlag, fmt.Sprintf("%v", disablePrompts))
+	}
+
 	n.Command = cmd
 
 	return n
@@ -114,6 +152,7 @@ func (n *New) Run(cmd *cobra.Command, args []string) error {
 		Kind:             n.Kind,
 		Body:             n.Body,
 		TimeNow:          n.TimeNow,
+		Interactive:      n.Interactive,
 		Config:           config,
 		Customs:          customValues,
 		EditorCmdBuilder: core.BuildCommand,
