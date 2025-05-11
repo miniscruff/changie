@@ -19,18 +19,21 @@ var (
 	errKindDoesNotAcceptBody              = errors.New("kind does not accept a body")
 	errKindProvidedWhenNotConfigured      = errors.New("kind provided but not supported")
 	errComponentProvidedWhenNotConfigured = errors.New("component provided but not supported")
+	errComponentNotFound                  = errors.New("component not found")
 	errCustomProvidedNotConfigured        = errors.New("custom value provided but not configured")
 	errProjectNotFound                    = errors.New("project not found")
 	errProjectRequired                    = errors.New("project missing but required")
 )
 
 type Prompts struct {
+	Disabled         bool
 	Config           *Config
 	StdinReader      io.Reader
 	KindConfig       *KindConfig
 	BodyEditor       bool
 	EditorCmdBuilder func(string) (EditorRunner, error)
 	TimeNow          TimeNow
+	Interactive      bool
 
 	// Values can be submitted from the environment or shell arguments.
 	Projects  []string
@@ -180,6 +183,10 @@ func (p *Prompts) projects() error {
 	}
 
 	if len(p.Projects) == 0 {
+		if !p.Interactive {
+			return errProjectRequired
+		}
+
 		var err error
 
 		projs, err := prompt.New().Ask("Projects").
@@ -216,6 +223,10 @@ func (p *Prompts) component() error {
 	}
 
 	if len(p.Component) == 0 {
+		if !p.Interactive {
+			return errComponentNotFound
+		}
+
 		var err error
 
 		comp, err := Custom{
@@ -243,6 +254,10 @@ func (p *Prompts) kind() error {
 	}
 
 	if len(p.Kind) == 0 {
+		if !p.Interactive {
+			return fmt.Errorf("kind not provided")
+		}
+
 		kindLabels := make([]string, len(p.Config.Kinds))
 		for i, kc := range p.Config.Kinds {
 			kindLabels[i] = kc.Label
@@ -280,6 +295,10 @@ func (p *Prompts) body() error {
 	}
 
 	if p.expectsBody() && len(p.Body) == 0 {
+		if !p.Interactive {
+			return fmt.Errorf("body not provided")
+		}
+
 		if p.BodyEditor {
 			file, err := createTempFile(runtime.GOOS, p.Config.VersionExt)
 			if err != nil {
@@ -344,6 +363,10 @@ func (p *Prompts) userChoices() error {
 		// skip already provided values
 		if p.Customs[custom.Key] != "" {
 			continue
+		}
+
+		if !p.Interactive {
+			return fmt.Errorf("custom data %s not provided", custom.Key)
 		}
 
 		var err error
