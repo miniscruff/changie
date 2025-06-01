@@ -26,14 +26,14 @@ func TestLatestVersionEchosLatestVersion(t *testing.T) {
 	cfg := latestConfig()
 	then.WithTempDirConfig(t, cfg)
 
-	builder := strings.Builder{}
-
 	then.CreateFile(t, cfg.ChangesDir, "v0.0.1.md")
 	then.CreateFile(t, cfg.ChangesDir, "v0.1.0.md")
 	then.CreateFile(t, cfg.ChangesDir, "v0.2.0-rc1.md")
 	then.CreateFile(t, cfg.ChangesDir, "head.tpl.md")
 
 	cmd := NewLatest()
+
+	builder := strings.Builder{}
 	cmd.SetOut(&builder)
 
 	err := cmd.Run(cmd.Command, nil)

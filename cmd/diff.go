@@ -33,7 +33,9 @@ If the argument is two versions split between triple dots similar to how GitHub
 supports as a comparison then we output the release notes between those two.
 
 Finally one last option is any of the constraints options from the semver package:
-https://github.com/Masterminds/semver#checking-version-constraints.`,
+https://github.com/Masterminds/semver#checking-version-constraints.
+
+Between versions we also add an amount of newlines specified by the AfterVersion value.`,
 		Example: `v1.20.0...v1.21.1`,
 		Args:    cobra.MatchAll(cobra.ExactArgs(1)),
 		RunE:    diff.Run,
@@ -59,8 +61,6 @@ https://github.com/Masterminds/semver#checking-version-constraints.`,
 func (d *Diff) Run(cmd *cobra.Command, args []string) error {
 	writer := cmd.OutOrStdout()
 	versionRange := args[0]
-	// if range is a number get up to that many versions
-	// if range has "..." which is equal to >= va <= vb
 
 	config, err := core.LoadConfig()
 	if err != nil {
@@ -87,7 +87,7 @@ func (d *Diff) Run(cmd *cobra.Command, args []string) error {
 
 	versionCount, err := strconv.ParseInt(versionRange, 10, 64)
 	if err == nil {
-		for i := range max(int(versionCount), len(vers)) {
+		for i := range min(int(versionCount), len(vers)) {
 			if !firstOutput {
 				err := core.WriteNewlines(writer, config.Newlines.AfterVersion)
 				if err != nil {
