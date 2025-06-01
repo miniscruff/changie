@@ -25,6 +25,7 @@ func TestAskPromptsForBody(t *testing.T) {
 		Config:      config,
 		StdinReader: reader,
 		TimeNow:     specificTimeNow,
+		Enabled:     true,
 	}
 	changes, err := prompts.BuildChanges()
 	then.Nil(t, err)
@@ -57,6 +58,7 @@ func TestAskPromptsForBodyWithProject(t *testing.T) {
 		Config:      config,
 		StdinReader: reader,
 		TimeNow:     specificTimeNow,
+		Enabled:     true,
 	}
 
 	changes, err := prompts.BuildChanges()
@@ -86,10 +88,102 @@ func TestAskPromptsForBodyWithProjectErrBadProject(t *testing.T) {
 		StdinReader: reader,
 		TimeNow:     specificTimeNow,
 		Projects:    []string{"missing"},
+		Enabled:     true,
 	}
 
 	_, err := prompts.BuildChanges()
 	then.Err(t, errProjectNotFound, err)
+}
+
+func TestAskPromptsFailIfDisabled(t *testing.T) {
+	config := &Config{
+		Projects: []ProjectConfig{
+			{Label: "Client", Key: "client"},
+			{Label: "Other", Key: "other"},
+		},
+		Components: []string{"cli", "tests", "utils"},
+		Kinds: []KindConfig{
+			{Label: "added"},
+			{Label: "changed"},
+			{Label: "removed"},
+		},
+		CustomChoices: []Custom{
+			{Key: "Issue", Type: CustomInt},
+		},
+	}
+
+	t.Run("project", func(t *testing.T) {
+		prompts := &Prompts{
+			Config:      config,
+			StdinReader: nil,
+			TimeNow:     specificTimeNow,
+			Enabled:     false,
+		}
+
+		_, err := prompts.BuildChanges()
+		then.Err(t, errProjectMissingPromptDisabled, err)
+	})
+
+	t.Run("component", func(t *testing.T) {
+		prompts := &Prompts{
+			Config:      config,
+			StdinReader: nil,
+			TimeNow:     specificTimeNow,
+			Enabled:     false,
+		}
+
+		prompts.Projects = []string{"other"}
+		_, err := prompts.BuildChanges()
+		then.Err(t, errComponentMissingPromptDisabled, err)
+	})
+
+	t.Run("kind", func(t *testing.T) {
+		prompts := &Prompts{
+			Config:      config,
+			StdinReader: nil,
+			TimeNow:     specificTimeNow,
+			Enabled:     false,
+		}
+
+		prompts.Projects = []string{"other"}
+		prompts.Component = "cli"
+
+		_, err := prompts.BuildChanges()
+		then.Err(t, errKindMissingPromptDisabled, err)
+	})
+
+	t.Run("body", func(t *testing.T) {
+		prompts := &Prompts{
+			Config:      config,
+			StdinReader: nil,
+			TimeNow:     specificTimeNow,
+			Enabled:     false,
+		}
+
+		prompts.Projects = []string{"other"}
+		prompts.Component = "cli"
+		prompts.Kind = "added"
+
+		_, err := prompts.BuildChanges()
+		then.Err(t, errBodyMissingPromptDisabled, err)
+	})
+
+	t.Run("custom", func(t *testing.T) {
+		prompts := &Prompts{
+			Config:      config,
+			StdinReader: nil,
+			TimeNow:     specificTimeNow,
+			Enabled:     false,
+		}
+
+		prompts.Projects = []string{"other"}
+		prompts.Component = "cli"
+		prompts.Kind = "added"
+		prompts.Body = "some body"
+
+		_, err := prompts.BuildChanges()
+		then.Err(t, errCustomMissingPromptDisabled, err)
+	})
 }
 
 func TestAskPromptsForBodyWithProjectErrBadInput(t *testing.T) {
@@ -109,6 +203,7 @@ func TestAskPromptsForBodyWithProjectErrBadInput(t *testing.T) {
 		Config:      config,
 		StdinReader: reader,
 		TimeNow:     specificTimeNow,
+		Enabled:     true,
 	}
 
 	_, err := prompts.BuildChanges()
@@ -132,6 +227,7 @@ func TestAskPromptsForBodyWithProjectErrNoProject(t *testing.T) {
 		Config:      config,
 		StdinReader: reader,
 		TimeNow:     specificTimeNow,
+		Enabled:     true,
 	}
 
 	_, err := prompts.BuildChanges()
@@ -160,6 +256,7 @@ func TestAskComponentKindBody(t *testing.T) {
 		Config:      config,
 		StdinReader: reader,
 		TimeNow:     specificTimeNow,
+		Enabled:     true,
 	}
 	changes, err := prompts.BuildChanges()
 	then.Nil(t, err)
@@ -196,6 +293,7 @@ func TestBodyKindPostProcess(t *testing.T) {
 		Customs: map[string]string{
 			"Issue": "25",
 		},
+		Enabled: true,
 	}
 	changes, err := prompts.BuildChanges()
 	then.Nil(t, err)
@@ -228,6 +326,7 @@ func TestBodyCustom(t *testing.T) {
 		Config:      config,
 		StdinReader: reader,
 		TimeNow:     specificTimeNow,
+		Enabled:     true,
 	}
 	changes, err := prompts.BuildChanges()
 	then.Nil(t, err)
@@ -263,6 +362,7 @@ func TestBodyCustomWithExistingCustomValue(t *testing.T) {
 		Customs: map[string]string{
 			"Project": "Changie",
 		},
+		Enabled: true,
 	}
 	changes, err := prompts.BuildChanges()
 	then.Nil(t, err)
@@ -306,6 +406,7 @@ func TestSkippedBodyGlobalChoicesKindWithAdditional(t *testing.T) {
 		Config:      config,
 		StdinReader: reader,
 		TimeNow:     specificTimeNow,
+		Enabled:     true,
 	}
 	changes, err := prompts.BuildChanges()
 	then.Nil(t, err)
@@ -332,6 +433,7 @@ func TestBodyAndPostProcess(t *testing.T) {
 		TimeNow:     specificTimeNow,
 		Body:        "our body",
 		Customs:     make(map[string]string),
+		Enabled:     true,
 	}
 
 	changes, err := prompts.BuildChanges()
@@ -374,6 +476,7 @@ func TestBodyAndPostProcessSkipGlobalPost(t *testing.T) {
 		Customs: map[string]string{
 			"Issue": "30",
 		},
+		Enabled: true,
 	}
 
 	changes, err := prompts.BuildChanges()
@@ -408,6 +511,7 @@ func TestErrorInvalidBody(t *testing.T) {
 		Config:      config,
 		StdinReader: reader,
 		TimeNow:     specificTimeNow,
+		Enabled:     true,
 	}
 
 	_, err := prompts.BuildChanges()
@@ -426,6 +530,7 @@ func TestErrorInvalidPost(t *testing.T) {
 		StdinReader: reader,
 		TimeNow:     specificTimeNow,
 		Body:        "our body",
+		Enabled:     true,
 	}
 
 	_, err := prompts.BuildChanges()
@@ -449,6 +554,7 @@ func TestErrorInvalidPostWithProjects(t *testing.T) {
 		TimeNow:     specificTimeNow,
 		Body:        "our body",
 		Projects:    []string{"client"},
+		Enabled:     true,
 	}
 
 	_, err := prompts.BuildChanges()
@@ -473,6 +579,7 @@ func TestErrorInvalidCustomType(t *testing.T) {
 		Config:      config,
 		StdinReader: reader,
 		TimeNow:     specificTimeNow,
+		Enabled:     true,
 	}
 
 	_, err := prompts.BuildChanges()
@@ -493,6 +600,7 @@ func TestErrorInvalidComponent(t *testing.T) {
 		Config:      config,
 		StdinReader: reader,
 		TimeNow:     specificTimeNow,
+		Enabled:     true,
 	}
 
 	_, err := prompts.BuildChanges()
@@ -516,6 +624,7 @@ func TestErrorInvalidKind(t *testing.T) {
 		Config:      config,
 		StdinReader: reader,
 		TimeNow:     specificTimeNow,
+		Enabled:     true,
 	}
 
 	_, err := prompts.BuildChanges()
@@ -534,6 +643,7 @@ func TestErrorFaultBody(t *testing.T) {
 		Config:      config,
 		StdinReader: reader,
 		TimeNow:     specificTimeNow,
+		Enabled:     true,
 	}
 
 	_, err := prompts.BuildChanges()
@@ -559,6 +669,7 @@ func TestErrorInvalidCustomValue(t *testing.T) {
 		Config:      config,
 		StdinReader: reader,
 		TimeNow:     specificTimeNow,
+		Enabled:     true,
 	}
 
 	_, err := prompts.BuildChanges()
@@ -578,6 +689,7 @@ func TestErrorBadKindLabel(t *testing.T) {
 		TimeNow:     specificTimeNow,
 		Kind:        "not kind",
 		Body:        "body",
+		Enabled:     true,
 	}
 
 	_, err := prompts.BuildChanges()
@@ -595,6 +707,7 @@ func TestErrorBadComponentInput(t *testing.T) {
 		TimeNow:     specificTimeNow,
 		Component:   "d",
 		Body:        "body",
+		Enabled:     true,
 	}
 
 	_, err := prompts.BuildChanges()
@@ -610,6 +723,7 @@ func TestErrorComponentGivenWithNoConfiguration(t *testing.T) {
 		TimeNow:     specificTimeNow,
 		Component:   "we shouldn't have a component",
 		Body:        "body",
+		Enabled:     true,
 	}
 
 	_, err := prompts.BuildChanges()
@@ -625,6 +739,7 @@ func TestErrorKindGivenWithNoConfiguration(t *testing.T) {
 		TimeNow:     specificTimeNow,
 		Kind:        "we shouldn't have a kind",
 		Body:        "body",
+		Enabled:     true,
 	}
 
 	_, err := prompts.BuildChanges()
@@ -645,6 +760,7 @@ func TestErrorCustomGivenWithNoConfiguration(t *testing.T) {
 		Customs: map[string]string{
 			"MissingKey": "40",
 		},
+		Enabled: true,
 	}
 
 	_, err := prompts.BuildChanges()
@@ -666,6 +782,7 @@ func TestErrorCustomGivenDoesNotPassValidation(t *testing.T) {
 		Customs: map[string]string{
 			"Issue": "40",
 		},
+		Enabled: true,
 	}
 
 	_, err := prompts.BuildChanges()
@@ -685,6 +802,7 @@ func TestErrorBodyGivenWithNoConfiguration(t *testing.T) {
 		TimeNow:     specificTimeNow,
 		Body:        "body",
 		Kind:        "kind",
+		Enabled:     true,
 	}
 
 	_, err := prompts.BuildChanges()
@@ -709,6 +827,7 @@ func TestErrorBodyGivenDoesNotPassValidation(t *testing.T) {
 		TimeNow:     specificTimeNow,
 		Kind:        "kind",
 		Body:        "body",
+		Enabled:     true,
 	}
 
 	_, err := prompts.BuildChanges()
@@ -731,6 +850,7 @@ func TestSkipPromptForComponentIfSet(t *testing.T) {
 		StdinReader: reader,
 		TimeNow:     specificTimeNow,
 		Component:   "a",
+		Enabled:     true,
 	}
 
 	changes, err := prompts.BuildChanges()
@@ -774,6 +894,7 @@ func TestSkipPromptForPromptsWithCustomPromptsInKindConfig(t *testing.T) {
 			"from": "1.20",
 			"to":   "1.22",
 		},
+		Enabled: true,
 	}
 
 	changes, err := prompts.BuildChanges()
@@ -803,6 +924,7 @@ func TestSkipPromptForKindIfSet(t *testing.T) {
 		StdinReader: reader,
 		TimeNow:     specificTimeNow,
 		Kind:        "kind",
+		Enabled:     true,
 	}
 
 	changes, err := prompts.BuildChanges()
@@ -831,6 +953,7 @@ func TestSkipPromptForBodyIfSet(t *testing.T) {
 		StdinReader: reader,
 		TimeNow:     specificTimeNow,
 		Body:        "skip body body",
+		Enabled:     true,
 	}
 
 	changes, err := prompts.BuildChanges()
@@ -859,6 +982,7 @@ func TestGetBodyTxtWithEditor(t *testing.T) {
 				t:        t,
 			}, nil
 		},
+		Enabled: true,
 	}
 
 	changes, err := prompts.BuildChanges()
@@ -884,6 +1008,7 @@ func TestGetBodyTxtWithEditorUnableToCreateCmd(t *testing.T) {
 		EditorCmdBuilder: func(s string) (EditorRunner, error) {
 			return BuildCommand(s)
 		},
+		Enabled: true,
 	}
 
 	_, err := prompts.BuildChanges()

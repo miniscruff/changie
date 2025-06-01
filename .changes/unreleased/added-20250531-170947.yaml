@@ -1,0 +1,5 @@
+kind: added
+body: Interactive flag to new command to support terminals that can not take user inputs
+time: 2025-05-31T17:09:47.672883283-07:00
+custom:
+    Issue: "771"

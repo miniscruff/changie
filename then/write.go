@@ -3,19 +3,27 @@ package then
 import (
 	"errors"
 	"io"
+	"sync"
 	"testing"
 	"time"
 )
 
 const delayTimeMS = 50
 
-// DelayWrite will waiting a few milliseconds between writing
+// DelayWrite will wait a few milliseconds between writing
 // some data in a separate goroutine, this is used when
 // we are prompting the user for input and need to write responses.
 func DelayWrite(t *testing.T, writer io.Writer, data ...[]byte) {
 	t.Helper()
 
+	wg := &sync.WaitGroup{}
+	wg.Add(1)
+
+	t.Cleanup(wg.Wait)
+
 	go func() {
+		defer wg.Done()
+
 		for _, bs := range data {
 			time.Sleep(delayTimeMS * time.Millisecond)
 

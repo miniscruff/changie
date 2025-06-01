@@ -44,6 +44,9 @@ func TestNewWithEnvVars(t *testing.T) {
 	reader, writer := then.WithReadWritePipe(t)
 
 	t.Setenv("ENVPREFIX_TESTCONTENT", "Test content")
+	// we need to override this value as it would fail in CI with the interactive system
+	// but is ok here as we override stdin and stdout anyway
+	t.Setenv("CI", "false")
 
 	then.DelayWrite(
 		t, writer,
@@ -79,6 +82,10 @@ func TestNewWithEnvVars(t *testing.T) {
 }
 
 func TestNewCreatesNewFileAfterPrompts(t *testing.T) {
+	// we need to override this value as it would fail in CI with the interactive system
+	// but is ok here as we override stdin and stdout anyway
+	t.Setenv("CI", "false")
+
 	cfg := newTestConfig()
 	then.WithTempDirConfig(t, cfg)
 	reader, writer := then.WithReadWritePipe(t)
@@ -188,6 +195,10 @@ func TestErrorNewFragmentTemplate(t *testing.T) {
 }
 
 func TestNewOutputsToCmdOutWhenDry(t *testing.T) {
+	// we need to override this value as it would fail in CI with the interactive system
+	// but is ok here as we override stdin and stdout anyway
+	t.Setenv("CI", "false")
+
 	cfg := newTestConfig()
 	cfg.Kinds = []core.KindConfig{}
 	then.WithTempDirConfig(t, cfg)
@@ -220,6 +231,10 @@ func TestNewOutputsToCmdOutWhenDry(t *testing.T) {
 }
 
 func TestNewFragmentTemplateSlash(t *testing.T) {
+	// we need to override this value as it would fail in CI with the interactive system
+	// but is ok here as we override stdin and stdout anyway
+	t.Setenv("CI", "false")
+
 	cfg := newTestConfig()
 	cfg.Components = []string{"test/component"}
 	then.WithTempDirConfig(t, cfg)
@@ -257,4 +272,28 @@ func TestNewFragmentTemplateSlash(t *testing.T) {
 
 	then.FileExists(t, futurePath, fileInfos[0].Name())
 	then.FileContents(t, changeContent, futurePath, fileInfos[0].Name())
+}
+
+func TestPromptEnabled(t *testing.T) {
+	t.Run("prompts enabled by default", func(t *testing.T) {
+		n := NewNew(nil, nil)
+
+		t.Setenv("CI", "false")
+		then.True(t, n.parsePromptEnabled())
+	})
+
+	t.Run("prompts disabled with flag", func(t *testing.T) {
+		n := NewNew(nil, nil)
+		n.Interactive = false
+
+		t.Setenv("CI", "false")
+		then.False(t, n.parsePromptEnabled())
+	})
+
+	t.Run("prompts disabled with CI env var", func(t *testing.T) {
+		n := NewNew(nil, nil)
+
+		t.Setenv("CI", "true")
+		then.False(t, n.parsePromptEnabled())
+	})
 }
