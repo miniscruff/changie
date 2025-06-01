@@ -35,7 +35,7 @@ supports as a comparison then we output the release notes between those two.
 Finally one last option is any of the constraints options from the semver package:
 https://github.com/Masterminds/semver#checking-version-constraints.
 
-Between versions we also add an amount of newlines specified by the AfterVersion value.`,
+Between versions we also add an amount of newlines specified by the AfterChangelogVersion value.`,
 		Example: `v1.20.0...v1.21.1`,
 		Args:    cobra.MatchAll(cobra.ExactArgs(1)),
 		RunE:    diff.Run,
@@ -89,7 +89,7 @@ func (d *Diff) Run(cmd *cobra.Command, args []string) error {
 	if err == nil {
 		for i := range min(int(versionCount), len(vers)) {
 			if !firstOutput {
-				err := core.WriteNewlines(writer, config.Newlines.AfterVersion)
+				err := core.WriteNewlines(writer, config.Newlines.AfterChangelogVersion)
 				if err != nil {
 					return err
 				}
@@ -128,7 +128,7 @@ func (d *Diff) Run(cmd *cobra.Command, args []string) error {
 		}
 
 		if !firstOutput {
-			err := core.WriteNewlines(writer, config.Newlines.AfterVersion)
+			err := core.WriteNewlines(writer, config.Newlines.AfterChangelogVersion)
 			if err != nil {
 				return err
 			}
