@@ -92,6 +92,56 @@ func TestAskPromptsForBodyWithProjectErrBadProject(t *testing.T) {
 	then.Err(t, errProjectNotFound, err)
 }
 
+func TestAskPromptsFailIfDisabled(t *testing.T) {
+	reader, writer := then.WithReadWritePipe(t)
+	then.DelayWrite(
+		t, writer,
+		[]byte("body stuff"),
+		[]byte{13},
+	)
+
+	config := &Config{
+		Projects: []ProjectConfig{
+			{Label: "Client", Key: "client"},
+			{Label: "Other", Key: "other"},
+		},
+		Components: []string{"cli", "tests", "utils"},
+		Kinds: []KindConfig{
+			{Label: "added"},
+			{Label: "changed"},
+			{Label: "removed"},
+		},
+		CustomChoices: []Custom{
+			{Key: "Issue", Type: CustomInt},
+		},
+	}
+	prompts := &Prompts{
+		Config:      config,
+		StdinReader: reader,
+		TimeNow:     specificTimeNow,
+		Enabled:     false,
+	}
+
+	_, err := prompts.BuildChanges()
+	then.Err(t, errProjectMissingPromptDisabled, err)
+
+	prompts.Projects = []string{"other"}
+	_, err = prompts.BuildChanges()
+	then.Err(t, errComponentMissingPromptDisabled, err)
+
+	prompts.Component = "cli"
+	_, err = prompts.BuildChanges()
+	then.Err(t, errKindMissingPromptDisabled, err)
+
+	prompts.Kind = "added"
+	_, err = prompts.BuildChanges()
+	then.Err(t, errBodyMissingPromptDisabled, err)
+
+	prompts.Body = "some body"
+	_, err = prompts.BuildChanges()
+	then.Err(t, errCustomMissingPromptDisabled, err)
+}
+
 func TestAskPromptsForBodyWithProjectErrBadInput(t *testing.T) {
 	reader, writer := then.WithReadWritePipe(t)
 	then.DelayWrite(
