@@ -81,7 +81,7 @@ func (l *Latest) Run(cmd *cobra.Command, args []string) error {
 		latestVer = strings.TrimPrefix(latestVer, "v")
 	}
 
-	_, err = l.OutOrStdout().Write([]byte(projPrefix + latestVer))
+	_, err = cmd.OutOrStdout().Write([]byte(projPrefix + latestVer))
 
 	return err
 }
