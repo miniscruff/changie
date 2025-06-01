@@ -81,6 +81,9 @@ func testMerge(t *testing.T, cmd *cobra.Command) {
 }
 
 func TestFullRun(t *testing.T) {
+	// we need to override this value as it would fail in CI with the interactive system
+	// but is ok here as we override stdin and stdout anyway
+	t.Setenv("CI", "false")
 	cmd := RootCmd()
 
 	then.WithTempDir(t)
