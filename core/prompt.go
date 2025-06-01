@@ -22,6 +22,13 @@ var (
 	errCustomProvidedNotConfigured        = errors.New("custom value provided but not configured")
 	errProjectNotFound                    = errors.New("project not found")
 	errProjectRequired                    = errors.New("project missing but required")
+
+	// prompt disabled
+	errProjectMissingPromptDisabled   = errors.New("project missing and prompt is disabled")
+	errComponentMissingPromptDisabled = errors.New("component missing and prompt is disabled")
+	errKindMissingPromptDisabled      = errors.New("kind missing and prompt is disabled")
+	errBodyMissingPromptDisabled      = errors.New("body missing and prompt is disabled")
+	errCustomMissingPromptDisabled    = errors.New("custom missing and prompt is disabled")
 )
 
 type Prompts struct {
@@ -31,6 +38,9 @@ type Prompts struct {
 	BodyEditor       bool
 	EditorCmdBuilder func(string) (EditorRunner, error)
 	TimeNow          TimeNow
+
+	// Enabled checks to make sure our terminal supports prompts
+	Enabled bool
 
 	// Values can be submitted from the environment or shell arguments.
 	Projects  []string
@@ -180,6 +190,10 @@ func (p *Prompts) projects() error {
 	}
 
 	if len(p.Projects) == 0 {
+		if !p.Enabled {
+			return errProjectMissingPromptDisabled
+		}
+
 		var err error
 
 		projs, err := prompt.New().Ask("Projects").
@@ -216,6 +230,10 @@ func (p *Prompts) component() error {
 	}
 
 	if len(p.Component) == 0 {
+		if !p.Enabled {
+			return errComponentMissingPromptDisabled
+		}
+
 		var err error
 
 		comp, err := Custom{
@@ -243,6 +261,10 @@ func (p *Prompts) kind() error {
 	}
 
 	if len(p.Kind) == 0 {
+		if !p.Enabled {
+			return errKindMissingPromptDisabled
+		}
+
 		kindLabels := make([]string, len(p.Config.Kinds))
 		for i, kc := range p.Config.Kinds {
 			kindLabels[i] = kc.Label
@@ -280,6 +302,10 @@ func (p *Prompts) body() error {
 	}
 
 	if p.expectsBody() && len(p.Body) == 0 {
+		if !p.Enabled {
+			return errBodyMissingPromptDisabled
+		}
+
 		if p.BodyEditor {
 			file, err := createTempFile(runtime.GOOS, p.Config.VersionExt)
 			if err != nil {
@@ -344,6 +370,10 @@ func (p *Prompts) userChoices() error {
 		// skip already provided values
 		if p.Customs[custom.Key] != "" {
 			continue
+		}
+
+		if !p.Enabled {
+			return fmt.Errorf("%w: custom key '%s'", errCustomMissingPromptDisabled, custom.Key)
 		}
 
 		var err error

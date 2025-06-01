@@ -258,3 +258,23 @@ func TestNewFragmentTemplateSlash(t *testing.T) {
 	then.FileExists(t, futurePath, fileInfos[0].Name())
 	then.FileContents(t, changeContent, futurePath, fileInfos[0].Name())
 }
+
+func TestPromptEnabled(t *testing.T) {
+	t.Run("prompts enabled by default", func(t *testing.T) {
+		n := NewNew(nil, nil)
+		then.True(t, n.parsePromptEnabled())
+	})
+
+	t.Run("prompts disabled with flag", func(t *testing.T) {
+		n := NewNew(nil, nil)
+		n.Interactive = false
+		then.False(t, n.parsePromptEnabled())
+	})
+
+	t.Run("prompts disabled with CI env var", func(t *testing.T) {
+		n := NewNew(nil, nil)
+
+		t.Setenv("CI", "true")
+		then.False(t, n.parsePromptEnabled())
+	})
+}
