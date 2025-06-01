@@ -6,21 +6,21 @@
             "bin": [
                 "changie.exe"
             ],
-            "hash": "4e322e4d2b0ce7fea0fe1d4c11609c9199ecf795303886e0c7644b3f96f2149c"
+            "hash": "1fc0cd2e6eba84a80a0149bf40925c4d18f97f9dafe245c39b65d1747ae4c4f7"
         },
         "64bit": {
             "url": "https://github.com/miniscruff/changie/releases/download/v1.22.0/changie_1.22.0_windows_amd64.zip",
             "bin": [
                 "changie.exe"
             ],
-            "hash": "f1d1f2ac0b8bd2009f35458271a7dc2c0c106d7c7cc5b42ddf232ee2f14076be"
+            "hash": "711761d2f34e3378abaf3a8295cdf171f3a37b25d23f1b6d4316b4ae12705534"
         },
         "arm64": {
             "url": "https://github.com/miniscruff/changie/releases/download/v1.22.0/changie_1.22.0_windows_arm64.zip",
             "bin": [
                 "changie.exe"
             ],
-            "hash": "b49251a4ad90f98b59ec958c5ef4f09ce4ed38af511a4e2bdf802d93a0d000ce"
+            "hash": "4994606eba835aee82f75c8e64e19ae0dc3d1c1049043e09a294393ee648a016"
         }
     },
     "homepage": "https://changie.dev",
