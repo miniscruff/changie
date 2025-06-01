@@ -32,6 +32,7 @@ being easy to use for developers and your release team.`,
 	cmd.AddCommand(merge.Command)
 	cmd.AddCommand(NewNew(time.Now, templateCache).Command)
 	cmd.AddCommand(NewNext().Command)
+	cmd.AddCommand(NewDiff().Command)
 
 	return cmd
 }
