@@ -1,44 +1,17 @@
 ---
 title: 'Installation'
 ---
-## deb/rpm
-Download a `.deb` or `.rpm` file from the [releases page](https://github.com/miniscruff/changie/releases)
-and install with `dpkg -i` and `rpm -i` respectively.
-
-## Windows Scoop
-On windows you can use [scoop](https://scoop.sh/) by first adding the repo and then installing.
-```sh
-scoop bucket add changie https://github.com/miniscruff/changie
-scoop install changie
-```
-
-## macOS with Homebrew
-
-On macOS, you can use [Homebrew](https://brew.sh/) to install changie from homebrew core.
-
-```sh
-brew install changie
-```
 
 ## ArchLinux
+
 An [AUR package](https://aur.archlinux.org/packages/changie/) is available.
 
 ```sh
 trizen -S changie
 ```
 
-## GitHub action
-This [GitHub action](https://github.com/miniscruff/changie-action) can be used.
-
-```yaml
-- name: Batch a new minor version
-  uses: miniscruff/changie-action@VERSION # view action repo for latest version
-  with:
-    version: latest # use the latest changie version
-    args: batch minor
-```
-
 ## Docker
+
 Docker images are uploaded to [GitHub Packages](https://github.com/miniscruff/changie/pkgs/container/changie).
 
 ```sh
@@ -64,20 +37,110 @@ docker run \
     new
 ```
 
-## NodeJS
-Changie is available as an [NPM package](https://www.npmjs.com/package/changie).
+## GitHub action
 
-* To add as a dependency of your project: `npm i -D changie`
-* To install globally: `npm i -g changie`
-* To run without adding a dependency: `npx changie`
+This [GitHub action](https://github.com/miniscruff/changie-action) can be used.
+
+```yaml
+- name: Batch a new minor version
+  uses: miniscruff/changie-action@VERSION # view action repo for latest version
+  with:
+    version: latest # use the latest changie version
+    args: batch minor
+```
+
+## macOS with Homebrew
+
+On macOS, you can use [Homebrew](https://brew.sh/) to install changie from homebrew core.
+
+```sh
+brew install changie
+```
 
 ## Manual
+
 * Download from [here](https://github.com/miniscruff/changie/releases).
 * Add executable somewhere in your path depending on your platform.
 
-## From source
+## Manual deb/rpm packages
+
+Download a `.deb` or `.rpm` file from the [releases page](https://github.com/miniscruff/changie/releases)
+and install with `dpkg -i` and `rpm -i` respectively.
+
+## Mise
+
+Changie is included in the [Mise](https://mise.jdx.dev/) registry.
+It's recommended to use `mise use` for tools.
+
+```sh
+mise use changie
+```
+
+This will add changie to the `mise.toml` file.
+```toml
+[tools]
+changie = "latest"
+```
+
+Or if you only want to use changie for a single mise task, such as `changie new`.
+
+```toml
+[tasks.fragment]
+tools.changie = "latest"
+run = "changie new"
+```
+
+## NodeJS
+
+Changie is available as an [NPM package](https://www.npmjs.com/package/changie).
+
+To add as a dependency of your project
+
+```sh
+npm i -D changie
+```
+
+To install globally
+
+```
+npm i -g changie
+```
+
+To run without adding a dependency
+
+```
+npx changie
+```
+
+## Source
+
 Go install can be used to download changie from the main branch.
 
 ```sh
 go install github.com/miniscruff/changie@latest
+```
+
+## UBI ( universal binary installer )
+
+[UBI](https://github.com/houseabsolute/ubi) can be used to install Changie binaries directly from
+GitHub.
+
+```sh
+ubi --project miniscruff/changie --in /binary/path
+```
+
+## Windows Scoop
+
+On Windows you can use [scoop](https://scoop.sh/) by first adding the repo and then installing.
+```sh
+scoop bucket add changie https://github.com/miniscruff/changie
+scoop install changie
+```
+
+## Winget
+
+On Windows you can also use the [winget](https://github.com/microsoft/winget-pkgs) package manager.
+
+```sh
+winget install miniscruff.changie
 ```
