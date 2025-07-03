@@ -109,6 +109,7 @@ nav:
       - cli/changie_completion_fish.md
       - cli/changie_completion_powershell.md
       - cli/changie_completion_zsh.md
+      - cli/changie_diff.md
       - cli/changie_init.md
       - cli/changie_latest.md
       - cli/changie_merge.md
