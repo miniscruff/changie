@@ -145,9 +145,8 @@ func (c Custom) askInt(stdinReader io.Reader) (string, error) {
 // Scrolling theme for cqroot/prompt. Allows items to be scrolled through
 // using the arrow keys.
 //
-// choices is a list of strings to display.
+// choices is a list of enum options to display.
 // cursor is the index of the currently selected item.
-// isSelected is a function that returns true if the item at the given index
 func ThemeScroll(choices []choose.Choice, cursor int) string {
 	s := strings.Builder{}
 	s.WriteString("\n")
