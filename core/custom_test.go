@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/cqroot/prompt/choose"
+
 	"github.com/miniscruff/changie/then"
 )
 
@@ -490,7 +491,6 @@ func TestThemeScrollCursorOutOfBounds(t *testing.T) {
 
 func TestThemeScrollLimitCalculation(t *testing.T) {
 	// Test that limit is correctly calculated as min(10, numChoices)
-
 	// Test with 5 choices
 	choices5 := make([]choose.Choice, 5)
 	for i := 0; i < 5; i++ {
