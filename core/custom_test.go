@@ -376,7 +376,7 @@ func TestThemeScrollWithFewerThan10Choices(t *testing.T) {
 
 func TestThemeScrollWithExactly10Choices(t *testing.T) {
 	choices := make([]choose.Choice, 10)
-	for i := 0; i < 10; i++ {
+	for i := range 10 {
 		choices[i] = choose.Choice{Text: fmt.Sprintf("Option %d", i+1)}
 	}
 
