@@ -8,6 +8,7 @@ linters:
     - goconst
     - goprintffuncname
     - gosec
+    - intrange
     - lll
     - misspell
     - nakedret
@@ -18,7 +19,7 @@ linters:
     - unparam
     - usetesting
     - whitespace
-    - wsl
+    - wsl_v5
   settings:
     exhaustive:
       default-signifies-exhaustive: false

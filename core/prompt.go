@@ -107,7 +107,7 @@ func (p *Prompts) BuildChanges() ([]*Change, error) {
 	}
 
 	changes := make([]*Change, len(p.Projects))
-	for i := range len(changes) {
+	for i := range changes {
 		// Err is already validated when getting the project above.
 		projConfig, _ := p.Config.Project(p.Projects[i])
 		changes[i] = &Change{

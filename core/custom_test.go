@@ -1,8 +1,12 @@
 package core
 
 import (
+	"fmt"
 	"os"
+	"strings"
 	"testing"
+
+	"github.com/cqroot/prompt/choose"
 
 	"github.com/miniscruff/changie/then"
 )
@@ -29,7 +33,6 @@ type ValidationSpec struct {
 
 func (s *ValidationSpec) Run(t *testing.T, custom Custom) {
 	err := custom.Validate(s.Input)
-
 	if s.Error == nil {
 		then.Nil(t, err)
 	} else {
@@ -352,4 +355,160 @@ func TestErrorBadMapFormat(t *testing.T) {
 	inputs := []string{"Issue=15", "Tag=alpha", "Ownerteam-name"}
 	_, err := CustomMapFromStrings(inputs)
 	then.Err(t, errInvalidCustomFormat, err)
+}
+
+func TestThemeScrollWithFewerThan10Choices(t *testing.T) {
+	choices := []choose.Choice{
+		{Text: "Option 1"},
+		{Text: "Option 2"},
+		{Text: "Option 3"},
+	}
+
+	result := ThemeScroll(choices, 0) // cursor at index 0
+
+	// Should show all 3 options with the second one selected
+	then.True(t, strings.Contains(result, "• Option 1"))
+	then.True(t, strings.Contains(result, "  Option 2"))
+	then.True(t, strings.Contains(result, "  Option 3"))
+	then.False(t, strings.Contains(result, "Option 4"))
+}
+
+func TestThemeScrollWithExactly10Choices(t *testing.T) {
+	choices := make([]choose.Choice, 10)
+	for i := range 10 {
+		choices[i] = choose.Choice{Text: fmt.Sprintf("Option %d", i+1)}
+	}
+
+	result := ThemeScroll(choices, 5) // cursor at middle
+
+	// Should show all 10 options with the 6th one selected
+	then.True(t, strings.Contains(result, "  Option 1"))
+	then.True(t, strings.Contains(result, "• Option 6"))
+	then.True(t, strings.Contains(result, "  Option 10"))
+}
+
+func TestThemeScrollWithMoreThan10ChoicesCursorAtStart(t *testing.T) {
+	choices := make([]choose.Choice, 15)
+	for i := range 15 {
+		choices[i] = choose.Choice{Text: fmt.Sprintf("Option %d", i+1)}
+	}
+
+	result := ThemeScroll(choices, 2) // cursor at index 2 (less than limit/2)
+
+	// Should show first 10 options with the 3rd one selected
+	then.True(t, strings.Contains(result, "  Option 1"))
+	then.True(t, strings.Contains(result, "• Option 3"))
+	then.True(t, strings.Contains(result, "  Option 10"))
+	then.False(t, strings.Contains(result, "Option 11"))
+}
+
+func TestThemeScrollWithMoreThan10ChoicesCursorInMiddle(t *testing.T) {
+	choices := make([]choose.Choice, 15)
+	for i := range 15 {
+		choices[i] = choose.Choice{Text: fmt.Sprintf("Option %d", i+1)}
+	}
+
+	result := ThemeScroll(choices, 7) // cursor at index 7 (in middle range)
+
+	// Should show options 3-12 with the 8th one selected (index 7 becomes index 5 in display)
+	then.True(t, strings.Contains(result, "  Option 3"))
+	then.True(t, strings.Contains(result, "• Option 8"))
+	then.True(t, strings.Contains(result, "  Option 12"))
+	// Verify the range is correct by checking that we have exactly 10 options
+	lines := strings.Split(strings.TrimSpace(result), "\n")
+	then.Equals(t, 10, len(lines))
+}
+
+func TestThemeScrollWithMoreThan10ChoicesCursorAtEnd(t *testing.T) {
+	choices := make([]choose.Choice, 15)
+	for i := range 15 {
+		choices[i] = choose.Choice{Text: fmt.Sprintf("Option %d", i+1)}
+	}
+
+	result := ThemeScroll(choices, 13) // cursor at index 13 (near end)
+
+	// Should show last 10 options with the 14th one selected
+	then.True(t, strings.Contains(result, "  Option 6"))
+	then.True(t, strings.Contains(result, "• Option 14"))
+	then.True(t, strings.Contains(result, "  Option 15"))
+	// Verify the range is correct by checking that we have exactly 10 options
+	lines := strings.Split(strings.TrimSpace(result), "\n")
+	then.SliceLen(t, 10, lines)
+}
+
+func TestThemeScrollWithMoreThan10ChoicesCursorAtVeryEnd(t *testing.T) {
+	choices := make([]choose.Choice, 15)
+	for i := range 15 {
+		choices[i] = choose.Choice{Text: fmt.Sprintf("Option %d", i+1)}
+	}
+
+	result := ThemeScroll(choices, 14) // cursor at last index
+
+	// Should show last 10 options with the 15th one selected
+	then.True(t, strings.Contains(result, "  Option 6"))
+	then.True(t, strings.Contains(result, "  Option 14"))
+	then.True(t, strings.Contains(result, "• Option 15"))
+	then.False(t, strings.Contains(result, "Option 2"))
+	then.False(t, strings.Contains(result, "Option 5"))
+}
+
+func TestThemeScrollWithEmptyChoices(t *testing.T) {
+	choices := []choose.Choice{}
+
+	result := ThemeScroll(choices, 0)
+
+	// Should return just a newline
+	then.Equals(t, "\n", result)
+}
+
+func TestThemeScrollWithSingleChoice(t *testing.T) {
+	choices := []choose.Choice{
+		{Text: "Only Option"},
+	}
+
+	result := ThemeScroll(choices, 0)
+
+	// Should show the single option as selected
+	then.True(t, strings.EqualFold(strings.TrimSpace(result), "• Only Option"))
+}
+
+func TestThemeScrollCursorOutOfBounds(t *testing.T) {
+	choices := []choose.Choice{
+		{Text: "Option 1"},
+		{Text: "Option 2"},
+		{Text: "Option 3"},
+	}
+
+	// Test with cursor beyond array bounds
+	result := ThemeScroll(choices, 5)
+
+	// Should handle gracefully and show all options
+	then.True(t, strings.Contains(result, "  Option 1"))
+	then.True(t, strings.Contains(result, "  Option 2"))
+	then.True(t, strings.Contains(result, "  Option 3"))
+}
+
+func TestThemeScrollLimitCalculation(t *testing.T) {
+	// Test that limit is correctly calculated as min(10, numChoices)
+	// Test with 5 choices
+	choices5 := make([]choose.Choice, 5)
+	for i := range 5 {
+		choices5[i] = choose.Choice{Text: fmt.Sprintf("Option %d", i+1)}
+	}
+
+	result5 := ThemeScroll(choices5, 0)
+	lines5 := strings.Split(strings.TrimSpace(result5), "\n")
+	// Should have 5 lines (one for each choice)
+	then.SliceLen(t, 5, lines5)
+
+	// Test with 15 choices
+	choices15 := make([]choose.Choice, 15)
+	for i := range 15 {
+		choices15[i] = choose.Choice{Text: fmt.Sprintf("Option %d", i+1)}
+	}
+
+	result15 := ThemeScroll(choices15, 0)
+	lines15 := strings.Split(strings.TrimSpace(result15), "\n")
+	// Should have 10 lines (limited by min(10, 15))
+	then.SliceLen(t, 10, lines15)
 }

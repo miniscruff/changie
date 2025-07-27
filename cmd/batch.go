@@ -248,6 +248,7 @@ func (b *Batch) Run(cmd *cobra.Command, args []string) (err error) {
 		}()
 
 		defer versionFile.Close()
+
 		b.writer = versionFile
 	}
 
