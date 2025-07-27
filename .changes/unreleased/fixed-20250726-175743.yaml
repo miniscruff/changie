@@ -1,5 +1,5 @@
 kind: fixed
-body: scrolling for long enumOptions lists
+body: scroll long enum option lists
 time: 2025-07-26T17:57:43.776123-04:00
 custom:
-    Issue: "611"
+    Issue: "794"
