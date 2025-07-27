@@ -255,7 +255,6 @@ func (c Custom) validateInt(input string) error {
 	}
 
 	value, err := strconv.ParseInt(input, base10, bit64)
-
 	if err != nil {
 		return errInvalidIntInput
 	}

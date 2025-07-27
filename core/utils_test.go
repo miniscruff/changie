@@ -417,6 +417,7 @@ func TestCanFindChangeFiles(t *testing.T) {
 
 func TestCanWriteNewLines(t *testing.T) {
 	var writer strings.Builder
+
 	err := WriteNewlines(&writer, 3)
 	then.Nil(t, err)
 	then.Equals(t, "\n\n\n", writer.String())
@@ -424,6 +425,7 @@ func TestCanWriteNewLines(t *testing.T) {
 
 func TestSkipNewLinesIfCountIsZero(t *testing.T) {
 	var writer strings.Builder
+
 	err := WriteNewlines(&writer, 0)
 	then.Nil(t, err)
 	then.Equals(t, "", writer.String())

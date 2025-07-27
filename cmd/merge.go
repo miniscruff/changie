@@ -96,6 +96,7 @@ func (m *Merge) mergeProject(
 		}
 
 		defer changeFile.Close()
+
 		writer = changeFile
 	}
 

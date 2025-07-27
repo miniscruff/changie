@@ -33,7 +33,6 @@ type ValidationSpec struct {
 
 func (s *ValidationSpec) Run(t *testing.T, custom Custom) {
 	err := custom.Validate(s.Input)
-
 	if s.Error == nil {
 		then.Nil(t, err)
 	} else {
@@ -390,7 +389,7 @@ func TestThemeScrollWithExactly10Choices(t *testing.T) {
 
 func TestThemeScrollWithMoreThan10ChoicesCursorAtStart(t *testing.T) {
 	choices := make([]choose.Choice, 15)
-	for i := 0; i < 15; i++ {
+	for i := range 15 {
 		choices[i] = choose.Choice{Text: fmt.Sprintf("Option %d", i+1)}
 	}
 
@@ -405,7 +404,7 @@ func TestThemeScrollWithMoreThan10ChoicesCursorAtStart(t *testing.T) {
 
 func TestThemeScrollWithMoreThan10ChoicesCursorInMiddle(t *testing.T) {
 	choices := make([]choose.Choice, 15)
-	for i := 0; i < 15; i++ {
+	for i := range 15 {
 		choices[i] = choose.Choice{Text: fmt.Sprintf("Option %d", i+1)}
 	}
 
@@ -422,7 +421,7 @@ func TestThemeScrollWithMoreThan10ChoicesCursorInMiddle(t *testing.T) {
 
 func TestThemeScrollWithMoreThan10ChoicesCursorAtEnd(t *testing.T) {
 	choices := make([]choose.Choice, 15)
-	for i := 0; i < 15; i++ {
+	for i := range 15 {
 		choices[i] = choose.Choice{Text: fmt.Sprintf("Option %d", i+1)}
 	}
 
@@ -439,7 +438,7 @@ func TestThemeScrollWithMoreThan10ChoicesCursorAtEnd(t *testing.T) {
 
 func TestThemeScrollWithMoreThan10ChoicesCursorAtVeryEnd(t *testing.T) {
 	choices := make([]choose.Choice, 15)
-	for i := 0; i < 15; i++ {
+	for i := range 15 {
 		choices[i] = choose.Choice{Text: fmt.Sprintf("Option %d", i+1)}
 	}
 
@@ -493,7 +492,7 @@ func TestThemeScrollLimitCalculation(t *testing.T) {
 	// Test that limit is correctly calculated as min(10, numChoices)
 	// Test with 5 choices
 	choices5 := make([]choose.Choice, 5)
-	for i := 0; i < 5; i++ {
+	for i := range 5 {
 		choices5[i] = choose.Choice{Text: fmt.Sprintf("Option %d", i+1)}
 	}
 
@@ -504,7 +503,7 @@ func TestThemeScrollLimitCalculation(t *testing.T) {
 
 	// Test with 15 choices
 	choices15 := make([]choose.Choice, 15)
-	for i := 0; i < 15; i++ {
+	for i := range 15 {
 		choices15[i] = choose.Choice{Text: fmt.Sprintf("Option %d", i+1)}
 	}
 

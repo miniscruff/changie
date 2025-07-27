@@ -402,6 +402,7 @@ func writeType(writer io.Writer, typeProps TypeProps) error {
 	// Do not write our root Config type header
 	if typeProps.Name != "Config" {
 		anchor := strings.ToLower(typeProps.Name) + "-type"
+
 		_, err := writer.Write(fmt.Appendf(
 			[]byte{},
 			"## %s %v\n%s\n",
@@ -409,7 +410,6 @@ func writeType(writer io.Writer, typeProps TypeProps) error {
 			buildSourceAnchorLink(anchor, typeProps.File, typeProps.Line),
 			typeProps.Doc,
 		))
-
 		if err != nil {
 			return err
 		}
