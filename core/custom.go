@@ -181,9 +181,9 @@ func ThemeScroll(choices []choose.Choice, cursor int) string {
 		isCursor := index == i
 
 		if isCursor {
-			s.WriteString(constants.DefaultSelectedItemStyle.Render(fmt.Sprintf("[•] %s", choice.Text)))
+			s.WriteString(constants.DefaultSelectedItemStyle.Render(fmt.Sprintf("• %s", choice.Text)))
 		} else {
-			s.WriteString(constants.DefaultItemStyle.Render(fmt.Sprintf("[ ] %s", choice.Text)))
+			s.WriteString(constants.DefaultItemStyle.Render(fmt.Sprintf("  %s", choice.Text)))
 		}
 
 		s.WriteString("\n")
