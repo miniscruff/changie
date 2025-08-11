@@ -40,21 +40,13 @@ jobs:
       with:
         # Required: the version of golangci-lint is required and must be specified
         # without patch version: we always use the latest patch version.
-        version: 'v2.2'
+        version: 'v2.3'
 
     - name: Gen
       run: go run main.go gen
 
     - name: Test
-      run: go test -coverprofile=c.out ./...
+      run: go test -cover ./...
 
     - name: Validate Changie fragments
       run: go run main.go batch major --dry-run
-
-    - name: Coverage
-      uses: codacy/codacy-coverage-reporter-action@v1
-      with:
-        project-token: ${{ secrets.CODACY_PROJECT_TOKEN }}
-        coverage-reports: ./c.out
-        force-coverage-parser: go
-
