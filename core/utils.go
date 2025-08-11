@@ -2,6 +2,7 @@ package core
 
 import (
 	"bytes"
+	"context"
 	"errors"
 	"fmt"
 	"io"
@@ -382,7 +383,7 @@ func BuildCommand(editorFilePath string) (EditorRunner, error) {
 	args = append(args, editorFilePath)
 
 	// #nosec G204
-	cmd := exec.Command(args[0], args[1:]...)
+	cmd := exec.CommandContext(context.Background(), args[0], args[1:]...)
 
 	// Set the stdin and stdout of the command to the current process's stdin and stdout
 	cmd.Stdin = os.Stdin
