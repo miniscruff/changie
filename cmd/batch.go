@@ -330,6 +330,7 @@ func (b *Batch) Run(cmd *cobra.Command, args []string) (err error) {
 	}
 
 	_ = core.WriteNewlines(b.writer, b.config.Newlines.EndOfVersion)
+	_ = core.WriteNewlines(b.writer, b.config.Newlines.AfterReleaseNotes)
 
 	if !b.DryRun && !b.KeepFragments {
 		err = b.ClearUnreleased(
