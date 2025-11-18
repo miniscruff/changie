@@ -13,7 +13,10 @@ import (
 	"github.com/miniscruff/changie/core"
 )
 
-var errVersionExists = errors.New("version already exists")
+var (
+	errVersionExists       = errors.New("version already exists")
+	errNoChangesNotAllowed = errors.New("no changes found and allow no changes disabled")
+)
 
 type Batch struct {
 	*cobra.Command
@@ -31,6 +34,7 @@ type Batch struct {
 	Prerelease        []string
 	Meta              []string
 	Force             bool
+	AllowNoChanges    bool
 
 	// Dependencies
 	TimeNow       core.TimeNow
@@ -141,6 +145,12 @@ Changes are sorted in the following order:
 		false,
 		"Force a new version file even if one already exists",
 	)
+	cmd.Flags().BoolVar(
+		&b.AllowNoChanges,
+		"allow-no-changes",
+		true,
+		"Allow batching no change fragments into an empty release note",
+	)
 	cmd.Flags().StringVarP(
 		&b.Project,
 		"project", "j",
@@ -162,6 +172,10 @@ func (b *Batch) getBatchData() (*core.BatchData, error) {
 	allChanges, err := core.GetChanges(b.config, b.IncludeDirs, b.Project)
 	if err != nil {
 		return nil, err
+	}
+
+	if !b.AllowNoChanges && len(allChanges) == 0 {
+		return nil, errNoChangesNotAllowed
 	}
 
 	currentVersion, err := core.GetNextVersion(

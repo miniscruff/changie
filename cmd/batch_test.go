@@ -394,6 +394,20 @@ func TestBatchErrorBadChanges(t *testing.T) {
 	then.NotNil(t, err)
 }
 
+func TestBatchErrorNoChangesAndNotAllowed(t *testing.T) {
+	cfg := batchTestConfig()
+	then.WithTempDirConfig(t, cfg)
+
+	err := os.MkdirAll(filepath.Join("news", "future"), 0777)
+	then.Nil(t, err)
+
+	batch := NewBatch(time.Now, core.NewTemplateCache())
+	batch.AllowNoChanges = false
+
+	err = batch.Run(batch.Command, []string{"v0.1.1"})
+	then.Err(t, errNoChangesNotAllowed, err)
+}
+
 func TestBatchOverrideIfForced(t *testing.T) {
 	cfg := batchTestConfig()
 	then.WithTempDirConfig(t, cfg)
