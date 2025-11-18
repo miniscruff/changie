@@ -282,8 +282,9 @@ func LoadEnvVars(config *Config, envs []string) map[string]string {
 	}
 
 	for k, v := range EnvVarMap(envs) {
-		if strings.HasPrefix(k, config.EnvPrefix) {
-			ret[strings.TrimPrefix(k, config.EnvPrefix)] = v
+		key, found := strings.CutPrefix(k, config.EnvPrefix)
+		if found {
+			ret[key] = v
 		}
 	}
 

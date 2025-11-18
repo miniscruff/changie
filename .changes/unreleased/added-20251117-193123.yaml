@@ -1,0 +1,5 @@
+kind: added
+body: Load env var values when running new command
+time: 2025-11-17T19:31:23.401243579-08:00
+custom:
+    Issue: "801"
