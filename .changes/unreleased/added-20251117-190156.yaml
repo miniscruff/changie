@@ -1,0 +1,5 @@
+kind: added
+body: Option to fail batch command if no change fragments exist
+time: 2025-11-17T19:01:56.03499413-08:00
+custom:
+    Issue: "826"

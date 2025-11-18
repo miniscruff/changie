@@ -48,6 +48,10 @@ Each version is merged together for the overall project changelog.
 Prompts are disabled and this command will fail if any values
 are not defined or valid and if any of the following are true:
 
+Custom prompt values can also be passed in via an environment variable.
+Use the following format: "${env var prefix}_CUSTOM_${custom key}=value".
+Example: "CHANGIE_CUSTOM_Author=miniscruff"
+
 1. CI env var is true
 2. --interactive=false
 `,
@@ -119,6 +123,14 @@ func (n *New) Run(cmd *cobra.Command, args []string) error {
 	customValues, err := core.CustomMapFromStrings(n.Custom)
 	if err != nil {
 		return err
+	}
+
+	changieEnvs := config.EnvVars()
+	for key, value := range changieEnvs {
+		key, found := strings.CutPrefix(key, "CUSTOM_")
+		if found {
+			customValues[key] = value
+		}
 	}
 
 	prompts := &core.Prompts{
