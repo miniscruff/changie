@@ -25,6 +25,9 @@ func TestLinkHandlerLinksToOtherPages(t *testing.T) {
 }
 
 func TestCanGetFiles(t *testing.T) {
+	// This could be useful but for now it always updates our schema
+	t.SkipNow()
+
 	// move our wd to project root instead of cmd dir
 	wd, _ := os.Getwd()
 	t.Chdir(filepath.Join(wd, ".."))

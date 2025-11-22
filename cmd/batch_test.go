@@ -23,6 +23,7 @@ func batchTestConfig() *core.Config {
 		UnreleasedDir:      "future",
 		HeaderPath:         "",
 		ChangelogPath:      "news.md",
+		VersionFileFormat:  "{{.Version}}.md",
 		VersionExt:         "md",
 		VersionFormat:      "## {{.Version}}",
 		KindFormat:         "### {{.Kind}}",
@@ -85,6 +86,7 @@ func TestBatchCanBatch(t *testing.T) {
 
 func TestBatchCanBatchWithProject(t *testing.T) {
 	cfg := batchTestConfig()
+	cfg.VersionFileFormat = "{{.Version}}-custom-format.md"
 	cfg.Projects = []core.ProjectConfig{
 		{
 			Label: "A",
@@ -111,7 +113,7 @@ func TestBatchCanBatchWithProject(t *testing.T) {
 ### removed
 * C`
 
-	then.FileContents(t, verContents, cfg.ChangesDir, "a", "v0.2.0.md")
+	then.FileContents(t, verContents, cfg.ChangesDir, "a", "v0.2.0-custom-format.md")
 	then.DirectoryFileCount(t, 1, cfg.ChangesDir, cfg.UnreleasedDir)
 }
 

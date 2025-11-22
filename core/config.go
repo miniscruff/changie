@@ -266,6 +266,10 @@ type Config struct {
 	// Filepath for your version footer file relative to [unreleasedDir](#config-unreleaseddir).
 	// It is also possible to use the '--footer-path' parameter when using the [batch command](../cli/changie_batch.md).
 	VersionFooterPath string `yaml:"versionFooterPath,omitempty"`
+	// Customize the file name generated for new versions or release note files.
+	// The file is placed in the [changesDir](#config-changesdir), so the full path is:
+	// `{{.ChangesDir}}/{{.VersionFileFormat}}`
+	VersionFileFormat string `yaml:"versionFileFormat,omitempty" default:"{{.Version}}.{{config.VersionExt}}" templateType:"BatchData"` //nolint:lll
 	// Customize the file name generated for new fragments.
 	// The default uses the component and kind only if configured for your project.
 	// The file is placed in the unreleased directory, so the full path is:
@@ -550,6 +554,10 @@ func LoadConfig() (*Config, error) {
 		}
 
 		c.FragmentFileFormat += fmt.Sprintf("{{.Time.Format \"%v\"}}", timeFormat)
+	}
+
+	if c.VersionFileFormat == "" {
+		c.VersionFileFormat = "{{.Version}}." + c.VersionExt
 	}
 
 	return &c, nil
