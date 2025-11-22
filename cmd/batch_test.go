@@ -174,6 +174,7 @@ func TestBatchCanAddNewLinesBeforeAndAfterKindHeader(t *testing.T) {
 func TestBatchErrorStandardBadWriter(t *testing.T) {
 	cfg := batchTestConfig()
 	then.WithTempDirConfig(t, cfg)
+
 	w := then.NewErrWriter()
 
 	batch := NewBatch(time.Now, core.NewTemplateCache())

@@ -30,7 +30,7 @@ jobs:
     - name: Setup Go
       uses: actions/setup-go@v6
       with:
-        go-version: 1.24
+        go-version-file: 'go.mod'
 
     - name: Check out code
       uses: actions/checkout@v6
@@ -40,7 +40,7 @@ jobs:
       with:
         # Required: the version of golangci-lint is required and must be specified
         # without patch version: we always use the latest patch version.
-        version: 'v2.3'
+        version: 'v2.6'
 
     - name: Gen
       run: go run main.go gen

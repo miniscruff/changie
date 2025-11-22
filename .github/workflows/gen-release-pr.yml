@@ -17,10 +17,11 @@ jobs:
     - name: Setup Go
       uses: actions/setup-go@v6
       with:
-        go-version: 1.24
+        go-version-file: 'go.mod'
 
     - name: Batch and merge
       run: |
+        go run main.go gen
         go run main.go batch auto
         go run main.go merge
         echo RELEASE_VERSION=$(go run main.go latest) >> $GITHUB_ENV

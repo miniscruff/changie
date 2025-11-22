@@ -16,7 +16,7 @@ jobs:
     - name: Setup Go
       uses: actions/setup-go@v6
       with:
-        go-version: 1.24
+        go-version-file: 'go.mod'
 
     - name: Setup NPM
       uses: actions/setup-node@v6

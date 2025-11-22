@@ -144,6 +144,7 @@ func TestErrorLatestBadConfig(t *testing.T) {
 func TestErrorLatestBadWrite(t *testing.T) {
 	cfg := latestConfig()
 	then.WithTempDirConfig(t, cfg)
+
 	w := then.NewErrWriter()
 
 	then.CreateFile(t, cfg.ChangesDir, "v0.0.1.md")
