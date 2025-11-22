@@ -505,11 +505,9 @@ func TestBatchErrorBadKindFormat(t *testing.T) {
 	writeChangeFile(t, cfg, &core.Change{Kind: "added", Body: "C"})
 
 	err := batch.Run(batch.Command, []string{"v0.2.3"})
-	t.Log(err)
 	then.NotNil(t, err)
 
-	fi, err := os.Stat(filepath.Join(cfg.ChangesDir, "v0.2.3.md"))
-	t.Log(fi)
+	_, err = os.Stat(filepath.Join(cfg.ChangesDir, "v0.2.3.md"))
 	then.Err(t, fs.ErrNotExist, err)
 }
 
