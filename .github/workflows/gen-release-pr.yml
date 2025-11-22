@@ -20,6 +20,7 @@ jobs:
         go run main.go batch auto
         go run main.go merge
         echo RELEASE_VERSION=$(go run main.go latest) >> $GITHUB_ENV
+        tail -n +3 .changes/$(go run main.go latest).md > ${{ github.workspace }}/rel_notes.md
 
     - name: Create Pull Request
       uses: peter-evans/create-pull-request@v7
@@ -27,4 +28,4 @@ jobs:
         title: Release ${{ env.RELEASE_VERSION }}
         branch: release/${{ env.RELEASE_VERSION }}
         commit-message: 'Release ${{ env.RELEASE_VERSION }}'
-        body-path: './.changes/${{ env.RELEASE_VERSION }}.md'
+        body-path: '${{ github.workspace }}/rel_notes.md'
