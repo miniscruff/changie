@@ -102,6 +102,7 @@ func (tc *TemplateCache) Execute(text string, wr io.Writer, data any) error {
 
 func (tc *TemplateCache) ExecuteString(text string, data any) (string, error) {
 	sb := strings.Builder{}
+
 	templ, err := tc.Load(text)
 	if err != nil {
 		return "", err
