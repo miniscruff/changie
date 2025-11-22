@@ -23,6 +23,7 @@ func batchTestConfig() *core.Config {
 		UnreleasedDir:      "future",
 		HeaderPath:         "",
 		ChangelogPath:      "news.md",
+		VersionFileFormat:  "{{.Version}}.md",
 		VersionExt:         "md",
 		VersionFormat:      "## {{.Version}}",
 		KindFormat:         "### {{.Kind}}",
@@ -85,6 +86,7 @@ func TestBatchCanBatch(t *testing.T) {
 
 func TestBatchCanBatchWithProject(t *testing.T) {
 	cfg := batchTestConfig()
+	cfg.VersionFileFormat = "{{.Version}}-custom-format.md"
 	cfg.Projects = []core.ProjectConfig{
 		{
 			Label: "A",
@@ -111,7 +113,7 @@ func TestBatchCanBatchWithProject(t *testing.T) {
 ### removed
 * C`
 
-	then.FileContents(t, verContents, cfg.ChangesDir, "a", "v0.2.0.md")
+	then.FileContents(t, verContents, cfg.ChangesDir, "a", "v0.2.0-custom-format.md")
 	then.DirectoryFileCount(t, 1, cfg.ChangesDir, cfg.UnreleasedDir)
 }
 
@@ -503,9 +505,11 @@ func TestBatchErrorBadKindFormat(t *testing.T) {
 	writeChangeFile(t, cfg, &core.Change{Kind: "added", Body: "C"})
 
 	err := batch.Run(batch.Command, []string{"v0.2.3"})
+	t.Log(err)
 	then.NotNil(t, err)
 
-	_, err = os.Stat(filepath.Join(cfg.ChangesDir, "v0.2.3.md"))
+	fi, err := os.Stat(filepath.Join(cfg.ChangesDir, "v0.2.3.md"))
+	t.Log(fi)
 	then.Err(t, fs.ErrNotExist, err)
 }
 

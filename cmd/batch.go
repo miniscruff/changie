@@ -239,7 +239,14 @@ func (b *Batch) Run(cmd *cobra.Command, args []string) (err error) {
 	if b.DryRun {
 		b.writer = cmd.OutOrStdout()
 	} else {
-		versionFilePath := filepath.Join(b.config.ChangesDir, b.Project, data.Version+"."+b.config.VersionExt)
+		var versionFileName string
+
+		versionFileName, err = b.TemplateCache.ExecuteString(b.config.VersionFileFormat, data)
+		if err != nil {
+			return err
+		}
+
+		versionFilePath := filepath.Join(b.config.ChangesDir, b.Project, versionFileName)
 
 		if !b.Force {
 			if exists, existErr := core.FileExists(versionFilePath); exists || existErr != nil {

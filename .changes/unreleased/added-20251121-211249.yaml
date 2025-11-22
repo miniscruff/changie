@@ -1,0 +1,5 @@
+kind: added
+body: Option to specify the generated release notes file name
+time: 2025-11-21T21:12:49.856816699-08:00
+custom:
+    Issue: "776"

@@ -162,6 +162,10 @@
           "type": "integer",
           "description": "Add newlines after kind"
         },
+        "afterReleaseNotes": {
+          "type": "integer",
+          "description": "Add newlines after release notes"
+        },
         "afterVersion": {
           "type": "integer",
           "description": "Add newlines after version"
@@ -319,6 +323,10 @@
     "versionFooterPath": {
       "type": "string",
       "description": "Filepath for your version footer file relative to [unreleasedDir](#config-unreleaseddir).\nIt is also possible to use the '--footer-path' parameter when using the [batch command](../cli/changie_batch.md)."
+    },
+    "versionFileFormat": {
+      "type": "string",
+      "description": "Customize the file name generated for new versions or release note files.\nThe file is placed in the [changesDir](#config-changesdir), so the full path is:\n`{{.ChangesDir}}/{{.VersionFileFormat}}`"
     },
     "fragmentFileFormat": {
       "type": "string",

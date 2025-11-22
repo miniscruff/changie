@@ -2,6 +2,7 @@ package core
 
 import (
 	"io"
+	"strings"
 	"text/template"
 	"time"
 
@@ -90,7 +91,7 @@ func (tc *TemplateCache) Load(text string) (*template.Template, error) {
 	return templ, err
 }
 
-func (tc *TemplateCache) Execute(text string, wr io.Writer, data interface{}) error {
+func (tc *TemplateCache) Execute(text string, wr io.Writer, data any) error {
 	templ, err := tc.Load(text)
 	if err != nil {
 		return err
@@ -99,7 +100,22 @@ func (tc *TemplateCache) Execute(text string, wr io.Writer, data interface{}) er
 	return templ.Execute(wr, data)
 }
 
-func (tc *TemplateCache) buildFuncMap() map[string]interface{} {
+func (tc *TemplateCache) ExecuteString(text string, data any) (string, error) {
+	sb := strings.Builder{}
+	templ, err := tc.Load(text)
+	if err != nil {
+		return "", err
+	}
+
+	err = templ.Execute(&sb, data)
+	if err != nil {
+		return "", err
+	}
+
+	return sb.String(), nil
+}
+
+func (tc *TemplateCache) buildFuncMap() map[string]any {
 	funcs := sprig.TxtFuncMap()
 
 	funcs["count"] = tc.Count
