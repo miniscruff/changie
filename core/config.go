@@ -138,6 +138,8 @@ type NewlinesConfig struct {
 	AfterHeaderTemplate int `yaml:"afterHeaderTemplate,omitempty" default:"0"`
 	// Add newlines after kind
 	AfterKind int `yaml:"afterKind,omitempty" default:"0"`
+	// Add newlines after release notes
+	AfterReleaseNotes int `yaml:"afterReleaseNotes,omitempty" default:"0"`
 	// Add newlines after version
 	AfterVersion int `yaml:"afterVersion,omitempty" default:"0"`
 	// Add newlines before change fragment

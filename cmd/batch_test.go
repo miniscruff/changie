@@ -701,3 +701,27 @@ func TestBatchClearUnreleasedMovesFilesIncludingHeaderIfSpecified(t *testing.T) 
 	// .gitkeep should remain
 	then.DirectoryFileCount(t, 1, cfg.ChangesDir, cfg.UnreleasedDir)
 }
+
+func TestBatchCanAddNewLinesAfterReleaseNotes(t *testing.T) {
+	cfg := batchTestConfig()
+	cfg.Newlines.AfterReleaseNotes = 2
+
+	then.WithTempDirConfig(t, cfg)
+
+	writeChangeFile(t, cfg, &core.Change{Kind: "added", Body: "A"})
+	writeChangeFile(t, cfg, &core.Change{Kind: "removed", Body: "B"})
+
+	batch := NewBatch(time.Now, core.NewTemplateCache())
+	err := batch.Run(batch.Command, []string{"v0.2.0"})
+	then.Nil(t, err)
+
+	verContents := `## v0.2.0
+### added
+* A
+### removed
+* B
+
+`
+	then.FileContents(t, verContents, cfg.ChangesDir, "v0.2.0.md")
+	then.DirectoryFileCount(t, 0, cfg.ChangesDir, cfg.UnreleasedDir)
+}
