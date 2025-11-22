@@ -388,4 +388,3 @@ Support for and use of Changie as an imported package is not recommended.
 ## v0.1.0 on 2020-12-20
 
 Initial release
-
