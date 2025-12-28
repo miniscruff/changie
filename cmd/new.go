@@ -141,7 +141,7 @@ func (n *New) Run(cmd *cobra.Command, args []string) error {
 		Kind:             n.Kind,
 		Body:             n.Body,
 		TimeNow:          n.TimeNow,
-		Config:           config,
+		Cfg:           config,
 		Customs:          customValues,
 		EditorCmdBuilder: core.BuildCommand,
 		Enabled:          n.parsePromptEnabled(),

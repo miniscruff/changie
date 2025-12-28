@@ -20,22 +20,22 @@ func ChangeLess(cfg *Config, changes []Change) func(i, j int) bool {
 		b := changes[j]
 
 		// Start by sorting by component index
-		if len(cfg.Components) > 0 && a.Component != b.Component {
-			for _, c := range cfg.Components {
-				if a.Component == c {
+		if len(cfg.Component.Options) > 0 && a.Component != b.Component {
+			for _, o := range cfg.Component.Options {
+				if o.Prompt.Equals(a.Component) {
 					return true
-				} else if b.Component == c {
+				} else if o.Prompt.Equals(b.Component) {
 					return false
 				}
 			}
 		}
 
 		// Then sort by kind index
-		if len(cfg.Kinds) > 0 && a.Kind != b.Kind {
-			for _, k := range cfg.Kinds {
-				if a.Kind == k.Key || a.Kind == k.Label {
+		if len(cfg.Kind.Options) > 0 && a.Kind != b.Kind {
+			for _, o := range cfg.Kind.Options {
+				if o.Prompt.Equals(a.Kind) {
 					return true
-				} else if b.Kind == k.Key || b.Kind == k.Label {
+				} else if o.Prompt.Equals(b.Kind) {
 					return false
 				}
 			}
@@ -89,11 +89,12 @@ func (change Change) WriteTo(writer io.Writer) (int64, error) {
 	return int64(n), err
 }
 
-func (change *Change) PostProcess(cfg *Config, kind *KindConfig) error {
+func (change *Change) PostProcess(cfg *Config, kind *KindOptions) error {
 	postConfigs := make([]PostProcessConfig, 0)
 
-	if kind == nil || !kind.SkipGlobalPost {
-		postConfigs = append(postConfigs, cfg.Post...)
+	// todo: support this feature
+	if kind == nil { // || !kind.SkipGlobalPost {
+		postConfigs = append(postConfigs, cfg.Changelog.Post...)
 	}
 
 	if kind != nil {

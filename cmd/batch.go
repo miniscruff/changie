@@ -41,7 +41,7 @@ type Batch struct {
 	TemplateCache *core.TemplateCache
 
 	// Computed values
-	config  *core.Config // current configuration
+	cfg     *core.Config // current configuration
 	writer  io.Writer    // writer we are batching to
 	version string       // the version we are bumping to
 }
@@ -164,12 +164,12 @@ Changes are sorted in the following order:
 }
 
 func (b *Batch) getBatchData() (*core.BatchData, error) {
-	previousVersion, err := core.GetLatestVersion(b.config, false, b.Project)
+	previousVersion, err := b.cfg.LatestVersion(false, b.Project)
 	if err != nil {
 		return nil, err
 	}
 
-	allChanges, err := core.GetChanges(b.config, b.IncludeDirs, b.Project)
+	allChanges, err := b.cfg.Changes(b.IncludeDirs, b.Project)
 	if err != nil {
 		return nil, err
 	}
@@ -178,8 +178,7 @@ func (b *Batch) getBatchData() (*core.BatchData, error) {
 		return nil, errNoChangesNotAllowed
 	}
 
-	currentVersion, err := core.GetNextVersion(
-		b.config,
+	currentVersion, err := b.cfg.NextVersion(
 		b.version,
 		b.Prerelease,
 		b.Meta,
@@ -201,7 +200,7 @@ func (b *Batch) getBatchData() (*core.BatchData, error) {
 		Prerelease:      currentVersion.Prerelease(),
 		Metadata:        currentVersion.Metadata(),
 		Changes:         allChanges,
-		Env:             b.config.EnvVars(),
+		Env:             b.cfg.EnvVars(),
 	}, nil
 }
 
@@ -210,22 +209,22 @@ func (b *Batch) Run(cmd *cobra.Command, args []string) (err error) {
 	// save our version for later use
 	b.version = args[0]
 
-	b.config, err = core.LoadConfig()
+	b.cfg, err = core.LoadConfig()
 	if err != nil {
 		return err
 	}
 
-	if len(b.config.Projects) > 0 {
+	if len(b.cfg.Projects) > 0 {
 		var pc *core.ProjectConfig
 
-		pc, err = b.config.Project(b.Project)
+		pc, err = b.cfg.Project(b.Project)
 		if err != nil {
 			return err
 		}
 
 		b.Project = pc.Key
 
-		err = os.MkdirAll(filepath.Join(b.config.ChangesDir, b.Project), core.CreateDirMode)
+		err = os.MkdirAll(filepath.Join(b.cfg.ChangesDir, b.Project), core.CreateDirMode)
 		if err != nil {
 			return err
 		}
@@ -241,12 +240,12 @@ func (b *Batch) Run(cmd *cobra.Command, args []string) (err error) {
 	} else {
 		var versionFileName string
 
-		versionFileName, err = b.TemplateCache.ExecuteString(b.config.VersionFileFormat, data)
+		versionFileName, err = b.TemplateCache.ExecuteString(b.cfg.VersionFileFormat, data)
 		if err != nil {
 			return err
 		}
 
-		versionFilePath := filepath.Join(b.config.ChangesDir, b.Project, versionFileName)
+		versionFilePath := filepath.Join(b.cfg.ChangesDir, b.Project, versionFileName)
 
 		if !b.Force {
 			if exists, existErr := core.FileExists(versionFilePath); exists || existErr != nil {
@@ -274,9 +273,9 @@ func (b *Batch) Run(cmd *cobra.Command, args []string) (err error) {
 	}
 
 	err = b.WriteTemplate(
-		b.config.VersionFormat,
-		b.config.Newlines.BeforeVersion,
-		b.config.Newlines.AfterVersion,
+		b.cfg.VersionFormat,
+		b.cfg.Newlines.BeforeVersion,
+		b.cfg.Newlines.AfterVersion,
 		data,
 	)
 	if err != nil {
@@ -286,12 +285,12 @@ func (b *Batch) Run(cmd *cobra.Command, args []string) (err error) {
 	for _, relativePath := range []string{
 		b.VersionHeaderPath,
 		b.OldHeaderPath,
-		b.config.VersionHeaderPath,
+		b.cfg.VersionHeaderPath,
 	} {
 		err = b.WriteTemplateFile(
 			relativePath,
-			b.config.Newlines.BeforeHeaderFile+1,
-			b.config.Newlines.AfterHeaderFile,
+			b.cfg.Newlines.BeforeHeaderFile+1,
+			b.cfg.Newlines.AfterHeaderFile,
 			data,
 		)
 		if err != nil {
@@ -300,9 +299,9 @@ func (b *Batch) Run(cmd *cobra.Command, args []string) (err error) {
 	}
 
 	err = b.WriteTemplate(
-		b.config.HeaderFormat,
-		b.config.Newlines.BeforeHeaderTemplate+1,
-		b.config.Newlines.AfterHeaderTemplate,
+		b.cfg.HeaderFormat,
+		b.cfg.Newlines.BeforeHeaderTemplate+1,
+		b.cfg.Newlines.AfterHeaderTemplate,
 		data,
 	)
 	if err != nil {
@@ -315,20 +314,20 @@ func (b *Batch) Run(cmd *cobra.Command, args []string) (err error) {
 	}
 
 	err = b.WriteTemplate(
-		b.config.FooterFormat,
-		b.config.Newlines.BeforeFooterTemplate+1,
-		b.config.Newlines.AfterFooterTemplate,
+		b.cfg.FooterFormat,
+		b.cfg.Newlines.BeforeFooterTemplate+1,
+		b.cfg.Newlines.AfterFooterTemplate,
 		data,
 	)
 	if err != nil {
 		return err
 	}
 
-	for _, relativePath := range []string{b.VersionFooterPath, b.config.VersionFooterPath} {
+	for _, relativePath := range []string{b.VersionFooterPath, b.cfg.VersionFooterPath} {
 		err = b.WriteTemplateFile(
 			relativePath,
-			b.config.Newlines.BeforeFooterFile+1,
-			b.config.Newlines.AfterFooterFile,
+			b.cfg.Newlines.BeforeFooterFile+1,
+			b.cfg.Newlines.AfterFooterFile,
 			data,
 		)
 		if err != nil {
@@ -336,16 +335,16 @@ func (b *Batch) Run(cmd *cobra.Command, args []string) (err error) {
 		}
 	}
 
-	_ = core.WriteNewlines(b.writer, b.config.Newlines.EndOfVersion)
-	_ = core.WriteNewlines(b.writer, b.config.Newlines.AfterReleaseNotes)
+	_ = core.WriteNewlines(b.writer, b.cfg.Newlines.EndOfVersion)
+	_ = core.WriteNewlines(b.writer, b.cfg.Newlines.AfterReleaseNotes)
 
 	if !b.DryRun && !b.KeepFragments {
 		err = b.ClearUnreleased(
 			data.Changes,
 			b.VersionHeaderPath,
-			b.config.VersionHeaderPath,
+			b.cfg.VersionHeaderPath,
 			b.VersionFooterPath,
-			b.config.VersionFooterPath,
+			b.cfg.VersionFooterPath,
 		)
 		if err != nil {
 			return err
@@ -354,7 +353,7 @@ func (b *Batch) Run(cmd *cobra.Command, args []string) (err error) {
 
 	if !b.DryRun && b.RemovePrereleases {
 		// only chance we fail is already checked above
-		allVers, _ := core.GetAllVersions(b.config, false, b.Project)
+		allVers, _ := b.cfg.AllVersions(false, b.Project)
 
 		for _, v := range allVers {
 			if v.Prerelease() == "" {
@@ -362,9 +361,9 @@ func (b *Batch) Run(cmd *cobra.Command, args []string) (err error) {
 			}
 
 			err = os.Remove(filepath.Join(
-				b.config.ChangesDir,
+				b.cfg.ChangesDir,
 				b.Project,
-				v.Original()+"."+b.config.VersionExt,
+				v.Original()+"."+b.cfg.VersionExt,
 			))
 			if err != nil {
 				return err
@@ -409,7 +408,7 @@ func (b *Batch) WriteTemplateFile(
 		return nil
 	}
 
-	fullPath := filepath.Join(b.config.ChangesDir, b.config.UnreleasedDir, relativePath)
+	fullPath := filepath.Join(b.cfg.ChangesDir, b.cfg.UnreleasedDir, relativePath)
 
 	var fileBytes []byte
 
@@ -430,17 +429,17 @@ func (b *Batch) WriteChanges(changes []core.Change) error {
 	lastKind := ""
 
 	for _, change := range changes {
-		if b.config.ComponentFormat != "" && lastComponent != change.Component {
+		if b.cfg.ComponentFormat != "" && lastComponent != change.Component {
 			lastComponent = change.Component
 			lastKind = ""
 
 			err := b.WriteTemplate(
-				b.config.ComponentFormat,
-				b.config.Newlines.BeforeComponent+1,
-				b.config.Newlines.AfterComponent,
+				b.cfg.ComponentFormat,
+				b.cfg.Newlines.BeforeComponent+1,
+				b.cfg.Newlines.AfterComponent,
 				core.ComponentData{
 					Component: lastComponent,
-					Env:       b.config.EnvVars(),
+					Env:       b.cfg.EnvVars(),
 				},
 			)
 			if err != nil {
@@ -448,18 +447,18 @@ func (b *Batch) WriteChanges(changes []core.Change) error {
 			}
 		}
 
-		if b.config.KindFormat != "" && lastKind != change.Kind {
+		if b.cfg.KindFormat != "" && lastKind != change.Kind {
 			lastKind = change.Kind
-			newKind := b.config.KindFromKeyOrLabel(change.Kind)
-			kindHeader := b.config.KindHeader(change.Kind)
+			newKind := b.cfg.KindFromKeyOrLabel(change.Kind)
+			kindHeader := b.cfg.KindHeader(change.Kind)
 
 			err := b.WriteTemplate(
 				kindHeader,
-				b.config.Newlines.BeforeKind+1,
-				b.config.Newlines.AfterKind,
+				b.cfg.Newlines.BeforeKind+1,
+				b.cfg.Newlines.AfterKind,
 				core.KindData{
 					Kind: newKind.Label,
-					Env:  b.config.EnvVars(),
+					Env:  b.cfg.EnvVars(),
 				},
 			)
 			if err != nil {
@@ -467,12 +466,12 @@ func (b *Batch) WriteChanges(changes []core.Change) error {
 			}
 		}
 
-		changeFormat := b.config.ChangeFormatForKind(lastKind)
+		changeFormat := b.cfg.ChangeFormatForKind(lastKind)
 
 		err := b.WriteTemplate(
 			changeFormat,
-			b.config.Newlines.BeforeChange+1,
-			b.config.Newlines.AfterChange,
+			b.cfg.Newlines.BeforeChange+1,
+			b.cfg.Newlines.AfterChange,
 			change,
 		)
 		if err != nil {
@@ -490,7 +489,7 @@ func (b *Batch) ClearUnreleased(changes []core.Change, otherFiles ...string) err
 	)
 
 	if b.MoveDir != "" {
-		err = os.MkdirAll(filepath.Join(b.config.ChangesDir, b.MoveDir), core.CreateDirMode)
+		err = os.MkdirAll(filepath.Join(b.cfg.ChangesDir, b.MoveDir), core.CreateDirMode)
 		if err != nil {
 			return err
 		}
@@ -501,7 +500,7 @@ func (b *Batch) ClearUnreleased(changes []core.Change, otherFiles ...string) err
 			continue
 		}
 
-		fullPath := filepath.Join(b.config.ChangesDir, b.config.UnreleasedDir, p)
+		fullPath := filepath.Join(b.cfg.ChangesDir, b.cfg.UnreleasedDir, p)
 
 		if exists, existErr := core.FileExists(fullPath); exists && existErr == nil {
 			filesToMove = append(filesToMove, fullPath)
@@ -516,7 +515,7 @@ func (b *Batch) ClearUnreleased(changes []core.Change, otherFiles ...string) err
 		if b.MoveDir != "" {
 			err = os.Rename(
 				f,
-				filepath.Join(b.config.ChangesDir, b.MoveDir, filepath.Base(f)),
+				filepath.Join(b.cfg.ChangesDir, b.MoveDir, filepath.Base(f)),
 			)
 			if err != nil {
 				return err
@@ -530,7 +529,7 @@ func (b *Batch) ClearUnreleased(changes []core.Change, otherFiles ...string) err
 	}
 
 	for _, include := range b.IncludeDirs {
-		fullInclude := filepath.Join(b.config.ChangesDir, include)
+		fullInclude := filepath.Join(b.cfg.ChangesDir, include)
 
 		files, _ := os.ReadDir(fullInclude)
 		if len(files) == 0 {

@@ -100,7 +100,7 @@ func (m *Merge) mergeProject(
 		writer = changeFile
 	}
 
-	allVersions, err := core.GetAllVersions(cfg, false, project)
+	allVersions, err := cfg.AllVersions(false, project)
 	if err != nil {
 		return fmt.Errorf("finding release notes: %w", err)
 	}
@@ -117,11 +117,7 @@ func (m *Merge) mergeProject(
 	if m.UnreleasedHeader != "" {
 		var unrelErr error
 
-		allChanges, unrelErr := core.GetChanges(
-			cfg,
-			nil,
-			project,
-		)
+		allChanges, unrelErr := cfg.Changes(nil, project)
 		if unrelErr != nil {
 			return unrelErr
 		}
@@ -135,7 +131,7 @@ func (m *Merge) mergeProject(
 
 			// create a fake batch to write the changes
 			b := &Batch{
-				config:        cfg,
+				cfg:           cfg,
 				writer:        writer,
 				TemplateCache: m.TemplateCache,
 			}
@@ -145,7 +141,7 @@ func (m *Merge) mergeProject(
 				return unrelErr
 			}
 
-			_ = core.WriteNewlines(b.writer, b.config.Newlines.EndOfVersion)
+			_ = core.WriteNewlines(b.writer, b.cfg.Newlines.EndOfVersion)
 			_ = core.WriteNewlines(writer, cfg.Newlines.AfterChangelogVersion)
 		}
 	}

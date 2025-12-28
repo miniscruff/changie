@@ -83,9 +83,11 @@ func TestSortByTime(t *testing.T) {
 
 func TestSortByKindThenTime(t *testing.T) {
 	cfg := &Config{
-		Kinds: []KindConfig{
-			{Label: "A"},
-			{Label: "B"},
+		Kind: KindConfig{
+			Options: []KindOptions{
+				{Prompt: PromptFormat{Label: "A"}},
+				{Prompt: PromptFormat{Label: "B"}},
+			},
 		},
 	}
 	changes := []Change{
@@ -104,11 +106,19 @@ func TestSortByKindThenTime(t *testing.T) {
 
 func TestSortByComponentThenKind(t *testing.T) {
 	cfg := &Config{
-		Kinds: []KindConfig{
-			{Label: "D"},
-			{Label: "E"},
+		Kind: KindConfig{
+			Options: []KindOptions{
+				{Prompt: PromptFormat{Label: "D"}},
+				{Prompt: PromptFormat{Label: "E"}},
+			},
 		},
-		Components: []string{"A", "B", "C"},
+		Component: ComponentConfig{
+			Options: []ComponentOptions{
+				{Prompt: PromptFormat{Label: "A"}},
+				{Prompt: PromptFormat{Label: "B"}},
+				{Prompt: PromptFormat{Label: "C"}},
+			},
+		},
 	}
 	changes := []Change{
 		{Body: "fourth", Component: "B", Kind: "E"},
@@ -153,10 +163,12 @@ func TestPostProcess_NoPostConfigs(t *testing.T) {
 
 func TestPostProcess_NilKindGlobalPost(t *testing.T) {
 	cfg := &Config{
-		Post: []PostProcessConfig{
-			{
-				Key:   "NilKind",
-				Value: "Yes",
+		Changelog: ChangelogConfig{
+			Post: []PostProcessConfig{
+				{
+					Key:   "NilKind",
+					Value: "Yes",
+				},
 			},
 		},
 	}
@@ -174,7 +186,7 @@ func TestPostProcess_KindPost(t *testing.T) {
 	change := &Change{
 		Custom: make(map[string]string),
 	}
-	kindCfg := &KindConfig{
+	kindOptions := KindOptions{
 		Post: []PostProcessConfig{
 			{
 				Key:   "NotNilKind",
@@ -183,7 +195,7 @@ func TestPostProcess_KindPost(t *testing.T) {
 		},
 	}
 
-	then.Nil(t, change.PostProcess(cfg, kindCfg))
+	then.Nil(t, change.PostProcess(cfg, &kindOptions))
 	then.MapLen(t, 1, change.Custom)
 	then.Equals(t, "AlsoYes", change.Custom["NotNilKind"])
 }
@@ -193,7 +205,7 @@ func TestPostProcess_InvalidPostTemplate(t *testing.T) {
 	change := &Change{
 		Custom: make(map[string]string),
 	}
-	kindCfg := &KindConfig{
+	kindOptions := KindOptions{
 		Post: []PostProcessConfig{
 			{
 				Key:   "BrokenTemplate",
@@ -202,5 +214,5 @@ func TestPostProcess_InvalidPostTemplate(t *testing.T) {
 		},
 	}
 
-	then.NotNil(t, change.PostProcess(cfg, kindCfg))
+	then.NotNil(t, change.PostProcess(cfg, &kindOptions))
 }

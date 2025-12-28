@@ -32,9 +32,9 @@ var (
 )
 
 type Prompts struct {
-	Config           *Config
+	Cfg              *Config
 	StdinReader      io.Reader
-	KindConfig       *KindConfig
+	KindOption       *KindOptions
 	BodyEditor       bool
 	EditorCmdBuilder func(string) (EditorRunner, error)
 	TimeNow          TimeNow
@@ -85,7 +85,7 @@ func (p *Prompts) BuildChanges() ([]*Change, error) {
 		return nil, err
 	}
 
-	envs := p.Config.EnvVars()
+	envs := p.Cfg.EnvVars()
 
 	// If we don't have projects enabled, just create a single change.
 	if len(p.Projects) == 0 {
@@ -98,7 +98,7 @@ func (p *Prompts) BuildChanges() ([]*Change, error) {
 			Env:       envs,
 		}
 
-		err = change.PostProcess(p.Config, p.KindConfig)
+		err = change.PostProcess(p.Cfg, p.KindOption)
 		if err != nil {
 			return nil, err
 		}
@@ -109,7 +109,7 @@ func (p *Prompts) BuildChanges() ([]*Change, error) {
 	changes := make([]*Change, len(p.Projects))
 	for i := range changes {
 		// Err is already validated when getting the project above.
-		projConfig, _ := p.Config.Project(p.Projects[i])
+		projConfig, _ := p.Cfg.ProjectByName(p.Projects[i])
 		changes[i] = &Change{
 			Project:   projConfig.Key,
 			Component: p.Component,
@@ -120,7 +120,7 @@ func (p *Prompts) BuildChanges() ([]*Change, error) {
 			Env:       envs,
 		}
 
-		err = changes[i].PostProcess(p.Config, p.KindConfig)
+		err = changes[i].PostProcess(p.Cfg, p.KindOption)
 		if err != nil {
 			return nil, err
 		}
@@ -132,28 +132,33 @@ func (p *Prompts) BuildChanges() ([]*Change, error) {
 // validateArguments will check the initial state of a change against the config
 // and return an error if anything is invalid
 func (p *Prompts) validateArguments() error {
-	if len(p.Config.Components) == 0 && len(p.Component) > 0 {
+	if len(p.Cfg.Component.Options) == 0 && len(p.Component) > 0 {
 		return errComponentProvidedWhenNotConfigured
 	}
 
-	if len(p.Config.Kinds) == 0 && len(p.Kind) > 0 {
+	if len(p.Cfg.Kind.Options) == 0 && len(p.Kind) > 0 {
 		return errKindProvidedWhenNotConfigured
 	}
 
 	configuredCustoms := make([]Custom, 0)
 
-	if len(p.Config.Kinds) > 0 && len(p.Kind) > 0 {
-		kc := p.Config.KindFromKeyOrLabel(p.Kind)
+	if len(p.Cfg.Kind.Options) > 0 && len(p.Kind) > 0 {
+		kc := p.Cfg.KindFromKeyOrLabel(p.Kind)
 		if kc == nil {
 			return fmt.Errorf("%w: %s", errInvalidKind, p.Kind)
 		}
 
-		configuredCustoms = append(configuredCustoms, kc.AdditionalChoices...)
-		if !kc.SkipGlobalChoices {
-			configuredCustoms = append(configuredCustoms, p.Config.CustomChoices...)
-		}
+		// TODO: support this feature
+		// configuredCustoms = append(configuredCustoms, kc.AdditionalChoices...)
+		// TODO: support this feature
+		/*
+			if !kc.SkipGlobalChoices {
+				configuredCustoms = append(configuredCustoms, p.Cfg.CustomChoices...)
+			}
+		*/
 	} else {
-		configuredCustoms = append(configuredCustoms, p.Config.CustomChoices...)
+		// todo: support this feature
+		// configuredCustoms = append(configuredCustoms, p.Cfg.CustomChoices...)
 	}
 
 	// make sure no custom values are assigned that do not exist
@@ -185,7 +190,7 @@ func (p *Prompts) validateArguments() error {
 }
 
 func (p *Prompts) projects() error {
-	if len(p.Config.Projects) == 0 {
+	if len(p.Cfg.Project.Options) == 0 {
 		return nil
 	}
 
@@ -198,7 +203,7 @@ func (p *Prompts) projects() error {
 
 		projs, err := prompt.New().Ask("Projects").
 			MultiChoose(
-				p.Config.ProjectLabels(),
+				p.Cfg.ProjectLabels(),
 				multichoose.WithHelp(true),
 				multichoose.WithTeaProgramOpts(tea.WithInput(p.StdinReader)),
 			)
@@ -215,7 +220,7 @@ func (p *Prompts) projects() error {
 
 	// Quickly validate the project exists and lines up before moving on.
 	for _, proj := range p.Projects {
-		_, err := p.Config.Project(proj)
+		_, err := p.Cfg.ProjectByName(proj)
 		if err != nil {
 			return fmt.Errorf("%w: %s", err, proj)
 		}
@@ -225,7 +230,7 @@ func (p *Prompts) projects() error {
 }
 
 func (p *Prompts) component() error {
-	if len(p.Config.Components) == 0 {
+	if len(p.Cfg.Component.Options) == 0 {
 		return nil
 	}
 
@@ -239,7 +244,7 @@ func (p *Prompts) component() error {
 		comp, err := Custom{
 			Type:        CustomEnum,
 			Label:       "Component",
-			EnumOptions: p.Config.Components,
+			EnumOptions: p.Cfg.Component.Names(),
 		}.AskPrompt(p.StdinReader)
 		if err != nil {
 			return err
@@ -248,7 +253,7 @@ func (p *Prompts) component() error {
 		p.Component = comp
 	}
 
-	if !slices.Contains(p.Config.Components, p.Component) {
+	if !slices.Contains(p.Cfg.Component.Names(), p.Component) {
 		return fmt.Errorf("%w: %s", errInvalidComponent, p.Component)
 	}
 
@@ -256,7 +261,7 @@ func (p *Prompts) component() error {
 }
 
 func (p *Prompts) kind() error {
-	if len(p.Config.Kinds) == 0 {
+	if len(p.Cfg.Kind.Options) == 0 {
 		return nil
 	}
 
@@ -265,9 +270,9 @@ func (p *Prompts) kind() error {
 			return errKindMissingPromptDisabled
 		}
 
-		kindLabels := make([]string, len(p.Config.Kinds))
-		for i, kc := range p.Config.Kinds {
-			kindLabels[i] = kc.Label
+		kindLabels := make([]string, len(p.Cfg.Kind.Options))
+		for i, kc := range p.Cfg.Kind.Options {
+			kindLabels[i] = kc.Prompt.KeyOrLabel()
 		}
 
 		kind, err := Custom{
@@ -282,12 +287,12 @@ func (p *Prompts) kind() error {
 		p.Kind = kind
 	}
 
-	for i := range p.Config.Kinds {
-		kindConfig := &p.Config.Kinds[i]
+	for i := range p.Cfg.Kind.Options {
+		kindOption := &p.Cfg.Kind.Options[i]
 
-		if kindConfig.Label == p.Kind || kindConfig.Key == p.Kind {
-			p.KindConfig = kindConfig
-			p.Kind = kindConfig.KeyOrLabel()
+		if kindOption.Prompt.Equals(p.Kind) {
+			p.KindOption = kindOption
+			p.Kind = kindOption.Prompt.KeyOrLabel()
 
 			return nil
 		}
@@ -307,7 +312,7 @@ func (p *Prompts) body() error {
 		}
 
 		if p.BodyEditor {
-			file, err := createTempFile(runtime.GOOS, p.Config.VersionExt)
+			file, err := createTempFile(runtime.GOOS, p.Cfg.ReleaseNotes.Extension)
 			if err != nil {
 				return err
 			}
@@ -321,7 +326,7 @@ func (p *Prompts) body() error {
 
 			return err
 		} else {
-			bodyCustom := p.Config.Body.CreateCustom()
+			bodyCustom := p.Cfg.Change.CreateCustom()
 
 			body, err := bodyCustom.AskPrompt(p.StdinReader)
 			if err != nil {
@@ -335,30 +340,40 @@ func (p *Prompts) body() error {
 	}
 
 	if p.expectsBody() && len(p.Body) > 0 {
-		return p.Config.Body.Validate(p.Body)
+		return p.Cfg.Change.Validate(p.Body)
 	}
 
 	return nil
 }
 
 func (p *Prompts) expectsNoBody() bool {
-	return p.KindConfig != nil && p.KindConfig.SkipBody
+	return p.KindOption != nil
+	// TODO: SUPPORT
+	// && p.KindOption.SkipBody
 }
 
 func (p *Prompts) expectsBody() bool {
-	return p.KindConfig == nil || !p.KindConfig.SkipBody
+	return p.KindOption == nil
+	// TODO: SUPPORT
+	// || !p.KindOption.SkipBody
 }
 
 func (p *Prompts) userChoices() error {
 	userChoices := make([]Custom, 0)
 
-	if p.KindConfig == nil || !p.KindConfig.SkipGlobalChoices {
-		userChoices = append(userChoices, p.Config.CustomChoices...)
+	// TODO: support
+	/*
+	if p.KindOption == nil || !p.KindOption.SkipGlobalChoices {
+		userChoices = append(userChoices, p.Cfg.CustomChoices...)
 	}
+	*/
 
-	if p.KindConfig != nil {
-		userChoices = append(userChoices, p.KindConfig.AdditionalChoices...)
+	// TODO: support
+	/*
+	if p.KindOption != nil {
+		userChoices = append(userChoices, p.KindOption.AdditionalChoices...)
 	}
+	*/
 
 	// custom map may be nil, which is fine if we have no choices
 	// otherwise we need to initialize it

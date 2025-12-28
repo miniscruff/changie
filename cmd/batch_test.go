@@ -543,7 +543,7 @@ func TestBatchWriteChanges(t *testing.T) {
 	var builder strings.Builder
 
 	batch := NewBatch(time.Now, core.NewTemplateCache())
-	batch.config = cfg
+	batch.cfg = cfg
 	batch.writer = &builder
 
 	changes := []core.Change{
@@ -574,7 +574,7 @@ func TestBatchCreateVersionsWithoutKindHeaders(t *testing.T) {
 	var builder strings.Builder
 
 	batch := NewBatch(time.Now, core.NewTemplateCache())
-	batch.config = cfg
+	batch.cfg = cfg
 	batch.writer = &builder
 
 	changes := []core.Change{
@@ -605,7 +605,7 @@ func TestBatchVersionFileWithComponentHeaders(t *testing.T) {
 	var builder strings.Builder
 
 	batch := NewBatch(time.Now, core.NewTemplateCache())
-	batch.config = cfg
+	batch.cfg = cfg
 	batch.writer = &builder
 
 	changes := []core.Change{
@@ -636,7 +636,7 @@ func TestBatchClearUnreleasedRemovesUnreleasedFilesIncludingHeader(t *testing.T)
 
 	cfg := batchTestConfig()
 	batch := NewBatch(time.Now, core.NewTemplateCache())
-	batch.config = cfg
+	batch.cfg = cfg
 
 	alphaPath := filepath.Join(cfg.ChangesDir, "alpha")
 	betaPath := filepath.Join(cfg.ChangesDir, "beta")
@@ -675,7 +675,7 @@ func TestBatchClearUnreleasedMovesFilesIncludingHeaderIfSpecified(t *testing.T) 
 
 	cfg := batchTestConfig()
 	batch := NewBatch(time.Now, core.NewTemplateCache())
-	batch.config = cfg
+	batch.cfg = cfg
 	batch.MoveDir = "beta"
 
 	for _, name := range []string{".gitkeep", "header.md"} {
