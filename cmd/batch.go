@@ -214,17 +214,17 @@ func (b *Batch) Run(cmd *cobra.Command, args []string) (err error) {
 		return err
 	}
 
-	if len(b.cfg.Projects) > 0 {
-		var pc *core.ProjectConfig
+	if len(b.cfg.Project.Options) > 0 {
+		var pc *core.ProjectOptions
 
-		pc, err = b.cfg.Project(b.Project)
+		pc, err = b.cfg.ProjectByName(b.Project)
 		if err != nil {
 			return err
 		}
 
 		b.Project = pc.Key
 
-		err = os.MkdirAll(filepath.Join(b.cfg.ChangesDir, b.Project), core.CreateDirMode)
+		err = os.MkdirAll(filepath.Join(b.cfg.RootDir, b.Project), core.CreateDirMode)
 		if err != nil {
 			return err
 		}

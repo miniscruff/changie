@@ -74,16 +74,16 @@ func (n *Next) Run(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	if len(cfg.Projects) > 0 {
-		var pc *core.ProjectConfig
+	if len(cfg.Project.Options) > 0 {
+		var pc *core.ProjectOptions
 
-		pc, err = cfg.Project(n.Project)
+		pc, err = cfg.ProjectByName(n.Project)
 		if err != nil {
 			return err
 		}
 
 		n.Project = pc.Key
-		projPrefix = pc.Key + cfg.ProjectsVersionSeparator
+		projPrefix = pc.Key + cfg.Project.VersionSeparator
 	}
 
 	var changes []core.Change
