@@ -59,16 +59,16 @@ func (l *Latest) Run(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	if len(cfg.Projects) > 0 {
-		var pc *core.ProjectConfig
+	if len(cfg.Project.Options) > 0 {
+		var pc *core.ProjectOptions
 
-		pc, err = cfg.Project(l.Project)
+		pc, err = cfg.ProjectByName(l.Project)
 		if err != nil {
 			return err
 		}
 
 		l.Project = pc.Key
-		projPrefix = pc.Key + cfg.ProjectsVersionSeparator
+		projPrefix = pc.Key + cfg.Project.VersionSeparator
 	}
 
 	ver, err := cfg.LatestVersion(l.SkipPrereleases, l.Project)
