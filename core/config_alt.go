@@ -170,9 +170,10 @@ type ReleaseNotesConfig struct {
 // changelog: ( shared type between root and project.options[*].changelog )
 type ChangelogConfig struct {
 	// output: output path to changelog file ( from ChangelogPath )
-	Output   string
-	Header   FileWriterFormat
-	Footer   FileWriterFormat
-	Newlines NewlinesConfig
-	Post     []PostProcessConfig `yaml:"post,omitempty"`
+	Output       string
+	Header       FileWriterFormat
+	Footer       FileWriterFormat
+	Newlines     NewlinesConfig
+	Post         []PostProcessConfig `yaml:"post,omitempty"`
+	Replacements []Replacement       `yaml:"replacements,omitempty"`
 }
