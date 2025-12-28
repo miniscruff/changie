@@ -10,15 +10,15 @@ import (
 
 func diffConfig() *core.Config {
 	return &core.Config{
-		ChangesDir:    "chgs",
-		UnreleasedDir: "unrel",
-		HeaderPath:    "head.tpl.md",
-		ChangelogPath: "changelog.md",
-		VersionExt:    "md",
-		VersionFormat: "",
-		KindFormat:    "",
-		ChangeFormat:  "",
-		Kinds:         []core.KindConfig{},
+		RootDir:    "chgs",
+		// UnreleasedDir: "unrel",
+		// HeaderPath:    "head.tpl.md",
+		// ChangelogPath: "changelog.md",
+		// VersionExt:    "md",
+		// VersionFormat: "",
+		// KindFormat:    "",
+		// ChangeFormat:  "",
+		// Kinds:         []core.KindConfig{},
 	}
 }
 
@@ -26,11 +26,11 @@ func TestDiff(t *testing.T) {
 	cfg := diffConfig()
 	then.WithTempDirConfig(t, cfg)
 
-	then.WriteFile(t, []byte("1\n"), cfg.ChangesDir, "v0.1.0.md")
-	then.WriteFile(t, []byte("2\n"), cfg.ChangesDir, "v0.2.0.md")
-	then.WriteFile(t, []byte("3\n"), cfg.ChangesDir, "v0.3.0.md")
-	then.WriteFile(t, []byte("4\n"), cfg.ChangesDir, "v1.0.0.md")
-	then.WriteFile(t, []byte("5\n"), cfg.ChangesDir, "v1.1.0.md")
+	then.WriteFile(t, []byte("1\n"), cfg.RootDir, "v0.1.0.md")
+	then.WriteFile(t, []byte("2\n"), cfg.RootDir, "v0.2.0.md")
+	then.WriteFile(t, []byte("3\n"), cfg.RootDir, "v0.3.0.md")
+	then.WriteFile(t, []byte("4\n"), cfg.RootDir, "v1.0.0.md")
+	then.WriteFile(t, []byte("5\n"), cfg.RootDir, "v1.1.0.md")
 
 	t.Run("with N", func(t *testing.T) {
 		expected := "5\n4\n"
