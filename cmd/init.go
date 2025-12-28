@@ -56,61 +56,61 @@ Default values follow keep a changelog and semver specs but are customizable.`,
 }
 
 func (i *Init) Run(cmd *cobra.Command, args []string) error {
-	config := core.Config{
-		ChangesDir:    i.ChangesDir,
-		UnreleasedDir: "unreleased",
-		HeaderPath:    "header.tpl.md",
-		ChangelogPath: i.ChangelogPath,
-		VersionExt:    "md",
-		VersionFormat: "## {{.Version}} - {{.Time.Format \"2006-01-02\"}}",
-		KindFormat:    "### {{.Kind}}",
-		ChangeFormat:  "* {{.Body}}",
-		Kinds: []core.KindConfig{
-			{
-				Label:     "Added",
-				AutoLevel: core.MinorLevel,
-			},
-			{
-				Label:     "Changed",
-				AutoLevel: core.MajorLevel,
-			},
-			{
-				Label:     "Deprecated",
-				AutoLevel: core.MinorLevel,
-			},
-			{
-				Label:     "Removed",
-				AutoLevel: core.MajorLevel,
-			},
-			{
-				Label:     "Fixed",
-				AutoLevel: core.PatchLevel,
-			},
-			{
-				Label:     "Security",
-				AutoLevel: core.PatchLevel,
-			},
-		},
-		Newlines: core.NewlinesConfig{
-			AfterChangelogHeader:   1,
-			BeforeChangelogVersion: 1,
-			EndOfVersion:           1,
-		},
-		EnvPrefix: "CHANGIE_",
+	cfg := core.Config{
+		////ChangesDir:    i.ChangesDir,
+		//UnreleasedDir: "unreleased",
+		//HeaderPath:    "header.tpl.md",
+		//ChangelogPath: i.ChangelogPath,
+		//VersionExt:    "md",
+		//VersionFormat: "## {{.Version}} - {{.Time.Format \"2006-01-02\"}}",
+		//KindFormat:    "### {{.Kind}}",
+		//ChangeFormat:  "* {{.Body}}",
+		//Kinds: []core.KindConfig{
+		//{
+		//Label:     "Added",
+		//AutoLevel: core.MinorLevel,
+		//},
+		//{
+		//Label:     "Changed",
+		//AutoLevel: core.MajorLevel,
+		//},
+		//{
+		//Label:     "Deprecated",
+		//AutoLevel: core.MinorLevel,
+		//},
+		//{
+		//Label:     "Removed",
+		//AutoLevel: core.MajorLevel,
+		//},
+		//{
+		//Label:     "Fixed",
+		//AutoLevel: core.PatchLevel,
+		//},
+		//{
+		//Label:     "Security",
+		//AutoLevel: core.PatchLevel,
+		//},
+		//},
+		//Newlines: core.NewlinesConfig{
+		//AfterChangelogHeader:   1,
+		//BeforeChangelogVersion: 1,
+		//EndOfVersion:           1,
+		//},
+		// EnvPrefix: "CHANGIE_",
 	}
 
-	headerPath := filepath.Join(config.ChangesDir, config.HeaderPath)
-	unreleasedPath := filepath.Join(config.ChangesDir, config.UnreleasedDir)
+	headerPath := filepath.Join(cfg.RootDir, cfg.Changelog.Header.FilePath)
+	unreleasedPath := filepath.Join(cfg.RootDir, cfg.Fragment.Dir)
 	keepPath := filepath.Join(unreleasedPath, ".gitkeep")
 
 	if !i.Force {
-		exists, existErr := config.Exists()
+		exists, existErr := cfg.Exists()
 		if exists || existErr != nil {
 			return errConfigExists
 		}
 	}
 
-	err := config.Save()
+	err := cfg.Save()
 	if err != nil {
 		return err
 	}
@@ -130,7 +130,7 @@ func (i *Init) Run(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	err = os.WriteFile(config.ChangelogPath, []byte(defaultChangelog), core.CreateFileMode)
+	err = os.WriteFile(cfg.Changelog.Output, []byte(defaultChangelog), core.CreateFileMode)
 	if err != nil {
 		return err
 	}
