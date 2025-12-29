@@ -255,7 +255,7 @@ func (b *Batch) Run(cmd *cobra.Command, args []string) (err error) {
 
 		versionFile, createErr := os.Create(versionFilePath)
 		if createErr != nil {
-			return createErr
+			return fmt.Errorf("creating release notes file %q: %w", versionFilePath, createErr)
 		}
 
 		defer func() {
@@ -285,7 +285,7 @@ func (b *Batch) Run(cmd *cobra.Command, args []string) (err error) {
 	for _, relativePath := range []string{
 		b.VersionHeaderPath,
 		b.OldHeaderPath,
-		b.cfg.ReleaseNotes.Version.FilePath,
+		b.cfg.ReleaseNotes.Header.FilePath,
 	} {
 		err = b.WriteTemplateFile(
 			relativePath,
@@ -323,7 +323,10 @@ func (b *Batch) Run(cmd *cobra.Command, args []string) (err error) {
 		return err
 	}
 
-	for _, relativePath := range []string{b.VersionFooterPath, b.cfg.ReleaseNotes.Version.FilePath} {
+	for _, relativePath := range []string{
+		b.VersionFooterPath,
+		b.cfg.ReleaseNotes.Footer.FilePath,
+	} {
 		err = b.WriteTemplateFile(
 			relativePath,
 			b.cfg.ReleaseNotes.Footer.Newlines.Before+1,
@@ -335,9 +338,8 @@ func (b *Batch) Run(cmd *cobra.Command, args []string) (err error) {
 		}
 	}
 
-	// TODO: add support for this
-	// _ = core.WriteNewlines(b.writer, b.cfg.Newlines.EndOfVersion)
-	// _ = core.WriteNewlines(b.writer, b.cfg.Newlines.AfterReleaseNotes)
+	_ = core.WriteNewlines(b.writer, b.cfg.ReleaseNotes.Version.Newlines.After)
+	_ = core.WriteNewlines(b.writer, b.cfg.ReleaseNotes.Newlines.After)
 
 	if !b.DryRun && !b.KeepFragments {
 		err = b.ClearUnreleased(
@@ -453,10 +455,15 @@ func (b *Batch) WriteChanges(changes []core.Change) error {
 			newKind := b.cfg.KindFromKeyOrLabel(change.Kind)
 			format := b.cfg.KindHeader(change.Kind)
 
+			// TODO: new config supports per kind newlines
+			// we need to pick the proper value between
+			// this kinds newlines and the global newlines
+			// but for now, just use globals
+
 			err := b.WriteTemplate(
 				format,
-				newKind.Newlines.Before+1,
-				newKind.Newlines.After,
+				b.cfg.Kind.Newlines.Before+1,
+				b.cfg.Kind.Newlines.After,
 				core.KindData{
 					// TODO: should this be key?
 					Kind: newKind.Prompt.Label,

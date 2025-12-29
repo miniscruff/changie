@@ -9,7 +9,12 @@ import (
 
 func initConfig() *core.Config {
 	return &core.Config{
-		// RootDir:    ".changes",
+		RootDir:    ".changes",
+		Changelog: core.ChangelogConfig{
+			Header: core.FileWriterFormat{
+				FilePath: "header.tpl",
+			},
+		},
 		// UnreleasedDir: "unreleased",
 		// HeaderPath:    "header.tpl.md",
 		// ChangelogPath: "CHANGELOG.md",

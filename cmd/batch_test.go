@@ -19,21 +19,36 @@ var changeIncrementer = 0
 
 func batchTestConfig() *core.Config {
 	return &core.Config{
-		// RootDir:         "news",
-		// Fragment.Dir:      "future",
-		// HeaderPath:         "",
-		// ChangelogPath:      "news.md",
-		// VersionFileFormat:  "{{.Version}}.md",
-		// VersionExt:         "md",
-		// VersionFormat:      "## {{.Version}}",
-		// KindFormat:         "### {{.Kind}}",
-		// ChangeFormat:       "* {{.Body}}",
-		// FragmentFileFormat: "",
-		// Kinds: []core.KindConfig{
-		// {Label: "added"},
-		// {Label: "removed"},
-		// {Label: "other"},
-		// },
+		RootDir:         "news",
+		Fragment: core.FragmentConfig{
+			Dir: "future",
+			FileFormat: "",
+		},
+		ReleaseNotes: core.ReleaseNotesConfig{
+			Version: core.FileWriterFormat{
+				FilePath: "{{.Version}}.md",
+				Format: "## {{.Version}}",
+			},
+			Extension: "md",
+		},
+		Changelog: core.ChangelogConfig{
+			Output: "news.md",
+		},
+		Kind: core.KindConfig{
+			Prompt: core.PromptFormat{
+				Format: "### {{.Kind}}",
+			},
+			Options: []core.KindOptions{
+				{ Prompt: core.PromptFormat{Label: "added"}},
+				{ Prompt: core.PromptFormat{Label: "removed"}},
+				{ Prompt: core.PromptFormat{Label: "other"}},
+			},
+		},
+		Change: core.ChangeConfig{
+			Prompt: core.PromptFormat{
+				Format: "* {{.Body}}",
+			},
+		},
 	}
 }
 
@@ -86,7 +101,7 @@ func TestBatchCanBatch(t *testing.T) {
 
 func TestBatchCanBatchWithProject(t *testing.T) {
 	cfg := batchTestConfig()
-	cfg.ReleaseNotes.Version.Format = "{{.Version}}-custom-format.md"
+	cfg.ReleaseNotes.Version.FilePath = "{{.Version}}-custom-format.md"
 	cfg.ReleaseNotes.Header.FilePath = "header.md"
 	cfg.Project = core.ProjectConfig{
 		Options: []core.ProjectOptions{

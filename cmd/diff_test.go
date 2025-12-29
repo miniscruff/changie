@@ -10,15 +10,10 @@ import (
 
 func diffConfig() *core.Config {
 	return &core.Config{
-		RootDir:    "chgs",
-		// UnreleasedDir: "unrel",
-		// HeaderPath:    "head.tpl.md",
-		// ChangelogPath: "changelog.md",
-		// VersionExt:    "md",
-		// VersionFormat: "",
-		// KindFormat:    "",
-		// ChangeFormat:  "",
-		// Kinds:         []core.KindConfig{},
+		RootDir: "chgs",
+		ReleaseNotes: core.ReleaseNotesConfig{
+			Extension: "md",
+		},
 	}
 }
 

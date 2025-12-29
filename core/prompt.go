@@ -363,16 +363,16 @@ func (p *Prompts) userChoices() error {
 
 	// TODO: support
 	/*
-	if p.KindOption == nil || !p.KindOption.SkipGlobalChoices {
-		userChoices = append(userChoices, p.Cfg.CustomChoices...)
-	}
+		if p.KindOption == nil || !p.KindOption.SkipGlobalChoices {
+			userChoices = append(userChoices, p.Cfg.CustomChoices...)
+		}
 	*/
 
 	// TODO: support
 	/*
-	if p.KindOption != nil {
-		userChoices = append(userChoices, p.KindOption.AdditionalChoices...)
-	}
+		if p.KindOption != nil {
+			userChoices = append(userChoices, p.KindOption.AdditionalChoices...)
+		}
 	*/
 
 	// custom map may be nil, which is fine if we have no choices

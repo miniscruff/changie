@@ -56,6 +56,8 @@ Default values follow keep a changelog and semver specs but are customizable.`,
 }
 
 func (i *Init) Run(cmd *cobra.Command, args []string) error {
+	// still gotta fix this lmao
+
 	cfg := core.Config{
 		////ChangesDir:    i.ChangesDir,
 		//UnreleasedDir: "unreleased",
