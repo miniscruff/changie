@@ -11,15 +11,17 @@ import (
 
 func nextTestConfig() *core.Config {
 	return &core.Config{
-		ChangesDir:    "chgs",
-		UnreleasedDir: "unrel",
-		HeaderPath:    "head.tpl.md",
-		ChangelogPath: "changelog.md",
-		VersionExt:    "md",
-		VersionFormat: "",
-		KindFormat:    "",
-		ChangeFormat:  "",
-		Kinds:         []core.KindConfig{},
+		RootDir: "chgs",
+		Fragment: core.FragmentConfig{
+			Dir: "unrel",
+		},
+		// HeaderPath:    "head.tpl.md",
+		// ChangelogPath: "changelog.md",
+		// VersionExt:    "md",
+		// VersionFormat: "",
+		// KindFormat:    "",
+		// ChangeFormat:  "",
+		// Kinds:         []core.KindConfig{},
 	}
 }
 
@@ -34,9 +36,9 @@ func TestNextVersionWithPatch(t *testing.T) {
 
 	// major and minor are not tested directly
 	// as next version is tested in utils
-	then.CreateFile(t, cfg.ChangesDir, "v0.0.1.md")
-	then.CreateFile(t, cfg.ChangesDir, "v0.1.0.md")
-	then.CreateFile(t, cfg.ChangesDir, "head.tpl.md")
+	then.CreateFile(t, cfg.RootDir, "v0.0.1.md")
+	then.CreateFile(t, cfg.RootDir, "v0.1.0.md")
+	then.CreateFile(t, cfg.RootDir, "head.tpl.md")
 
 	err := next.Run(next.Command, []string{"patch"})
 	then.Nil(t, err)
@@ -45,11 +47,13 @@ func TestNextVersionWithPatch(t *testing.T) {
 
 func TestNextVersionWithProject(t *testing.T) {
 	cfg := nextTestConfig()
-	cfg.ProjectsVersionSeparator = "|"
-	cfg.Projects = []core.ProjectConfig{
-		{
-			Label: "W things",
-			Key:   "w",
+	cfg.Project = core.ProjectConfig{
+		VersionSeparator: "|",
+		Options: []core.ProjectOptions{
+			{
+				Label: "W things",
+				Key:   "w",
+			},
 		},
 	}
 	then.WithTempDirConfig(t, cfg)
@@ -62,9 +66,9 @@ func TestNextVersionWithProject(t *testing.T) {
 
 	// major and minor are not tested directly
 	// as next version is tested in utils
-	then.CreateFile(t, cfg.ChangesDir, "w", "v0.0.1.md")
-	then.CreateFile(t, cfg.ChangesDir, "w", "v0.1.0.md")
-	then.CreateFile(t, cfg.ChangesDir, "w", "head.tpl.md")
+	then.CreateFile(t, cfg.RootDir, "w", "v0.0.1.md")
+	then.CreateFile(t, cfg.RootDir, "w", "v0.1.0.md")
+	then.CreateFile(t, cfg.RootDir, "w", "head.tpl.md")
 
 	err := next.Run(next.Command, []string{"patch"})
 	then.Nil(t, err)
@@ -73,11 +77,13 @@ func TestNextVersionWithProject(t *testing.T) {
 
 func TestNextVersionWithProjectBadProject(t *testing.T) {
 	cfg := nextTestConfig()
-	cfg.ProjectsVersionSeparator = "|"
-	cfg.Projects = []core.ProjectConfig{
-		{
-			Label: "W things",
-			Key:   "w",
+	cfg.Project = core.ProjectConfig{
+		VersionSeparator: "|",
+		Options: []core.ProjectOptions{
+			{
+				Label: "W things",
+				Key:   "w",
+			},
 		},
 	}
 	then.WithTempDirConfig(t, cfg)
@@ -90,9 +96,9 @@ func TestNextVersionWithProjectBadProject(t *testing.T) {
 
 	// major and minor are not tested directly
 	// as next version is tested in utils
-	then.CreateFile(t, cfg.ChangesDir, "w", "v0.0.1.md")
-	then.CreateFile(t, cfg.ChangesDir, "w", "v0.1.0.md")
-	then.CreateFile(t, cfg.ChangesDir, "w", "head.tpl.md")
+	then.CreateFile(t, cfg.RootDir, "w", "v0.0.1.md")
+	then.CreateFile(t, cfg.RootDir, "w", "v0.1.0.md")
+	then.CreateFile(t, cfg.RootDir, "w", "head.tpl.md")
 
 	err := next.Run(next.Command, []string{"patch"})
 	then.NotNil(t, err)
@@ -100,10 +106,14 @@ func TestNextVersionWithProjectBadProject(t *testing.T) {
 
 func TestNextVersionWithAuto(t *testing.T) {
 	cfg := nextTestConfig()
-	cfg.Kinds = []core.KindConfig{
-		{
-			Label:     "Feature",
-			AutoLevel: core.MinorLevel,
+	cfg.Kind = core.KindConfig{
+		Options: []core.KindOptions{
+			{
+				Prompt: core.PromptFormat{
+					Label: "Feature",
+				},
+				AutoLevel: core.MinorLevel,
+			},
 		},
 	}
 
@@ -113,9 +123,9 @@ func TestNextVersionWithAuto(t *testing.T) {
 	next := NewNext()
 
 	next.SetOut(&builder)
-	then.CreateFile(t, cfg.ChangesDir, "v0.0.1.md")
-	then.CreateFile(t, cfg.ChangesDir, "v0.1.0.md")
-	then.CreateFile(t, cfg.ChangesDir, "head.tpl.md")
+	then.CreateFile(t, cfg.RootDir, "v0.0.1.md")
+	then.CreateFile(t, cfg.RootDir, "v0.1.0.md")
+	then.CreateFile(t, cfg.RootDir, "head.tpl.md")
 
 	var changeBytes bytes.Buffer
 
@@ -124,7 +134,7 @@ func TestNextVersionWithAuto(t *testing.T) {
 	}
 	_, err := minorChange.WriteTo(&changeBytes)
 	then.Nil(t, err)
-	then.WriteFile(t, changeBytes.Bytes(), cfg.ChangesDir, cfg.UnreleasedDir, "a.yaml")
+	then.WriteFile(t, changeBytes.Bytes(), cfg.RootDir, cfg.Fragment.Dir, "a.yaml")
 
 	err = next.Run(next.Command, []string{"auto"})
 	then.Nil(t, err)
@@ -142,9 +152,9 @@ func TestNextVersionWithPrereleaseAndMeta(t *testing.T) {
 	next.Meta = []string{"hash"}
 
 	next.SetOut(&builder)
-	then.CreateFile(t, cfg.ChangesDir, "v0.0.1.md")
-	then.CreateFile(t, cfg.ChangesDir, "v0.1.0.md")
-	then.CreateFile(t, cfg.ChangesDir, "head.tpl.md")
+	then.CreateFile(t, cfg.RootDir, "v0.0.1.md")
+	then.CreateFile(t, cfg.RootDir, "v0.1.0.md")
+	then.CreateFile(t, cfg.RootDir, "head.tpl.md")
 
 	err := next.Run(next.Command, []string{"patch"})
 	then.Nil(t, err)
@@ -185,7 +195,7 @@ func TestErrorNextPartNotSupported(t *testing.T) {
 	builder := strings.Builder{}
 
 	next.SetOut(&builder)
-	then.CreateFile(t, cfg.ChangesDir, "v0.0.1.md")
+	then.CreateFile(t, cfg.RootDir, "v0.0.1.md")
 
 	err := next.Run(next.Command, []string{"notsupported"})
 	then.NotNil(t, err)
@@ -200,7 +210,7 @@ func TestErrorNextUnableToGetChanges(t *testing.T) {
 	aVer := []byte("not a valid change")
 
 	next.SetOut(&builder)
-	then.WriteFile(t, aVer, cfg.ChangesDir, cfg.UnreleasedDir, "a.yaml")
+	then.WriteFile(t, aVer, cfg.RootDir, cfg.Fragment.Dir, "a.yaml")
 
 	// bad yaml will fail to load changes
 	err := next.Run(next.Command, []string{"auto"})

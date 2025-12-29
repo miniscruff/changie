@@ -6,15 +6,10 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"io/fs"
 	"os"
 	"os/exec"
-	"path/filepath"
-	"sort"
 	"strings"
 	"time"
-
-	"github.com/Masterminds/semver/v3"
 
 	shellquote "github.com/kballard/go-shellquote"
 )
@@ -49,209 +44,11 @@ func AppendFile(rootFile io.Writer, path string) error {
 	return err
 }
 
-func GetAllVersions(
-	config *Config,
-	skipPrereleases bool,
-	projectKey string,
-) ([]*semver.Version, error) {
-	allVersions := make([]*semver.Version, 0)
-
-	versionsPath := config.ChangesDir
-	if len(projectKey) > 0 {
-		versionsPath = filepath.Join(versionsPath, projectKey)
-	}
-
-	fileInfos, err := os.ReadDir(versionsPath)
-	if err != nil && errors.Is(err, fs.ErrNotExist) {
-		return allVersions, nil
-	}
-
-	if err != nil {
-		return allVersions, fmt.Errorf("reading files from '%s': %w", versionsPath, err)
-	}
-
-	for _, file := range fileInfos {
-		if file.Name() == config.HeaderPath || file.IsDir() {
-			continue
-		}
-
-		versionString := strings.TrimSuffix(file.Name(), filepath.Ext(file.Name()))
-
-		v, err := semver.NewVersion(versionString)
-		if err != nil {
-			continue
-		}
-
-		if skipPrereleases && v.Prerelease() != "" {
-			continue
-		}
-
-		allVersions = append(allVersions, v)
-	}
-
-	sort.Sort(sort.Reverse(semver.Collection(allVersions)))
-
-	return allVersions, nil
-}
-
-func GetLatestVersion(
-	config *Config,
-	skipPrereleases bool,
-	projectKey string,
-) (*semver.Version, error) {
-	allVersions, err := GetAllVersions(config, skipPrereleases, projectKey)
-	if err != nil {
-		return nil, err
-	}
-
-	// if no versions exist default to v0.0.0
-	if len(allVersions) == 0 {
-		return semver.MustParse("v0.0.0"), nil
-	}
-
-	return allVersions[0], nil
-}
-
 func ValidBumpLevel(level string) bool {
 	return level == MajorLevel ||
 		level == MinorLevel ||
 		level == PatchLevel ||
 		level == AutoLevel
-}
-
-func HighestAutoLevel(config *Config, allChanges []Change) (string, error) {
-	if len(allChanges) == 0 {
-		return "", ErrNoChangesFoundForAuto
-	}
-
-	highestLevel := EmptyLevel
-	err := ErrNoChangesFoundForAuto
-
-	for _, change := range allChanges {
-		for _, kc := range config.Kinds {
-			if kc.KeyOrLabel() != change.Kind {
-				continue
-			}
-
-			switch kc.AutoLevel {
-			case MajorLevel:
-				// major is the highest one, so we can just return it
-				return MajorLevel, nil
-			case PatchLevel:
-				if highestLevel == EmptyLevel {
-					highestLevel = PatchLevel
-					err = nil
-				}
-			case MinorLevel:
-				// bump to minor if we have a minor level
-				if highestLevel == PatchLevel || highestLevel == EmptyLevel {
-					highestLevel = MinorLevel
-					err = nil
-				}
-			case EmptyLevel:
-				return EmptyLevel, ErrMissingAutoLevel
-			}
-		}
-	}
-
-	return highestLevel, err
-}
-
-func GetNextVersion(
-	config *Config,
-	partOrVersion string,
-	prerelease, meta []string,
-	allChanges []Change,
-	projectKey string,
-) (*semver.Version, error) {
-	var (
-		err  error
-		next *semver.Version
-		ver  semver.Version
-	)
-
-	// if part or version is a valid version, then return it
-	next, err = semver.NewVersion(partOrVersion)
-	if err != nil {
-		if !ValidBumpLevel(partOrVersion) {
-			return nil, ErrBadVersionOrPart
-		}
-
-		// otherwise use a bump type command
-		next, err = GetLatestVersion(config, false, projectKey)
-		if err != nil {
-			return nil, err
-		}
-
-		if partOrVersion == AutoLevel {
-			partOrVersion, err = HighestAutoLevel(config, allChanges)
-			if err != nil {
-				return nil, err
-			}
-		}
-
-		switch partOrVersion {
-		case MajorLevel:
-			ver = next.IncMajor()
-		case MinorLevel:
-			ver = next.IncMinor()
-		case PatchLevel:
-			ver = next.IncPatch()
-		}
-
-		next = &ver
-	}
-
-	if len(prerelease) > 0 {
-		ver, err = next.SetPrerelease(strings.Join(prerelease, "."))
-		if err != nil {
-			return nil, err
-		}
-
-		next = &ver
-	}
-
-	if len(meta) > 0 {
-		ver, err = next.SetMetadata(strings.Join(meta, "."))
-		if err != nil {
-			return nil, err
-		}
-
-		next = &ver
-	}
-
-	return next, nil
-}
-
-func FindChangeFiles(
-	config *Config,
-	searchPaths []string,
-) ([]string, error) {
-	var yamlFiles []string
-
-	// add the unreleased path to any search paths included
-	searchPaths = append(searchPaths, config.UnreleasedDir)
-
-	// read all yaml files from our search paths
-	for _, searchPath := range searchPaths {
-		rootPath := filepath.Join(config.ChangesDir, searchPath)
-
-		fileInfos, err := os.ReadDir(rootPath)
-		if err != nil {
-			return yamlFiles, err
-		}
-
-		for _, file := range fileInfos {
-			if filepath.Ext(file.Name()) != ".yaml" {
-				continue
-			}
-
-			path := filepath.Join(rootPath, file.Name())
-			yamlFiles = append(yamlFiles, path)
-		}
-	}
-
-	return yamlFiles, nil
 }
 
 func WriteNewlines(writer io.Writer, lines int) error {
@@ -289,45 +86,6 @@ func LoadEnvVars(config *Config, envs []string) map[string]string {
 	}
 
 	return ret
-}
-
-func GetChanges(
-	cfg *Config,
-	searchPaths []string,
-	projectKey string,
-) ([]Change, error) {
-	var changes []Change
-
-	changeFiles, err := FindChangeFiles(cfg, searchPaths)
-	if err != nil {
-		return changes, err
-	}
-
-	for _, cf := range changeFiles {
-		c, err := LoadChange(cf)
-		if err != nil {
-			return changes, err
-		}
-
-		if len(projectKey) > 0 && c.Project != projectKey {
-			continue
-		}
-
-		c.Env = cfg.EnvVars()
-
-		kc := cfg.KindFromKeyOrLabel(c.KindKey)
-		if kc != nil {
-			c.KindLabel = kc.Label
-		} else if len(cfg.Kinds) > 0 {
-			return nil, fmt.Errorf("%w: '%s'", ErrKindNotFound, c.KindKey)
-		}
-
-		changes = append(changes, c)
-	}
-
-	sort.Slice(changes, ChangeLess(cfg, changes))
-
-	return changes, nil
 }
 
 func FileExists(path string) (bool, error) {
