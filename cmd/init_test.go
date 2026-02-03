@@ -9,15 +9,20 @@ import (
 
 func initConfig() *core.Config {
 	return &core.Config{
-		ChangesDir:    ".changes",
-		UnreleasedDir: "unreleased",
-		HeaderPath:    "header.tpl.md",
-		ChangelogPath: "CHANGELOG.md",
-		VersionExt:    "md",
-		VersionFormat: "",
-		KindFormat:    "",
-		ChangeFormat:  "",
-		Kinds:         []core.KindConfig{},
+		RootDir:    ".changes",
+		Changelog: core.ChangelogConfig{
+			Header: core.FileWriterFormat{
+				FilePath: "header.tpl",
+			},
+		},
+		// UnreleasedDir: "unreleased",
+		// HeaderPath:    "header.tpl.md",
+		// ChangelogPath: "CHANGELOG.md",
+		// VersionExt:    "md",
+		// VersionFormat: "",
+		// KindFormat:    "",
+		// ChangeFormat:  "",
+		// Kinds:         []core.KindConfig{},
 	}
 }
 
@@ -29,9 +34,9 @@ func TestInitBuildsDefaultSkeleton(t *testing.T) {
 	err := cmd.Run(cmd.Command, nil)
 
 	then.Nil(t, err)
-	then.FileContents(t, defaultHeader, cfg.ChangesDir, cfg.HeaderPath)
-	then.FileContents(t, defaultChangelog, cfg.ChangelogPath)
-	then.FileContents(t, "", cfg.ChangesDir, cfg.UnreleasedDir, ".gitkeep")
+	then.FileContents(t, defaultHeader, cfg.RootDir, cfg.Changelog.Header.FilePath)
+	then.FileContents(t, defaultChangelog, cfg.Changelog.Output)
+	then.FileContents(t, "", cfg.RootDir, cfg.Fragment.Dir, ".gitkeep")
 }
 
 func TestInitBuildsConfigIfConfigExistsIfForced(t *testing.T) {
@@ -43,9 +48,9 @@ func TestInitBuildsConfigIfConfigExistsIfForced(t *testing.T) {
 	err := cmd.Run(cmd.Command, nil)
 
 	then.Nil(t, err)
-	then.FileContents(t, defaultHeader, cfg.ChangesDir, cfg.HeaderPath)
-	then.FileContents(t, defaultChangelog, cfg.ChangelogPath)
-	then.FileContents(t, "", cfg.ChangesDir, cfg.UnreleasedDir, ".gitkeep")
+	then.FileContents(t, defaultHeader, cfg.RootDir, cfg.Changelog.Header.FilePath)
+	then.FileContents(t, defaultChangelog, cfg.Changelog.Output)
+	then.FileContents(t, "", cfg.RootDir, cfg.Fragment.Dir, ".gitkeep")
 }
 
 func TestErrorInitFileExists(t *testing.T) {

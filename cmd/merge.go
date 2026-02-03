@@ -62,9 +62,9 @@ func (m *Merge) Run(cmd *cobra.Command, args []string) error {
 	}
 
 	// If we have projects, merge all of them.
-	if len(cfg.Projects) > 0 {
-		for _, pc := range cfg.Projects {
-			err = m.mergeProject(cfg, pc.Key, pc.ChangelogPath, pc.Replacements)
+	if len(cfg.Project.Options) > 0 {
+		for _, pc := range cfg.Project.Options {
+			err = m.mergeProject(cfg, pc.Key, pc.Changelog.Output, pc.Replacements)
 			if err != nil {
 				return err
 			}
@@ -73,7 +73,7 @@ func (m *Merge) Run(cmd *cobra.Command, args []string) error {
 		return nil
 	}
 
-	return m.mergeProject(cfg, "", cfg.ChangelogPath, cfg.Replacements)
+	return m.mergeProject(cfg, "", cfg.Changelog.Output, cfg.Changelog.Replacements)
 }
 
 func (m *Merge) mergeProject(
@@ -100,42 +100,39 @@ func (m *Merge) mergeProject(
 		writer = changeFile
 	}
 
-	allVersions, err := core.GetAllVersions(cfg, false, project)
+	allVersions, err := cfg.AllVersions(false, project)
 	if err != nil {
 		return fmt.Errorf("finding release notes: %w", err)
 	}
 
-	if cfg.HeaderPath != "" {
-		err = core.AppendFile(writer, filepath.Join(cfg.ChangesDir, cfg.HeaderPath))
+	if cfg.Changelog.Header.FilePath != "" {
+		err = core.AppendFile(writer, filepath.Join(cfg.RootDir, cfg.Changelog.Header.FilePath))
 		if err != nil {
 			return err
 		}
 
-		_ = core.WriteNewlines(writer, cfg.Newlines.AfterChangelogHeader)
+		_ = core.WriteNewlines(writer, cfg.Changelog.Header.Newlines.After)
 	}
 
 	if m.UnreleasedHeader != "" {
 		var unrelErr error
 
-		allChanges, unrelErr := core.GetChanges(
-			cfg,
-			nil,
-			project,
-		)
+		allChanges, unrelErr := cfg.Changes(nil, project)
 		if unrelErr != nil {
 			return unrelErr
 		}
 
 		// Make sure we have any changes before writing the unreleased content.
 		if len(allChanges) > 0 {
-			_ = core.WriteNewlines(writer, cfg.Newlines.BeforeChangelogVersion)
-			_ = core.WriteNewlines(writer, cfg.Newlines.BeforeVersion)
+			// TODO: I think I am missing some newline options
+			// _ = core.WriteNewlines(writer, cfg.Newlines.BeforeChangelogVersion)
+			// _ = core.WriteNewlines(writer, cfg.Newlines.BeforeVersion)
 			_, _ = writer.Write([]byte(m.UnreleasedHeader))
-			_ = core.WriteNewlines(writer, cfg.Newlines.AfterVersion)
+			// _ = core.WriteNewlines(writer, cfg.Newlines.AfterVersion)
 
 			// create a fake batch to write the changes
 			b := &Batch{
-				config:        cfg,
+				cfg:           cfg,
 				writer:        writer,
 				TemplateCache: m.TemplateCache,
 			}
@@ -145,21 +142,23 @@ func (m *Merge) mergeProject(
 				return unrelErr
 			}
 
-			_ = core.WriteNewlines(b.writer, b.config.Newlines.EndOfVersion)
-			_ = core.WriteNewlines(writer, cfg.Newlines.AfterChangelogVersion)
+			// TODO: I think I am missing some newline options
+			//_ = core.WriteNewlines(b.writer, b.cfg.Newlines.EndOfVersion)
+			//_ = core.WriteNewlines(writer, cfg.Newlines.AfterChangelogVersion)
 		}
 	}
 
 	for _, version := range allVersions {
-		_ = core.WriteNewlines(writer, cfg.Newlines.BeforeChangelogVersion)
-		versionPath := filepath.Join(cfg.ChangesDir, project, version.Original()+"."+cfg.VersionExt)
+		// _ = core.WriteNewlines(writer, cfg.Newlines.BeforeChangelogVersion)
+		versionPath := filepath.Join(cfg.RootDir, project, version.Original()+"."+cfg.ReleaseNotes.Extension)
 
 		err = core.AppendFile(writer, versionPath)
 		if err != nil {
 			return err
 		}
 
-		_ = core.WriteNewlines(writer, cfg.Newlines.AfterChangelogVersion)
+		// TODO: I think I am missing some newline options
+		// _ = core.WriteNewlines(writer, cfg.Newlines.AfterChangelogVersion)
 	}
 
 	if len(allVersions) == 0 {

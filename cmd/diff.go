@@ -62,15 +62,15 @@ func (d *Diff) Run(cmd *cobra.Command, args []string) error {
 	writer := cmd.OutOrStdout()
 	versionRange := args[0]
 
-	config, err := core.LoadConfig()
+	cfg, err := core.LoadConfig()
 	if err != nil {
 		return err
 	}
 
-	if len(config.Projects) > 0 {
-		var pc *core.ProjectConfig
+	if len(cfg.Project.Options) > 0 {
+		var pc *core.ProjectOptions
 
-		pc, err = config.Project(d.Project)
+		pc, err = cfg.ProjectByName(d.Project)
 		if err != nil {
 			return err
 		}
@@ -78,7 +78,7 @@ func (d *Diff) Run(cmd *cobra.Command, args []string) error {
 		d.Project = pc.Key
 	}
 
-	vers, err := core.GetAllVersions(config, d.SkipPrereleases, d.Project)
+	vers, err := cfg.AllVersions(d.SkipPrereleases, d.Project)
 	if err != nil {
 		return err
 	}
@@ -89,7 +89,7 @@ func (d *Diff) Run(cmd *cobra.Command, args []string) error {
 	if err == nil {
 		for i := range min(int(versionCount), len(vers)) {
 			if !firstOutput {
-				err := core.WriteNewlines(writer, config.Newlines.AfterChangelogVersion)
+				err := core.WriteNewlines(writer, cfg.Changelog.Newlines.After)
 				if err != nil {
 					return err
 				}
@@ -98,9 +98,9 @@ func (d *Diff) Run(cmd *cobra.Command, args []string) error {
 			firstOutput = false
 
 			versionPath := filepath.Join(
-				config.ChangesDir,
+				cfg.RootDir,
 				d.Project,
-				vers[i].Original()+"."+config.VersionExt,
+				vers[i].Original()+"."+cfg.ReleaseNotes.Extension,
 			)
 
 			err = core.AppendFile(writer, versionPath)
@@ -128,7 +128,7 @@ func (d *Diff) Run(cmd *cobra.Command, args []string) error {
 		}
 
 		if !firstOutput {
-			err := core.WriteNewlines(writer, config.Newlines.AfterChangelogVersion)
+			err := core.WriteNewlines(writer, cfg.Changelog.Newlines.After)
 			if err != nil {
 				return err
 			}
@@ -137,9 +137,9 @@ func (d *Diff) Run(cmd *cobra.Command, args []string) error {
 		firstOutput = false
 
 		versionPath := filepath.Join(
-			config.ChangesDir,
+			cfg.RootDir,
 			d.Project,
-			ver.Original()+"."+config.VersionExt,
+			ver.Original()+"."+cfg.ReleaseNotes.Extension,
 		)
 
 		err = core.AppendFile(writer, versionPath)

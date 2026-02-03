@@ -10,15 +10,17 @@ import (
 
 func latestConfig() *core.Config {
 	return &core.Config{
-		ChangesDir:    "chgs",
-		UnreleasedDir: "unrel",
-		HeaderPath:    "head.tpl.md",
-		ChangelogPath: "changelog.md",
-		VersionExt:    "md",
-		VersionFormat: "",
-		KindFormat:    "",
-		ChangeFormat:  "",
-		Kinds:         []core.KindConfig{},
+		RootDir: "chgs",
+		Fragment: core.FragmentConfig{
+			Dir: "unrel",
+		},
+		// HeaderPath:    "head.tpl.md",
+		// ChangelogPath: "changelog.md",
+		// VersionExt:    "md",
+		// VersionFormat: "",
+		// KindFormat:    "",
+		// ChangeFormat:  "",
+		// Kinds:         []core.KindConfig{},
 	}
 }
 
@@ -26,10 +28,10 @@ func TestLatestVersionEchosLatestVersion(t *testing.T) {
 	cfg := latestConfig()
 	then.WithTempDirConfig(t, cfg)
 
-	then.CreateFile(t, cfg.ChangesDir, "v0.0.1.md")
-	then.CreateFile(t, cfg.ChangesDir, "v0.1.0.md")
-	then.CreateFile(t, cfg.ChangesDir, "v0.2.0-rc1.md")
-	then.CreateFile(t, cfg.ChangesDir, "head.tpl.md")
+	then.CreateFile(t, cfg.RootDir, "v0.0.1.md")
+	then.CreateFile(t, cfg.RootDir, "v0.1.0.md")
+	then.CreateFile(t, cfg.RootDir, "v0.2.0-rc1.md")
+	then.CreateFile(t, cfg.RootDir, "head.tpl.md")
 
 	cmd := NewLatest()
 
@@ -47,10 +49,10 @@ func TestLatestEchoLatestNonPrerelease(t *testing.T) {
 
 	builder := strings.Builder{}
 
-	then.CreateFile(t, cfg.ChangesDir, "v0.0.1.md")
-	then.CreateFile(t, cfg.ChangesDir, "v0.1.0.md")
-	then.CreateFile(t, cfg.ChangesDir, "v0.2.0-rc1.md")
-	then.CreateFile(t, cfg.ChangesDir, "head.tpl.md")
+	then.CreateFile(t, cfg.RootDir, "v0.0.1.md")
+	then.CreateFile(t, cfg.RootDir, "v0.1.0.md")
+	then.CreateFile(t, cfg.RootDir, "v0.2.0-rc1.md")
+	then.CreateFile(t, cfg.RootDir, "head.tpl.md")
 
 	cmd := NewLatest()
 	cmd.SkipPrereleases = true
@@ -67,9 +69,9 @@ func TestLatestWithoutPrefix(t *testing.T) {
 
 	builder := strings.Builder{}
 
-	then.CreateFile(t, cfg.ChangesDir, "v0.0.1.md")
-	then.CreateFile(t, cfg.ChangesDir, "v0.1.0.md")
-	then.CreateFile(t, cfg.ChangesDir, "head.tpl.md")
+	then.CreateFile(t, cfg.RootDir, "v0.0.1.md")
+	then.CreateFile(t, cfg.RootDir, "v0.1.0.md")
+	then.CreateFile(t, cfg.RootDir, "head.tpl.md")
 
 	cmd := NewLatest()
 	cmd.RemovePrefix = true
@@ -82,19 +84,21 @@ func TestLatestWithoutPrefix(t *testing.T) {
 
 func TestLatestVersionWithProject(t *testing.T) {
 	cfg := latestConfig()
-	cfg.Projects = []core.ProjectConfig{
-		{
-			Label: "r project",
-			Key:   "r",
+	cfg.Project = core.ProjectConfig{
+		VersionSeparator: "#",
+		Options: []core.ProjectOptions{
+			{
+				Label: "r project",
+				Key:   "r",
+			},
 		},
 	}
-	cfg.ProjectsVersionSeparator = "#"
 	then.WithTempDirConfig(t, cfg)
 
-	then.CreateFile(t, cfg.ChangesDir, "r", "v0.0.1.md")
-	then.CreateFile(t, cfg.ChangesDir, "r", "v0.1.0.md")
-	then.CreateFile(t, cfg.ChangesDir, "r", "v0.2.0-rc1.md")
-	then.CreateFile(t, cfg.ChangesDir, "r", "head.tpl.md")
+	then.CreateFile(t, cfg.RootDir, "r", "v0.0.1.md")
+	then.CreateFile(t, cfg.RootDir, "r", "v0.1.0.md")
+	then.CreateFile(t, cfg.RootDir, "r", "v0.2.0-rc1.md")
+	then.CreateFile(t, cfg.RootDir, "r", "head.tpl.md")
 
 	builder := strings.Builder{}
 	cmd := NewLatest()
@@ -109,19 +113,21 @@ func TestLatestVersionWithProject(t *testing.T) {
 
 func TestLatestVersionWithBadProject(t *testing.T) {
 	cfg := latestConfig()
-	cfg.Projects = []core.ProjectConfig{
-		{
-			Label: "r project",
-			Key:   "r",
+	cfg.Project = core.ProjectConfig{
+		VersionSeparator: "#",
+		Options: []core.ProjectOptions{
+			{
+				Label: "r project",
+				Key:   "r",
+			},
 		},
 	}
-	cfg.ProjectsVersionSeparator = "#"
 	then.WithTempDirConfig(t, cfg)
 
-	then.CreateFile(t, cfg.ChangesDir, "r", "v0.0.1.md")
-	then.CreateFile(t, cfg.ChangesDir, "r", "v0.1.0.md")
-	then.CreateFile(t, cfg.ChangesDir, "r", "v0.2.0-rc1.md")
-	then.CreateFile(t, cfg.ChangesDir, "r", "head.tpl.md")
+	then.CreateFile(t, cfg.RootDir, "r", "v0.0.1.md")
+	then.CreateFile(t, cfg.RootDir, "r", "v0.1.0.md")
+	then.CreateFile(t, cfg.RootDir, "r", "v0.2.0-rc1.md")
+	then.CreateFile(t, cfg.RootDir, "r", "head.tpl.md")
 
 	cmd := NewLatest()
 	cmd.Project = "missing_project_again"
@@ -147,8 +153,8 @@ func TestErrorLatestBadWrite(t *testing.T) {
 
 	w := then.NewErrWriter()
 
-	then.CreateFile(t, cfg.ChangesDir, "v0.0.1.md")
-	then.CreateFile(t, cfg.ChangesDir, "v0.1.0.md")
+	then.CreateFile(t, cfg.RootDir, "v0.0.1.md")
+	then.CreateFile(t, cfg.RootDir, "v0.1.0.md")
 
 	cmd := NewLatest()
 	cmd.SetOut(w)

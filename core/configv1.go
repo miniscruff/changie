@@ -1,5 +1,6 @@
 package core
 
+/*
 import (
 	"errors"
 	"fmt"
@@ -562,3 +563,4 @@ func LoadConfig() (*Config, error) {
 
 	return &c, nil
 }
+*/

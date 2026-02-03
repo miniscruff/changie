@@ -54,24 +54,24 @@ func NewLatest() *Latest {
 func (l *Latest) Run(cmd *cobra.Command, args []string) error {
 	projPrefix := ""
 
-	config, err := core.LoadConfig()
+	cfg, err := core.LoadConfig()
 	if err != nil {
 		return err
 	}
 
-	if len(config.Projects) > 0 {
-		var pc *core.ProjectConfig
+	if len(cfg.Project.Options) > 0 {
+		var pc *core.ProjectOptions
 
-		pc, err = config.Project(l.Project)
+		pc, err = cfg.ProjectByName(l.Project)
 		if err != nil {
 			return err
 		}
 
 		l.Project = pc.Key
-		projPrefix = pc.Key + config.ProjectsVersionSeparator
+		projPrefix = pc.Key + cfg.Project.VersionSeparator
 	}
 
-	ver, err := core.GetLatestVersion(config, l.SkipPrereleases, l.Project)
+	ver, err := cfg.LatestVersion(l.SkipPrereleases, l.Project)
 	if err != nil {
 		return err
 	}
