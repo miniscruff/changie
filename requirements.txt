@@ -30,7 +30,7 @@ python-dateutil==2.9.0.post0
 PyYAML==6.0.3
 pyyaml_env_tag==1.1
 regex==2026.2.28
-requests==2.32.5
+requests==2.33.0
 six==1.17.0
 termcolor==3.3.0
 tinycss2==1.5.1
