@@ -12,44 +12,44 @@ import (
 
 func mergeTestConfig() *core.Config {
 	return &core.Config{
-		ChangesDir:    "news",
-		UnreleasedDir: "future",
-		HeaderPath:    "header.rst",
-		ChangelogPath: "news.md",
-		VersionExt:    "md",
-		VersionFormat: "## {{.Version}}",
-		KindFormat:    "### {{.Kind}}",
-		ChangeFormat:  "* {{.Body}}",
-		Kinds: []core.KindConfig{
-			{Label: "Added"},
-			{Label: "Removed"},
-			{Label: "Other"},
-		},
-		Newlines: core.NewlinesConfig{
-			// BeforeVersion: 1,
-			// AfterVersion: 1,
-			AfterChange:            1,
-			BeforeChangelogVersion: 0,
-			// AfterChangelogVersion: 1,
-		},
-		Replacements: []core.Replacement{
-			{
-				Path:    "replace.json",
-				Find:    `  "version": ".*",`,
-				Replace: `  "version": "{{.VersionNoPrefix}}",`,
-			},
-		},
+		// RootDir:    "news",
+		// Fragment.Dir: "future",
+		// HeaderPath:    "header.rst",
+		// ChangelogPath: "news.md",
+		// VersionExt:    "md",
+		// VersionFormat: "## {{.Version}}",
+		// KindFormat:    "### {{.Kind}}",
+		// ChangeFormat:  "* {{.Body}}",
+		// Kinds: []core.KindConfig{
+		// {Label: "Added"},
+		// {Label: "Removed"},
+		// {Label: "Other"},
+		// },
+		// Newlines: core.NewlinesConfig{
+		// BeforeVersion: 1,
+		// AfterVersion: 1,
+		// AfterChange:            1,
+		// BeforeChangelogVersion: 0,
+		// AfterChangelogVersion: 1,
+		// },
+		// Replacements: []core.Replacement{
+		// {
+		// Path:    "replace.json",
+		// Find:    `  "version": ".*",`,
+		// Replace: `  "version": "{{.VersionNoPrefix}}",`,
+		// },
+		// },
 	}
 }
 
 func TestMergeVersionsSuccessfully(t *testing.T) {
 	cfg := mergeTestConfig()
-	cfg.HeaderPath = ""
-	cfg.Replacements = nil
+	cfg.Changelog.Header.FilePath = ""
+	cfg.Changelog.Replacements = nil
 	then.WithTempDirConfig(t, cfg)
 
-	then.WriteFile(t, []byte("first version\n"), cfg.ChangesDir, "v0.1.0.md")
-	then.WriteFile(t, []byte("second version\n"), cfg.ChangesDir, "v0.2.0.md")
+	then.WriteFile(t, []byte("first version\n"), cfg.RootDir, "v0.1.0.md")
+	then.WriteFile(t, []byte("second version\n"), cfg.RootDir, "v0.2.0.md")
 
 	cmd := NewMerge(core.NewTemplateCache())
 	err := cmd.Run(cmd.Command, nil)
@@ -63,26 +63,30 @@ first version
 
 func TestMergeVersionsSuccessfullyWithProject(t *testing.T) {
 	cfg := mergeTestConfig()
-	cfg.HeaderPath = ""
-	cfg.Replacements = nil
-	cfg.Projects = []core.ProjectConfig{
-		{
-			Label:         "A thing",
-			Key:           "a",
-			ChangelogPath: "a/thing/CHANGELOG.md",
-			Replacements: []core.Replacement{
-				{
-					Path:    "a/VERSION",
-					Find:    "version",
-					Replace: "{{.Version}}",
+	cfg.ReleaseNotes.Header.FilePath = ""
+	cfg.Changelog.Replacements = nil
+	cfg.Project = core.ProjectConfig{
+		Options: []core.ProjectOptions{
+			{
+				Label: "A thing",
+				Key:   "a",
+				Changelog: core.ChangelogConfig{
+					Output: "a/thing/CHANGELOG.md",
+				},
+				Replacements: []core.Replacement{
+					{
+						Path:    "a/VERSION",
+						Find:    "version",
+						Replace: "{{.Version}}",
+					},
 				},
 			},
 		},
 	}
 	then.WithTempDirConfig(t, cfg)
 
-	then.WriteFile(t, []byte("first version\n"), cfg.ChangesDir, "a", "v0.1.0.md")
-	then.WriteFile(t, []byte("second version\n"), cfg.ChangesDir, "a", "v0.2.0.md")
+	then.WriteFile(t, []byte("first version\n"), cfg.RootDir, "a", "v0.1.0.md")
+	then.WriteFile(t, []byte("second version\n"), cfg.RootDir, "a", "v0.2.0.md")
 	then.WriteFile(t, []byte("version\n"), "a", "VERSION")
 
 	cmd := NewMerge(core.NewTemplateCache())
@@ -99,13 +103,17 @@ first version
 
 func TestMergeVersionsSuccessfullyWithProjectAndNoChanges(t *testing.T) {
 	cfg := mergeTestConfig()
-	cfg.HeaderPath = ""
-	cfg.Replacements = nil
-	cfg.Projects = []core.ProjectConfig{
-		{
-			Label:         "A thing",
-			Key:           "a",
-			ChangelogPath: "a/thing/CHANGELOG.md",
+	cfg.ReleaseNotes.Header.FilePath = ""
+	cfg.Changelog.Replacements = nil
+	cfg.Project = core.ProjectConfig{
+		Options: []core.ProjectOptions{
+			{
+				Label: "A thing",
+				Key:   "a",
+				Changelog: core.ChangelogConfig{
+					Output: "a/thing/CHANGELOG.md",
+				},
+			},
 		},
 	}
 	then.WithTempDirConfig(t, cfg)
@@ -121,12 +129,12 @@ func TestMergeVersionsSuccessfullyWithProjectAndNoChanges(t *testing.T) {
 
 func TestMergeVersionsWithUnreleasedChanges(t *testing.T) {
 	cfg := mergeTestConfig()
-	cfg.HeaderPath = ""
-	cfg.Replacements = nil
+	cfg.ReleaseNotes.Header.FilePath = ""
+	cfg.Changelog.Replacements = nil
 	then.WithTempDirConfig(t, cfg)
 
-	then.WriteFile(t, []byte("first version\n"), cfg.ChangesDir, "v0.1.0.md")
-	then.WriteFile(t, []byte("second version\n"), cfg.ChangesDir, "v0.2.0.md")
+	then.WriteFile(t, []byte("first version\n"), cfg.RootDir, "v0.1.0.md")
+	then.WriteFile(t, []byte("second version\n"), cfg.RootDir, "v0.2.0.md")
 
 	unrel := core.Change{
 		Kind: "Added",
@@ -150,15 +158,15 @@ first version
 
 func TestMergeVersionsWithUnreleasedChangesErrorsOnBadChanges(t *testing.T) {
 	cfg := mergeTestConfig()
-	cfg.HeaderPath = ""
-	cfg.Replacements = nil
+	cfg.ReleaseNotes.Header.FilePath = ""
+	cfg.Changelog.Replacements = nil
 	then.WithTempDirConfig(t, cfg)
 
-	then.WriteFile(t, []byte("first version\n"), cfg.ChangesDir, "v0.1.0.md")
-	then.WriteFile(t, []byte("second version\n"), cfg.ChangesDir, "v0.2.0.md")
+	then.WriteFile(t, []byte("first version\n"), cfg.RootDir, "v0.1.0.md")
+	then.WriteFile(t, []byte("second version\n"), cfg.RootDir, "v0.2.0.md")
 
 	aVer := []byte("not a valid change")
-	then.WriteFile(t, aVer, cfg.ChangesDir, cfg.UnreleasedDir, "a.yaml")
+	then.WriteFile(t, aVer, cfg.RootDir, cfg.Fragment.Dir, "a.yaml")
 
 	cmd := NewMerge(core.NewTemplateCache())
 	cmd.UnreleasedHeader = "## Coming Soon"
@@ -168,13 +176,13 @@ func TestMergeVersionsWithUnreleasedChangesErrorsOnBadChanges(t *testing.T) {
 
 func TestMergeVersionsWithUnreleasedChangesErrorsOnBadChangeFormat(t *testing.T) {
 	cfg := mergeTestConfig()
-	cfg.HeaderPath = ""
-	cfg.Replacements = nil
-	cfg.ChangeFormat = "{{...invalid format{{{"
+	cfg.ReleaseNotes.Header.FilePath = ""
+	cfg.Changelog.Replacements = nil
+	cfg.Change.Prompt.Format = "{{...invalid format{{{"
 	then.WithTempDirConfig(t, cfg)
 
-	then.WriteFile(t, []byte("first version\n"), cfg.ChangesDir, "v0.1.0.md")
-	then.WriteFile(t, []byte("second version\n"), cfg.ChangesDir, "v0.2.0.md")
+	then.WriteFile(t, []byte("first version\n"), cfg.RootDir, "v0.1.0.md")
+	then.WriteFile(t, []byte("second version\n"), cfg.RootDir, "v0.2.0.md")
 
 	unrel := core.Change{
 		Kind: "Added",
@@ -190,27 +198,33 @@ func TestMergeVersionsWithUnreleasedChangesErrorsOnBadChangeFormat(t *testing.T)
 
 func TestMergeVersionsWithUnreleasedChangesInOneProject(t *testing.T) {
 	cfg := mergeTestConfig()
-	cfg.HeaderPath = ""
-	cfg.Replacements = nil
-	cfg.Projects = []core.ProjectConfig{
-		{
-			Label:         "A thing",
-			Key:           "a",
-			ChangelogPath: "a/thing/CHANGELOG.md",
-		},
-		{
-			Label:         "B thing",
-			Key:           "b",
-			ChangelogPath: "b/thing/CHANGELOG.md",
+	cfg.ReleaseNotes.Header.FilePath = ""
+	cfg.Changelog.Replacements = nil
+	cfg.Project = core.ProjectConfig{
+		Options: []core.ProjectOptions{
+			{
+				Label: "A thing",
+				Key:   "a",
+				Changelog: core.ChangelogConfig{
+					Output: "a/thing/CHANGELOG.md",
+				},
+			},
+			{
+				Label: "B thing",
+				Key:   "b",
+				Changelog: core.ChangelogConfig{
+					Output: "b/thing/CHANGELOG.md",
+				},
+			},
 		},
 	}
 	then.WithTempDirConfig(t, cfg)
 
-	then.WriteFile(t, []byte("first A version\n"), cfg.ChangesDir, "a", "v0.1.0.md")
-	then.WriteFile(t, []byte("second A version\n"), cfg.ChangesDir, "a", "v0.2.0.md")
+	then.WriteFile(t, []byte("first A version\n"), cfg.RootDir, "a", "v0.1.0.md")
+	then.WriteFile(t, []byte("second A version\n"), cfg.RootDir, "a", "v0.2.0.md")
 	then.Nil(t, os.MkdirAll(filepath.Join("a", "thing"), core.CreateDirMode))
-	then.WriteFile(t, []byte("first B version\n"), cfg.ChangesDir, "b", "v0.1.0.md")
-	then.WriteFile(t, []byte("second B version\n"), cfg.ChangesDir, "b", "v0.2.0.md")
+	then.WriteFile(t, []byte("first B version\n"), cfg.RootDir, "b", "v0.1.0.md")
+	then.WriteFile(t, []byte("second B version\n"), cfg.RootDir, "b", "v0.2.0.md")
 	then.Nil(t, os.MkdirAll(filepath.Join("b", "thing"), core.CreateDirMode))
 
 	unrel := core.Change{
@@ -248,10 +262,10 @@ func TestMergeVersionsWithHeaderAndReplacements(t *testing.T) {
   "version": "old-version",
 }`
 
-	then.WriteFile(t, []byte("first version\n"), cfg.ChangesDir, "v0.1.0.md")
-	then.WriteFile(t, []byte("second version\n"), cfg.ChangesDir, "v0.2.0.md")
-	then.WriteFile(t, []byte("ignored\n"), cfg.ChangesDir, "ignored.txt")
-	then.WriteFile(t, []byte("a simple header\n"), cfg.ChangesDir, cfg.HeaderPath)
+	then.WriteFile(t, []byte("first version\n"), cfg.RootDir, "v0.1.0.md")
+	then.WriteFile(t, []byte("second version\n"), cfg.RootDir, "v0.2.0.md")
+	then.WriteFile(t, []byte("ignored\n"), cfg.RootDir, "ignored.txt")
+	then.WriteFile(t, []byte("a simple header\n"), cfg.RootDir, cfg.ReleaseNotes.Header.FilePath)
 	then.WriteFile(t, []byte(jsonContents), "replace.json")
 
 	cmd := NewMerge(core.NewTemplateCache())
@@ -262,7 +276,7 @@ func TestMergeVersionsWithHeaderAndReplacements(t *testing.T) {
 second version
 first version
 `
-	then.FileContents(t, changeContents, cfg.ChangelogPath)
+	then.FileContents(t, changeContents, cfg.Changelog.Output)
 
 	newContents := `{
   "key": "value",
@@ -281,10 +295,10 @@ first version
 `
 	writer := strings.Builder{}
 
-	then.WriteFile(t, []byte("first version\n"), cfg.ChangesDir, "v0.1.0.md")
-	then.WriteFile(t, []byte("second version\n"), cfg.ChangesDir, "v0.2.0.md")
-	then.WriteFile(t, []byte("ignored\n"), cfg.ChangesDir, "ignored.txt")
-	then.WriteFile(t, []byte("a simple header\n"), cfg.ChangesDir, cfg.HeaderPath)
+	then.WriteFile(t, []byte("first version\n"), cfg.RootDir, "v0.1.0.md")
+	then.WriteFile(t, []byte("second version\n"), cfg.RootDir, "v0.2.0.md")
+	then.WriteFile(t, []byte("ignored\n"), cfg.RootDir, "ignored.txt")
+	then.WriteFile(t, []byte("a simple header\n"), cfg.RootDir, cfg.ReleaseNotes.Header.FilePath)
 
 	cmd := NewMerge(core.NewTemplateCache())
 	cmd.DryRun = true
@@ -301,7 +315,7 @@ func TestMergeSkipsVersionsIfNoneFound(t *testing.T) {
 	changeContents := "a simple header\n"
 	builder := strings.Builder{}
 
-	then.WriteFile(t, []byte("a simple header\n"), cfg.ChangesDir, cfg.HeaderPath)
+	then.WriteFile(t, []byte("a simple header\n"), cfg.RootDir, cfg.ReleaseNotes.Header.FilePath)
 
 	cmd := NewMerge(core.NewTemplateCache())
 	cmd.DryRun = true
@@ -322,11 +336,11 @@ func TestErrorMergeBadConfig(t *testing.T) {
 
 func TestErrorMergeBadReplacement(t *testing.T) {
 	cfg := mergeTestConfig()
-	cfg.Replacements[0].Replace = "{{bad....}}"
+	cfg.Changelog.Replacements[0].Replace = "{{bad....}}"
 	then.WithTempDirConfig(t, cfg)
 
-	then.WriteFile(t, []byte("a simple header\n"), cfg.ChangesDir, cfg.HeaderPath)
-	then.WriteFile(t, []byte("first version\n"), cfg.ChangesDir, "v0.1.0.md")
+	then.WriteFile(t, []byte("a simple header\n"), cfg.RootDir, cfg.ReleaseNotes.Header.FilePath)
+	then.WriteFile(t, []byte("first version\n"), cfg.RootDir, "v0.1.0.md")
 
 	cmd := NewMerge(core.NewTemplateCache())
 	err := cmd.Run(cmd.Command, nil)

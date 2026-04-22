@@ -69,33 +69,33 @@ func (n *Next) Run(cmd *cobra.Command, args []string) error {
 	part := strings.ToLower(args[0])
 	projPrefix := ""
 
-	config, err := core.LoadConfig()
+	cfg, err := core.LoadConfig()
 	if err != nil {
 		return err
 	}
 
-	if len(config.Projects) > 0 {
-		var pc *core.ProjectConfig
+	if len(cfg.Project.Options) > 0 {
+		var pc *core.ProjectOptions
 
-		pc, err = config.Project(n.Project)
+		pc, err = cfg.ProjectByName(n.Project)
 		if err != nil {
 			return err
 		}
 
 		n.Project = pc.Key
-		projPrefix = pc.Key + config.ProjectsVersionSeparator
+		projPrefix = pc.Key + cfg.Project.VersionSeparator
 	}
 
 	var changes []core.Change
 	// only worry about loading changes, if we are in auto mode
 	if part == core.AutoLevel {
-		changes, err = core.GetChanges(config, n.IncludeDirs, n.Project)
+		changes, err = cfg.Changes(n.IncludeDirs, n.Project)
 		if err != nil {
 			return err
 		}
 	}
 
-	next, err := core.GetNextVersion(config, part, n.Prerelease, n.Meta, changes, n.Project)
+	next, err := cfg.NextVersion(part, n.Prerelease, n.Meta, changes, n.Project)
 	if err != nil {
 		return err
 	}

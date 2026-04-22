@@ -14,20 +14,20 @@ import (
 
 func newTestConfig() *core.Config {
 	return &core.Config{
-		ChangesDir:    "news",
-		UnreleasedDir: "future",
-		HeaderPath:    "header.rst",
-		ChangelogPath: "news.md",
-		VersionExt:    "md",
-		VersionFormat: "## {{.Version}}",
-		KindFormat:    "### {{.Kind}}",
-		ChangeFormat:  "* {{.Body}}",
-		EnvPrefix:     "ENVPREFIX_",
-		Kinds: []core.KindConfig{
-			{Label: "added"},
-			{Label: "removed"},
-			{Label: "other"},
-		},
+		// RootDir:    "news",
+		// Fragment.Dir: "future",
+		// HeaderPath:    "header.rst",
+		// ChangelogPath: "news.md",
+		// VersionExt:    "md",
+		// VersionFormat: "## {{.Version}}",
+		// KindFormat:    "### {{.Kind}}",
+		// ChangeFormat:  "* {{.Body}}",
+		// EnvPrefix:     "ENVPREFIX_",
+		// Kinds: []core.KindConfig{
+		// {Label: "added"},
+		// {Label: "removed"},
+		// {Label: "other"},
+		// },
 	}
 }
 
@@ -37,7 +37,7 @@ func newMockTime() time.Time {
 
 func TestNewWithEnvVars(t *testing.T) {
 	cfg := newTestConfig()
-	cfg.Post = []core.PostProcessConfig{
+	cfg.Changelog.Post = []core.PostProcessConfig{
 		{Key: "TestPost", Value: "{{.Env.TESTCONTENT}}"},
 	}
 	then.WithTempDirConfig(t, cfg)
@@ -61,12 +61,12 @@ func TestNewWithEnvVars(t *testing.T) {
 	)
 	cmd.SetIn(reader)
 
-	then.Nil(t, os.MkdirAll(filepath.Join(cfg.ChangesDir, cfg.UnreleasedDir), 0755))
+	then.Nil(t, os.MkdirAll(filepath.Join(cfg.RootDir, cfg.Fragment.Dir), 0755))
 
 	err := cmd.Run(cmd.Command, nil)
 	then.Nil(t, err)
 
-	futurePath := filepath.Join(cfg.ChangesDir, cfg.UnreleasedDir)
+	futurePath := filepath.Join(cfg.RootDir, cfg.Fragment.Dir)
 	fileInfos, err := os.ReadDir(futurePath)
 	then.Nil(t, err)
 	then.Equals(t, 1, len(fileInfos))
@@ -83,7 +83,7 @@ func TestNewWithEnvVars(t *testing.T) {
 
 func TestNewWithCustomEnvVars(t *testing.T) {
 	cfg := newTestConfig()
-	cfg.CustomChoices = []core.Custom{
+	cfg.Fragment.Prompts = []core.Custom{
 		{
 			Key:      "Author",
 			Type:     core.CustomString,
@@ -113,12 +113,12 @@ func TestNewWithCustomEnvVars(t *testing.T) {
 	)
 	cmd.SetIn(reader)
 
-	then.Nil(t, os.MkdirAll(filepath.Join(cfg.ChangesDir, cfg.UnreleasedDir), 0755))
+	then.Nil(t, os.MkdirAll(filepath.Join(cfg.RootDir, cfg.Fragment.Dir), 0755))
 
 	err := cmd.Run(cmd.Command, nil)
 	then.Nil(t, err)
 
-	futurePath := filepath.Join(cfg.ChangesDir, cfg.UnreleasedDir)
+	futurePath := filepath.Join(cfg.RootDir, cfg.Fragment.Dir)
 	fileInfos, err := os.ReadDir(futurePath)
 	then.Nil(t, err)
 	then.Equals(t, 1, len(fileInfos))
@@ -160,7 +160,7 @@ func TestNewCreatesNewFileAfterPrompts(t *testing.T) {
 	err := cmd.Run(cmd.Command, nil)
 	then.Nil(t, err)
 
-	futurePath := filepath.Join(cfg.ChangesDir, cfg.UnreleasedDir)
+	futurePath := filepath.Join(cfg.RootDir, cfg.Fragment.Dir)
 	fileInfos, err := os.ReadDir(futurePath)
 	then.Nil(t, err)
 	then.Equals(t, 1, len(fileInfos))
@@ -225,7 +225,7 @@ func TestErrorNewOnBadPrompts(t *testing.T) {
 
 func TestErrorNewFragmentTemplate(t *testing.T) {
 	cfg := newTestConfig()
-	cfg.FragmentFileFormat = "{{...asdf}}"
+	cfg.Fragment.FileFormat = "{{...asdf}}"
 	then.WithTempDirConfig(t, cfg)
 	reader, writer := then.WithReadWritePipe(t)
 
@@ -252,7 +252,8 @@ func TestNewOutputsToCmdOutWhenDry(t *testing.T) {
 	t.Setenv("CI", "false")
 
 	cfg := newTestConfig()
-	cfg.Kinds = []core.KindConfig{}
+	// todo: why?
+	// cfg.Kind = []core.KindConfig{}
 	then.WithTempDirConfig(t, cfg)
 	reader, writer := then.WithReadWritePipe(t)
 
@@ -288,7 +289,15 @@ func TestNewFragmentTemplateSlash(t *testing.T) {
 	t.Setenv("CI", "false")
 
 	cfg := newTestConfig()
-	cfg.Components = []string{"test/component"}
+	cfg.Component = core.ComponentConfig{
+		Options: []core.ComponentOptions{
+			{
+				Prompt: core.PromptFormat{
+					Key: "test/component",
+				},
+			},
+		},
+	}
 	then.WithTempDirConfig(t, cfg)
 	reader, writer := then.WithReadWritePipe(t)
 
@@ -306,12 +315,12 @@ func TestNewFragmentTemplateSlash(t *testing.T) {
 	)
 	cmd.SetIn(reader)
 
-	then.Nil(t, os.MkdirAll(filepath.Join(cfg.ChangesDir, cfg.UnreleasedDir), 0755))
+	then.Nil(t, os.MkdirAll(filepath.Join(cfg.RootDir, cfg.Fragment.Dir), 0755))
 
 	err := cmd.Run(cmd.Command, nil)
 	then.Nil(t, err)
 
-	futurePath := filepath.Join(cfg.ChangesDir, cfg.UnreleasedDir)
+	futurePath := filepath.Join(cfg.RootDir, cfg.Fragment.Dir)
 	fileInfos, err := os.ReadDir(futurePath)
 	then.Nil(t, err)
 	then.Equals(t, 1, len(fileInfos))

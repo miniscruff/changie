@@ -141,7 +141,7 @@ func (n *New) Run(cmd *cobra.Command, args []string) error {
 		Kind:             n.Kind,
 		Body:             n.Body,
 		TimeNow:          n.TimeNow,
-		Config:           config,
+		Cfg:              config,
 		Customs:          customValues,
 		EditorCmdBuilder: core.BuildCommand,
 		Enabled:          n.parsePromptEnabled(),
@@ -160,7 +160,7 @@ func (n *New) Run(cmd *cobra.Command, args []string) error {
 		} else {
 			var fragmentWriter strings.Builder
 
-			fileErr := n.TemplateCache.Execute(config.FragmentFileFormat, &fragmentWriter, change)
+			fileErr := n.TemplateCache.Execute(config.Fragment.FileFormat, &fragmentWriter, change)
 			if fileErr != nil {
 				return fileErr
 			}
@@ -172,7 +172,7 @@ func (n *New) Run(cmd *cobra.Command, args []string) error {
 			replacer := strings.NewReplacer("/", "-", "\\", "-")
 			outputFilename = replacer.Replace(outputFilename)
 
-			outputPath := filepath.Join(config.ChangesDir, config.UnreleasedDir, outputFilename)
+			outputPath := filepath.Join(config.RootDir, config.Fragment.Dir, outputFilename)
 
 			fileErr = os.MkdirAll(filepath.Dir(outputPath), core.CreateDirMode)
 			if fileErr != nil {
