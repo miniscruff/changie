@@ -37,7 +37,7 @@ jobs:
         tail -n +3 .changes/$(go run main.go latest).md > '${{ github.workspace }}/rel_notes.md'
 
     - name: Run GoReleaser
-      uses: goreleaser/goreleaser-action@v7.0.0
+      uses: goreleaser/goreleaser-action@v7.1.0
       with:
         version: latest
         args: --clean --release-notes="${{ github.workspace}}/rel_notes.md" --skip=validate --verbose
