@@ -34,6 +34,6 @@ requests==2.33.1
 six==1.17.0
 termcolor==3.3.0
 tinycss2==1.5.1
-urllib3==2.6.3
+urllib3==2.7.0
 watchdog==6.0.0
 webencodings==0.5.1
