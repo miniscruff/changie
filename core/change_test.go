@@ -108,7 +108,8 @@ func TestSortByComponentThenKind(t *testing.T) {
 			{Label: "D"},
 			{Label: "E"},
 		},
-		Components: []string{"A", "B", "C"},
+		Components:      []string{"A", "B", "C"},
+		ComponentFormat: "## {{.Component}}",
 	}
 	changes := []Change{
 		{Body: "fourth", Component: "B", Kind: "E"},
@@ -121,6 +122,29 @@ func TestSortByComponentThenKind(t *testing.T) {
 	then.Equals(t, "first", changes[0].Body)
 	then.Equals(t, "second", changes[1].Body)
 	then.Equals(t, "third", changes[2].Body)
+	then.Equals(t, "fourth", changes[3].Body)
+}
+
+func TestSortByKindWhenComponentFormatIsEmpty(t *testing.T) {
+	cfg := &Config{
+		Kinds: []KindConfig{
+			{Label: "D"},
+			{Label: "E"},
+		},
+		Components: []string{"A", "B", "C"},
+	}
+	changes := []Change{
+		{Body: "fourth", Component: "B", Kind: "E", Time: orderedTimes[0]},
+		{Body: "second", Component: "A", Kind: "E", Time: orderedTimes[1]},
+		{Body: "third", Component: "B", Kind: "D", Time: orderedTimes[1]},
+		{Body: "first", Component: "A", Kind: "D", Time: orderedTimes[2]},
+	}
+
+	sort.Slice(changes, ChangeLess(cfg, changes))
+
+	then.Equals(t, "first", changes[0].Body)
+	then.Equals(t, "third", changes[1].Body)
+	then.Equals(t, "second", changes[2].Body)
 	then.Equals(t, "fourth", changes[3].Body)
 }
 
