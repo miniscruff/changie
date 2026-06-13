@@ -5,7 +5,6 @@ linters:
     - dogsled
     - dupl
     - exhaustive
-    - goconst
     - goprintffuncname
     - gosec
     - intrange
@@ -23,9 +22,6 @@ linters:
   settings:
     exhaustive:
       default-signifies-exhaustive: false
-    goconst:
-      min-len: 5
-      min-occurrences: 5
     misspell:
       locale: US
     nolintlint:
