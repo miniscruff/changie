@@ -631,6 +631,33 @@ func TestBatchVersionFileWithComponentHeaders(t *testing.T) {
 	then.Equals(t, expected, builder.String())
 }
 
+func TestBatchVersionFileWithoutComponentHeadersGroupsByKind(t *testing.T) {
+	cfg := batchTestConfig()
+	cfg.Components = []string{"cli", "web"}
+	cfg.ComponentFormat = ""
+	cfg.KindFormat = "### {{.Kind}}"
+	cfg.ChangeFormat = "* {{.Body}} ({{.Component}})"
+
+	then.WithTempDirConfig(t, cfg)
+
+	writeChangeFile(t, cfg, &core.Change{Body: "cli added", Kind: "added", Component: "cli"})
+	writeChangeFile(t, cfg, &core.Change{Body: "cli removed", Kind: "removed", Component: "cli"})
+	writeChangeFile(t, cfg, &core.Change{Body: "web added", Kind: "added", Component: "web"})
+
+	batch := NewBatch(time.Now, core.NewTemplateCache())
+	err := batch.Run(batch.Command, []string{"v0.2.0"})
+	then.Nil(t, err)
+
+	verContents := `## v0.2.0
+### added
+* cli added (cli)
+* web added (web)
+### removed
+* cli removed (cli)`
+
+	then.FileContents(t, verContents, cfg.ChangesDir, "v0.2.0.md")
+}
+
 func TestBatchClearUnreleasedRemovesUnreleasedFilesIncludingHeader(t *testing.T) {
 	then.WithTempDir(t)
 
