@@ -1,5 +1,0 @@
-kind: fixed
-body: Skip kind when sorting if kind format is empty
-time: 2026-06-12T19:01:08.466046786-07:00
-custom:
-    Issue: "893"
