@@ -12,7 +12,7 @@ import (
 
 // Less will compare two Change values with the config settings.
 // * Components, if enabled and componentFormat is configured, are sorted by index in config
-// * Kind, if enabled, are sorted by index in config
+// * Kind, if enabled and kindFormat is configured, are sorted by index in config
 // * Time sorted newest first
 func ChangeLess(cfg *Config, changes []Change) func(i, j int) bool {
 	return func(i, j int) bool {
@@ -31,7 +31,7 @@ func ChangeLess(cfg *Config, changes []Change) func(i, j int) bool {
 		}
 
 		// Then sort by kind index
-		if len(cfg.Kinds) > 0 && a.Kind != b.Kind {
+		if cfg.KindFormat != "" && len(cfg.Kinds) > 0 && a.Kind != b.Kind {
 			for _, k := range cfg.Kinds {
 				if a.Kind == k.Key || a.Kind == k.Label {
 					return true

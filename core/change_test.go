@@ -102,6 +102,26 @@ func TestSortByKindThenTime(t *testing.T) {
 	then.Equals(t, "fourth", changes[3].Body)
 }
 
+func TestSortByTimeIfKindFormatEmpty(t *testing.T) {
+	cfg := &Config{
+		Kinds: []KindConfig{
+			{Label: "A"},
+			{Label: "B"},
+		},
+		KindFormat: "",
+	}
+	changes := []Change{
+		{Kind: "A", Body: "first", Time: orderedTimes[2]},
+		{Kind: "B", Body: "second", Time: orderedTimes[1]},
+		{Kind: "A", Body: "third", Time: orderedTimes[0]},
+	}
+	sort.Slice(changes, ChangeLess(cfg, changes))
+
+	then.Equals(t, "first", changes[0].Body)
+	then.Equals(t, "second", changes[1].Body)
+	then.Equals(t, "third", changes[2].Body)
+}
+
 func TestSortByComponentThenKind(t *testing.T) {
 	cfg := &Config{
 		Kinds: []KindConfig{
@@ -110,6 +130,7 @@ func TestSortByComponentThenKind(t *testing.T) {
 		},
 		Components:      []string{"A", "B", "C"},
 		ComponentFormat: "## {{.Component}}",
+		KindFormat:      "* {{.Kind}}",
 	}
 	changes := []Change{
 		{Body: "fourth", Component: "B", Kind: "E"},
@@ -132,6 +153,7 @@ func TestSortByKindWhenComponentFormatIsEmpty(t *testing.T) {
 			{Label: "E"},
 		},
 		Components: []string{"A", "B", "C"},
+		KindFormat: "* {{.Kind}}",
 	}
 	changes := []Change{
 		{Body: "fourth", Component: "B", Kind: "E", Time: orderedTimes[0]},

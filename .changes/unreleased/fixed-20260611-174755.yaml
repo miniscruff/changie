@@ -1,5 +1,0 @@
-kind: fixed
-body: Fixed sorting of changelog entries when `componentFormat` isn't set, to prevent duplicate 'kind' headers
-time: 2026-06-11T17:47:55.44687+01:00
-custom:
-    Issue: "890"
