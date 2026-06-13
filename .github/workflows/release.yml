@@ -59,9 +59,7 @@ jobs:
     - name: Publish to NPM
       run: |
         node npm/prepare-release.mjs
-        npm publish --access public
-      env:
-        NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        npm publish
 
     - name: Build docs
       run: |
