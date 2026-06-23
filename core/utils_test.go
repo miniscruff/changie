@@ -788,3 +788,48 @@ type errRunner struct {
 func (r *errRunner) Run() error {
 	return r.err
 }
+
+func TestHighestAutoLevelWithTemplate(t *testing.T) {
+	cfg := &Config{
+		Kinds: []KindConfig{
+			{
+				Label:     "changed",
+				AutoLevel: `{{if eq .Custom.Breaking "Yes"}}major{{else}}patch{{end}}`,
+			},
+		},
+	}
+
+	major, err := HighestAutoLevel(cfg, []Change{
+		{Kind: "changed", Custom: map[string]string{"Breaking": "Yes"}},
+	})
+	then.Nil(t, err)
+	then.Equals(t, MajorLevel, major)
+
+	patch, err := HighestAutoLevel(cfg, []Change{
+		{Kind: "changed", Custom: map[string]string{"Breaking": "No"}},
+	})
+	then.Nil(t, err)
+	then.Equals(t, PatchLevel, patch)
+}
+
+func TestErrorHighestAutoLevelBadTemplate(t *testing.T) {
+	cfg := &Config{
+		Kinds: []KindConfig{
+			{Label: "changed", AutoLevel: "{{ no_such_func }}"},
+		},
+	}
+	_, err := HighestAutoLevel(cfg, []Change{{Kind: "changed"}})
+	then.NotNil(t, err)
+}
+
+// A single change whose template renders an invalid level must return a clear
+// ErrInvalidAutoLevel, NOT the misleading ErrNoChangesFoundForAuto.
+func TestErrorHighestAutoLevelInvalidRender(t *testing.T) {
+	cfg := &Config{
+		Kinds: []KindConfig{
+			{Label: "changed", AutoLevel: `{{ "nope" }}`},
+		},
+	}
+	_, err := HighestAutoLevel(cfg, []Change{{Kind: "changed"}})
+	then.Err(t, ErrInvalidAutoLevel, err)
+}

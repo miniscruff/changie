@@ -450,3 +450,54 @@ func TestConfigProjectErrorNotFound(t *testing.T) {
 	_, err := cfg.Project("emailer")
 	then.Err(t, errProjectNotFound, err)
 }
+
+func TestAutoLevelForChangeLiteral(t *testing.T) {
+	kc := KindConfig{AutoLevel: MinorLevel}
+	level, err := kc.AutoLevelForChange(NewTemplateCache(), Change{})
+	then.Nil(t, err)
+	then.Equals(t, MinorLevel, level)
+}
+
+func TestAutoLevelForChangeTemplate(t *testing.T) {
+	kc := KindConfig{
+		AutoLevel: `{{if eq .Custom.Breaking "Yes"}}major{{else}}patch{{end}}`,
+	}
+	cache := NewTemplateCache()
+
+	major, err := kc.AutoLevelForChange(cache, Change{Custom: map[string]string{"Breaking": "Yes"}})
+	then.Nil(t, err)
+	then.Equals(t, MajorLevel, major)
+
+	patch, err := kc.AutoLevelForChange(cache, Change{Custom: map[string]string{"Breaking": "No"}})
+	then.Nil(t, err)
+	then.Equals(t, PatchLevel, patch)
+}
+
+func TestAutoLevelForChangeNoneTemplate(t *testing.T) {
+	kc := KindConfig{AutoLevel: `{{if .Custom.Skip}}none{{else}}patch{{end}}`}
+	cache := NewTemplateCache()
+
+	none, err := kc.AutoLevelForChange(cache, Change{Custom: map[string]string{"Skip": "true"}})
+	then.Nil(t, err)
+	then.Equals(t, NoneLevel, none)
+}
+
+func TestAutoLevelForChangeBadTemplate(t *testing.T) {
+	kc := KindConfig{AutoLevel: "{{ no_such_func }}"}
+	_, err := kc.AutoLevelForChange(NewTemplateCache(), Change{})
+	then.NotNil(t, err)
+}
+
+// A template that renders an unknown level (typo / wrong case) must error, not no-op.
+func TestErrorAutoLevelForChangeInvalidRender(t *testing.T) {
+	kc := KindConfig{AutoLevel: `{{ "Major" }}`}
+	_, err := kc.AutoLevelForChange(NewTemplateCache(), Change{})
+	then.NotNil(t, err)
+}
+
+// A conditional with no else renders empty and must error clearly.
+func TestErrorAutoLevelForChangeEmptyRender(t *testing.T) {
+	kc := KindConfig{AutoLevel: `{{if .Custom.Breaking}}major{{end}}`}
+	_, err := kc.AutoLevelForChange(NewTemplateCache(), Change{})
+	then.NotNil(t, err)
+}

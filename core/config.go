@@ -6,6 +6,7 @@ import (
 	"io/fs"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/Masterminds/semver/v3"
 	"gopkg.in/yaml.v3"
@@ -32,6 +33,7 @@ var ConfigPaths []string = []string{
 }
 
 var ErrConfigNotFound = errors.New("no changie config found")
+var ErrInvalidAutoLevel = errors.New("auto level template must resolve to major, minor, patch or none")
 
 // GetVersions will return, in semver sorted order, all released versions
 type GetVersions func(Config) ([]*semver.Version, error)
@@ -69,9 +71,12 @@ type KindConfig struct {
 	// Possible values are major, minor, patch or none and the highest one is used if
 	// multiple changes are found. none will not bump the version.
 	// Only none changes is not a valid bump and will fail to batch.
+	// Auto also supports go templates using the change as the template data, so the
+	// level can be calculated from custom values. The rendered value must be one of
+	// the possible values listed above.
 	// example: yaml
-	// auto: minor
-	AutoLevel string `yaml:"auto,omitempty"`
+	// auto: '{{if eq .Custom.Breaking "Yes"}}major{{else}}patch{{end}}'
+	AutoLevel string `yaml:"auto,omitempty" templateType:"Change"`
 }
 
 // KeyOrLabel returns the kind config key if set, otherwise the label
@@ -81,6 +86,32 @@ func (kc *KindConfig) KeyOrLabel() string {
 	}
 
 	return kc.Label
+}
+
+// AutoLevelForChange resolves the auto bump level for the provided change.
+// The auto value supports go templates using the change as the template data,
+// so the level can be derived from custom values.
+// If auto does not contain a template it is returned as-is. When a template is
+// used, the rendered value is validated to be one of major, minor, patch or none;
+// anything else is an error so typos do not silently no-op. As with every other
+// changie template, whitespace is the caller's responsibility via the {{- / -}}
+// trim markers, so the rendered value is used verbatim and not trimmed.
+func (kc *KindConfig) AutoLevelForChange(cache *TemplateCache, change Change) (string, error) {
+	if !strings.Contains(kc.AutoLevel, "{{") {
+		return kc.AutoLevel, nil
+	}
+
+	level, err := cache.ExecuteString(kc.AutoLevel, change)
+	if err != nil {
+		return EmptyLevel, err
+	}
+
+	switch level {
+	case MajorLevel, MinorLevel, PatchLevel, NoneLevel:
+		return level, nil
+	default:
+		return EmptyLevel, fmt.Errorf("%w: kind %q rendered %q", ErrInvalidAutoLevel, kc.KeyOrLabel(), level)
+	}
 }
 
 // Body config allows you to customize the default body prompt

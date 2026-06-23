@@ -124,6 +124,7 @@ func HighestAutoLevel(config *Config, allChanges []Change) (string, error) {
 		return "", ErrNoChangesFoundForAuto
 	}
 
+	templateCache := NewTemplateCache()
 	highestLevel := EmptyLevel
 	err := ErrNoChangesFoundForAuto
 
@@ -133,7 +134,12 @@ func HighestAutoLevel(config *Config, allChanges []Change) (string, error) {
 				continue
 			}
 
-			switch kc.AutoLevel {
+			level, levelErr := kc.AutoLevelForChange(templateCache, change)
+			if levelErr != nil {
+				return EmptyLevel, levelErr
+			}
+
+			switch level {
 			case MajorLevel:
 				// major is the highest one, so we can just return it
 				return MajorLevel, nil
