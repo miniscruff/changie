@@ -273,13 +273,13 @@ type Config struct {
 	// Relative to [changesDir](#config-changesdir).
 	// example: yaml
 	// headerPath: header.tpl.md
-	HeaderPath string `yaml:"headerPath"`
+	HeaderPath string `yaml:"headerPath,omitempty"`
 	// Filepath for the generated changelog file.
 	// Relative to project root.
 	// ChangelogPath is not required if you are using projects.
 	// example: yaml
 	// changelogPath: CHANGELOG.md
-	ChangelogPath string `yaml:"changelogPath"`
+	ChangelogPath string `yaml:"changelogPath,omitempty"`
 	// File extension for generated version files.
 	// This should probably match your changelog path file.
 	// Must not include the period.
