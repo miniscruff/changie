@@ -492,7 +492,7 @@ func TestAutoLevelForChangeBadTemplate(t *testing.T) {
 func TestErrorAutoLevelForChangeInvalidRender(t *testing.T) {
 	kc := KindConfig{AutoLevel: `{{ "Major" }}`}
 	_, err := kc.AutoLevelForChange(NewTemplateCache(), Change{})
-	then.NotNil(t, err)
+	then.Err(t, ErrInvalidAutoLevel, err)
 }
 
 // A conditional with no else renders empty and must error clearly.
