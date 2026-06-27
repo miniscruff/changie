@@ -16,10 +16,14 @@ type Next struct {
 	Prerelease  []string
 	Meta        []string
 	Project     string
+
+	TemplateCache *core.TemplateCache
 }
 
-func NewNext() *Next {
-	next := &Next{}
+func NewNext(cache *core.TemplateCache) *Next {
+	next := &Next{
+		TemplateCache: cache,
+	}
 
 	cmd := &cobra.Command{
 		Use:   "next major|minor|patch|auto",
@@ -95,7 +99,7 @@ func (n *Next) Run(cmd *cobra.Command, args []string) error {
 		}
 	}
 
-	next, err := core.GetNextVersion(config, part, n.Prerelease, n.Meta, changes, n.Project)
+	next, err := core.GetNextVersion(config, n.TemplateCache, part, n.Prerelease, n.Meta, changes, n.Project)
 	if err != nil {
 		return err
 	}

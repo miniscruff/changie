@@ -31,7 +31,10 @@ var ConfigPaths []string = []string{
 	".changie.yml",
 }
 
-var ErrConfigNotFound = errors.New("no changie config found")
+var (
+	ErrConfigNotFound   = errors.New("no changie config found")
+	ErrInvalidAutoLevel = errors.New("auto level must resolve to major, minor, patch or none")
+)
 
 // GetVersions will return, in semver sorted order, all released versions
 type GetVersions func(Config) ([]*semver.Version, error)
@@ -69,9 +72,12 @@ type KindConfig struct {
 	// Possible values are major, minor, patch or none and the highest one is used if
 	// multiple changes are found. none will not bump the version.
 	// Only none changes is not a valid bump and will fail to batch.
+	// Auto also supports go templates using the change as the template data, so the
+	// level can be calculated from custom values. The rendered value must be one of
+	// the possible values listed above.
 	// example: yaml
-	// auto: minor
-	AutoLevel string `yaml:"auto,omitempty"`
+	// auto: '{{if eq .Custom.Breaking "Yes"}}major{{else}}patch{{end}}'
+	AutoLevel string `yaml:"auto,omitempty" templateType:"Change"`
 }
 
 // KeyOrLabel returns the kind config key if set, otherwise the label
@@ -81,6 +87,27 @@ func (kc *KindConfig) KeyOrLabel() string {
 	}
 
 	return kc.Label
+}
+
+// AutoLevelForChange resolves the auto bump level for the provided change.
+// The auto value supports go templates using the change as the template data,
+// so the level can be derived from custom values.
+func (kc *KindConfig) AutoLevelForChange(cache *TemplateCache, change Change) (string, error) {
+	if kc.AutoLevel == "" {
+		return EmptyLevel, ErrMissingAutoLevel
+	}
+
+	level, err := cache.ExecuteString(kc.AutoLevel, change)
+	if err != nil {
+		return EmptyLevel, err
+	}
+
+	switch level {
+	case MajorLevel, MinorLevel, PatchLevel, NoneLevel:
+		return level, nil
+	default:
+		return EmptyLevel, fmt.Errorf("kind %q wit auto config %q: %w", kc.KeyOrLabel(), kc.AutoLevel, ErrInvalidAutoLevel)
+	}
 }
 
 // Body config allows you to customize the default body prompt
