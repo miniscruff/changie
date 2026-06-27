@@ -180,6 +180,7 @@ func (b *Batch) getBatchData() (*core.BatchData, error) {
 
 	currentVersion, err := core.GetNextVersion(
 		b.config,
+		b.TemplateCache,
 		b.version,
 		b.Prerelease,
 		b.Meta,

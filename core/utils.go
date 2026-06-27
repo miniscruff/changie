@@ -119,14 +119,12 @@ func ValidBumpLevel(level string) bool {
 		level == AutoLevel
 }
 
-func HighestAutoLevel(config *Config, allChanges []Change) (string, error) {
+func HighestAutoLevel(config *Config, cache *TemplateCache, allChanges []Change) (string, error) {
 	if len(allChanges) == 0 {
 		return "", ErrNoChangesFoundForAuto
 	}
 
-	templateCache := NewTemplateCache()
 	highestLevel := EmptyLevel
-	err := ErrNoChangesFoundForAuto
 
 	for _, change := range allChanges {
 		for _, kc := range config.Kinds {
@@ -134,9 +132,9 @@ func HighestAutoLevel(config *Config, allChanges []Change) (string, error) {
 				continue
 			}
 
-			level, levelErr := kc.AutoLevelForChange(templateCache, change)
-			if levelErr != nil {
-				return EmptyLevel, levelErr
+			level, err := kc.AutoLevelForChange(cache, change)
+			if err != nil {
+				return EmptyLevel, err
 			}
 
 			switch level {
@@ -146,13 +144,11 @@ func HighestAutoLevel(config *Config, allChanges []Change) (string, error) {
 			case PatchLevel:
 				if highestLevel == EmptyLevel {
 					highestLevel = PatchLevel
-					err = nil
 				}
 			case MinorLevel:
 				// bump to minor if we have a minor level
 				if highestLevel == PatchLevel || highestLevel == EmptyLevel {
 					highestLevel = MinorLevel
-					err = nil
 				}
 			case EmptyLevel:
 				return EmptyLevel, ErrMissingAutoLevel
@@ -160,11 +156,16 @@ func HighestAutoLevel(config *Config, allChanges []Change) (string, error) {
 		}
 	}
 
-	return highestLevel, err
+	if highestLevel == EmptyLevel {
+		return EmptyLevel, ErrNoChangesFoundForAuto
+	}
+
+	return highestLevel, nil
 }
 
 func GetNextVersion(
 	config *Config,
+	cache *TemplateCache,
 	partOrVersion string,
 	prerelease, meta []string,
 	allChanges []Change,
@@ -190,7 +191,7 @@ func GetNextVersion(
 		}
 
 		if partOrVersion == AutoLevel {
-			partOrVersion, err = HighestAutoLevel(config, allChanges)
+			partOrVersion, err = HighestAutoLevel(config, cache, allChanges)
 			if err != nil {
 				return nil, err
 			}

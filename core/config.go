@@ -6,7 +6,6 @@ import (
 	"io/fs"
 	"os"
 	"path/filepath"
-	"strings"
 
 	"github.com/Masterminds/semver/v3"
 	"gopkg.in/yaml.v3"
@@ -32,8 +31,10 @@ var ConfigPaths []string = []string{
 	".changie.yml",
 }
 
-var ErrConfigNotFound = errors.New("no changie config found")
-var ErrInvalidAutoLevel = errors.New("auto level template must resolve to major, minor, patch or none")
+var (
+	ErrConfigNotFound   = errors.New("no changie config found")
+	ErrInvalidAutoLevel = errors.New("auto level must resolve to major, minor, patch or none")
+)
 
 // GetVersions will return, in semver sorted order, all released versions
 type GetVersions func(Config) ([]*semver.Version, error)
@@ -91,14 +92,9 @@ func (kc *KindConfig) KeyOrLabel() string {
 // AutoLevelForChange resolves the auto bump level for the provided change.
 // The auto value supports go templates using the change as the template data,
 // so the level can be derived from custom values.
-// If auto does not contain a template it is returned as-is. When a template is
-// used, the rendered value is validated to be one of major, minor, patch or none;
-// anything else is an error so typos do not silently no-op. As with every other
-// changie template, whitespace is the caller's responsibility via the {{- / -}}
-// trim markers, so the rendered value is used verbatim and not trimmed.
 func (kc *KindConfig) AutoLevelForChange(cache *TemplateCache, change Change) (string, error) {
-	if !strings.Contains(kc.AutoLevel, "{{") {
-		return kc.AutoLevel, nil
+	if kc.AutoLevel == "" {
+		return EmptyLevel, ErrMissingAutoLevel
 	}
 
 	level, err := cache.ExecuteString(kc.AutoLevel, change)
@@ -110,7 +106,7 @@ func (kc *KindConfig) AutoLevelForChange(cache *TemplateCache, change Change) (s
 	case MajorLevel, MinorLevel, PatchLevel, NoneLevel:
 		return level, nil
 	default:
-		return EmptyLevel, fmt.Errorf("%w: kind %q rendered %q", ErrInvalidAutoLevel, kc.KeyOrLabel(), level)
+		return EmptyLevel, fmt.Errorf("kind %q wit auto config %q: %w", kc.KeyOrLabel(), kc.AutoLevel, ErrInvalidAutoLevel)
 	}
 }
 

@@ -160,7 +160,7 @@ func TestErrorNextVersionBadReadDir(t *testing.T) {
 
 	config := &Config{ChangesDir: "\\."}
 
-	ver, err := GetNextVersion(config, "major", nil, nil, nil, "")
+	ver, err := GetNextVersion(config, NewTemplateCache(), "major", nil, nil, nil, "")
 	then.Equals(t, "v1.0.0", ver.Original())
 	then.Nil(t, err)
 }
@@ -171,7 +171,7 @@ func TestErrorNextVersionBadVersion(t *testing.T) {
 
 	config := &Config{ChangesDir: "."}
 
-	ver, err := GetNextVersion(config, "a", []string{}, []string{}, nil, "")
+	ver, err := GetNextVersion(config, NewTemplateCache(), "a", []string{}, []string{}, nil, "")
 	then.Equals(t, ver, nil)
 	then.Err(t, ErrBadVersionOrPart, err)
 }
@@ -253,7 +253,7 @@ func TestNextVersionOptions(t *testing.T) {
 				ChangesDir: ".",
 			}
 
-			ver, err := GetNextVersion(config, tc.partOrVersion, tc.prerelease, tc.meta, nil, "")
+			ver, err := GetNextVersion(config, NewTemplateCache(), tc.partOrVersion, tc.prerelease, tc.meta, nil, "")
 			then.Nil(t, err)
 			then.Equals(t, tc.expected, ver.Original())
 		})
@@ -298,7 +298,7 @@ func TestNextVersionOptionsWithNoneAutoLevel(t *testing.T) {
 		},
 	}
 
-	ver, err := GetNextVersion(config, "auto", nil, nil, changes, "")
+	ver, err := GetNextVersion(config, NewTemplateCache(), "auto", nil, nil, changes, "")
 	then.Nil(t, err)
 	then.Equals(t, "v0.3.0", ver.Original())
 }
@@ -325,7 +325,7 @@ func TestNextVersionOptionsNoneAutoLevelOnly(t *testing.T) {
 		},
 	}
 
-	ver, err := GetNextVersion(config, "auto", nil, nil, changes, "")
+	ver, err := GetNextVersion(config, NewTemplateCache(), "auto", nil, nil, changes, "")
 	then.Equals(t, ver, nil)
 	then.Err(t, ErrNoChangesFoundForAuto, err)
 }
@@ -350,7 +350,7 @@ func TestErrorNextVersionAutoMissingKind(t *testing.T) {
 		},
 	}
 
-	_, err = GetNextVersion(config, "auto", nil, nil, changes, "")
+	_, err = GetNextVersion(config, NewTemplateCache(), "auto", nil, nil, changes, "")
 	then.Err(t, ErrMissingAutoLevel, err)
 }
 
@@ -360,7 +360,7 @@ func TestErrorNextVersionBadPrerelease(t *testing.T) {
 
 	config := &Config{ChangesDir: "."}
 
-	_, err := GetNextVersion(config, "patch", []string{"0005"}, nil, nil, "")
+	_, err := GetNextVersion(config, NewTemplateCache(), "patch", []string{"0005"}, nil, nil, "")
 	then.NotNil(t, err)
 }
 
@@ -370,7 +370,7 @@ func TestErrorNextVersionBadMeta(t *testing.T) {
 
 	config := &Config{ChangesDir: "."}
 
-	_, err := GetNextVersion(config, "patch", nil, []string{"&&*&"}, nil, "")
+	_, err := GetNextVersion(config, NewTemplateCache(), "patch", nil, []string{"&&*&"}, nil, "")
 	then.NotNil(t, err)
 }
 
@@ -556,7 +556,7 @@ func TestHighestAutoLevel(t *testing.T) {
 		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
-			res, err := HighestAutoLevel(cfg, tc.changes)
+			res, err := HighestAutoLevel(cfg, NewTemplateCache(), tc.changes)
 			then.Nil(t, err)
 			then.Equals(t, tc.expected, res)
 		})
@@ -576,7 +576,7 @@ func TestErrorHighestAutoLevelMissingKindConfig(t *testing.T) {
 			Kind: "missing",
 		},
 	}
-	_, err := HighestAutoLevel(cfg, changes)
+	_, err := HighestAutoLevel(cfg, NewTemplateCache(), changes)
 	then.Err(t, ErrMissingAutoLevel, err)
 }
 
@@ -589,7 +589,7 @@ func TestErrorHighestAutoLevelWithNoChanges(t *testing.T) {
 		},
 	}
 	changes := []Change{}
-	_, err := HighestAutoLevel(cfg, changes)
+	_, err := HighestAutoLevel(cfg, NewTemplateCache(), changes)
 	then.Err(t, ErrNoChangesFoundForAuto, err)
 }
 
@@ -799,13 +799,13 @@ func TestHighestAutoLevelWithTemplate(t *testing.T) {
 		},
 	}
 
-	major, err := HighestAutoLevel(cfg, []Change{
+	major, err := HighestAutoLevel(cfg, NewTemplateCache(), []Change{
 		{Kind: "changed", Custom: map[string]string{"Breaking": "Yes"}},
 	})
 	then.Nil(t, err)
 	then.Equals(t, MajorLevel, major)
 
-	patch, err := HighestAutoLevel(cfg, []Change{
+	patch, err := HighestAutoLevel(cfg, NewTemplateCache(), []Change{
 		{Kind: "changed", Custom: map[string]string{"Breaking": "No"}},
 	})
 	then.Nil(t, err)
@@ -818,7 +818,7 @@ func TestErrorHighestAutoLevelBadTemplate(t *testing.T) {
 			{Label: "changed", AutoLevel: "{{ no_such_func }}"},
 		},
 	}
-	_, err := HighestAutoLevel(cfg, []Change{{Kind: "changed"}})
+	_, err := HighestAutoLevel(cfg, NewTemplateCache(), []Change{{Kind: "changed"}})
 	then.NotNil(t, err)
 }
 
@@ -830,6 +830,6 @@ func TestErrorHighestAutoLevelInvalidRender(t *testing.T) {
 			{Label: "changed", AutoLevel: `{{ "nope" }}`},
 		},
 	}
-	_, err := HighestAutoLevel(cfg, []Change{{Kind: "changed"}})
+	_, err := HighestAutoLevel(cfg, NewTemplateCache(), []Change{{Kind: "changed"}})
 	then.Err(t, ErrInvalidAutoLevel, err)
 }
