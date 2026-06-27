@@ -1,0 +1,5 @@
+kind: fixed
+body: Header and changelog paths are now marked optional in json schema
+time: 2026-06-27T11:35:42.314010705-07:00
+custom:
+    Issue: "850"

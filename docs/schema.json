@@ -420,8 +420,6 @@
   "required": [
     "changesDir",
     "unreleasedDir",
-    "headerPath",
-    "changelogPath",
     "versionExt",
     "changeFormat"
   ],
