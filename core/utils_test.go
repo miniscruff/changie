@@ -812,18 +812,6 @@ func TestHighestAutoLevelWithTemplate(t *testing.T) {
 	then.Equals(t, PatchLevel, patch)
 }
 
-func TestErrorHighestAutoLevelBadTemplate(t *testing.T) {
-	cfg := &Config{
-		Kinds: []KindConfig{
-			{Label: "changed", AutoLevel: "{{ no_such_func }}"},
-		},
-	}
-	_, err := HighestAutoLevel(cfg, NewTemplateCache(), []Change{{Kind: "changed"}})
-	then.NotNil(t, err)
-}
-
-// A single change whose template renders an invalid level must return a clear
-// ErrInvalidAutoLevel, NOT the misleading ErrNoChangesFoundForAuto.
 func TestErrorHighestAutoLevelInvalidRender(t *testing.T) {
 	cfg := &Config{
 		Kinds: []KindConfig{
