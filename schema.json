@@ -117,7 +117,7 @@
         },
         "auto": {
           "type": "string",
-          "description": "Auto determines what value to bump when using `batch auto` or `next auto`.\nPossible values are major, minor, patch or none and the highest one is used if\nmultiple changes are found. none will not bump the version.\nOnly none changes is not a valid bump and will fail to batch.\nexample: yaml\nauto: minor"
+          "description": "Auto determines what value to bump when using `batch auto` or `next auto`.\nPossible values are major, minor, patch or none and the highest one is used if\nmultiple changes are found. none will not bump the version.\nOnly none changes is not a valid bump and will fail to batch.\nAuto also supports go templates using the change as the template data, so the\nlevel can be calculated from custom values. The rendered value must be one of\nthe possible values listed above.\nexample: yaml\nauto: '{{if eq .Custom.Breaking \"Yes\"}}major{{else}}patch{{end}}'"
         }
       },
       "additionalProperties": false,
@@ -420,8 +420,6 @@
   "required": [
     "changesDir",
     "unreleasedDir",
-    "headerPath",
-    "changelogPath",
     "versionExt",
     "changeFormat"
   ],
