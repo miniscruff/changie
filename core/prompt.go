@@ -373,6 +373,10 @@ func (p *Prompts) userChoices() error {
 		}
 
 		if !p.Enabled {
+			if custom.Optional {
+				continue
+			}
+
 			return fmt.Errorf("%w: custom key '%s'", errCustomMissingPromptDisabled, custom.Key)
 		}
 

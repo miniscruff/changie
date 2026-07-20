@@ -861,6 +861,32 @@ func TestSkipPromptForComponentIfSet(t *testing.T) {
 	then.Equals(t, "skip component body", c.Body)
 }
 
+func TestSkipPromptForCustomIfOptionalAndDisabled(t *testing.T) {
+	config := &Config{
+		CustomChoices: []Custom{
+			{
+				Key:      "cust",
+				Optional: true,
+				Type:     "string",
+			},
+		},
+	}
+	prompts := &Prompts{
+		Config:  config,
+		TimeNow: specificTimeNow,
+		Enabled: false,
+		Body:    "skip custom input",
+	}
+
+	changes, err := prompts.BuildChanges()
+	then.Nil(t, err)
+
+	c := changes[0]
+	then.Equals(t, "skip custom input", c.Body)
+	then.MapLen(t, 0, c.Custom)
+	then.Equals(t, "", c.Custom["cust"])
+}
+
 func TestSkipPromptForPromptsWithCustomPromptsInKindConfig(t *testing.T) {
 	config := &Config{
 		Kinds: []KindConfig{

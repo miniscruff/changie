@@ -140,8 +140,8 @@ func TestNewCreatesNewFileAfterPrompts(t *testing.T) {
 
 	cfg := newTestConfig()
 	then.WithTempDirConfig(t, cfg)
-	reader, writer := then.WithReadWritePipe(t)
 
+	reader, writer := then.WithReadWritePipe(t)
 	then.DelayWrite(
 		t, writer,
 		[]byte{106, 13},
