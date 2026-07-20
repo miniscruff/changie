@@ -16,7 +16,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: "Check for changelog entry"
-        uses: brettcannon/check-for-changed-files@v1.2.1
+        uses: brettcannon/check-for-changed-files@v1.2.2
         with:
           file-pattern: |
             .changes/unreleased/*.yaml
