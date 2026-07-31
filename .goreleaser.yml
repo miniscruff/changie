@@ -82,6 +82,15 @@ dockers:
     - "--platform=linux/amd64"
 checksum:
   name_template: 'checksums.txt'
+signs:
+  - artifacts: checksum
+    signature: ${artifact}.sigstore.json
+    cmd: cosign
+    args:
+      - sign-blob
+      - --bundle=${signature}
+      - --yes
+      - ${artifact}
 snapshot:
   version_template: "{{ .Tag }}-next"
 changelog:
