@@ -29,20 +29,5 @@ jobs:
     - name: Ensure npm supports trusted publishing
       run: npm install -g npm@latest
 
-    - name: Build snapshot binaries with GoReleaser
-      uses: goreleaser/goreleaser-action@v7.2.2
-      with:
-        version: latest
-        args: release --snapshot --clean --skip=announce,validate,publish
-
-    - name: Set throwaway version
-      run: npm version 1.25.2-beta.0 --no-git-tag-version
-
-    - name: Publish test package to npm
-      run: |
-        node npm/prepare-release.mjs
-        npm publish --provenance --tag beta
-
-    - name: Verify published version and binary
-      run: |
-        npm view changie@beta version
+    - name: Unpublish throwaway test version
+      run: npm unpublish changie@1.25.2-beta.0 --force
