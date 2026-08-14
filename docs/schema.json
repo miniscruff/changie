@@ -29,7 +29,7 @@
         },
         "type": {
           "type": "string",
-          "description": "Specifies the type of choice which changes the prompt.\n\n| value | description | options\n| -- | -- | -- |\nstring | Freeform text | [minLength](#custom-minlength) and [maxLength](#custom-maxlength)\nblock | Multiline text | [minLength](#custom-minlength) and [maxLength](#custom-maxlength)\nint | Whole numbers | [minInt](#custom-minint) and [maxInt](#custom-maxint)\nenum | Limited set of strings | [enumOptions](#custom-enumoptions) is used to specify values"
+          "description": "Specifies the type of choice which changes the prompt.\n\n| value | description | options\n| -- | -- | -- |\nstring | Freeform text | [minLength](#custom-minlength) and [maxLength](#custom-maxlength)\nblock | Multiline text | [minLength](#custom-minlength) and [maxLength](#custom-maxlength)\nint | Whole numbers | [minInt](#custom-minint) and [maxInt](#custom-maxint)\nenum | Limited set of strings | [enumOptions](#custom-enumoptions) is used to specify values\nenums | Multiple values from a limited set of strings | [enumOptions](#custom-enumoptions) is used to specify values"
         },
         "optional": {
           "type": "boolean",
@@ -60,7 +60,7 @@
             "type": "string"
           },
           "type": "array",
-          "description": "When using the enum type, you must also specify what possible options to allow.\nUsers will be given a selection list to select the value they want."
+          "description": "When using the enum or enums type, you must also specify what possible options to allow.\nUsers will be given a selection list to select the value, or values, they want."
         }
       },
       "additionalProperties": false,
