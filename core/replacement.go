@@ -105,6 +105,8 @@ func (r Replacement) Execute(data ReplaceData) error {
 
 		newData := regex.ReplaceAll(fileData, buf.Bytes())
 
+		// Replacement paths come from the user's own config, writing them is the point.
+		// #nosec G304,G703
 		err = os.WriteFile(path, newData, CreateFileMode)
 		if err != nil {
 			return err

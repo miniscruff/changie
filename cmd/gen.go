@@ -208,10 +208,32 @@ func getCorePackages(packageName string) (*token.FileSet, CoreTypes) {
 	packagePath := fmt.Sprintf("./%v", packageName)
 
 	fset := token.NewFileSet()
-	packages, _ := parser.ParseDir(fset, packagePath, nil, parser.ParseComments)
 
-	corePackage := packages[packageName]
-	p := godoc.New(corePackage, "./", 0)
+	entries, err := os.ReadDir(packagePath)
+	if err != nil {
+		return fset, corePackages
+	}
+
+	files := make([]*ast.File, 0, len(entries))
+
+	for _, entry := range entries {
+		name := entry.Name()
+		if entry.IsDir() || !strings.HasSuffix(name, ".go") {
+			continue
+		}
+
+		file, err := parser.ParseFile(fset, filepath.Join(packagePath, name), nil, parser.ParseComments)
+		if err != nil || file.Name.Name != packageName {
+			continue
+		}
+
+		files = append(files, file)
+	}
+
+	p, err := godoc.NewFromFiles(fset, files, "./")
+	if err != nil {
+		return fset, corePackages
+	}
 
 	for _, t := range p.Types {
 		corePackages[t.Name] = t
