@@ -12,13 +12,14 @@ import (
 	"github.com/cqroot/prompt/choose"
 	"github.com/cqroot/prompt/constants"
 	"github.com/cqroot/prompt/input"
+	"github.com/cqroot/prompt/multichoose"
 	"github.com/cqroot/prompt/write"
 
 	tea "github.com/charmbracelet/bubbletea"
 )
 
 // CustomType determines the possible custom choice types.
-// Current values are: `string`, `block`, `int` and `enum`.
+// Current values are: `string`, `block`, `int`, `enum` and `enums`.
 type CustomType string
 
 const (
@@ -26,7 +27,12 @@ const (
 	CustomBlock  CustomType = "block"
 	CustomInt    CustomType = "int"
 	CustomEnum   CustomType = "enum"
+	CustomEnums  CustomType = "enums"
 )
+
+// enumsSeparator joins and splits the selected values of an "enums" custom
+// choice, as the selections are stored as a single string.
+const enumsSeparator = ", "
 
 var (
 	errInvalidPromptType   = errors.New("invalid prompt type")
@@ -65,6 +71,7 @@ type Custom struct {
 	// block | Multiline text | [minLength](#custom-minlength) and [maxLength](#custom-maxlength)
 	// int | Whole numbers | [minInt](#custom-minint) and [maxInt](#custom-maxint)
 	// enum | Limited set of strings | [enumOptions](#custom-enumoptions) is used to specify values
+	// enums | Multiple values from a limited set of strings | [enumOptions](#custom-enumoptions) is used to specify values
 	Type CustomType `yaml:"type" required:"true"`
 
 	// If true, an empty value will not fail validation.
@@ -98,8 +105,8 @@ type Custom struct {
 	MinLength *int64 `yaml:"minLength,omitempty" default:"nil"`
 	// If specified string input must be no more than this long
 	MaxLength *int64 `yaml:"maxLength,omitempty" default:"nil"`
-	// When using the enum type, you must also specify what possible options to allow.
-	// Users will be given a selection list to select the value they want.
+	// When using the enum or enums type, you must also specify what possible options to allow.
+	// Users will be given a selection list to select the value, or values, they want.
 	EnumOptions []string `yaml:"enumOptions,omitempty"`
 }
 
@@ -202,6 +209,20 @@ func (c Custom) askEnum(stdinReader io.Reader) (string, error) {
 		)
 }
 
+func (c Custom) askEnums(stdinReader io.Reader) (string, error) {
+	values, err := prompt.New().Ask(c.DisplayLabel()).
+		MultiChoose(
+			c.EnumOptions,
+			multichoose.WithHelp(true),
+			multichoose.WithTeaProgramOpts(tea.WithInput(stdinReader)),
+		)
+	if err != nil {
+		return "", err
+	}
+
+	return strings.Join(values, enumsSeparator), nil
+}
+
 // CreatePrompt will create a promptui select or prompt from a custom choice
 func (c Custom) AskPrompt(stdinReader io.Reader) (string, error) {
 	switch c.Type {
@@ -213,6 +234,8 @@ func (c Custom) AskPrompt(stdinReader io.Reader) (string, error) {
 		return c.askInt(stdinReader)
 	case CustomEnum:
 		return c.askEnum(stdinReader)
+	case CustomEnums:
+		return c.askEnums(stdinReader)
 	}
 
 	return "", errInvalidPromptType
@@ -226,6 +249,8 @@ func (c Custom) Validate(input string) error {
 		return c.validateInt(input)
 	case CustomEnum:
 		return c.validateEnum(input)
+	case CustomEnums:
+		return c.validateEnums(input)
 	}
 
 	return errInvalidPromptType
@@ -276,6 +301,20 @@ func (c Custom) validateEnum(input string) error {
 	}
 
 	return fmt.Errorf("%w: %s", errInvalidEnum, input)
+}
+
+func (c Custom) validateEnums(input string) error {
+	if c.Optional && input == "" {
+		return nil
+	}
+
+	for _, value := range strings.Split(input, enumsSeparator) {
+		if !slices.Contains(c.EnumOptions, value) {
+			return fmt.Errorf("%w: %s", errInvalidEnum, value)
+		}
+	}
+
+	return nil
 }
 
 // CustomMapFromStrings will parse a CLI argument of strings into a key value map

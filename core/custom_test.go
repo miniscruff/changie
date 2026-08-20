@@ -113,6 +113,21 @@ func TestCanRunEnumPrompt(t *testing.T) {
 	then.Equals(t, "b", value)
 }
 
+func TestCanRunEnumsPrompt(t *testing.T) {
+	reader, writer := then.WithReadWritePipe(t)
+	then.DelayWrite(
+		t, writer,
+		[]byte{32, 106, 32, 13}, // 32=space, 106=down, 32=space, 13=enter
+	)
+
+	opts := []string{"a", "b", "c"}
+	custom := Custom{Type: CustomEnums, EnumOptions: opts}
+
+	value, err := custom.AskPrompt(reader)
+	then.Nil(t, err)
+	then.Equals(t, "a, b", value)
+}
+
 var validationSpecs = []ValidationSpecs{
 	{
 		Name: "String",
@@ -336,6 +351,34 @@ func TestInvalidEnum(t *testing.T) {
 	}
 	err := custom.Validate("north-south")
 	then.Err(t, errInvalidEnum, err)
+}
+
+func TestValidEnums(t *testing.T) {
+	custom := Custom{
+		Type:        CustomEnums,
+		EnumOptions: []string{"north", "south", "east", "west"},
+	}
+	err := custom.Validate("south, west")
+	then.Nil(t, err)
+}
+
+func TestInvalidEnums(t *testing.T) {
+	custom := Custom{
+		Type:        CustomEnums,
+		EnumOptions: []string{"north", "south", "east", "west"},
+	}
+	err := custom.Validate("south, north-south")
+	then.Err(t, errInvalidEnum, err)
+}
+
+func TestOptionalEmptyEnums(t *testing.T) {
+	custom := Custom{
+		Type:        CustomEnums,
+		Optional:    true,
+		EnumOptions: []string{"north", "south", "east", "west"},
+	}
+	err := custom.Validate("")
+	then.Nil(t, err)
 }
 
 func TestCustomMapFromStrings(t *testing.T) {
