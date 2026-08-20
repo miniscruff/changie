@@ -42,7 +42,7 @@ jobs:
       with:
         # Required: the version of golangci-lint is required and must be specified
         # without patch version: we always use the latest patch version.
-        version: 'v2.6'
+        version: 'v2.12'
 
     - name: Gen
       run: go run main.go gen
