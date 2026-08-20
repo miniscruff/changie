@@ -552,6 +552,8 @@ func LoadConfig() (*Config, error) {
 
 	customPath := os.Getenv(configEnvVar)
 	if customPath != "" {
+		// The config path is intentionally chosen by the user via the env var.
+		// #nosec G304,G703
 		bs, err = os.ReadFile(customPath)
 	} else {
 		bs, err = findConfigUpwards()
