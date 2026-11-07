@@ -15,6 +15,7 @@ func (p *Prompts) newForm() *huh.Form {
 	var fields []huh.Field
 
 	fields = append(fields, p.projectFields()...)
+	fields = append(fields, p.componentFields()...)
 
 	return huh.NewForm(huh.NewGroup(fields...))
 }
@@ -43,5 +44,20 @@ func (p *Prompts) projectFields() []huh.Field {
 				return nil
 			}).
 			Value(&p.Projects),
+	}
+}
+
+func (p *Prompts) componentFields() []huh.Field {
+	if len(p.Config.Components) == 0 {
+		return nil
+	}
+
+	return []huh.Field{
+		huh.NewSelect[string]().
+			Key("component").
+			Title("Component").
+			Options(huh.NewOptions(p.Config.Components...)...).
+			Height(min(len(p.Config.Components)+1, maxOptionsHeight)).
+			Value(&p.Component),
 	}
 }

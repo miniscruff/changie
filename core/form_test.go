@@ -85,3 +85,74 @@ func TestFormNoProjects(t *testing.T) {
 
 	then.SliceLen(t, 0, p.projectFields())
 }
+
+func TestFormComponent(t *testing.T) {
+	p := &Prompts{
+		Config: &Config{
+			Components: []string{"cli", "tests", "utils"},
+		},
+	}
+	d := newFormDriver(t, p.newForm())
+
+	then.Contains(t, "Component", d.view())
+	then.Contains(t, "utils", d.view())
+
+	d.down()
+	d.enter()
+
+	then.True(t, d.completed())
+	then.Equals(t, "tests", p.Component)
+}
+
+func TestFormComponentFilter(t *testing.T) {
+	components := make([]string, 50)
+	for i := range components {
+		components[i] = fmt.Sprintf("component-%02d", i)
+	}
+
+	p := &Prompts{
+		Config: &Config{
+			Components: components,
+		},
+	}
+	d := newFormDriver(t, p.newForm())
+
+	then.False(t, strings.Contains(d.view(), "component-49"))
+
+	d.press('/')
+	d.typeText("49")
+	d.enter() // accept the filter
+	d.enter()
+
+	then.True(t, d.completed())
+	then.Equals(t, "component-49", p.Component)
+}
+
+func TestFormProjectsThenComponent(t *testing.T) {
+	p := &Prompts{
+		Config: &Config{
+			Projects: []ProjectConfig{
+				{Label: "Client", Key: "client"},
+			},
+			Components: []string{"cli", "tests"},
+		},
+	}
+	d := newFormDriver(t, p.newForm())
+
+	d.press(' ')
+	d.next()
+	then.Equals(t, "component", d.focused())
+	// previous answers stay visible
+	then.Contains(t, "Client", d.view())
+
+	d.prev()
+	then.Equals(t, "projects", d.focused())
+}
+
+func TestFormNoComponents(t *testing.T) {
+	p := &Prompts{
+		Config: &Config{},
+	}
+
+	then.SliceLen(t, 0, p.componentFields())
+}
