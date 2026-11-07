@@ -92,14 +92,15 @@ func (p *Prompts) kindFields() []huh.Field {
 		options[i] = huh.NewOption(kc.Label, kc.KeyOrLabel())
 	}
 
-	return []huh.Field{
-		huh.NewSelect[string]().
-			Key("kind").
-			Title("Kind").
-			Options(options...).
-			Height(min(len(options)+1, maxOptionsHeight)).
-			Value(&p.Kind),
-	}
+	kind := huh.NewSelect[string]().
+		Key("kind").
+		Title("Kind").
+		Options(options...).
+		Height(min(len(options)+1, maxOptionsHeight)).
+		Value(&p.Kind)
+
+	// the selected kind decides which fields are shown
+	return []huh.Field{resizeWhenChanged(kind)}
 }
 
 // selectedKind returns the config of the currently selected kind, or nil if

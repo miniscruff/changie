@@ -633,3 +633,37 @@ func TestFormAccessibleSkipsHidden(t *testing.T) {
 	then.Equals(t, "", p.Body)
 	then.MapLen(t, 0, p.formCustoms())
 }
+
+func TestFormGrowsWhenKindShowsMoreFields(t *testing.T) {
+	p := &Prompts{
+		Config: &Config{
+			Kinds: []KindConfig{
+				{Label: "Dependencies", Key: "deps", SkipBody: true, SkipGlobalChoices: true},
+				{
+					Label:             "Security",
+					Key:               "security",
+					AdditionalChoices: []Custom{{Key: "CVE", Label: "CVE Number", Type: CustomString}},
+				},
+			},
+			Body: BodyConfig{UseBlock: true},
+			CustomChoices: []Custom{
+				{Key: "Issue", Type: CustomInt},
+				{Key: "Author", Type: CustomString},
+			},
+		},
+	}
+	d := newPromptsDriver(t, p)
+
+	// only the kind is visible to begin with
+	then.False(t, strings.Contains(d.view(), "Body"))
+
+	d.down()
+
+	view := d.view()
+	then.Contains(t, "Body", view)
+	then.Contains(t, "Issue", view)
+	then.Contains(t, "Author", view)
+	then.Contains(t, "CVE Number", view)
+	// the kind is still shown above the new fields
+	then.Contains(t, "Dependencies", view)
+}

@@ -70,3 +70,35 @@ func fieldVisible(field huh.Field) bool {
 
 	return !ok || !h.hide()
 }
+
+// resizeOnChange wraps a field whose value decides which other fields are
+// hidden, such as the kind. huh sizes the form once, from the fields visible
+// when the terminal size is known, so fields shown by a later change would be
+// cut off. Whenever the value changes the last terminal size is sent again so
+// huh recalculates the height for the fields now visible.
+type resizeOnChange struct {
+	huh.Field
+	size *tea.WindowSizeMsg
+}
+
+func resizeWhenChanged(field huh.Field) huh.Field {
+	return &resizeOnChange{Field: field}
+}
+
+func (r *resizeOnChange) Update(msg tea.Msg) (huh.Model, tea.Cmd) {
+	if size, ok := msg.(tea.WindowSizeMsg); ok {
+		r.size = &size
+	}
+
+	before := r.GetValue()
+	model, cmd := r.Field.Update(msg)
+	r.Field = model.(huh.Field)
+
+	if r.size == nil || r.GetValue() == before {
+		return r, cmd
+	}
+
+	size := *r.size
+
+	return r, tea.Batch(cmd, func() tea.Msg { return size })
+}
