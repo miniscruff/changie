@@ -1,6 +1,8 @@
 package core
 
 import (
+	"io"
+
 	"charm.land/huh/v2"
 
 	tea "charm.land/bubbletea/v2"
@@ -15,6 +17,8 @@ import (
 // group and hide individual fields by:
 //   - reporting Skip so tab and shift+tab move past the field
 //   - rendering nothing so the field is not displayed
+//   - not asking the field in accessible mode, which asks each field in order
+//     instead of using Skip
 //
 // This relies on huh's group calling Skip and View on the fields it stores and
 // storing the model returned by Update, so the tests for this type also act as
@@ -50,6 +54,14 @@ func (h *hideableField) Update(msg tea.Msg) (huh.Model, tea.Cmd) {
 	h.Field = model.(huh.Field)
 
 	return h, cmd
+}
+
+func (h *hideableField) RunAccessible(w io.Writer, r io.Reader) error {
+	if h.hide() {
+		return nil
+	}
+
+	return h.Field.RunAccessible(w, r)
 }
 
 // fieldVisible returns whether field is currently shown.

@@ -1,7 +1,9 @@
 package core
 
 import (
+	"bytes"
 	"fmt"
+	"io"
 	"strings"
 	"testing"
 
@@ -557,4 +559,77 @@ func TestFormNothingVisibleToAsk(t *testing.T) {
 	form, err := p.newForm()
 	then.Nil(t, err)
 	then.Equals(t, nil, form)
+}
+
+// lineReader returns at most one line per read, like a terminal does.
+// huh reads each accessible field with its own buffer, so a reader returning
+// everything at once would be consumed by the first field.
+type lineReader struct {
+	input string
+}
+
+func (r *lineReader) Read(b []byte) (int, error) {
+	if r.input == "" {
+		return 0, io.EOF
+	}
+
+	line, _, _ := strings.Cut(r.input, "\n")
+	n := copy(b, line+"\n")
+	r.input = r.input[min(n, len(r.input)):]
+
+	return n, nil
+}
+
+func runAccessibleForm(t *testing.T, p *Prompts, input string) string {
+	t.Helper()
+
+	form, err := p.newForm()
+	then.Nil(t, err)
+
+	var output bytes.Buffer
+
+	err = form.
+		WithAccessible(true).
+		WithInput(&lineReader{input: input}).
+		WithOutput(&output).
+		Run()
+	then.Nil(t, err)
+
+	return output.String()
+}
+
+func accessibleKindConfig() *Config {
+	return &Config{
+		Kinds: []KindConfig{
+			{Label: "Added", Key: "added"},
+			{Label: "Dependencies", Key: "deps", SkipBody: true, SkipGlobalChoices: true},
+		},
+		CustomChoices: []Custom{
+			{Key: "Issue", Type: CustomInt},
+		},
+	}
+}
+
+func TestFormAccessible(t *testing.T) {
+	p := &Prompts{Config: accessibleKindConfig()}
+
+	output := runAccessibleForm(t, p, "1\nbody stuff\n12\n")
+
+	then.Contains(t, "Body", output)
+	then.Contains(t, "Issue", output)
+	then.Equals(t, "added", p.Kind)
+	then.Equals(t, "body stuff", p.Body)
+	then.MapEquals(t, map[string]string{"Issue": "12"}, p.formCustoms())
+}
+
+func TestFormAccessibleSkipsHidden(t *testing.T) {
+	p := &Prompts{Config: accessibleKindConfig()}
+
+	output := runAccessibleForm(t, p, "2\n")
+
+	then.False(t, strings.Contains(output, "Body"))
+	then.False(t, strings.Contains(output, "Issue"))
+	then.Equals(t, "deps", p.Kind)
+	then.Equals(t, "", p.Body)
+	then.MapLen(t, 0, p.formCustoms())
 }
