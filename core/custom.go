@@ -3,20 +3,11 @@ package core
 import (
 	"errors"
 	"fmt"
-	"io"
 	"slices"
 	"strconv"
 	"strings"
 
 	"charm.land/huh/v2"
-	"github.com/cqroot/prompt"
-	"github.com/cqroot/prompt/choose"
-	"github.com/cqroot/prompt/constants"
-	"github.com/cqroot/prompt/input"
-	"github.com/cqroot/prompt/multichoose"
-	"github.com/cqroot/prompt/write"
-
-	tea "github.com/charmbracelet/bubbletea"
 )
 
 // CustomType determines the possible custom choice types.
@@ -120,113 +111,8 @@ func (c Custom) DisplayLabel() string {
 	return c.Label
 }
 
-func (c Custom) askString(stdinReader io.Reader) (string, error) {
-	return prompt.New().Ask(c.DisplayLabel()).
-		Input(
-			"",
-			input.WithHelp(true),
-			input.WithValidateFunc(c.validateString),
-			input.WithTeaProgramOpts(tea.WithInput(stdinReader)),
-		)
-}
-
-func (c Custom) askBlock(stdinReader io.Reader) (string, error) {
-	return prompt.New().Ask(c.DisplayLabel()).
-		Write(
-			"",
-			write.WithHelp(true),
-			write.WithValidateFunc(c.validateString),
-			write.WithTeaProgramOpts(tea.WithInput(stdinReader)),
-		)
-}
-
-func (c Custom) askInt(stdinReader io.Reader) (string, error) {
-	return prompt.New().Ask(c.DisplayLabel()).
-		Input(
-			"",
-			input.WithHelp(true),
-			input.WithInputMode(input.InputInteger),
-			input.WithValidateFunc(c.validateInt),
-			input.WithTeaProgramOpts(tea.WithInput(stdinReader)),
-		)
-}
-
-// Scrolling theme for cqroot/prompt. Allows items to be scrolled through
-// using the arrow keys.
-//
-// choices is a list of enum options to display.
-// cursor is the index of the currently selected item.
-func ThemeScroll(choices []choose.Choice, cursor int) string {
-	s := strings.Builder{}
-	s.WriteString("\n")
-
-	numChoices := len(choices)
-	index := cursor
-	limit := min(10, numChoices)
-	start := 0
-	end := limit
-
-	// Create a slice of items to display
-	if numChoices > limit {
-		if index < limit/2 {
-			end = limit
-		} else if index >= limit/2 && index <= numChoices-limit/2 {
-			start = index - limit/2
-			end = index + limit/2
-			index = limit / 2
-		} else {
-			start = numChoices - limit
-			end = numChoices
-			index = limit - (numChoices - index)
-		}
-	}
-
-	// Loop through the slice and display each item.
-	// We will determine if the item is selected or not by calling isSelected
-	// with the index of the item, but since we're only displaying a slice of
-	// the items we need to offset the index.
-	for i, choice := range choices[start:end] {
-		// Check if the item is the one at the cursor's location
-		isCursor := index == i
-
-		if isCursor {
-			s.WriteString(constants.DefaultSelectedItemStyle.Render(fmt.Sprintf("• %s", choice.Text)))
-		} else {
-			s.WriteString(constants.DefaultItemStyle.Render(fmt.Sprintf("  %s", choice.Text)))
-		}
-
-		s.WriteString("\n")
-	}
-
-	return s.String()
-}
-
-func (c Custom) askEnum(stdinReader io.Reader) (string, error) {
-	return prompt.New().Ask(c.DisplayLabel()).
-		Choose(
-			c.EnumOptions,
-			choose.WithHelp(true),
-			choose.WithTeaProgramOpts(tea.WithInput(stdinReader)),
-			choose.WithTheme(ThemeScroll),
-		)
-}
-
-func (c Custom) askEnums(stdinReader io.Reader) (string, error) {
-	values, err := prompt.New().Ask(c.DisplayLabel()).
-		MultiChoose(
-			c.EnumOptions,
-			multichoose.WithHelp(true),
-			multichoose.WithTeaProgramOpts(tea.WithInput(stdinReader)),
-		)
-	if err != nil {
-		return "", err
-	}
-
-	return strings.Join(values, enumsSeparator), nil
-}
-
 // formField creates a huh field for the custom choice, storing the answer in
-// value. Multiple enum selections are stored joined, the same as AskPrompt.
+// value. Multiple enum selections are stored joined.
 func (c Custom) formField(value *string) (huh.Field, error) {
 	switch c.Type {
 	case CustomString:
@@ -288,24 +174,6 @@ func (a joinedAccessor) Get() []string {
 
 func (a joinedAccessor) Set(values []string) {
 	*a.value = strings.Join(values, enumsSeparator)
-}
-
-// CreatePrompt will create a promptui select or prompt from a custom choice
-func (c Custom) AskPrompt(stdinReader io.Reader) (string, error) {
-	switch c.Type {
-	case CustomString:
-		return c.askString(stdinReader)
-	case CustomBlock:
-		return c.askBlock(stdinReader)
-	case CustomInt:
-		return c.askInt(stdinReader)
-	case CustomEnum:
-		return c.askEnum(stdinReader)
-	case CustomEnums:
-		return c.askEnums(stdinReader)
-	}
-
-	return "", errInvalidPromptType
 }
 
 func (c Custom) Validate(input string) error {
