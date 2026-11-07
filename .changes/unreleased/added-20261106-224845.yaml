@@ -1,0 +1,5 @@
+kind: added
+body: Sign release checksums with Cosign, publishing a checksums.txt.sigstore.json bundle with each release
+time: 2026-11-06T22:48:45.306996316-08:00
+custom:
+    Issue: "946"
