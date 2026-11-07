@@ -11,7 +11,7 @@ const maxOptionsHeight = 12
 // newForm builds a single huh form asking for every configured value.
 // All fields are kept in one group so previous answers stay visible and
 // shift+tab can be used to go back.
-func (p *Prompts) newForm() *huh.Form {
+func (p *Prompts) newForm() (*huh.Form, error) {
 	var fields []huh.Field
 
 	fields = append(fields, p.projectFields()...)
@@ -19,7 +19,14 @@ func (p *Prompts) newForm() *huh.Form {
 	fields = append(fields, p.kindFields()...)
 	fields = append(fields, p.bodyFields()...)
 
-	return huh.NewForm(huh.NewGroup(fields...))
+	customFields, err := p.customFields()
+	if err != nil {
+		return nil, err
+	}
+
+	fields = append(fields, customFields...)
+
+	return huh.NewForm(huh.NewGroup(fields...)), nil
 }
 
 func (p *Prompts) projectFields() []huh.Field {
@@ -131,4 +138,78 @@ func (p *Prompts) skipsBody() bool {
 	kc := p.selectedKind()
 
 	return kc != nil && kc.SkipBody
+}
+
+// formCustom is a custom choice asked in the form along with its answer.
+// Each field keeps its own answer as kinds may share custom keys.
+type formCustom struct {
+	custom Custom
+	value  string
+	hidden func() bool
+}
+
+// customFields creates fields for the global custom choices, hidden when the
+// selected kind skips them, followed by every kind's additional choices,
+// only shown while that kind is selected.
+func (p *Prompts) customFields() ([]huh.Field, error) {
+	p.customAnswers = nil
+
+	for _, custom := range p.Config.CustomChoices {
+		p.customAnswers = append(p.customAnswers, &formCustom{
+			custom: custom,
+			hidden: p.skipsGlobalChoices,
+		})
+	}
+
+	for i := range p.Config.Kinds {
+		kindKey := p.Config.Kinds[i].KeyOrLabel()
+		notSelected := func() bool {
+			kc := p.selectedKind()
+
+			return kc == nil || kc.KeyOrLabel() != kindKey
+		}
+
+		for _, custom := range p.Config.Kinds[i].AdditionalChoices {
+			p.customAnswers = append(p.customAnswers, &formCustom{
+				custom: custom,
+				hidden: notSelected,
+			})
+		}
+	}
+
+	fields := make([]huh.Field, len(p.customAnswers))
+
+	for i, answer := range p.customAnswers {
+		field, err := answer.custom.formField(&answer.value)
+		if err != nil {
+			return nil, err
+		}
+
+		fields[i] = hideWhen(field, answer.hidden)
+	}
+
+	return fields, nil
+}
+
+// skipsGlobalChoices returns whether the selected kind skips global choices.
+func (p *Prompts) skipsGlobalChoices() bool {
+	kc := p.selectedKind()
+
+	return kc != nil && kc.SkipGlobalChoices
+}
+
+// formCustoms returns the custom values answered in the form, ignoring
+// fields hidden by the selected kind.
+func (p *Prompts) formCustoms() map[string]string {
+	customs := make(map[string]string)
+
+	for _, answer := range p.customAnswers {
+		if answer.hidden() {
+			continue
+		}
+
+		customs[answer.custom.Key] = answer.value
+	}
+
+	return customs
 }

@@ -48,6 +48,9 @@ type Prompts struct {
 	Kind      string
 	Body      string
 	Customs   map[string]string
+
+	// customAnswers are the custom choices asked in the form.
+	customAnswers []*formCustom
 }
 
 // BuildChanges will ask the user prompts based on the configuration

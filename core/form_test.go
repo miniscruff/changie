@@ -10,6 +10,15 @@ import (
 	"github.com/miniscruff/changie/then"
 )
 
+func newPromptsDriver(t *testing.T, p *Prompts) *formDriver {
+	t.Helper()
+
+	form, err := p.newForm()
+	then.Nil(t, err)
+
+	return newFormDriver(t, form)
+}
+
 func TestFormProjects(t *testing.T) {
 	p := &Prompts{
 		Config: &Config{
@@ -20,7 +29,7 @@ func TestFormProjects(t *testing.T) {
 			},
 		},
 	}
-	d := newFormDriver(t, p.newForm())
+	d := newPromptsDriver(t, p)
 
 	then.Contains(t, "Projects", d.view())
 	then.Contains(t, "Client", d.view())
@@ -46,7 +55,7 @@ func TestFormProjectsRequired(t *testing.T) {
 			},
 		},
 	}
-	d := newFormDriver(t, p.newForm())
+	d := newPromptsDriver(t, p)
 
 	d.enter()
 
@@ -65,7 +74,7 @@ func TestFormProjectsFilter(t *testing.T) {
 			Projects: projects,
 		},
 	}
-	d := newFormDriver(t, p.newForm())
+	d := newPromptsDriver(t, p)
 
 	// long lists scroll instead of showing every project
 	then.False(t, strings.Contains(d.view(), "project-099"))
@@ -94,7 +103,7 @@ func TestFormComponent(t *testing.T) {
 			Components: []string{"cli", "tests", "utils"},
 		},
 	}
-	d := newFormDriver(t, p.newForm())
+	d := newPromptsDriver(t, p)
 
 	then.Contains(t, "Component", d.view())
 	then.Contains(t, "utils", d.view())
@@ -117,7 +126,7 @@ func TestFormComponentFilter(t *testing.T) {
 			Components: components,
 		},
 	}
-	d := newFormDriver(t, p.newForm())
+	d := newPromptsDriver(t, p)
 
 	then.False(t, strings.Contains(d.view(), "component-49"))
 
@@ -137,7 +146,7 @@ func TestFormProjectsThenComponent(t *testing.T) {
 			Components: []string{"cli", "tests"},
 		},
 	}
-	d := newFormDriver(t, p.newForm())
+	d := newPromptsDriver(t, p)
 
 	d.press(' ')
 	d.next()
@@ -166,7 +175,7 @@ func TestFormKind(t *testing.T) {
 			},
 		},
 	}
-	d := newFormDriver(t, p.newForm())
+	d := newPromptsDriver(t, p)
 
 	then.Contains(t, "Kind", d.view())
 	then.Contains(t, "Added", d.view())
@@ -188,7 +197,7 @@ func TestFormSelectedKindFollowsCursor(t *testing.T) {
 			},
 		},
 	}
-	d := newFormDriver(t, p.newForm())
+	d := newPromptsDriver(t, p)
 
 	then.Equals(t, "added", p.selectedKind().Key)
 
@@ -211,7 +220,7 @@ func TestFormBody(t *testing.T) {
 	p := &Prompts{
 		Config: &Config{},
 	}
-	d := newFormDriver(t, p.newForm())
+	d := newPromptsDriver(t, p)
 
 	then.Contains(t, "Body", d.view())
 
@@ -228,7 +237,7 @@ func TestFormBodyBlock(t *testing.T) {
 			Body: BodyConfig{UseBlock: true},
 		},
 	}
-	d := newFormDriver(t, p.newForm())
+	d := newPromptsDriver(t, p)
 
 	d.typeText("first line")
 	d.send(tea.KeyPressMsg{Code: tea.KeyEnter, Mod: tea.ModAlt}) // new line
@@ -246,7 +255,7 @@ func TestFormBodyLength(t *testing.T) {
 			Body: BodyConfig{MinLength: &minLength},
 		},
 	}
-	d := newFormDriver(t, p.newForm())
+	d := newPromptsDriver(t, p)
 
 	d.typeText("abc")
 	d.enter()
@@ -270,7 +279,7 @@ func TestFormBodyHiddenBySkipBody(t *testing.T) {
 			},
 		},
 	}
-	d := newFormDriver(t, p.newForm())
+	d := newPromptsDriver(t, p)
 
 	then.Contains(t, "Body", d.view())
 
@@ -291,7 +300,7 @@ func TestFormBodyShownForKindWithBody(t *testing.T) {
 			},
 		},
 	}
-	d := newFormDriver(t, p.newForm())
+	d := newPromptsDriver(t, p)
 
 	d.down()
 	d.next()
@@ -308,4 +317,145 @@ func TestFormBodyWithEditor(t *testing.T) {
 	}
 
 	then.SliceLen(t, 0, p.bodyFields())
+}
+
+func TestFormGlobalCustoms(t *testing.T) {
+	p := &Prompts{
+		Config: &Config{
+			Kinds: []KindConfig{
+				{Label: "Added", Key: "added"},
+				{Label: "Dependencies", Key: "deps", SkipBody: true, SkipGlobalChoices: true},
+			},
+			CustomChoices: []Custom{
+				{Key: "Issue", Type: CustomInt},
+			},
+		},
+	}
+	d := newPromptsDriver(t, p)
+
+	then.Contains(t, "Issue", d.view())
+
+	d.next() // body
+	d.next() // issue
+	then.Equals(t, "Issue", d.focused())
+
+	d.typeText("12")
+	d.enter()
+
+	then.True(t, d.completed())
+	then.MapEquals(t, map[string]string{"Issue": "12"}, p.formCustoms())
+}
+
+func TestFormGlobalCustomsSkipped(t *testing.T) {
+	p := &Prompts{
+		Config: &Config{
+			Kinds: []KindConfig{
+				{Label: "Added", Key: "added"},
+				{Label: "Dependencies", Key: "deps", SkipBody: true, SkipGlobalChoices: true},
+			},
+			CustomChoices: []Custom{
+				{Key: "Issue", Type: CustomInt},
+			},
+		},
+	}
+	d := newPromptsDriver(t, p)
+
+	d.down()
+	then.False(t, strings.Contains(d.view(), "Issue"))
+
+	d.enter()
+
+	then.True(t, d.completed())
+	then.MapLen(t, 0, p.formCustoms())
+}
+
+func TestFormKindAdditionalChoices(t *testing.T) {
+	p := &Prompts{
+		Config: &Config{
+			Kinds: []KindConfig{
+				{
+					Label: "Added",
+					Key:   "added",
+					AdditionalChoices: []Custom{
+						{Key: "Feature", Label: "Feature Flag", Type: CustomString},
+					},
+				},
+				{
+					Label: "Security",
+					Key:   "security",
+					AdditionalChoices: []Custom{
+						{Key: "CVE", Label: "CVE Number", Type: CustomString},
+					},
+				},
+			},
+		},
+	}
+	d := newPromptsDriver(t, p)
+
+	then.Contains(t, "Feature Flag", d.view())
+	then.False(t, strings.Contains(d.view(), "CVE Number"))
+
+	d.down()
+	then.False(t, strings.Contains(d.view(), "Feature Flag"))
+	then.Contains(t, "CVE Number", d.view())
+
+	d.next() // body
+	d.next() // cve
+	then.Equals(t, "CVE", d.focused())
+
+	d.typeText("2026-0001")
+	d.enter()
+
+	then.True(t, d.completed())
+	then.MapEquals(t, map[string]string{"CVE": "2026-0001"}, p.formCustoms())
+}
+
+func TestFormKindAdditionalChoicesSharedKey(t *testing.T) {
+	p := &Prompts{
+		Config: &Config{
+			Kinds: []KindConfig{
+				{
+					Label:             "Added",
+					Key:               "added",
+					AdditionalChoices: []Custom{{Key: "Ticket", Type: CustomString}},
+				},
+				{
+					Label:             "Fixed",
+					Key:               "fixed",
+					AdditionalChoices: []Custom{{Key: "Ticket", Type: CustomString}},
+				},
+			},
+		},
+	}
+	d := newPromptsDriver(t, p)
+
+	// answer the added ticket, then go back and switch to fixed
+	d.next()
+	d.next()
+	d.typeText("ADD-1")
+	d.prev()
+	d.prev()
+	then.Equals(t, "kind", d.focused())
+
+	d.down()
+	d.next()
+	d.next()
+	d.typeText("FIX-2")
+	d.enter()
+
+	then.True(t, d.completed())
+	then.MapEquals(t, map[string]string{"Ticket": "FIX-2"}, p.formCustoms())
+}
+
+func TestFormCustomsInvalidType(t *testing.T) {
+	p := &Prompts{
+		Config: &Config{
+			CustomChoices: []Custom{
+				{Key: "Bad", Type: "bad"},
+			},
+		},
+	}
+
+	_, err := p.newForm()
+	then.Err(t, errInvalidPromptType, err)
 }
