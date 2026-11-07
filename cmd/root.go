@@ -15,7 +15,7 @@ func RootCmd() *cobra.Command {
 		Short: "changie handles conflict-free changelog management",
 		Long: `Changie keeps your changes organized and attached to your code.
 
-Changie is aimed at seemlessly integrating into your release process while also
+Changie is aimed at seamlessly integrating into your release process while also
 being easy to use for developers and your release team.`,
 	}
 	cmd.SilenceUsage = true
