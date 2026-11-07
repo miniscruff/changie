@@ -1,5 +1,0 @@
-kind: added
-body: Prompts for `changie new` use a single form where earlier answers stay visible, shift+tab goes back, lists can be filtered with `/` and invalid answers show an error without exiting
-time: 2026-11-07T15:40:09.335843657-08:00
-custom:
-    Issue: "950"

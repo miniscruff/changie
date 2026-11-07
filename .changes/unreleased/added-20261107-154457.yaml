@@ -1,0 +1,5 @@
+kind: added
+body: Open your editor with ctrl+e when writing block bodies and block custom choices
+time: 2026-11-07T15:44:57.686911413-08:00
+custom:
+    Issue: "950"
