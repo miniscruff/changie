@@ -1224,3 +1224,41 @@ func TestAskPromptsProjectWithoutKey(t *testing.T) {
 	// projects without a key are saved with an empty project, as before
 	then.Equals(t, "", changes[0].Project)
 }
+
+func TestAskPromptsKindWithoutKey(t *testing.T) {
+	reader, writer := then.WithReadWritePipe(t)
+	then.DelayWrite(
+		t, writer,
+		keyDown,
+		[]byte{13},
+		[]byte("CVE-1"),
+		[]byte{13},
+	)
+
+	config := &Config{
+		Kinds: []KindConfig{
+			{Label: "Dependencies", SkipBody: true, SkipGlobalChoices: true},
+			{
+				Label:             "Security",
+				SkipBody:          true,
+				SkipGlobalChoices: true,
+				AdditionalChoices: []Custom{{Key: "CVE", Type: CustomString}},
+			},
+		},
+		CustomChoices: []Custom{{Key: "Issue", Type: CustomInt}},
+	}
+	prompts := &Prompts{
+		Config:      config,
+		StdinReader: reader,
+		TimeNow:     specificTimeNow,
+		Enabled:     true,
+	}
+
+	changes, err := prompts.BuildChanges()
+	then.Nil(t, err)
+	then.SliceLen(t, 1, changes)
+	// kinds without a key are found by label for hiding fields and saving
+	then.Equals(t, "Security", changes[0].Kind)
+	then.Equals(t, "", changes[0].Body)
+	then.MapEquals(t, map[string]string{"CVE": "CVE-1"}, changes[0].Custom)
+}

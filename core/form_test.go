@@ -192,6 +192,27 @@ func TestFormKind(t *testing.T) {
 	then.Equals(t, "Removed", p.Kind)
 }
 
+func TestFormKindWithoutLabel(t *testing.T) {
+	p := &Prompts{
+		Config: &Config{
+			Kinds: []KindConfig{
+				{Key: "added"},
+				{Key: "fixed"},
+			},
+		},
+	}
+	d := newPromptsDriver(t, p)
+
+	// kinds without a label show the key
+	then.Contains(t, "added", d.view())
+	then.Contains(t, "fixed", d.view())
+
+	d.down()
+	d.enter()
+
+	then.Equals(t, "fixed", p.Kind)
+}
+
 func TestFormSelectedKindFollowsCursor(t *testing.T) {
 	p := &Prompts{
 		Config: &Config{

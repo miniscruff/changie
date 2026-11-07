@@ -99,7 +99,14 @@ func (p *Prompts) kindFields() []huh.Field {
 	options := make([]huh.Option[string], len(p.Config.Kinds))
 	for i := range p.Config.Kinds {
 		kc := &p.Config.Kinds[i]
-		options[i] = huh.NewOption(kc.Label, kc.KeyOrLabel())
+
+		// kinds are looked up by key or label, and either may be empty
+		label := kc.Label
+		if label == "" {
+			label = kc.Key
+		}
+
+		options[i] = huh.NewOption(label, kc.KeyOrLabel())
 	}
 
 	kind := huh.NewSelect[string]().
