@@ -134,7 +134,7 @@ func (p *Prompts) bodyFields() []huh.Field {
 		text := huh.NewText().
 			Key("body").
 			Title(custom.DisplayLabel()).
-			Validate(custom.validateString).
+			Validate(validateCleaned(custom.validateString)).
 			Value(&p.Body)
 
 		if p.Config.VersionExt != "" {
@@ -241,7 +241,12 @@ func (p *Prompts) formCustoms() map[string]string {
 			continue
 		}
 
-		customs[answer.custom.Key] = answer.value
+		value := answer.value
+		if answer.custom.Type == CustomBlock {
+			value = cleanText(value)
+		}
+
+		customs[answer.custom.Key] = value
 	}
 
 	return customs

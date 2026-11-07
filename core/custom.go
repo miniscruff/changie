@@ -125,7 +125,7 @@ func (c Custom) formField(value *string) (huh.Field, error) {
 		return huh.NewText().
 			Key(c.Key).
 			Title(c.DisplayLabel()).
-			Validate(c.validateString).
+			Validate(validateCleaned(c.validateString)).
 			Value(value), nil
 	case CustomInt:
 		return huh.NewInput().

@@ -7,6 +7,8 @@ import (
 	"strings"
 	"testing"
 
+	"charm.land/huh/v2"
+
 	tea "charm.land/bubbletea/v2"
 
 	"github.com/miniscruff/changie/then"
@@ -709,4 +711,60 @@ func TestCollapseBlankLines(t *testing.T) {
 	view := "a\n\n  \n\x1b[0m\nb\n\nc\n\n"
 
 	then.Equals(t, "a\n\nb\n\nc\n", collapseBlankLines(view))
+}
+
+// editorSaved simulates text saved by an external editor, starting with a
+// byte order mark and ending with a newline.
+func editorSaved(text string) string {
+	return string(bom) + text + "\n"
+}
+
+func TestFormBlockValidatesCleanedText(t *testing.T) {
+	maxLength := int64(5)
+	custom := Custom{Key: "Notes", Type: CustomBlock, MaxLength: &maxLength}
+
+	var value string
+
+	field, err := custom.formField(&value)
+	then.Nil(t, err)
+
+	text, ok := field.(*huh.Text)
+	then.True(t, ok)
+
+	// the editor's newline and byte order mark do not count against the length
+	text.Value(new(editorSaved("12345")))
+
+	d := newFormDriver(t, huh.NewForm(huh.NewGroup(text)))
+	d.enter()
+
+	then.True(t, d.completed())
+}
+
+func TestAskPromptsCleansEditorBody(t *testing.T) {
+	p := &Prompts{
+		Config: &Config{
+			Body: BodyConfig{UseBlock: true},
+			CustomChoices: []Custom{
+				{Key: "Notes", Type: CustomBlock},
+				{Key: "Author", Type: CustomString},
+			},
+		},
+	}
+
+	_, err := p.newForm()
+	then.Nil(t, err)
+
+	// simulate the body and notes being written with ctrl+e
+	p.Body = editorSaved("body from editor")
+	p.customAnswers[0].value = editorSaved("notes from editor")
+	p.customAnswers[1].value = " spaced author "
+
+	p.applyFormAnswers()
+
+	then.Equals(t, "body from editor", p.Body)
+	// only block values are cleaned, other answers are kept as typed
+	then.MapEquals(t, map[string]string{
+		"Notes":  "notes from editor",
+		"Author": " spaced author ",
+	}, p.Customs)
 }

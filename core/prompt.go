@@ -245,9 +245,22 @@ func (p *Prompts) runForm() error {
 		return err
 	}
 
-	// a body typed before switching to a kind without a body is not used
-	if p.skipsBody() && !p.bodyProvided {
-		p.Body = ""
+	p.applyFormAnswers()
+
+	return nil
+}
+
+// applyFormAnswers tidies the values answered in the form and adds the
+// custom answers to the provided custom values.
+func (p *Prompts) applyFormAnswers() {
+	if !p.bodyProvided {
+		// a body typed before switching to a kind without a body is not used
+		if p.skipsBody() {
+			p.Body = ""
+		}
+
+		// block bodies may have been written with an editor using ctrl+e
+		p.Body = cleanText(p.Body)
 	}
 
 	answers := p.formCustoms()
@@ -256,8 +269,6 @@ func (p *Prompts) runForm() error {
 	}
 
 	maps.Copy(p.Customs, answers)
-
-	return nil
 }
 
 // resolveValues resolves the kind config and validates the body, which may

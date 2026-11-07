@@ -1,7 +1,6 @@
 package core
 
 import (
-	"bytes"
 	"context"
 	"errors"
 	"fmt"
@@ -412,5 +411,19 @@ func getBodyTextWithEditor(runner EditorRunner, editorFile string) (string, erro
 		return "", err
 	}
 
-	return strings.TrimSpace(string(bytes.TrimPrefix(buf, bom))), nil
+	return cleanText(string(buf)), nil
+}
+
+// cleanText removes a byte order mark and surrounding whitespace, such as the
+// trailing newline most editors add when saving a file.
+func cleanText(text string) string {
+	return strings.TrimSpace(strings.TrimPrefix(text, string(bom)))
+}
+
+// validateCleaned wraps validate to check the text as it will be saved,
+// without the whitespace an editor may have added.
+func validateCleaned(validate func(string) error) func(string) error {
+	return func(text string) error {
+		return validate(cleanText(text))
+	}
 }
