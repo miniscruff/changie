@@ -50,7 +50,13 @@ func (p *Prompts) projectFields() []huh.Field {
 
 	options := make([]huh.Option[string], len(p.Config.Projects))
 	for i, label := range p.Config.ProjectLabels() {
-		options[i] = huh.NewOption(label, p.Config.Projects[i].Key)
+		// projects are looked up by key or label, and the key may be empty
+		value := p.Config.Projects[i].Key
+		if value == "" {
+			value = label
+		}
+
+		options[i] = huh.NewOption(label, value)
 	}
 
 	return []huh.Field{

@@ -1193,3 +1193,34 @@ func TestAskPromptsNothingToAsk(t *testing.T) {
 	then.Nil(t, err)
 	then.Equals(t, "body from flag", changes[0].Body)
 }
+
+func TestAskPromptsProjectWithoutKey(t *testing.T) {
+	reader, writer := then.WithReadWritePipe(t)
+	then.DelayWrite(
+		t, writer,
+		keyDown,
+		[]byte{32},
+		[]byte{13},
+		[]byte("body stuff"),
+		[]byte{13},
+	)
+
+	config := &Config{
+		Projects: []ProjectConfig{
+			{Label: "Client", Key: "client"},
+			{Label: "Frontend"},
+		},
+	}
+	prompts := &Prompts{
+		Config:      config,
+		StdinReader: reader,
+		TimeNow:     specificTimeNow,
+		Enabled:     true,
+	}
+
+	changes, err := prompts.BuildChanges()
+	then.Nil(t, err)
+	then.SliceLen(t, 1, changes)
+	// projects without a key are saved with an empty project, as before
+	then.Equals(t, "", changes[0].Project)
+}
