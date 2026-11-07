@@ -156,3 +156,53 @@ func TestFormNoComponents(t *testing.T) {
 
 	then.SliceLen(t, 0, p.componentFields())
 }
+
+func TestFormKind(t *testing.T) {
+	p := &Prompts{
+		Config: &Config{
+			Kinds: []KindConfig{
+				{Label: "Added", Key: "added"},
+				{Label: "Removed"},
+			},
+		},
+	}
+	d := newFormDriver(t, p.newForm())
+
+	then.Contains(t, "Kind", d.view())
+	then.Contains(t, "Added", d.view())
+
+	d.down()
+	d.enter()
+
+	then.True(t, d.completed())
+	// kinds without a key use the label
+	then.Equals(t, "Removed", p.Kind)
+}
+
+func TestFormSelectedKindFollowsCursor(t *testing.T) {
+	p := &Prompts{
+		Config: &Config{
+			Kinds: []KindConfig{
+				{Label: "Added", Key: "added"},
+				{Label: "Removed", Key: "removed", SkipBody: true},
+			},
+		},
+	}
+	d := newFormDriver(t, p.newForm())
+
+	then.Equals(t, "added", p.selectedKind().Key)
+
+	d.down()
+	then.False(t, d.completed())
+	then.Equals(t, "removed", p.selectedKind().Key)
+	then.True(t, p.selectedKind().SkipBody)
+}
+
+func TestFormNoKinds(t *testing.T) {
+	p := &Prompts{
+		Config: &Config{},
+	}
+
+	then.SliceLen(t, 0, p.kindFields())
+	then.Equals(t, nil, p.selectedKind())
+}

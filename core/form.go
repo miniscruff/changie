@@ -16,6 +16,7 @@ func (p *Prompts) newForm() *huh.Form {
 
 	fields = append(fields, p.projectFields()...)
 	fields = append(fields, p.componentFields()...)
+	fields = append(fields, p.kindFields()...)
 
 	return huh.NewForm(huh.NewGroup(fields...))
 }
@@ -60,4 +61,33 @@ func (p *Prompts) componentFields() []huh.Field {
 			Height(min(len(p.Config.Components)+1, maxOptionsHeight)).
 			Value(&p.Component),
 	}
+}
+
+func (p *Prompts) kindFields() []huh.Field {
+	if len(p.Config.Kinds) == 0 {
+		return nil
+	}
+
+	options := make([]huh.Option[string], len(p.Config.Kinds))
+	for i := range p.Config.Kinds {
+		kc := &p.Config.Kinds[i]
+		options[i] = huh.NewOption(kc.Label, kc.KeyOrLabel())
+	}
+
+	return []huh.Field{
+		huh.NewSelect[string]().
+			Key("kind").
+			Title("Kind").
+			Options(options...).
+			Height(min(len(options)+1, maxOptionsHeight)).
+			Value(&p.Kind),
+	}
+}
+
+// selectedKind returns the config of the currently selected kind, or nil if
+// kinds are not configured. The kind field updates the selection as the
+// cursor moves, so fields depending on the kind can use this to hide
+// themselves while the form is running.
+func (p *Prompts) selectedKind() *KindConfig {
+	return p.Config.KindFromKeyOrLabel(p.Kind)
 }
