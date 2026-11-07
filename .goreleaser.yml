@@ -30,14 +30,6 @@ nfpms:
     formats:
     - deb
     - rpm
-brews:
-  - repository:
-      owner: miniscruff
-      name: changie
-    homepage: https://changie.dev
-    description: Automated changelog tool for preparing releases with lots of customization options.
-    license: MIT
-    skip_upload: auto
 scoops:
   - repository:
       owner: miniscruff
@@ -65,21 +57,21 @@ winget:
           owner: microsoft
           name: winget-pkgs
           branch: master
-dockers:
-  - goos: linux
-    goarch: amd64
-    image_templates:
-      - "ghcr.io/miniscruff/changie:v{{ .Major }}"
-      - "ghcr.io/miniscruff/changie:v{{ .Major }}.{{ .Minor }}"
-      - "ghcr.io/miniscruff/changie:v{{ .Major }}.{{ .Minor }}.{{ .Patch }}"
-      - "ghcr.io/miniscruff/changie:latest"
-    build_flag_templates:
-    - "--pull"
-    - "--label=org.opencontainers.image.created={{.Date}}"
-    - "--label=org.opencontainers.image.title={{.ProjectName}}"
-    - "--label=org.opencontainers.image.revision={{.FullCommit}}"
-    - "--label=org.opencontainers.image.version={{.Version}}"
-    - "--platform=linux/amd64"
+dockers_v2:
+  - images:
+      - "ghcr.io/miniscruff/changie"
+    tags:
+      - "v{{ .Major }}"
+      - "v{{ .Major }}.{{ .Minor }}"
+      - "v{{ .Major }}.{{ .Minor }}.{{ .Patch }}"
+      - "latest"
+    labels:
+      org.opencontainers.image.created: "{{ .Date }}"
+      org.opencontainers.image.title: "{{ .ProjectName }}"
+      org.opencontainers.image.revision: "{{ .FullCommit }}"
+      org.opencontainers.image.version: "{{ .Version }}"
+    platforms:
+      - linux/amd64
 checksum:
   name_template: 'checksums.txt'
 signs:
