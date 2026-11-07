@@ -133,6 +133,11 @@ func (d *formDriver) enter() {
 	d.press(tea.KeyEnter)
 }
 
+func (d *formDriver) down() {
+	d.t.Helper()
+	d.press(tea.KeyDown)
+}
+
 func (d *formDriver) next() {
 	d.t.Helper()
 	d.press(tea.KeyTab)
