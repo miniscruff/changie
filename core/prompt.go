@@ -37,6 +37,9 @@ type Prompts struct {
 
 	// Enabled checks to make sure our terminal supports prompts
 	Enabled bool
+	// LegacyPrompts asks for missing values using the cqroot prompts, one at
+	// a time, instead of the huh form.
+	LegacyPrompts bool
 
 	// Values can be submitted from the environment or shell arguments.
 	Projects  []string
@@ -61,19 +64,12 @@ func (p *Prompts) BuildChanges() ([]*Change, error) {
 		return nil, err
 	}
 
-	p.bodyProvided = len(p.Body) > 0
-
-	if p.Enabled {
-		err = p.runForm()
+	if p.LegacyPrompts {
+		err = p.askWithCqroot()
 	} else {
-		err = p.requireProvided()
+		err = p.askWithHuh()
 	}
 
-	if err != nil {
-		return nil, err
-	}
-
-	err = p.resolveValues()
 	if err != nil {
 		return nil, err
 	}
@@ -186,6 +182,26 @@ func (p *Prompts) validateArguments() error {
 	}
 
 	return nil
+}
+
+// askWithHuh asks for every missing value in a single huh form, returning an
+// error for missing values when prompts are disabled.
+func (p *Prompts) askWithHuh() error {
+	p.bodyProvided = len(p.Body) > 0
+
+	var err error
+
+	if p.Enabled {
+		err = p.runForm()
+	} else {
+		err = p.requireProvided()
+	}
+
+	if err != nil {
+		return err
+	}
+
+	return p.resolveValues()
 }
 
 // requireProvided returns an error if any value we would prompt for was not

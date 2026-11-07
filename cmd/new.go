@@ -11,6 +11,9 @@ import (
 	"github.com/miniscruff/changie/core"
 )
 
+// legacyPromptsEnvVar opts out of the huh form, using the cqroot prompts.
+const legacyPromptsEnvVar = "CHANGIE_LEGACY_PROMPTS"
+
 type New struct {
 	*cobra.Command
 
@@ -54,6 +57,9 @@ Example: "CHANGIE_CUSTOM_Author=miniscruff"
 
 1. CI env var is true
 2. --interactive=false
+
+Set CHANGIE_LEGACY_PROMPTS=true to use the previous prompts, which ask
+one value at a time. These will be removed in a future release.
 `,
 		Args: cobra.NoArgs,
 		RunE: n.Run,
@@ -145,6 +151,7 @@ func (n *New) Run(cmd *cobra.Command, args []string) error {
 		Customs:          customValues,
 		EditorCmdBuilder: core.BuildCommand,
 		Enabled:          n.parsePromptEnabled(),
+		LegacyPrompts:    strings.ToLower(os.Getenv(legacyPromptsEnvVar)) == "true",
 	}
 
 	changes, err := prompts.BuildChanges()
