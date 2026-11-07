@@ -2,8 +2,10 @@ package core
 
 import (
 	"slices"
+	"strings"
 
 	"charm.land/huh/v2"
+	"github.com/charmbracelet/x/ansi"
 )
 
 // maxOptionsHeight limits how tall select fields grow so long option lists,
@@ -36,7 +38,9 @@ func (p *Prompts) newForm() (*huh.Form, error) {
 		return nil, nil
 	}
 
-	return huh.NewForm(huh.NewGroup(fields...)), nil
+	group := huh.NewGroup(fields...)
+
+	return huh.NewForm(group).WithLayout(compactLayout{group: group}), nil
 }
 
 func (p *Prompts) projectFields() []huh.Field {
@@ -241,4 +245,39 @@ func (p *Prompts) formCustoms() map[string]string {
 	}
 
 	return customs
+}
+
+// compactLayout shows our single group like huh's default layout but removes
+// repeated blank lines. huh separates every field with a blank line, so a
+// hidden field, which renders nothing, would otherwise leave a larger gap.
+type compactLayout struct {
+	group *huh.Group
+}
+
+func (l compactLayout) View(*huh.Form) string {
+	return collapseBlankLines(l.group.View())
+}
+
+func (compactLayout) GroupWidth(_ *huh.Form, _ *huh.Group, width int) int {
+	return width
+}
+
+// collapseBlankLines replaces runs of blank lines with a single blank line.
+// Lines containing only whitespace and styling count as blank.
+func collapseBlankLines(view string) string {
+	lines := strings.Split(view, "\n")
+	kept := make([]string, 0, len(lines))
+	previousBlank := false
+
+	for _, line := range lines {
+		blank := strings.TrimSpace(ansi.Strip(line)) == ""
+		if blank && previousBlank {
+			continue
+		}
+
+		kept = append(kept, line)
+		previousBlank = blank
+	}
+
+	return strings.Join(kept, "\n")
 }

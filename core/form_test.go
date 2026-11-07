@@ -667,3 +667,46 @@ func TestFormGrowsWhenKindShowsMoreFields(t *testing.T) {
 	// the kind is still shown above the new fields
 	then.Contains(t, "Dependencies", view)
 }
+
+func TestFormHiddenFieldLeavesSingleGap(t *testing.T) {
+	p := &Prompts{
+		Config: &Config{
+			Kinds: []KindConfig{
+				{Label: "Added", Key: "added"},
+				{Label: "Dependencies", Key: "deps", SkipBody: true},
+			},
+			CustomChoices: []Custom{
+				{Key: "Issue", Type: CustomInt},
+			},
+		},
+	}
+	d := newPromptsDriver(t, p)
+
+	d.down()
+
+	then.False(t, strings.Contains(d.view(), "Body"))
+	then.Contains(t, "Issue", d.view())
+	then.Equals(t, 1, maxBlankLines(d.view()))
+}
+
+// maxBlankLines returns the longest run of blank lines in view.
+func maxBlankLines(view string) int {
+	longest, run := 0, 0
+
+	for line := range strings.SplitSeq(view, "\n") {
+		if strings.TrimSpace(line) == "" {
+			run++
+			longest = max(longest, run)
+		} else {
+			run = 0
+		}
+	}
+
+	return longest
+}
+
+func TestCollapseBlankLines(t *testing.T) {
+	view := "a\n\n  \n\x1b[0m\nb\n\nc\n\n"
+
+	then.Equals(t, "a\n\nb\n\nc\n", collapseBlankLines(view))
+}
