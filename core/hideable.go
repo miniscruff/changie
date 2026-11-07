@@ -51,3 +51,10 @@ func (h *hideableField) Update(msg tea.Msg) (huh.Model, tea.Cmd) {
 
 	return h, cmd
 }
+
+// fieldVisible returns whether field is currently shown.
+func fieldVisible(field huh.Field) bool {
+	h, ok := field.(*hideableField)
+
+	return !ok || !h.hide()
+}

@@ -459,3 +459,102 @@ func TestFormCustomsInvalidType(t *testing.T) {
 	_, err := p.newForm()
 	then.Err(t, errInvalidPromptType, err)
 }
+
+func TestFormSkipsProvidedValues(t *testing.T) {
+	config := &Config{
+		Projects: []ProjectConfig{
+			{Label: "Client", Key: "client"},
+		},
+		Components: []string{"cli", "tests"},
+		Kinds: []KindConfig{
+			{Label: "Added", Key: "added"},
+		},
+		CustomChoices: []Custom{
+			{Key: "Issue", Type: CustomInt},
+			{Key: "Author", Type: CustomString},
+		},
+	}
+
+	p := &Prompts{
+		Config:    config,
+		Projects:  []string{"client"},
+		Component: "cli",
+		Kind:      "added",
+		Body:      "body from flag",
+		Customs:   map[string]string{"Issue": "15"},
+	}
+
+	then.SliceLen(t, 0, p.projectFields())
+	then.SliceLen(t, 0, p.componentFields())
+	then.SliceLen(t, 0, p.kindFields())
+	then.SliceLen(t, 0, p.bodyFields())
+
+	d := newPromptsDriver(t, p)
+
+	// only the custom value not provided is asked
+	then.Equals(t, "Author", d.focused())
+
+	d.typeText("miniscruff")
+	d.enter()
+
+	then.True(t, d.completed())
+	then.MapEquals(t, map[string]string{"Author": "miniscruff"}, p.formCustoms())
+}
+
+func TestFormProvidedKindHidesFields(t *testing.T) {
+	p := &Prompts{
+		Config: &Config{
+			Kinds: []KindConfig{
+				{Label: "Added", Key: "added"},
+				{
+					Label:             "Dependencies",
+					Key:               "deps",
+					SkipBody:          true,
+					SkipGlobalChoices: true,
+					AdditionalChoices: []Custom{{Key: "Package", Type: CustomString}},
+				},
+			},
+			CustomChoices: []Custom{
+				{Key: "Issue", Type: CustomInt},
+			},
+		},
+		Kind: "deps",
+	}
+	d := newPromptsDriver(t, p)
+
+	then.Equals(t, "Package", d.focused())
+	then.False(t, strings.Contains(d.view(), "Body"))
+	then.False(t, strings.Contains(d.view(), "Issue"))
+
+	d.typeText("huh")
+	d.enter()
+
+	then.True(t, d.completed())
+	then.MapEquals(t, map[string]string{"Package": "huh"}, p.formCustoms())
+}
+
+func TestFormNothingToAsk(t *testing.T) {
+	p := &Prompts{
+		Config: &Config{},
+		Body:   "body from flag",
+	}
+
+	form, err := p.newForm()
+	then.Nil(t, err)
+	then.Equals(t, nil, form)
+}
+
+func TestFormNothingVisibleToAsk(t *testing.T) {
+	p := &Prompts{
+		Config: &Config{
+			Kinds: []KindConfig{
+				{Label: "Dependencies", Key: "deps", SkipBody: true},
+			},
+		},
+		Kind: "deps",
+	}
+
+	form, err := p.newForm()
+	then.Nil(t, err)
+	then.Equals(t, nil, form)
+}

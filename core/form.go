@@ -1,6 +1,8 @@
 package core
 
 import (
+	"slices"
+
 	"charm.land/huh/v2"
 )
 
@@ -8,7 +10,9 @@ import (
 // such as hundreds of projects, scroll instead of overflowing the terminal.
 const maxOptionsHeight = 12
 
-// newForm builds a single huh form asking for every configured value.
+// newForm builds a single huh form asking for every configured value that
+// was not already provided by flags or environment variables.
+// If there is nothing to ask the form is nil.
 // All fields are kept in one group so previous answers stay visible and
 // shift+tab can be used to go back.
 func (p *Prompts) newForm() (*huh.Form, error) {
@@ -26,11 +30,17 @@ func (p *Prompts) newForm() (*huh.Form, error) {
 
 	fields = append(fields, customFields...)
 
+	// huh panics on an empty group and never completes if every field is
+	// hidden, which can happen when the kind is provided
+	if !slices.ContainsFunc(fields, fieldVisible) {
+		return nil, nil
+	}
+
 	return huh.NewForm(huh.NewGroup(fields...)), nil
 }
 
 func (p *Prompts) projectFields() []huh.Field {
-	if len(p.Config.Projects) == 0 {
+	if len(p.Config.Projects) == 0 || len(p.Projects) > 0 {
 		return nil
 	}
 
@@ -57,7 +67,7 @@ func (p *Prompts) projectFields() []huh.Field {
 }
 
 func (p *Prompts) componentFields() []huh.Field {
-	if len(p.Config.Components) == 0 {
+	if len(p.Config.Components) == 0 || len(p.Component) > 0 {
 		return nil
 	}
 
@@ -72,7 +82,7 @@ func (p *Prompts) componentFields() []huh.Field {
 }
 
 func (p *Prompts) kindFields() []huh.Field {
-	if len(p.Config.Kinds) == 0 {
+	if len(p.Config.Kinds) == 0 || len(p.Kind) > 0 {
 		return nil
 	}
 
@@ -93,7 +103,8 @@ func (p *Prompts) kindFields() []huh.Field {
 }
 
 // selectedKind returns the config of the currently selected kind, or nil if
-// kinds are not configured. The kind field updates the selection as the
+// kinds are not configured. This is either the kind provided by flag or the
+// kind under the cursor. The kind field updates the selection as the
 // cursor moves, so fields depending on the kind can use this to hide
 // themselves while the form is running.
 func (p *Prompts) selectedKind() *KindConfig {
@@ -101,6 +112,10 @@ func (p *Prompts) selectedKind() *KindConfig {
 }
 
 func (p *Prompts) bodyFields() []huh.Field {
+	if len(p.Body) > 0 {
+		return nil
+	}
+
 	// the body is written with the external editor after the form instead
 	if p.BodyEditor {
 		return nil
@@ -155,6 +170,10 @@ func (p *Prompts) customFields() ([]huh.Field, error) {
 	p.customAnswers = nil
 
 	for _, custom := range p.Config.CustomChoices {
+		if p.customProvided(custom) {
+			continue
+		}
+
 		p.customAnswers = append(p.customAnswers, &formCustom{
 			custom: custom,
 			hidden: p.skipsGlobalChoices,
@@ -170,6 +189,10 @@ func (p *Prompts) customFields() ([]huh.Field, error) {
 		}
 
 		for _, custom := range p.Config.Kinds[i].AdditionalChoices {
+			if p.customProvided(custom) {
+				continue
+			}
+
 			p.customAnswers = append(p.customAnswers, &formCustom{
 				custom: custom,
 				hidden: notSelected,
@@ -189,6 +212,11 @@ func (p *Prompts) customFields() ([]huh.Field, error) {
 	}
 
 	return fields, nil
+}
+
+// customProvided returns whether the custom value was provided by flag.
+func (p *Prompts) customProvided(custom Custom) bool {
+	return p.Customs[custom.Key] != ""
 }
 
 // skipsGlobalChoices returns whether the selected kind skips global choices.
