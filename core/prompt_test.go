@@ -210,10 +210,15 @@ func TestAskPromptsForBodyWithProjectErrBadInput(t *testing.T) {
 	then.NotNil(t, err)
 }
 
-func TestAskPromptsForBodyWithProjectErrNoProject(t *testing.T) {
+func TestAskPromptsProjectRequiredBeforeContinuing(t *testing.T) {
 	reader, writer := then.WithReadWritePipe(t)
 	then.DelayWrite(
 		t, writer,
+		// enter without a project shows an error and stays on projects
+		[]byte{13},
+		[]byte{32},
+		[]byte{13},
+		[]byte("body stuff"),
 		[]byte{13},
 	)
 
@@ -230,8 +235,10 @@ func TestAskPromptsForBodyWithProjectErrNoProject(t *testing.T) {
 		Enabled:     true,
 	}
 
-	_, err := prompts.BuildChanges()
-	then.Err(t, errProjectRequired, err)
+	changes, err := prompts.BuildChanges()
+	then.Nil(t, err)
+	then.SliceLen(t, 1, changes)
+	then.Equals(t, "client", changes[0].Project)
 }
 
 func TestAskComponentKindBody(t *testing.T) {
@@ -491,11 +498,14 @@ func TestBodyAndPostProcessSkipGlobalPost(t *testing.T) {
 	then.Equals(t, "", c.Custom["GlobalPost"])
 }
 
-func TestErrorInvalidBody(t *testing.T) {
+func TestAskPromptsInvalidBodyBeforeContinuing(t *testing.T) {
 	reader, writer := then.WithReadWritePipe(t)
 	then.DelayWrite(
 		t, writer,
+		// too short shows an error and stays on the body
 		[]byte("abc"),
+		[]byte{13},
+		[]byte("de"),
 		[]byte{13},
 	)
 
@@ -514,8 +524,9 @@ func TestErrorInvalidBody(t *testing.T) {
 		Enabled:     true,
 	}
 
-	_, err := prompts.BuildChanges()
-	then.Err(t, errInputTooShort, err)
+	changes, err := prompts.BuildChanges()
+	then.Nil(t, err)
+	then.Equals(t, "abcde", changes[0].Body)
 }
 
 func TestErrorInvalidPost(t *testing.T) {
@@ -1091,4 +1102,94 @@ func TestRequireProvided(t *testing.T) {
 
 		then.Err(t, errCustomMissingPromptDisabled, p.requireProvided())
 	})
+}
+
+var (
+	keyDown     = []byte("\x1b[B")
+	keyShiftTab = []byte("\x1b[Z")
+)
+
+func TestAskPromptsGoBackAndChangeKind(t *testing.T) {
+	reader, writer := then.WithReadWritePipe(t)
+	then.DelayWrite(
+		t, writer,
+		// pick added, type a body, then go back and pick dependencies
+		[]byte{13},
+		[]byte("body for added"),
+		keyShiftTab,
+		keyDown,
+		[]byte{13},
+		[]byte("huh"),
+		[]byte{13},
+	)
+
+	config := &Config{
+		Kinds: []KindConfig{
+			{Label: "Added", Key: "added"},
+			{
+				Label:             "Dependencies",
+				Key:               "deps",
+				SkipBody:          true,
+				AdditionalChoices: []Custom{{Key: "Package", Type: CustomString}},
+			},
+		},
+	}
+	prompts := &Prompts{
+		Config:      config,
+		StdinReader: reader,
+		TimeNow:     specificTimeNow,
+		Enabled:     true,
+	}
+
+	changes, err := prompts.BuildChanges()
+	then.Nil(t, err)
+
+	then.SliceLen(t, 1, changes)
+	c := changes[0]
+	then.Equals(t, "deps", c.Kind)
+	// the body typed for added is not used as dependencies skips the body
+	then.Equals(t, "", c.Body)
+	then.MapEquals(t, map[string]string{"Package": "huh"}, c.Custom)
+}
+
+func TestAskPromptsKeepsProvidedCustoms(t *testing.T) {
+	reader, writer := then.WithReadWritePipe(t)
+	then.DelayWrite(
+		t, writer,
+		[]byte("body stuff"),
+		[]byte{13},
+		[]byte("miniscruff"),
+		[]byte{13},
+	)
+
+	config := &Config{
+		CustomChoices: []Custom{
+			{Key: "Issue", Type: CustomInt},
+			{Key: "Author", Type: CustomString},
+		},
+	}
+	prompts := &Prompts{
+		Config:      config,
+		StdinReader: reader,
+		TimeNow:     specificTimeNow,
+		Enabled:     true,
+		Customs:     map[string]string{"Issue": "15"},
+	}
+
+	changes, err := prompts.BuildChanges()
+	then.Nil(t, err)
+	then.MapEquals(t, map[string]string{"Issue": "15", "Author": "miniscruff"}, changes[0].Custom)
+}
+
+func TestAskPromptsNothingToAsk(t *testing.T) {
+	prompts := &Prompts{
+		Config:  &Config{},
+		TimeNow: specificTimeNow,
+		Enabled: true,
+		Body:    "body from flag",
+	}
+
+	changes, err := prompts.BuildChanges()
+	then.Nil(t, err)
+	then.Equals(t, "body from flag", changes[0].Body)
 }

@@ -4,13 +4,9 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"maps"
 	"runtime"
 	"slices"
-
-	"github.com/cqroot/prompt"
-	"github.com/cqroot/prompt/multichoose"
-
-	tea "github.com/charmbracelet/bubbletea"
 )
 
 var (
@@ -51,6 +47,8 @@ type Prompts struct {
 
 	// customAnswers are the custom choices asked in the form.
 	customAnswers []*formCustom
+	// bodyProvided is whether the body was provided before the form ran.
+	bodyProvided bool
 }
 
 // BuildChanges will ask the user prompts based on the configuration
@@ -63,34 +61,19 @@ func (p *Prompts) BuildChanges() ([]*Change, error) {
 		return nil, err
 	}
 
-	if !p.Enabled {
+	p.bodyProvided = len(p.Body) > 0
+
+	if p.Enabled {
+		err = p.runForm()
+	} else {
 		err = p.requireProvided()
-		if err != nil {
-			return nil, err
-		}
 	}
 
-	err = p.projects()
 	if err != nil {
 		return nil, err
 	}
 
-	err = p.component()
-	if err != nil {
-		return nil, err
-	}
-
-	err = p.kind()
-	if err != nil {
-		return nil, err
-	}
-
-	err = p.body()
-	if err != nil {
-		return nil, err
-	}
-
-	err = p.userChoices()
+	err = p.resolveValues()
 	if err != nil {
 		return nil, err
 	}
@@ -148,6 +131,17 @@ func (p *Prompts) validateArguments() error {
 
 	if len(p.Config.Kinds) == 0 && len(p.Kind) > 0 {
 		return errKindProvidedWhenNotConfigured
+	}
+
+	for _, proj := range p.Projects {
+		_, err := p.Config.Project(proj)
+		if err != nil {
+			return fmt.Errorf("%w: %s", err, proj)
+		}
+	}
+
+	if len(p.Component) > 0 && !slices.Contains(p.Config.Components, p.Component) {
+		return fmt.Errorf("%w: %s", errInvalidComponent, p.Component)
 	}
 
 	configuredCustoms := make([]Custom, 0)
@@ -235,209 +229,81 @@ func (p *Prompts) requireProvided() error {
 	return nil
 }
 
-func (p *Prompts) projects() error {
-	if len(p.Config.Projects) == 0 {
+// runForm asks for any missing values using a huh form.
+func (p *Prompts) runForm() error {
+	form, err := p.newForm()
+	if err != nil {
+		return err
+	}
+
+	if form == nil {
 		return nil
 	}
 
-	if len(p.Projects) == 0 {
-		if !p.Enabled {
-			return errProjectMissingPromptDisabled
-		}
-
-		var err error
-
-		projs, err := prompt.New().Ask("Projects").
-			MultiChoose(
-				p.Config.ProjectLabels(),
-				multichoose.WithHelp(true),
-				multichoose.WithTeaProgramOpts(tea.WithInput(p.StdinReader)),
-			)
-		if err != nil {
-			return err
-		}
-
-		if len(projs) == 0 {
-			return errProjectRequired
-		}
-
-		p.Projects = projs
+	err = form.WithInput(p.StdinReader).Run()
+	if err != nil {
+		return err
 	}
 
-	// Quickly validate the project exists and lines up before moving on.
-	for _, proj := range p.Projects {
-		_, err := p.Config.Project(proj)
-		if err != nil {
-			return fmt.Errorf("%w: %s", err, proj)
-		}
+	// a body typed before switching to a kind without a body is not used
+	if p.skipsBody() && !p.bodyProvided {
+		p.Body = ""
 	}
 
-	return nil
-}
-
-func (p *Prompts) component() error {
-	if len(p.Config.Components) == 0 {
-		return nil
-	}
-
-	if len(p.Component) == 0 {
-		if !p.Enabled {
-			return errComponentMissingPromptDisabled
-		}
-
-		var err error
-
-		comp, err := Custom{
-			Type:        CustomEnum,
-			Label:       "Component",
-			EnumOptions: p.Config.Components,
-		}.AskPrompt(p.StdinReader)
-		if err != nil {
-			return err
-		}
-
-		p.Component = comp
-	}
-
-	if !slices.Contains(p.Config.Components, p.Component) {
-		return fmt.Errorf("%w: %s", errInvalidComponent, p.Component)
-	}
-
-	return nil
-}
-
-func (p *Prompts) kind() error {
-	if len(p.Config.Kinds) == 0 {
-		return nil
-	}
-
-	if len(p.Kind) == 0 {
-		if !p.Enabled {
-			return errKindMissingPromptDisabled
-		}
-
-		kindLabels := make([]string, len(p.Config.Kinds))
-		for i, kc := range p.Config.Kinds {
-			kindLabels[i] = kc.Label
-		}
-
-		kind, err := Custom{
-			Type:        CustomEnum,
-			Label:       "Kind",
-			EnumOptions: kindLabels,
-		}.AskPrompt(p.StdinReader)
-		if err != nil {
-			return err
-		}
-
-		p.Kind = kind
-	}
-
-	for i := range p.Config.Kinds {
-		kindConfig := &p.Config.Kinds[i]
-
-		if kindConfig.Label == p.Kind || kindConfig.Key == p.Kind {
-			p.KindConfig = kindConfig
-			p.Kind = kindConfig.KeyOrLabel()
-
-			return nil
-		}
-	}
-
-	return fmt.Errorf("%w: %s", errInvalidKind, p.Kind)
-}
-
-func (p *Prompts) body() error {
-	if p.expectsNoBody() && len(p.Body) > 0 {
-		return fmt.Errorf("%w: %s", errKindDoesNotAcceptBody, p.Kind)
-	}
-
-	if p.expectsBody() && len(p.Body) == 0 {
-		if !p.Enabled {
-			return errBodyMissingPromptDisabled
-		}
-
-		if p.BodyEditor {
-			file, err := createTempFile(runtime.GOOS, p.Config.VersionExt)
-			if err != nil {
-				return err
-			}
-
-			runner, err := p.EditorCmdBuilder(file)
-			if err != nil {
-				return err
-			}
-
-			p.Body, err = getBodyTextWithEditor(runner, file)
-
-			return err
-		} else {
-			bodyCustom := p.Config.Body.CreateCustom()
-
-			body, err := bodyCustom.AskPrompt(p.StdinReader)
-			if err != nil {
-				return err
-			}
-
-			p.Body = body
-
-			return err
-		}
-	}
-
-	if p.expectsBody() && len(p.Body) > 0 {
-		return p.Config.Body.Validate(p.Body)
-	}
-
-	return nil
-}
-
-func (p *Prompts) expectsNoBody() bool {
-	return p.KindConfig != nil && p.KindConfig.SkipBody
-}
-
-func (p *Prompts) expectsBody() bool {
-	return p.KindConfig == nil || !p.KindConfig.SkipBody
-}
-
-func (p *Prompts) userChoices() error {
-	userChoices := make([]Custom, 0)
-
-	if p.KindConfig == nil || !p.KindConfig.SkipGlobalChoices {
-		userChoices = append(userChoices, p.Config.CustomChoices...)
-	}
-
-	if p.KindConfig != nil {
-		userChoices = append(userChoices, p.KindConfig.AdditionalChoices...)
-	}
-
-	// custom map may be nil, which is fine if we have no choices
-	// otherwise we need to initialize it
-	if len(userChoices) > 0 && p.Customs == nil {
+	answers := p.formCustoms()
+	if len(answers) > 0 && p.Customs == nil {
 		p.Customs = make(map[string]string)
 	}
 
-	for _, custom := range userChoices {
-		// skip already provided values
-		if p.Customs[custom.Key] != "" {
-			continue
-		}
-
-		if !p.Enabled {
-			if custom.Optional {
-				continue
-			}
-
-			return fmt.Errorf("%w: custom key '%s'", errCustomMissingPromptDisabled, custom.Key)
-		}
-
-		var err error
-
-		p.Customs[custom.Key], err = custom.AskPrompt(p.StdinReader)
-		if err != nil {
-			return err
-		}
-	}
+	maps.Copy(p.Customs, answers)
 
 	return nil
+}
+
+// resolveValues resolves the kind config and validates the body, which may
+// still be written using an editor.
+func (p *Prompts) resolveValues() error {
+	if len(p.Config.Kinds) > 0 {
+		kc := p.selectedKind()
+		if kc == nil {
+			return fmt.Errorf("%w: %s", errInvalidKind, p.Kind)
+		}
+
+		p.KindConfig = kc
+		p.Kind = kc.KeyOrLabel()
+	}
+
+	return p.resolveBody()
+}
+
+func (p *Prompts) resolveBody() error {
+	if p.skipsBody() {
+		if len(p.Body) > 0 {
+			return fmt.Errorf("%w: %s", errKindDoesNotAcceptBody, p.Kind)
+		}
+
+		return nil
+	}
+
+	if len(p.Body) > 0 {
+		return p.Config.Body.Validate(p.Body)
+	}
+
+	if !p.Enabled || !p.BodyEditor {
+		return nil
+	}
+
+	file, err := createTempFile(runtime.GOOS, p.Config.VersionExt)
+	if err != nil {
+		return err
+	}
+
+	runner, err := p.EditorCmdBuilder(file)
+	if err != nil {
+		return err
+	}
+
+	p.Body, err = getBodyTextWithEditor(runner, file)
+
+	return err
 }
