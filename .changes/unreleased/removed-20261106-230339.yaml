@@ -1,0 +1,5 @@
+kind: removed
+body: Self-hosted Homebrew tap, use `brew install changie` from homebrew core instead
+time: 2026-11-06T23:03:39.041602532-08:00
+custom:
+    Issue: "947"

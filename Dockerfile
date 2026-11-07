@@ -1,3 +1,4 @@
 FROM scratch
+ARG TARGETPLATFORM
 ENTRYPOINT ["/changie"]
-COPY changie /
+COPY $TARGETPLATFORM/changie /
