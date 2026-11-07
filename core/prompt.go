@@ -63,6 +63,13 @@ func (p *Prompts) BuildChanges() ([]*Change, error) {
 		return nil, err
 	}
 
+	if !p.Enabled {
+		err = p.requireProvided()
+		if err != nil {
+			return nil, err
+		}
+	}
+
 	err = p.projects()
 	if err != nil {
 		return nil, err
@@ -181,6 +188,47 @@ func (p *Prompts) validateArguments() error {
 		_, ok := foundCustoms[key]
 		if !ok {
 			return fmt.Errorf("%w: %s", errCustomProvidedNotConfigured, key)
+		}
+	}
+
+	return nil
+}
+
+// requireProvided returns an error if any value we would prompt for was not
+// provided, used when prompts are disabled.
+// Optional custom values may be missing.
+func (p *Prompts) requireProvided() error {
+	if len(p.Config.Projects) > 0 && len(p.Projects) == 0 {
+		return errProjectMissingPromptDisabled
+	}
+
+	if len(p.Config.Components) > 0 && len(p.Component) == 0 {
+		return errComponentMissingPromptDisabled
+	}
+
+	if len(p.Config.Kinds) > 0 && len(p.Kind) == 0 {
+		return errKindMissingPromptDisabled
+	}
+
+	kc := p.selectedKind()
+
+	if (kc == nil || !kc.SkipBody) && len(p.Body) == 0 {
+		return errBodyMissingPromptDisabled
+	}
+
+	choices := make([]Custom, 0)
+
+	if kc == nil || !kc.SkipGlobalChoices {
+		choices = append(choices, p.Config.CustomChoices...)
+	}
+
+	if kc != nil {
+		choices = append(choices, kc.AdditionalChoices...)
+	}
+
+	for _, custom := range choices {
+		if !custom.Optional && !p.customProvided(custom) {
+			return fmt.Errorf("%w: custom key '%s'", errCustomMissingPromptDisabled, custom.Key)
 		}
 	}
 

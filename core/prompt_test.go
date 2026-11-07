@@ -1040,3 +1040,55 @@ func TestGetBodyTxtWithEditorUnableToCreateCmd(t *testing.T) {
 	_, err := prompts.BuildChanges()
 	then.NotNil(t, err)
 }
+
+func TestRequireProvided(t *testing.T) {
+	config := &Config{
+		Kinds: []KindConfig{
+			{Label: "Added", Key: "added"},
+			{
+				Label:             "Dependencies",
+				Key:               "deps",
+				SkipBody:          true,
+				SkipGlobalChoices: true,
+				AdditionalChoices: []Custom{
+					{Key: "Package", Type: CustomString},
+					{Key: "Version", Type: CustomString, Optional: true},
+				},
+			},
+		},
+		CustomChoices: []Custom{
+			{Key: "Issue", Type: CustomInt},
+			{Key: "Author", Type: CustomString, Optional: true},
+		},
+	}
+
+	t.Run("all provided", func(t *testing.T) {
+		p := &Prompts{
+			Config:  config,
+			Kind:    "added",
+			Body:    "body",
+			Customs: map[string]string{"Issue": "15"},
+		}
+
+		then.Nil(t, p.requireProvided())
+	})
+
+	t.Run("kind skips body and global choices", func(t *testing.T) {
+		p := &Prompts{
+			Config:  config,
+			Kind:    "deps",
+			Customs: map[string]string{"Package": "huh"},
+		}
+
+		then.Nil(t, p.requireProvided())
+	})
+
+	t.Run("kind additional choice missing", func(t *testing.T) {
+		p := &Prompts{
+			Config: config,
+			Kind:   "deps",
+		}
+
+		then.Err(t, errCustomMissingPromptDisabled, p.requireProvided())
+	})
+}
