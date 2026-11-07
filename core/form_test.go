@@ -5,6 +5,8 @@ import (
 	"strings"
 	"testing"
 
+	tea "charm.land/bubbletea/v2"
+
 	"github.com/miniscruff/changie/then"
 )
 
@@ -32,7 +34,7 @@ func TestFormProjects(t *testing.T) {
 	d.press(' ')
 	d.enter()
 
-	then.True(t, d.completed())
+	then.Equals(t, "body", d.focused())
 	then.SliceEquals(t, []string{"client", "shared"}, p.Projects)
 }
 
@@ -48,7 +50,7 @@ func TestFormProjectsRequired(t *testing.T) {
 
 	d.enter()
 
-	then.False(t, d.completed())
+	then.Equals(t, "projects", d.focused())
 	then.Contains(t, errProjectRequired.Error(), d.view())
 }
 
@@ -74,7 +76,7 @@ func TestFormProjectsFilter(t *testing.T) {
 	d.press(' ')
 	d.enter()
 
-	then.True(t, d.completed())
+	then.Equals(t, "body", d.focused())
 	then.SliceEquals(t, []string{"project-099"}, p.Projects)
 }
 
@@ -100,7 +102,7 @@ func TestFormComponent(t *testing.T) {
 	d.down()
 	d.enter()
 
-	then.True(t, d.completed())
+	then.Equals(t, "body", d.focused())
 	then.Equals(t, "tests", p.Component)
 }
 
@@ -122,9 +124,7 @@ func TestFormComponentFilter(t *testing.T) {
 	d.press('/')
 	d.typeText("49")
 	d.enter() // accept the filter
-	d.enter()
 
-	then.True(t, d.completed())
 	then.Equals(t, "component-49", p.Component)
 }
 
@@ -174,7 +174,7 @@ func TestFormKind(t *testing.T) {
 	d.down()
 	d.enter()
 
-	then.True(t, d.completed())
+	then.Equals(t, "body", d.focused())
 	// kinds without a key use the label
 	then.Equals(t, "Removed", p.Kind)
 }
@@ -205,4 +205,107 @@ func TestFormNoKinds(t *testing.T) {
 
 	then.SliceLen(t, 0, p.kindFields())
 	then.Equals(t, nil, p.selectedKind())
+}
+
+func TestFormBody(t *testing.T) {
+	p := &Prompts{
+		Config: &Config{},
+	}
+	d := newFormDriver(t, p.newForm())
+
+	then.Contains(t, "Body", d.view())
+
+	d.typeText("body stuff")
+	d.enter()
+
+	then.True(t, d.completed())
+	then.Equals(t, "body stuff", p.Body)
+}
+
+func TestFormBodyBlock(t *testing.T) {
+	p := &Prompts{
+		Config: &Config{
+			Body: BodyConfig{UseBlock: true},
+		},
+	}
+	d := newFormDriver(t, p.newForm())
+
+	d.typeText("first line")
+	d.send(tea.KeyPressMsg{Code: tea.KeyEnter, Mod: tea.ModAlt}) // new line
+	d.typeText("second line")
+	d.enter()
+
+	then.True(t, d.completed())
+	then.Equals(t, "first line\nsecond line", p.Body)
+}
+
+func TestFormBodyLength(t *testing.T) {
+	minLength := int64(5)
+	p := &Prompts{
+		Config: &Config{
+			Body: BodyConfig{MinLength: &minLength},
+		},
+	}
+	d := newFormDriver(t, p.newForm())
+
+	d.typeText("abc")
+	d.enter()
+
+	then.False(t, d.completed())
+	then.Contains(t, errInputTooShort.Error(), d.view())
+
+	d.typeText("de")
+	d.enter()
+
+	then.True(t, d.completed())
+	then.Equals(t, "abcde", p.Body)
+}
+
+func TestFormBodyHiddenBySkipBody(t *testing.T) {
+	p := &Prompts{
+		Config: &Config{
+			Kinds: []KindConfig{
+				{Label: "Added", Key: "added"},
+				{Label: "Dependencies", Key: "deps", SkipBody: true},
+			},
+		},
+	}
+	d := newFormDriver(t, p.newForm())
+
+	then.Contains(t, "Body", d.view())
+
+	d.down()
+	then.False(t, strings.Contains(d.view(), "Body"))
+
+	// enter on the kind is the last visible field so it submits the form
+	d.enter()
+	then.True(t, d.completed())
+}
+
+func TestFormBodyShownForKindWithBody(t *testing.T) {
+	p := &Prompts{
+		Config: &Config{
+			Kinds: []KindConfig{
+				{Label: "Dependencies", Key: "deps", SkipBody: true},
+				{Label: "Added", Key: "added"},
+			},
+		},
+	}
+	d := newFormDriver(t, p.newForm())
+
+	d.down()
+	d.next()
+	then.Equals(t, "body", d.focused())
+
+	d.prev()
+	then.Equals(t, "kind", d.focused())
+}
+
+func TestFormBodyWithEditor(t *testing.T) {
+	p := &Prompts{
+		Config:     &Config{},
+		BodyEditor: true,
+	}
+
+	then.SliceLen(t, 0, p.bodyFields())
 }

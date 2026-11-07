@@ -17,6 +17,7 @@ func (p *Prompts) newForm() *huh.Form {
 	fields = append(fields, p.projectFields()...)
 	fields = append(fields, p.componentFields()...)
 	fields = append(fields, p.kindFields()...)
+	fields = append(fields, p.bodyFields()...)
 
 	return huh.NewForm(huh.NewGroup(fields...))
 }
@@ -90,4 +91,44 @@ func (p *Prompts) kindFields() []huh.Field {
 // themselves while the form is running.
 func (p *Prompts) selectedKind() *KindConfig {
 	return p.Config.KindFromKeyOrLabel(p.Kind)
+}
+
+func (p *Prompts) bodyFields() []huh.Field {
+	// the body is written with the external editor after the form instead
+	if p.BodyEditor {
+		return nil
+	}
+
+	custom := p.Config.Body.CreateCustom()
+
+	var field huh.Field
+
+	if p.Config.Body.UseBlock {
+		text := huh.NewText().
+			Key("body").
+			Title(custom.DisplayLabel()).
+			Validate(custom.validateString).
+			Value(&p.Body)
+
+		if p.Config.VersionExt != "" {
+			text.EditorExtension(p.Config.VersionExt)
+		}
+
+		field = text
+	} else {
+		field = huh.NewInput().
+			Key("body").
+			Title(custom.DisplayLabel()).
+			Validate(custom.validateString).
+			Value(&p.Body)
+	}
+
+	return []huh.Field{hideWhen(field, p.skipsBody)}
+}
+
+// skipsBody returns whether the selected kind does not accept a body.
+func (p *Prompts) skipsBody() bool {
+	kc := p.selectedKind()
+
+	return kc != nil && kc.SkipBody
 }
