@@ -9,22 +9,22 @@ import (
 	"github.com/miniscruff/changie/then"
 )
 
-// hideTestForm builds a form of three inputs where the middle one is hidden
-// whenever hidden is true.
-func hideTestForm(hidden *bool) *huh.Form {
+// conditionalTestForm builds a form of three inputs where the middle one is
+// only shown while shown is true.
+func conditionalTestForm(shown *bool) *huh.Form {
 	return huh.NewForm(huh.NewGroup(
 		huh.NewInput().Key("first").Title("First Title"),
-		hideWhen(
+		showWhen(
 			huh.NewInput().Key("middle").Title("Middle Title"),
-			func() bool { return *hidden },
+			func() bool { return *shown },
 		),
 		huh.NewInput().Key("last").Title("Last Title"),
 	))
 }
 
-func TestHideableFieldShownWhenNotHidden(t *testing.T) {
-	hidden := false
-	d := newFormDriver(t, hideTestForm(&hidden))
+func TestConditionalFieldShown(t *testing.T) {
+	shown := true
+	d := newFormDriver(t, conditionalTestForm(&shown))
 
 	then.Contains(t, "Middle Title", d.view())
 
@@ -38,9 +38,9 @@ func TestHideableFieldShownWhenNotHidden(t *testing.T) {
 	then.Equals(t, "middle", d.focused())
 }
 
-func TestHideableFieldSkippedWhenHidden(t *testing.T) {
-	hidden := true
-	d := newFormDriver(t, hideTestForm(&hidden))
+func TestConditionalFieldSkippedWhenNotShown(t *testing.T) {
+	shown := false
+	d := newFormDriver(t, conditionalTestForm(&shown))
 
 	then.False(t, strings.Contains(d.view(), "Middle Title"))
 
@@ -51,30 +51,30 @@ func TestHideableFieldSkippedWhenHidden(t *testing.T) {
 	then.Equals(t, "first", d.focused())
 }
 
-func TestHideableFieldUpdatesWithOtherValues(t *testing.T) {
-	hidden := true
-	d := newFormDriver(t, hideTestForm(&hidden))
+func TestConditionalFieldUpdatesWithOtherValues(t *testing.T) {
+	shown := false
+	d := newFormDriver(t, conditionalTestForm(&shown))
 
 	then.False(t, strings.Contains(d.view(), "Middle Title"))
 
-	// in a real form the hide value changes as the result of a key press,
+	// in a real form the show value changes as the result of a key press,
 	// such as selecting a kind, so we toggle it before the next key
-	hidden = false
+	shown = true
 
 	d.next()
 	then.Equals(t, "middle", d.focused())
 	then.Contains(t, "Middle Title", d.view())
 }
 
-func TestHideableFieldKeepsValue(t *testing.T) {
+func TestConditionalFieldKeepsValue(t *testing.T) {
 	var value string
 
-	hidden := false
+	shown := true
 	form := huh.NewForm(huh.NewGroup(
 		huh.NewInput().Key("first"),
-		hideWhen(
+		showWhen(
 			huh.NewInput().Key("middle").Value(&value),
-			func() bool { return hidden },
+			func() bool { return shown },
 		),
 	))
 	d := newFormDriver(t, form)
@@ -86,9 +86,9 @@ func TestHideableFieldKeepsValue(t *testing.T) {
 	then.Contains(t, "abc", d.view())
 }
 
-func TestHideableFieldCompletesForm(t *testing.T) {
-	hidden := true
-	d := newFormDriver(t, hideTestForm(&hidden))
+func TestConditionalFieldCompletesForm(t *testing.T) {
+	shown := false
+	d := newFormDriver(t, conditionalTestForm(&shown))
 
 	d.next()
 	then.False(t, d.completed())

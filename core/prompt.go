@@ -255,7 +255,7 @@ func (p *Prompts) runForm() error {
 func (p *Prompts) applyFormAnswers() {
 	if !p.bodyProvided {
 		// a body typed before switching to a kind without a body is not used
-		if p.skipsBody() {
+		if !p.acceptsBody() {
 			p.Body = ""
 		}
 
@@ -288,7 +288,7 @@ func (p *Prompts) resolveValues() error {
 }
 
 func (p *Prompts) resolveBody() error {
-	if p.skipsBody() {
+	if !p.acceptsBody() {
 		if len(p.Body) > 0 {
 			return fmt.Errorf("%w: %s", errKindDoesNotAcceptBody, p.Kind)
 		}

@@ -163,14 +163,14 @@ func (p *Prompts) bodyFields() []huh.Field {
 			Value(&p.Body)
 	}
 
-	return []huh.Field{hideWhen(field, p.skipsBody)}
+	return []huh.Field{showWhen(field, p.acceptsBody)}
 }
 
-// skipsBody returns whether the selected kind does not accept a body.
-func (p *Prompts) skipsBody() bool {
+// acceptsBody returns whether the selected kind accepts a body.
+func (p *Prompts) acceptsBody() bool {
 	kc := p.selectedKind()
 
-	return kc != nil && kc.SkipBody
+	return kc == nil || !kc.SkipBody
 }
 
 // formCustom is a custom choice asked in the form along with its answer.
@@ -178,7 +178,7 @@ func (p *Prompts) skipsBody() bool {
 type formCustom struct {
 	custom Custom
 	value  string
-	hidden func() bool
+	shown  func() bool
 }
 
 // customFields creates fields for the global custom choices, hidden when the
@@ -194,16 +194,16 @@ func (p *Prompts) customFields() ([]huh.Field, error) {
 
 		p.customAnswers = append(p.customAnswers, &formCustom{
 			custom: custom,
-			hidden: p.skipsGlobalChoices,
+			shown:  p.asksGlobalChoices,
 		})
 	}
 
 	for i := range p.Config.Kinds {
 		kindKey := p.Config.Kinds[i].KeyOrLabel()
-		notSelected := func() bool {
+		kindSelected := func() bool {
 			kc := p.selectedKind()
 
-			return kc == nil || kc.KeyOrLabel() != kindKey
+			return kc != nil && kc.KeyOrLabel() == kindKey
 		}
 
 		for _, custom := range p.Config.Kinds[i].AdditionalChoices {
@@ -213,7 +213,7 @@ func (p *Prompts) customFields() ([]huh.Field, error) {
 
 			p.customAnswers = append(p.customAnswers, &formCustom{
 				custom: custom,
-				hidden: notSelected,
+				shown:  kindSelected,
 			})
 		}
 	}
@@ -226,7 +226,7 @@ func (p *Prompts) customFields() ([]huh.Field, error) {
 			return nil, err
 		}
 
-		fields[i] = hideWhen(field, answer.hidden)
+		fields[i] = showWhen(field, answer.shown)
 	}
 
 	return fields, nil
@@ -237,11 +237,11 @@ func (p *Prompts) customProvided(custom Custom) bool {
 	return p.Customs[custom.Key] != ""
 }
 
-// skipsGlobalChoices returns whether the selected kind skips global choices.
-func (p *Prompts) skipsGlobalChoices() bool {
+// asksGlobalChoices returns whether the selected kind asks global choices.
+func (p *Prompts) asksGlobalChoices() bool {
 	kc := p.selectedKind()
 
-	return kc != nil && kc.SkipGlobalChoices
+	return kc == nil || !kc.SkipGlobalChoices
 }
 
 // formCustoms returns the custom values answered in the form, ignoring
@@ -250,7 +250,7 @@ func (p *Prompts) formCustoms() map[string]string {
 	customs := make(map[string]string)
 
 	for _, answer := range p.customAnswers {
-		if answer.hidden() {
+		if !answer.shown() {
 			continue
 		}
 

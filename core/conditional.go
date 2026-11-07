@@ -8,7 +8,7 @@ import (
 	tea "charm.land/bubbletea/v2"
 )
 
-// hideableField wraps a huh field so it can be hidden based on the answers
+// conditionalField wraps a huh field so it is only shown based on the answers
 // to other fields, such as only asking for a body when the selected kind
 // accepts one.
 //
@@ -23,56 +23,56 @@ import (
 // This relies on huh's group calling Skip and View on the fields it stores and
 // storing the model returned by Update, so the tests for this type also act as
 // a check that a huh upgrade has not changed that behavior.
-type hideableField struct {
+type conditionalField struct {
 	huh.Field
-	hide func() bool
+	show func() bool
 }
 
-// hideWhen wraps field so that it is hidden whenever hide returns true.
-// hide is called on every navigation and render so it should be cheap.
-func hideWhen(field huh.Field, hide func() bool) huh.Field {
-	return &hideableField{
+// showWhen wraps field so that it is only shown while show returns true.
+// show is called on every navigation and render so it should be cheap.
+func showWhen(field huh.Field, show func() bool) huh.Field {
+	return &conditionalField{
 		Field: field,
-		hide:  hide,
+		show:  show,
 	}
 }
 
-func (h *hideableField) Skip() bool {
-	return h.hide() || h.Field.Skip()
+func (c *conditionalField) Skip() bool {
+	return !c.show() || c.Field.Skip()
 }
 
-func (h *hideableField) View() string {
-	if h.hide() {
+func (c *conditionalField) View() string {
+	if !c.show() {
 		return ""
 	}
 
-	return h.Field.View()
+	return c.Field.View()
 }
 
-func (h *hideableField) Update(msg tea.Msg) (huh.Model, tea.Cmd) {
-	model, cmd := h.Field.Update(msg)
-	h.Field = model.(huh.Field)
+func (c *conditionalField) Update(msg tea.Msg) (huh.Model, tea.Cmd) {
+	model, cmd := c.Field.Update(msg)
+	c.Field = model.(huh.Field)
 
-	return h, cmd
+	return c, cmd
 }
 
-func (h *hideableField) RunAccessible(w io.Writer, r io.Reader) error {
-	if h.hide() {
+func (c *conditionalField) RunAccessible(w io.Writer, r io.Reader) error {
+	if !c.show() {
 		return nil
 	}
 
-	return h.Field.RunAccessible(w, r)
+	return c.Field.RunAccessible(w, r)
 }
 
 // fieldVisible returns whether field is currently shown.
 func fieldVisible(field huh.Field) bool {
-	h, ok := field.(*hideableField)
+	c, ok := field.(*conditionalField)
 
-	return !ok || !h.hide()
+	return !ok || c.show()
 }
 
 // resizeOnChange wraps a field whose value decides which other fields are
-// hidden, such as the kind. huh sizes the form once, from the fields visible
+// shown, such as the kind. huh sizes the form once, from the fields visible
 // when the terminal size is known, so fields shown by a later change would be
 // cut off. Whenever the value changes the last terminal size is sent again so
 // huh recalculates the height for the fields now visible.
