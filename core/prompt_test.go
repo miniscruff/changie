@@ -1367,10 +1367,11 @@ func TestNewPromptsWarning(t *testing.T) {
 		prompts Prompts
 		warns   bool
 	}{
-		{name: "huh form shown", prompts: Prompts{Enabled: true}, warns: true},
-		{name: "legacy prompts", prompts: Prompts{Enabled: true, LegacyPrompts: true}},
-		{name: "prompts disabled", prompts: Prompts{Body: "from flag"}},
-		{name: "nothing to ask", prompts: Prompts{Enabled: true, Body: "from flag"}},
+		{name: "huh form shown", prompts: Prompts{Enabled: true, ShowNewPromptsWarning: true}, warns: true},
+		{name: "warning hidden", prompts: Prompts{Enabled: true}},
+		{name: "legacy prompts", prompts: Prompts{Enabled: true, LegacyPrompts: true, ShowNewPromptsWarning: true}},
+		{name: "prompts disabled", prompts: Prompts{Body: "from flag", ShowNewPromptsWarning: true}},
+		{name: "nothing to ask", prompts: Prompts{Enabled: true, Body: "from flag", ShowNewPromptsWarning: true}},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			reader, writer := then.WithReadWritePipe(t)
@@ -1378,22 +1379,20 @@ func TestNewPromptsWarning(t *testing.T) {
 				then.DelayWrite(t, writer, []byte("body stuff"), []byte{13})
 			}
 
-			var warnings bytes.Buffer
+			var output bytes.Buffer
 
 			prompts := tc.prompts
 			prompts.Config = &Config{}
 			prompts.StdinReader = reader
 			prompts.TimeNow = specificTimeNow
-			prompts.WarningWriter = &warnings
+			prompts.Output = &output
 
 			_, err := prompts.BuildChanges()
 			then.Nil(t, err)
 
-			if tc.warns {
-				then.Equals(t, newPromptsWarning+"\n", warnings.String())
-			} else {
-				then.Equals(t, "", warnings.String())
-			}
+			// the form is drawn after the warning on the same output
+			then.Equals(t, tc.warns, strings.HasPrefix(output.String(), newPromptsWarning+"\n"))
+			then.Equals(t, tc.warns, strings.Contains(output.String(), newPromptsWarning))
 		})
 	}
 }

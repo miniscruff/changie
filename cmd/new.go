@@ -154,22 +154,20 @@ func (n *New) Run(cmd *cobra.Command, args []string) error {
 	}
 
 	prompts := &core.Prompts{
-		StdinReader:      n.InOrStdin(),
-		BodyEditor:       n.BodyEditor,
-		Projects:         n.Projects,
-		Component:        n.Component,
-		Kind:             n.Kind,
-		Body:             n.Body,
-		TimeNow:          n.TimeNow,
-		Config:           config,
-		Customs:          customValues,
-		EditorCmdBuilder: core.BuildCommand,
-		Enabled:          n.parsePromptEnabled(),
-		LegacyPrompts:    legacyPrompts,
-	}
-
-	if showWarning {
-		prompts.WarningWriter = n.ErrOrStderr()
+		StdinReader:           n.InOrStdin(),
+		BodyEditor:            n.BodyEditor,
+		Projects:              n.Projects,
+		Component:             n.Component,
+		Kind:                  n.Kind,
+		Body:                  n.Body,
+		TimeNow:               n.TimeNow,
+		Config:                config,
+		Customs:               customValues,
+		EditorCmdBuilder:      core.BuildCommand,
+		Enabled:               n.parsePromptEnabled(),
+		LegacyPrompts:         legacyPrompts,
+		Output:                n.ErrOrStderr(),
+		ShowNewPromptsWarning: showWarning,
 	}
 
 	changes, err := prompts.BuildChanges()
