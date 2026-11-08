@@ -330,6 +330,44 @@ var validationSpecs = []ValidationSpecs{
 			},
 		},
 	},
+	{
+		Name: "MaxIntOnly",
+		Custom: Custom{
+			Type:   CustomInt,
+			Label:  "Int",
+			MaxInt: PtrInt64(100),
+		},
+		Specs: []ValidationSpec{
+			{
+				Name:  "TooHigh",
+				Input: "500",
+				Error: errIntTooHigh,
+			},
+			{
+				Name:  "Valid",
+				Input: "-5",
+			},
+		},
+	},
+	{
+		Name: "MinIntOnly",
+		Custom: Custom{
+			Type:   CustomInt,
+			Label:  "Int",
+			MinInt: PtrInt64(10),
+		},
+		Specs: []ValidationSpec{
+			{
+				Name:  "TooLow",
+				Input: "5",
+				Error: errIntTooLow,
+			},
+			{
+				Name:  "Valid",
+				Input: "5000",
+			},
+		},
+	},
 }
 
 func TestValidators(t *testing.T) {

@@ -356,7 +356,7 @@ func (c Custom) validateInt(input string) error {
 	}
 
 	if c.MaxInt != nil && value > *c.MaxInt {
-		return fmt.Errorf("%w: %v > %v", errIntTooHigh, value, *c.MinInt)
+		return fmt.Errorf("%w: %v > %v", errIntTooHigh, value, *c.MaxInt)
 	}
 
 	return nil
