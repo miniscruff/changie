@@ -1,0 +1,5 @@
+kind: added
+body: Invalid prompt answers show an error inline instead of exiting
+time: 2026-11-07T15:44:56.546316817-08:00
+custom:
+    Issue: "950"

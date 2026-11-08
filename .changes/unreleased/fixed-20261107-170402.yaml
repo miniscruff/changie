@@ -1,0 +1,5 @@
+kind: fixed
+body: Prompts for `changie new` are written to stderr, so they stay visible and are not included when redirecting the output of `--dry-run`
+time: 2026-11-07T17:04:02.116243067-08:00
+custom:
+    Issue: "950"

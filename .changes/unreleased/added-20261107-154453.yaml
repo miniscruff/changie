@@ -1,0 +1,5 @@
+kind: added
+body: Prompts for `changie new` ask every value in a single form, keeping earlier answers visible
+time: 2026-11-07T15:44:53.111676048-08:00
+custom:
+    Issue: "950"

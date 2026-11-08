@@ -1,0 +1,5 @@
+kind: added
+body: Accessible prompts for screen readers and basic terminals, asking one value per line when `TERM=dumb`
+time: 2026-11-07T21:11:37.650591476-08:00
+custom:
+    Issue: "950"

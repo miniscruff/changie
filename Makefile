@@ -28,8 +28,7 @@ gen: # Generate config and CLI docs
 
 .PHONY: vhs-gen
 vhs-gen: # Generate VHS recording videos
-	cd examples
-	ls *.tape | xargs -n 1 vhs
+	cd examples && ls *.tape | xargs -n 1 vhs
 
 .PHONY: docs-serve
 docs-serve: # Serve documentation locally with hot reloading

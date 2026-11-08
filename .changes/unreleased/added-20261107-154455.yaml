@@ -1,0 +1,5 @@
+kind: added
+body: Filter projects, components, kinds and enum options by typing `/`
+time: 2026-11-07T15:44:55.398698204-08:00
+custom:
+    Issue: "950"

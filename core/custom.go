@@ -8,6 +8,7 @@ import (
 	"strconv"
 	"strings"
 
+	"charm.land/huh/v2"
 	"github.com/cqroot/prompt"
 	"github.com/cqroot/prompt/choose"
 	"github.com/cqroot/prompt/constants"
@@ -42,6 +43,7 @@ var (
 	errInputTooLong        = errors.New("input length too long")
 	errInputTooShort       = errors.New("input length too short")
 	errInvalidEnum         = errors.New("invalid enum")
+	errEnumsRequired       = errors.New("at least one option is required")
 	errInvalidCustomFormat = errors.New("invalid custom format, must be \"Key=Value\"")
 	base10                 = 10
 	bit64                  = 64
@@ -221,6 +223,71 @@ func (c Custom) askEnums(stdinReader io.Reader) (string, error) {
 	}
 
 	return strings.Join(values, enumsSeparator), nil
+}
+
+// formField creates a huh field for the custom choice, storing the answer in
+// value. Multiple enum selections are stored joined, the same as AskPrompt.
+func (c Custom) formField(value *string) (huh.Field, error) {
+	switch c.Type {
+	case CustomString:
+		return huh.NewInput().
+			Key(c.Key).
+			Title(c.DisplayLabel()).
+			Validate(c.validateString).
+			Value(value), nil
+	case CustomBlock:
+		return huh.NewText().
+			Key(c.Key).
+			Title(c.DisplayLabel()).
+			Validate(validateCleaned(c.validateString)).
+			Value(value), nil
+	case CustomInt:
+		return huh.NewInput().
+			Key(c.Key).
+			Title(c.DisplayLabel()).
+			Validate(c.validateInt).
+			Value(value), nil
+	case CustomEnum:
+		return huh.NewSelect[string]().
+			Key(c.Key).
+			Title(c.DisplayLabel()).
+			Options(huh.NewOptions(c.EnumOptions...)...).
+			Height(min(len(c.EnumOptions)+1, maxOptionsHeight)).
+			Value(value), nil
+	case CustomEnums:
+		return huh.NewMultiSelect[string]().
+			Key(c.Key).
+			Title(c.DisplayLabel()).
+			Options(huh.NewOptions(c.EnumOptions...)...).
+			Height(min(len(c.EnumOptions)+1, maxOptionsHeight)).
+			Validate(func(values []string) error {
+				if len(values) == 0 && !c.Optional {
+					return errEnumsRequired
+				}
+
+				return nil
+			}).
+			Accessor(joinedAccessor{value: value}), nil
+	}
+
+	return nil, fmt.Errorf("%w: %s", errInvalidPromptType, c.Type)
+}
+
+// joinedAccessor stores multiple selected values as a single joined string.
+type joinedAccessor struct {
+	value *string
+}
+
+func (a joinedAccessor) Get() []string {
+	if *a.value == "" {
+		return []string{}
+	}
+
+	return strings.Split(*a.value, enumsSeparator)
+}
+
+func (a joinedAccessor) Set(values []string) {
+	*a.value = strings.Join(values, enumsSeparator)
 }
 
 // CreatePrompt will create a promptui select or prompt from a custom choice

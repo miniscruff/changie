@@ -4,13 +4,10 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"maps"
+	"os"
 	"runtime"
 	"slices"
-
-	"github.com/cqroot/prompt"
-	"github.com/cqroot/prompt/multichoose"
-
-	tea "github.com/charmbracelet/bubbletea"
 )
 
 var (
@@ -31,6 +28,12 @@ var (
 	errCustomMissingPromptDisabled    = errors.New("custom missing and prompt is disabled")
 )
 
+// newPromptsWarning is shown before the huh form while the legacy prompts are
+// still available, so users know how to switch back if they hit a problem.
+const newPromptsWarning = "changie is using new prompts, if you run into any issues please report them at " +
+	"https://github.com/miniscruff/changie/issues and set CHANGIE_LEGACY_PROMPTS=on to use the previous prompts, " +
+	"or CHANGIE_LEGACY_PROMPTS=off to hide this warning."
+
 type Prompts struct {
 	Config           *Config
 	StdinReader      io.Reader
@@ -41,6 +44,12 @@ type Prompts struct {
 
 	// Enabled checks to make sure our terminal supports prompts
 	Enabled bool
+	// LegacyPrompts asks for missing values using the cqroot prompts, one at
+	// a time, instead of the huh form.
+	LegacyPrompts bool
+	// ShowNewPromptsWarning writes a warning to stderr before the huh form,
+	// pointing to the legacy prompts in case of problems.
+	ShowNewPromptsWarning bool
 
 	// Values can be submitted from the environment or shell arguments.
 	Projects  []string
@@ -48,6 +57,11 @@ type Prompts struct {
 	Kind      string
 	Body      string
 	Customs   map[string]string
+
+	// customAnswers are the custom choices asked in the form.
+	customAnswers []*formCustom
+	// bodyProvided is whether the body was provided before the form ran.
+	bodyProvided bool
 }
 
 // BuildChanges will ask the user prompts based on the configuration
@@ -60,27 +74,12 @@ func (p *Prompts) BuildChanges() ([]*Change, error) {
 		return nil, err
 	}
 
-	err = p.projects()
-	if err != nil {
-		return nil, err
+	if p.LegacyPrompts {
+		err = p.askWithCqroot()
+	} else {
+		err = p.askWithHuh()
 	}
 
-	err = p.component()
-	if err != nil {
-		return nil, err
-	}
-
-	err = p.kind()
-	if err != nil {
-		return nil, err
-	}
-
-	err = p.body()
-	if err != nil {
-		return nil, err
-	}
-
-	err = p.userChoices()
 	if err != nil {
 		return nil, err
 	}
@@ -140,6 +139,17 @@ func (p *Prompts) validateArguments() error {
 		return errKindProvidedWhenNotConfigured
 	}
 
+	for _, proj := range p.Projects {
+		_, err := p.Config.Project(proj)
+		if err != nil {
+			return fmt.Errorf("%w: %s", err, proj)
+		}
+	}
+
+	if len(p.Component) > 0 && !slices.Contains(p.Config.Components, p.Component) {
+		return fmt.Errorf("%w: %s", errInvalidComponent, p.Component)
+	}
+
 	configuredCustoms := make([]Custom, 0)
 
 	if len(p.Config.Kinds) > 0 && len(p.Kind) > 0 {
@@ -184,209 +194,151 @@ func (p *Prompts) validateArguments() error {
 	return nil
 }
 
-func (p *Prompts) projects() error {
-	if len(p.Config.Projects) == 0 {
-		return nil
+// askWithHuh asks for every missing value in a single huh form, returning an
+// error for missing values when prompts are disabled.
+func (p *Prompts) askWithHuh() error {
+	p.bodyProvided = len(p.Body) > 0
+
+	var err error
+
+	if p.Enabled {
+		err = p.runForm()
+	} else {
+		err = p.requireProvided()
 	}
 
-	if len(p.Projects) == 0 {
-		if !p.Enabled {
-			return errProjectMissingPromptDisabled
-		}
-
-		var err error
-
-		projs, err := prompt.New().Ask("Projects").
-			MultiChoose(
-				p.Config.ProjectLabels(),
-				multichoose.WithHelp(true),
-				multichoose.WithTeaProgramOpts(tea.WithInput(p.StdinReader)),
-			)
-		if err != nil {
-			return err
-		}
-
-		if len(projs) == 0 {
-			return errProjectRequired
-		}
-
-		p.Projects = projs
+	if err != nil {
+		return err
 	}
 
-	// Quickly validate the project exists and lines up before moving on.
-	for _, proj := range p.Projects {
-		_, err := p.Config.Project(proj)
-		if err != nil {
-			return fmt.Errorf("%w: %s", err, proj)
+	return p.resolveValues()
+}
+
+// requireProvided returns an error if any value we would prompt for was not
+// provided, used when prompts are disabled.
+// Optional custom values may be missing.
+func (p *Prompts) requireProvided() error {
+	if len(p.Config.Projects) > 0 && len(p.Projects) == 0 {
+		return errProjectMissingPromptDisabled
+	}
+
+	if len(p.Config.Components) > 0 && len(p.Component) == 0 {
+		return errComponentMissingPromptDisabled
+	}
+
+	if len(p.Config.Kinds) > 0 && len(p.Kind) == 0 {
+		return errKindMissingPromptDisabled
+	}
+
+	kc := p.selectedKind()
+
+	if (kc == nil || !kc.SkipBody) && len(p.Body) == 0 {
+		return errBodyMissingPromptDisabled
+	}
+
+	choices := make([]Custom, 0)
+
+	if kc == nil || !kc.SkipGlobalChoices {
+		choices = append(choices, p.Config.CustomChoices...)
+	}
+
+	if kc != nil {
+		choices = append(choices, kc.AdditionalChoices...)
+	}
+
+	for _, custom := range choices {
+		if !custom.Optional && !p.customProvided(custom) {
+			return fmt.Errorf("%w: custom key '%s'", errCustomMissingPromptDisabled, custom.Key)
 		}
 	}
 
 	return nil
 }
 
-func (p *Prompts) component() error {
-	if len(p.Config.Components) == 0 {
+// runForm asks for any missing values using a huh form.
+func (p *Prompts) runForm() error {
+	form, err := p.newForm()
+	if err != nil {
+		return err
+	}
+
+	if form == nil {
 		return nil
 	}
 
-	if len(p.Component) == 0 {
-		if !p.Enabled {
-			return errComponentMissingPromptDisabled
-		}
-
-		var err error
-
-		comp, err := Custom{
-			Type:        CustomEnum,
-			Label:       "Component",
-			EnumOptions: p.Config.Components,
-		}.AskPrompt(p.StdinReader)
-		if err != nil {
-			return err
-		}
-
-		p.Component = comp
+	if p.ShowNewPromptsWarning {
+		_, _ = fmt.Fprintln(os.Stderr, newPromptsWarning)
 	}
 
-	if !slices.Contains(p.Config.Components, p.Component) {
-		return fmt.Errorf("%w: %s", errInvalidComponent, p.Component)
+	err = form.WithInput(formInput(p.StdinReader)).Run()
+	if err != nil {
+		return err
 	}
+
+	p.applyFormAnswers()
 
 	return nil
 }
 
-func (p *Prompts) kind() error {
-	if len(p.Config.Kinds) == 0 {
-		return nil
-	}
-
-	if len(p.Kind) == 0 {
-		if !p.Enabled {
-			return errKindMissingPromptDisabled
+// applyFormAnswers tidies the values answered in the form and adds the
+// custom answers to the provided custom values.
+func (p *Prompts) applyFormAnswers() {
+	if !p.bodyProvided {
+		// a body typed before switching to a kind without a body is not used
+		if !p.acceptsBody() {
+			p.Body = ""
 		}
 
-		kindLabels := make([]string, len(p.Config.Kinds))
-		for i, kc := range p.Config.Kinds {
-			kindLabels[i] = kc.Label
-		}
-
-		kind, err := Custom{
-			Type:        CustomEnum,
-			Label:       "Kind",
-			EnumOptions: kindLabels,
-		}.AskPrompt(p.StdinReader)
-		if err != nil {
-			return err
-		}
-
-		p.Kind = kind
+		// block bodies may have been written with an editor using ctrl+e
+		p.Body = cleanText(p.Body)
 	}
 
-	for i := range p.Config.Kinds {
-		kindConfig := &p.Config.Kinds[i]
-
-		if kindConfig.Label == p.Kind || kindConfig.Key == p.Kind {
-			p.KindConfig = kindConfig
-			p.Kind = kindConfig.KeyOrLabel()
-
-			return nil
-		}
-	}
-
-	return fmt.Errorf("%w: %s", errInvalidKind, p.Kind)
-}
-
-func (p *Prompts) body() error {
-	if p.expectsNoBody() && len(p.Body) > 0 {
-		return fmt.Errorf("%w: %s", errKindDoesNotAcceptBody, p.Kind)
-	}
-
-	if p.expectsBody() && len(p.Body) == 0 {
-		if !p.Enabled {
-			return errBodyMissingPromptDisabled
-		}
-
-		if p.BodyEditor {
-			file, err := createTempFile(runtime.GOOS, p.Config.VersionExt)
-			if err != nil {
-				return err
-			}
-
-			runner, err := p.EditorCmdBuilder(file)
-			if err != nil {
-				return err
-			}
-
-			p.Body, err = getBodyTextWithEditor(runner, file)
-
-			return err
-		} else {
-			bodyCustom := p.Config.Body.CreateCustom()
-
-			body, err := bodyCustom.AskPrompt(p.StdinReader)
-			if err != nil {
-				return err
-			}
-
-			p.Body = body
-
-			return err
-		}
-	}
-
-	if p.expectsBody() && len(p.Body) > 0 {
-		return p.Config.Body.Validate(p.Body)
-	}
-
-	return nil
-}
-
-func (p *Prompts) expectsNoBody() bool {
-	return p.KindConfig != nil && p.KindConfig.SkipBody
-}
-
-func (p *Prompts) expectsBody() bool {
-	return p.KindConfig == nil || !p.KindConfig.SkipBody
-}
-
-func (p *Prompts) userChoices() error {
-	userChoices := make([]Custom, 0)
-
-	if p.KindConfig == nil || !p.KindConfig.SkipGlobalChoices {
-		userChoices = append(userChoices, p.Config.CustomChoices...)
-	}
-
-	if p.KindConfig != nil {
-		userChoices = append(userChoices, p.KindConfig.AdditionalChoices...)
-	}
-
-	// custom map may be nil, which is fine if we have no choices
-	// otherwise we need to initialize it
-	if len(userChoices) > 0 && p.Customs == nil {
+	answers := p.formCustoms()
+	if len(answers) > 0 && p.Customs == nil {
 		p.Customs = make(map[string]string)
 	}
 
-	for _, custom := range userChoices {
-		// skip already provided values
-		if p.Customs[custom.Key] != "" {
-			continue
+	maps.Copy(p.Customs, answers)
+}
+
+// resolveValues resolves the kind config and validates the body, which may
+// still be written using an editor.
+func (p *Prompts) resolveValues() error {
+	// the kind is always configured here, as provided kinds are validated
+	// and the form only offers configured kinds
+	p.KindConfig = p.selectedKind()
+
+	return p.resolveBody()
+}
+
+func (p *Prompts) resolveBody() error {
+	if !p.acceptsBody() {
+		if len(p.Body) > 0 {
+			return fmt.Errorf("%w: %s", errKindDoesNotAcceptBody, p.Kind)
 		}
 
-		if !p.Enabled {
-			if custom.Optional {
-				continue
-			}
-
-			return fmt.Errorf("%w: custom key '%s'", errCustomMissingPromptDisabled, custom.Key)
-		}
-
-		var err error
-
-		p.Customs[custom.Key], err = custom.AskPrompt(p.StdinReader)
-		if err != nil {
-			return err
-		}
+		return nil
 	}
 
-	return nil
+	if len(p.Body) > 0 {
+		return p.Config.Body.Validate(p.Body)
+	}
+
+	if !p.Enabled || !p.BodyEditor {
+		return nil
+	}
+
+	file, err := createTempFile(runtime.GOOS, p.Config.VersionExt)
+	if err != nil {
+		return err
+	}
+
+	runner, err := p.EditorCmdBuilder(file)
+	if err != nil {
+		return err
+	}
+
+	p.Body, err = getBodyTextWithEditor(runner, file)
+
+	return err
 }
