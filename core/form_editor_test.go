@@ -18,13 +18,10 @@ func TestAskPromptsBodyWithCtrlE(t *testing.T) {
 		t.Skip("uses a shell script as the editor")
 	}
 
-	// the editor records the file it was given and writes the body to it
-	dir := t.TempDir()
-	editedPath := filepath.Join(dir, "edited")
-	editor := filepath.Join(dir, "editor.sh")
-	script := "#!/bin/sh\nprintf '%s' \"$1\" > " + editedPath + "\nprintf 'from the editor\\n' > \"$1\"\n"
-	then.Nil(t, os.WriteFile(editor, []byte(script), 0o700))
-	t.Setenv("EDITOR", editor)
+	// the editor writes the path of the file it was given as the body
+	script := filepath.Join(t.TempDir(), "editor.sh")
+	then.Nil(t, os.WriteFile(script, []byte("printf '%s\\n' \"$1\" > \"$1\"\n"), 0o600))
+	t.Setenv("EDITOR", "sh "+script)
 
 	reader, writer := then.WithReadWritePipe(t)
 	then.DelayWrite(
@@ -35,7 +32,7 @@ func TestAskPromptsBodyWithCtrlE(t *testing.T) {
 
 	prompts := &Prompts{
 		Config: &Config{
-			VersionExt: "md",
+			VersionExt: "rst",
 			Body:       BodyConfig{UseBlock: true},
 		},
 		StdinReader: reader,
@@ -45,9 +42,8 @@ func TestAskPromptsBodyWithCtrlE(t *testing.T) {
 
 	changes, err := prompts.BuildChanges()
 	then.Nil(t, err)
-	then.Equals(t, "from the editor", changes[0].Body)
 
-	edited, err := os.ReadFile(editedPath)
-	then.Nil(t, err)
-	then.Equals(t, ".md", filepath.Ext(string(edited)))
+	// the body is the trimmed editor text, the temp file using our extension
+	then.Equals(t, ".rst", filepath.Ext(changes[0].Body))
+	then.True(t, filepath.IsAbs(changes[0].Body))
 }
