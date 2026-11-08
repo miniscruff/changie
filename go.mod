@@ -9,6 +9,7 @@ require (
 	github.com/Masterminds/sprig/v3 v3.3.0
 	github.com/charmbracelet/bubbletea v0.24.2
 	github.com/charmbracelet/x/ansi v0.11.6
+	github.com/charmbracelet/x/term v0.2.2
 	github.com/cqroot/prompt v0.9.4
 	github.com/invopop/jsonschema v0.14.0
 	github.com/kballard/go-shellquote v0.0.0-20180428030007-95032a82bc51
@@ -32,7 +33,6 @@ require (
 	github.com/charmbracelet/ultraviolet v0.0.0-20260205113103-524a6607adb8 // indirect
 	github.com/charmbracelet/x/exp/ordered v0.1.0 // indirect
 	github.com/charmbracelet/x/exp/strings v0.0.0-20240722160745-212f7b056ed0 // indirect
-	github.com/charmbracelet/x/term v0.2.2 // indirect
 	github.com/charmbracelet/x/termios v0.1.1 // indirect
 	github.com/charmbracelet/x/windows v0.2.2 // indirect
 	github.com/clipperhouse/displaywidth v0.11.0 // indirect

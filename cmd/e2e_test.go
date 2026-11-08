@@ -39,10 +39,15 @@ func testInit(t *testing.T, cmd *cobra.Command) {
 	then.FileExists(t, ".changie.yaml")
 }
 
-func testNew(t *testing.T, cmd *cobra.Command, w io.Writer, body string) {
+func testNew(t *testing.T, cmd *cobra.Command, body string) {
+	// each new gets its own input, as reading piped input for the prompts
+	// can not be canceled once the prompts are done
+	reader, writer := then.WithReadWritePipe(t)
+	cmd.SetIn(reader)
+
 	cmd.SetArgs([]string{"new"})
 	then.DelayWrite(
-		t, w,
+		t, writer,
 		[]byte("j"),
 		[]byte{13},
 		[]byte(body),
@@ -88,14 +93,14 @@ func TestFullRun(t *testing.T) {
 	cmd := RootCmd()
 
 	then.WithTempDir(t)
-	inReader, inWriter, outReader, outWriter := then.WithStdInOut(t)
+	inReader, _, outReader, outWriter := then.WithStdInOut(t)
 	swapInReaderOutWriter(t, cmd, inReader, outWriter)
 
 	testInit(t, cmd)
 	testEcho(t, cmd, outReader, []string{"latest"}, "0.0.0")
-	testNew(t, cmd, inWriter, "older")
+	testNew(t, cmd, "older")
 	time.Sleep(2 * time.Second) // let time pass for the next change
-	testNew(t, cmd, inWriter, "newer")
+	testNew(t, cmd, "newer")
 	testBatch(t, cmd)
 	testEcho(t, cmd, outReader, []string{"latest"}, "0.1.0")
 	testEcho(t, cmd, outReader, []string{"next", "major"}, "1.0.0")

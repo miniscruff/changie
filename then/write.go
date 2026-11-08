@@ -8,8 +8,6 @@ import (
 	"time"
 )
 
-const delayTimeMS = 50
-
 // DelayWrite will wait a few milliseconds between writing
 // some data in a separate goroutine, this is used when
 // we are prompting the user for input and need to write responses.
