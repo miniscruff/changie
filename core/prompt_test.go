@@ -1357,3 +1357,40 @@ func TestErrorInvalidBody(t *testing.T) {
 	_, err := prompts.BuildChanges()
 	then.Err(t, errInputTooShort, err)
 }
+
+func TestNewPromptsWarning(t *testing.T) {
+	for _, tc := range []struct {
+		name    string
+		prompts Prompts
+		warns   bool
+	}{
+		{name: "huh form shown", prompts: Prompts{Enabled: true}, warns: true},
+		{name: "legacy prompts", prompts: Prompts{Enabled: true, LegacyPrompts: true}},
+		{name: "prompts disabled", prompts: Prompts{Body: "from flag"}},
+		{name: "nothing to ask", prompts: Prompts{Enabled: true, Body: "from flag"}},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			reader, writer := then.WithReadWritePipe(t)
+			if tc.prompts.Enabled && tc.prompts.Body == "" {
+				then.DelayWrite(t, writer, []byte("body stuff"), []byte{13})
+			}
+
+			var warnings bytes.Buffer
+
+			prompts := tc.prompts
+			prompts.Config = &Config{}
+			prompts.StdinReader = reader
+			prompts.TimeNow = specificTimeNow
+			prompts.WarningWriter = &warnings
+
+			_, err := prompts.BuildChanges()
+			then.Nil(t, err)
+
+			if tc.warns {
+				then.Equals(t, newPromptsWarning+"\n", warnings.String())
+			} else {
+				then.Equals(t, "", warnings.String())
+			}
+		})
+	}
+}

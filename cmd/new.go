@@ -51,13 +51,15 @@ Each version is merged together for the overall project changelog.
 Prompts are disabled and this command will fail if any values
 are not defined or valid and if any of the following are true:
 
+1. CI env var is true
+2. --interactive=false
+
 Custom prompt values can also be passed in via an environment variable.
 Use the following format: "${env var prefix}_CUSTOM_${custom key}=value".
 Example: "CHANGIE_CUSTOM_Author=miniscruff"
 
-1. CI env var is true
-2. --interactive=false
-
+Prompts ask for every missing value in a single form,
+use shift+tab to go back to a previous prompt.
 Set CHANGIE_LEGACY_PROMPTS=true to use the previous prompts, which ask
 one value at a time. These will be removed in a future release.
 `,
@@ -152,6 +154,7 @@ func (n *New) Run(cmd *cobra.Command, args []string) error {
 		EditorCmdBuilder: core.BuildCommand,
 		Enabled:          n.parsePromptEnabled(),
 		LegacyPrompts:    strings.ToLower(os.Getenv(legacyPromptsEnvVar)) == "true",
+		WarningWriter:    n.ErrOrStderr(),
 	}
 
 	changes, err := prompts.BuildChanges()

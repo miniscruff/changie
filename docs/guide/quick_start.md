@@ -21,6 +21,10 @@ to generate your change file.
 changie new
 ```
 
+The prompts ask for every value in a single form, use shift+tab to go back to a previous prompt.
+If you run into any issues please [report them](https://github.com/miniscruff/changie/issues)
+and set `CHANGIE_LEGACY_PROMPTS=true` to use the previous prompts until they are fixed.
+
 When it is time to prepare your next release, batch all unreleased changes into one using the batch command.
 
 ```sh

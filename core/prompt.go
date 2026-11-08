@@ -27,6 +27,11 @@ var (
 	errCustomMissingPromptDisabled    = errors.New("custom missing and prompt is disabled")
 )
 
+// newPromptsWarning is shown before the huh form while the legacy prompts are
+// still available, so users know how to switch back if they hit a problem.
+const newPromptsWarning = "changie is using new prompts, if you run into any issues please report them at " +
+	"https://github.com/miniscruff/changie/issues and set CHANGIE_LEGACY_PROMPTS=true to use the previous prompts."
+
 type Prompts struct {
 	Config           *Config
 	StdinReader      io.Reader
@@ -40,6 +45,9 @@ type Prompts struct {
 	// LegacyPrompts asks for missing values using the cqroot prompts, one at
 	// a time, instead of the huh form.
 	LegacyPrompts bool
+	// WarningWriter, if set, is where the new prompts warning is written
+	// before the huh form is shown.
+	WarningWriter io.Writer
 
 	// Values can be submitted from the environment or shell arguments.
 	Projects  []string
@@ -254,6 +262,10 @@ func (p *Prompts) runForm() error {
 
 	if form == nil {
 		return nil
+	}
+
+	if p.WarningWriter != nil {
+		_, _ = fmt.Fprintln(p.WarningWriter, newPromptsWarning)
 	}
 
 	err = form.WithInput(p.StdinReader).Run()
