@@ -2,6 +2,8 @@ package core
 
 import (
 	"bytes"
+	"io"
+	"os"
 	"strings"
 	"testing"
 	"time"
@@ -1380,6 +1382,46 @@ func TestErrorInvalidBody(t *testing.T) {
 	then.Err(t, errInputTooShort, err)
 }
 
+// captureStderr redirects stderr until the returned func is called, which
+// returns everything written to it.
+func captureStderr(t *testing.T) func() string {
+	t.Helper()
+
+	reader, writer, err := os.Pipe()
+	then.Nil(t, err)
+
+	original := os.Stderr
+	os.Stderr = writer
+
+	var captured bytes.Buffer
+
+	done := make(chan struct{})
+
+	go func() {
+		_, _ = io.Copy(&captured, reader)
+
+		close(done)
+	}()
+
+	restore := func() {
+		if os.Stderr == writer {
+			os.Stderr = original
+			_ = writer.Close()
+
+			<-done
+
+			_ = reader.Close()
+		}
+	}
+	t.Cleanup(restore)
+
+	return func() string {
+		restore()
+
+		return captured.String()
+	}
+}
+
 func TestNewPromptsWarning(t *testing.T) {
 	for _, tc := range []struct {
 		name    string
@@ -1398,20 +1440,20 @@ func TestNewPromptsWarning(t *testing.T) {
 				then.DelayWrite(t, writer, []byte("body stuff"), []byte{13})
 			}
 
-			var output bytes.Buffer
+			stderr := captureStderr(t)
 
 			prompts := tc.prompts
 			prompts.Config = &Config{}
 			prompts.StdinReader = reader
 			prompts.TimeNow = specificTimeNow
-			prompts.Output = &output
 
 			_, err := prompts.BuildChanges()
 			then.Nil(t, err)
 
-			// the form is drawn after the warning on the same output
-			then.Equals(t, tc.warns, strings.HasPrefix(output.String(), newPromptsWarning+"\n"))
-			then.Equals(t, tc.warns, strings.Contains(output.String(), newPromptsWarning))
+			// the form is drawn after the warning, also on stderr
+			output := stderr()
+			then.Equals(t, tc.warns, strings.HasPrefix(output, newPromptsWarning+"\n"))
+			then.Equals(t, tc.warns, strings.Contains(output, newPromptsWarning))
 		})
 	}
 }

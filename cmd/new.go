@@ -166,7 +166,6 @@ func (n *New) Run(cmd *cobra.Command, args []string) error {
 		EditorCmdBuilder:      core.BuildCommand,
 		Enabled:               n.parsePromptEnabled(),
 		LegacyPrompts:         legacyPrompts,
-		Output:                n.ErrOrStderr(),
 		ShowNewPromptsWarning: showWarning,
 	}
 

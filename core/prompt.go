@@ -47,9 +47,7 @@ type Prompts struct {
 	// LegacyPrompts asks for missing values using the cqroot prompts, one at
 	// a time, instead of the huh form.
 	LegacyPrompts bool
-	// Output is where the huh form is drawn, defaulting to stderr.
-	Output io.Writer
-	// ShowNewPromptsWarning writes a warning to Output before the huh form,
+	// ShowNewPromptsWarning writes a warning to stderr before the huh form,
 	// pointing to the legacy prompts in case of problems.
 	ShowNewPromptsWarning bool
 
@@ -268,19 +266,11 @@ func (p *Prompts) runForm() error {
 		return nil
 	}
 
-	output := p.Output
-	if output == nil {
-		output = os.Stderr
-	}
-
 	if p.ShowNewPromptsWarning {
-		_, _ = fmt.Fprintln(output, newPromptsWarning)
+		_, _ = fmt.Fprintln(os.Stderr, newPromptsWarning)
 	}
 
-	err = form.
-		WithInput(formInput(p.StdinReader)).
-		WithOutput(output).
-		Run()
+	err = form.WithInput(formInput(p.StdinReader)).Run()
 	if err != nil {
 		return err
 	}
