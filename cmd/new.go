@@ -1,6 +1,8 @@
 package cmd
 
 import (
+	"errors"
+	"fmt"
 	"io"
 	"os"
 	"path/filepath"
@@ -10,6 +12,13 @@ import (
 
 	"github.com/miniscruff/changie/core"
 )
+
+// legacyPromptsEnvVar chooses between the huh form and the cqroot prompts:
+// unset uses the huh form with a warning, "on" uses the cqroot prompts and
+// "off" uses the huh form without the warning.
+const legacyPromptsEnvVar = "CHANGIE_LEGACY_PROMPTS"
+
+var errInvalidLegacyPrompts = errors.New("invalid " + legacyPromptsEnvVar + " value, must be on or off")
 
 type New struct {
 	*cobra.Command
@@ -48,12 +57,18 @@ Each version is merged together for the overall project changelog.
 Prompts are disabled and this command will fail if any values
 are not defined or valid and if any of the following are true:
 
+1. CI env var is true
+2. --interactive=false
+
 Custom prompt values can also be passed in via an environment variable.
 Use the following format: "${env var prefix}_CUSTOM_${custom key}=value".
 Example: "CHANGIE_CUSTOM_Author=miniscruff"
 
-1. CI env var is true
-2. --interactive=false
+Prompts ask for every missing value in a single form,
+use shift+tab to go back to a previous prompt.
+Set CHANGIE_LEGACY_PROMPTS=on to use the previous prompts, which ask
+one value at a time. These will be removed in a future release.
+Set CHANGIE_LEGACY_PROMPTS=off to hide the warning about the new prompts.
 `,
 		Args: cobra.NoArgs,
 		RunE: n.Run,
@@ -133,18 +148,25 @@ func (n *New) Run(cmd *cobra.Command, args []string) error {
 		}
 	}
 
+	legacyPrompts, showWarning, err := parseLegacyPrompts()
+	if err != nil {
+		return err
+	}
+
 	prompts := &core.Prompts{
-		StdinReader:      n.InOrStdin(),
-		BodyEditor:       n.BodyEditor,
-		Projects:         n.Projects,
-		Component:        n.Component,
-		Kind:             n.Kind,
-		Body:             n.Body,
-		TimeNow:          n.TimeNow,
-		Config:           config,
-		Customs:          customValues,
-		EditorCmdBuilder: core.BuildCommand,
-		Enabled:          n.parsePromptEnabled(),
+		StdinReader:           n.InOrStdin(),
+		BodyEditor:            n.BodyEditor,
+		Projects:              n.Projects,
+		Component:             n.Component,
+		Kind:                  n.Kind,
+		Body:                  n.Body,
+		TimeNow:               n.TimeNow,
+		Config:                config,
+		Customs:               customValues,
+		EditorCmdBuilder:      core.BuildCommand,
+		Enabled:               n.parsePromptEnabled(),
+		LegacyPrompts:         legacyPrompts,
+		ShowNewPromptsWarning: showWarning,
 	}
 
 	changes, err := prompts.BuildChanges()
@@ -196,6 +218,23 @@ func (n *New) Run(cmd *cobra.Command, args []string) error {
 	}
 
 	return err
+}
+
+// parseLegacyPrompts returns whether to use the legacy prompts and whether to
+// warn about the new prompts, based on CHANGIE_LEGACY_PROMPTS.
+func parseLegacyPrompts() (legacy bool, showWarning bool, err error) {
+	value := os.Getenv(legacyPromptsEnvVar)
+
+	switch strings.ToLower(value) {
+	case "":
+		return false, true, nil
+	case "on":
+		return true, false, nil
+	case "off":
+		return false, false, nil
+	}
+
+	return false, false, fmt.Errorf("%w: %q", errInvalidLegacyPrompts, value)
 }
 
 func (n *New) parsePromptEnabled() bool {

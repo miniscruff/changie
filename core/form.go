@@ -1,0 +1,301 @@
+package core
+
+import (
+	"slices"
+	"strings"
+
+	"charm.land/huh/v2"
+	"github.com/charmbracelet/x/ansi"
+)
+
+// maxOptionsHeight limits how tall select fields grow so long option lists,
+// such as hundreds of projects, scroll instead of overflowing the terminal.
+const maxOptionsHeight = 12
+
+// newForm builds a single huh form asking for every configured value that
+// was not already provided by flags or environment variables.
+// If there is nothing to ask the form is nil.
+// All fields are kept in one group so previous answers stay visible and
+// shift+tab can be used to go back.
+func (p *Prompts) newForm() (*huh.Form, error) {
+	var fields []huh.Field
+
+	fields = append(fields, p.projectFields()...)
+	fields = append(fields, p.componentFields()...)
+	fields = append(fields, p.kindFields()...)
+	fields = append(fields, p.bodyFields()...)
+
+	customFields, err := p.customFields()
+	if err != nil {
+		return nil, err
+	}
+
+	fields = append(fields, customFields...)
+
+	// huh panics on an empty group and never completes if every field is
+	// hidden, which can happen when the kind is provided
+	if !slices.ContainsFunc(fields, fieldVisible) {
+		return nil, nil
+	}
+
+	group := huh.NewGroup(fields...)
+
+	return huh.NewForm(group).WithLayout(compactLayout{group: group}), nil
+}
+
+func (p *Prompts) projectFields() []huh.Field {
+	if len(p.Config.Projects) == 0 || len(p.Projects) > 0 {
+		return nil
+	}
+
+	options := make([]huh.Option[string], len(p.Config.Projects))
+	for i, label := range p.Config.ProjectLabels() {
+		// projects are looked up by key or label, and the key may be empty
+		value := p.Config.Projects[i].Key
+		if value == "" {
+			value = label
+		}
+
+		options[i] = huh.NewOption(label, value)
+	}
+
+	return []huh.Field{
+		huh.NewMultiSelect[string]().
+			Key("projects").
+			Title("Projects").
+			Options(options...).
+			Height(min(len(options)+1, maxOptionsHeight)).
+			Validate(func(projects []string) error {
+				if len(projects) == 0 {
+					return errProjectRequired
+				}
+
+				return nil
+			}).
+			Value(&p.Projects),
+	}
+}
+
+func (p *Prompts) componentFields() []huh.Field {
+	if len(p.Config.Components) == 0 || len(p.Component) > 0 {
+		return nil
+	}
+
+	return []huh.Field{
+		huh.NewSelect[string]().
+			Key("component").
+			Title("Component").
+			Options(huh.NewOptions(p.Config.Components...)...).
+			Height(min(len(p.Config.Components)+1, maxOptionsHeight)).
+			Value(&p.Component),
+	}
+}
+
+func (p *Prompts) kindFields() []huh.Field {
+	if len(p.Config.Kinds) == 0 || len(p.Kind) > 0 {
+		return nil
+	}
+
+	options := make([]huh.Option[string], len(p.Config.Kinds))
+	for i := range p.Config.Kinds {
+		kc := &p.Config.Kinds[i]
+
+		// kinds are looked up by key or label, and either may be empty
+		label := kc.Label
+		if label == "" {
+			label = kc.Key
+		}
+
+		options[i] = huh.NewOption(label, kc.KeyOrLabel())
+	}
+
+	kind := huh.NewSelect[string]().
+		Key("kind").
+		Title("Kind").
+		Options(options...).
+		Height(min(len(options)+1, maxOptionsHeight)).
+		Value(&p.Kind)
+
+	// the selected kind decides which fields are shown
+	return []huh.Field{resizeWhenChanged(kind)}
+}
+
+// selectedKind returns the config of the currently selected kind, or nil if
+// kinds are not configured. This is either the kind provided by flag or the
+// kind under the cursor. The kind field updates the selection as the
+// cursor moves, so fields depending on the kind can use this to hide
+// themselves while the form is running.
+func (p *Prompts) selectedKind() *KindConfig {
+	return p.Config.KindFromKeyOrLabel(p.Kind)
+}
+
+func (p *Prompts) bodyFields() []huh.Field {
+	if len(p.Body) > 0 {
+		return nil
+	}
+
+	// the body is written with the external editor after the form instead
+	if p.BodyEditor {
+		return nil
+	}
+
+	custom := p.Config.Body.CreateCustom()
+
+	var field huh.Field
+
+	if p.Config.Body.UseBlock {
+		text := huh.NewText().
+			Key("body").
+			Title(custom.DisplayLabel()).
+			Validate(validateCleaned(custom.validateString)).
+			Value(&p.Body)
+
+		if p.Config.VersionExt != "" {
+			text.EditorExtension(p.Config.VersionExt)
+		}
+
+		field = text
+	} else {
+		field = huh.NewInput().
+			Key("body").
+			Title(custom.DisplayLabel()).
+			Validate(custom.validateString).
+			Value(&p.Body)
+	}
+
+	return []huh.Field{showWhen(field, p.acceptsBody)}
+}
+
+// acceptsBody returns whether the selected kind accepts a body.
+func (p *Prompts) acceptsBody() bool {
+	kc := p.selectedKind()
+
+	return kc == nil || !kc.SkipBody
+}
+
+// formCustom is a custom choice asked in the form along with its answer.
+// Each field keeps its own answer as kinds may share custom keys.
+type formCustom struct {
+	custom Custom
+	value  string
+	shown  func() bool
+}
+
+// customFields creates fields for the global custom choices, hidden when the
+// selected kind skips them, followed by every kind's additional choices,
+// only shown while that kind is selected.
+func (p *Prompts) customFields() ([]huh.Field, error) {
+	p.customAnswers = nil
+
+	for _, custom := range p.Config.CustomChoices {
+		if p.customProvided(custom) {
+			continue
+		}
+
+		p.customAnswers = append(p.customAnswers, &formCustom{
+			custom: custom,
+			shown:  p.asksGlobalChoices,
+		})
+	}
+
+	for i := range p.Config.Kinds {
+		kindKey := p.Config.Kinds[i].KeyOrLabel()
+		kindSelected := func() bool {
+			kc := p.selectedKind()
+
+			return kc != nil && kc.KeyOrLabel() == kindKey
+		}
+
+		for _, custom := range p.Config.Kinds[i].AdditionalChoices {
+			if p.customProvided(custom) {
+				continue
+			}
+
+			p.customAnswers = append(p.customAnswers, &formCustom{
+				custom: custom,
+				shown:  kindSelected,
+			})
+		}
+	}
+
+	fields := make([]huh.Field, len(p.customAnswers))
+
+	for i, answer := range p.customAnswers {
+		field, err := answer.custom.formField(&answer.value)
+		if err != nil {
+			return nil, err
+		}
+
+		fields[i] = showWhen(field, answer.shown)
+	}
+
+	return fields, nil
+}
+
+// customProvided returns whether the custom value was provided by flag.
+func (p *Prompts) customProvided(custom Custom) bool {
+	return p.Customs[custom.Key] != ""
+}
+
+// asksGlobalChoices returns whether the selected kind asks global choices.
+func (p *Prompts) asksGlobalChoices() bool {
+	kc := p.selectedKind()
+
+	return kc == nil || !kc.SkipGlobalChoices
+}
+
+// formCustoms returns the custom values answered in the form, ignoring
+// fields hidden by the selected kind.
+func (p *Prompts) formCustoms() map[string]string {
+	customs := make(map[string]string)
+
+	for _, answer := range p.customAnswers {
+		if !answer.shown() {
+			continue
+		}
+
+		value := answer.value
+		if answer.custom.Type == CustomBlock {
+			value = cleanText(value)
+		}
+
+		customs[answer.custom.Key] = value
+	}
+
+	return customs
+}
+
+// compactLayout shows our single group like huh's default layout but removes
+// repeated blank lines. huh separates every field with a blank line, so a
+// hidden field, which renders nothing, would otherwise leave a larger gap.
+type compactLayout struct {
+	group *huh.Group
+}
+
+func (l compactLayout) View(*huh.Form) string {
+	return collapseBlankLines(l.group.View())
+}
+
+func (compactLayout) GroupWidth(_ *huh.Form, _ *huh.Group, width int) int {
+	return width
+}
+
+// collapseBlankLines replaces runs of blank lines with a single blank line.
+// Lines containing only whitespace and styling count as blank.
+func collapseBlankLines(view string) string {
+	lines := strings.Split(view, "\n")
+	kept := make([]string, 0, len(lines))
+	previousBlank := false
+
+	for _, line := range lines {
+		blank := strings.TrimSpace(ansi.Strip(line)) == ""
+		if blank && previousBlank {
+			continue
+		}
+
+		kept = append(kept, line)
+		previousBlank = blank
+	}
+
+	return strings.Join(kept, "\n")
+}

@@ -6,7 +6,10 @@ import (
 	"strings"
 	"testing"
 
+	"charm.land/huh/v2"
 	"github.com/cqroot/prompt/choose"
+
+	tea "charm.land/bubbletea/v2"
 
 	"github.com/miniscruff/changie/then"
 )
@@ -554,4 +557,160 @@ func TestThemeScrollLimitCalculation(t *testing.T) {
 	lines15 := strings.Split(strings.TrimSpace(result15), "\n")
 	// Should have 10 lines (limited by min(10, 15))
 	then.SliceLen(t, 10, lines15)
+}
+
+// runCustomField runs a form with only the custom field, driving it with input.
+func runCustomField(t *testing.T, custom Custom, input func(d *formDriver)) (*formDriver, string) {
+	t.Helper()
+
+	var value string
+
+	field, err := custom.formField(&value)
+	then.Nil(t, err)
+
+	d := newFormDriver(t, huh.NewForm(huh.NewGroup(field)))
+	input(d)
+
+	return d, value
+}
+
+func TestCustomFormFieldString(t *testing.T) {
+	custom := Custom{Key: "Author", Label: "GitHub Name", Type: CustomString}
+
+	d, value := runCustomField(t, custom, func(d *formDriver) {
+		then.Contains(t, "GitHub Name", d.view())
+		d.typeText("miniscruff")
+		d.enter()
+	})
+
+	then.True(t, d.completed())
+	then.Equals(t, "miniscruff", value)
+}
+
+func TestCustomFormFieldStringLength(t *testing.T) {
+	maxLength := int64(3)
+	custom := Custom{Key: "Short", Type: CustomString, MaxLength: &maxLength}
+
+	d, _ := runCustomField(t, custom, func(d *formDriver) {
+		d.typeText("abcd")
+		d.enter()
+	})
+
+	then.False(t, d.completed())
+	then.Contains(t, errInputTooLong.Error(), d.view())
+}
+
+func TestCustomFormFieldBlock(t *testing.T) {
+	custom := Custom{Key: "Notes", Type: CustomBlock}
+
+	d, value := runCustomField(t, custom, func(d *formDriver) {
+		d.typeText("line one")
+		d.send(tea.KeyPressMsg{Code: tea.KeyEnter, Mod: tea.ModAlt})
+		d.typeText("line two")
+		d.enter()
+	})
+
+	then.True(t, d.completed())
+	then.Equals(t, "line one\nline two", value)
+}
+
+func TestCustomFormFieldInt(t *testing.T) {
+	custom := Custom{Key: "Issue", Type: CustomInt}
+
+	d, value := runCustomField(t, custom, func(d *formDriver) {
+		d.typeText("15")
+		d.enter()
+	})
+
+	then.True(t, d.completed())
+	then.Equals(t, "15", value)
+}
+
+func TestCustomFormFieldIntInvalid(t *testing.T) {
+	minInt := int64(10)
+	custom := Custom{Key: "Issue", Type: CustomInt, MinInt: &minInt}
+
+	d, _ := runCustomField(t, custom, func(d *formDriver) {
+		d.typeText("abc")
+		d.enter()
+	})
+
+	then.False(t, d.completed())
+	then.Contains(t, errInvalidIntInput.Error(), d.view())
+
+	d, _ = runCustomField(t, custom, func(d *formDriver) {
+		d.typeText("5")
+		d.enter()
+	})
+
+	then.False(t, d.completed())
+	then.Contains(t, errIntTooLow.Error(), d.view())
+}
+
+func TestCustomFormFieldOptionalInt(t *testing.T) {
+	custom := Custom{Key: "Issue", Type: CustomInt, Optional: true}
+
+	d, value := runCustomField(t, custom, func(d *formDriver) {
+		d.enter()
+	})
+
+	then.True(t, d.completed())
+	then.Equals(t, "", value)
+}
+
+func TestCustomFormFieldEnum(t *testing.T) {
+	custom := Custom{Key: "Platform", Type: CustomEnum, EnumOptions: []string{"linux", "mac", "windows"}}
+
+	d, value := runCustomField(t, custom, func(d *formDriver) {
+		d.down()
+		d.enter()
+	})
+
+	then.True(t, d.completed())
+	then.Equals(t, "mac", value)
+}
+
+func TestCustomFormFieldEnums(t *testing.T) {
+	custom := Custom{Key: "Platforms", Type: CustomEnums, EnumOptions: []string{"linux", "mac", "windows"}}
+
+	d, value := runCustomField(t, custom, func(d *formDriver) {
+		d.press(' ')
+		d.down()
+		d.down()
+		d.press(' ')
+		d.enter()
+	})
+
+	then.True(t, d.completed())
+	then.Equals(t, "linux, windows", value)
+	then.Nil(t, custom.Validate(value))
+}
+
+func TestCustomFormFieldEnumsRequired(t *testing.T) {
+	custom := Custom{Key: "Platforms", Type: CustomEnums, EnumOptions: []string{"linux", "mac"}}
+
+	d, _ := runCustomField(t, custom, func(d *formDriver) {
+		d.enter()
+	})
+
+	then.False(t, d.completed())
+	then.Contains(t, errEnumsRequired.Error(), d.view())
+}
+
+func TestCustomFormFieldOptionalEnums(t *testing.T) {
+	custom := Custom{Key: "Platforms", Type: CustomEnums, Optional: true, EnumOptions: []string{"linux", "mac"}}
+
+	d, value := runCustomField(t, custom, func(d *formDriver) {
+		d.enter()
+	})
+
+	then.True(t, d.completed())
+	then.Equals(t, "", value)
+}
+
+func TestCustomFormFieldInvalidType(t *testing.T) {
+	var value string
+
+	_, err := Custom{Key: "Bad", Type: "bad"}.formField(&value)
+	then.Err(t, errInvalidPromptType, err)
 }

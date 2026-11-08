@@ -2,6 +2,9 @@ package core
 
 import (
 	"bytes"
+	"io"
+	"os"
+	"strings"
 	"testing"
 	"time"
 
@@ -22,10 +25,11 @@ func TestAskPromptsForBody(t *testing.T) {
 
 	config := &Config{}
 	prompts := &Prompts{
-		Config:      config,
-		StdinReader: reader,
-		TimeNow:     specificTimeNow,
-		Enabled:     true,
+		Config:        config,
+		StdinReader:   reader,
+		TimeNow:       specificTimeNow,
+		Enabled:       true,
+		LegacyPrompts: promptsLegacy,
 	}
 	changes, err := prompts.BuildChanges()
 	then.Nil(t, err)
@@ -55,10 +59,11 @@ func TestAskPromptsForBodyWithProject(t *testing.T) {
 		},
 	}
 	prompts := &Prompts{
-		Config:      config,
-		StdinReader: reader,
-		TimeNow:     specificTimeNow,
-		Enabled:     true,
+		Config:        config,
+		StdinReader:   reader,
+		TimeNow:       specificTimeNow,
+		Enabled:       true,
+		LegacyPrompts: promptsLegacy,
 	}
 
 	changes, err := prompts.BuildChanges()
@@ -84,11 +89,12 @@ func TestAskPromptsForBodyWithProjectErrBadProject(t *testing.T) {
 	}
 
 	prompts := &Prompts{
-		Config:      config,
-		StdinReader: reader,
-		TimeNow:     specificTimeNow,
-		Projects:    []string{"missing"},
-		Enabled:     true,
+		Config:        config,
+		StdinReader:   reader,
+		TimeNow:       specificTimeNow,
+		Projects:      []string{"missing"},
+		Enabled:       true,
+		LegacyPrompts: promptsLegacy,
 	}
 
 	_, err := prompts.BuildChanges()
@@ -114,10 +120,11 @@ func TestAskPromptsFailIfDisabled(t *testing.T) {
 
 	t.Run("project", func(t *testing.T) {
 		prompts := &Prompts{
-			Config:      config,
-			StdinReader: nil,
-			TimeNow:     specificTimeNow,
-			Enabled:     false,
+			Config:        config,
+			StdinReader:   nil,
+			TimeNow:       specificTimeNow,
+			Enabled:       false,
+			LegacyPrompts: promptsLegacy,
 		}
 
 		_, err := prompts.BuildChanges()
@@ -126,10 +133,11 @@ func TestAskPromptsFailIfDisabled(t *testing.T) {
 
 	t.Run("component", func(t *testing.T) {
 		prompts := &Prompts{
-			Config:      config,
-			StdinReader: nil,
-			TimeNow:     specificTimeNow,
-			Enabled:     false,
+			Config:        config,
+			StdinReader:   nil,
+			TimeNow:       specificTimeNow,
+			Enabled:       false,
+			LegacyPrompts: promptsLegacy,
 		}
 
 		prompts.Projects = []string{"other"}
@@ -139,10 +147,11 @@ func TestAskPromptsFailIfDisabled(t *testing.T) {
 
 	t.Run("kind", func(t *testing.T) {
 		prompts := &Prompts{
-			Config:      config,
-			StdinReader: nil,
-			TimeNow:     specificTimeNow,
-			Enabled:     false,
+			Config:        config,
+			StdinReader:   nil,
+			TimeNow:       specificTimeNow,
+			Enabled:       false,
+			LegacyPrompts: promptsLegacy,
 		}
 
 		prompts.Projects = []string{"other"}
@@ -154,10 +163,11 @@ func TestAskPromptsFailIfDisabled(t *testing.T) {
 
 	t.Run("body", func(t *testing.T) {
 		prompts := &Prompts{
-			Config:      config,
-			StdinReader: nil,
-			TimeNow:     specificTimeNow,
-			Enabled:     false,
+			Config:        config,
+			StdinReader:   nil,
+			TimeNow:       specificTimeNow,
+			Enabled:       false,
+			LegacyPrompts: promptsLegacy,
 		}
 
 		prompts.Projects = []string{"other"}
@@ -170,10 +180,11 @@ func TestAskPromptsFailIfDisabled(t *testing.T) {
 
 	t.Run("custom", func(t *testing.T) {
 		prompts := &Prompts{
-			Config:      config,
-			StdinReader: nil,
-			TimeNow:     specificTimeNow,
-			Enabled:     false,
+			Config:        config,
+			StdinReader:   nil,
+			TimeNow:       specificTimeNow,
+			Enabled:       false,
+			LegacyPrompts: promptsLegacy,
 		}
 
 		prompts.Projects = []string{"other"}
@@ -200,20 +211,26 @@ func TestAskPromptsForBodyWithProjectErrBadInput(t *testing.T) {
 		},
 	}
 	prompts := &Prompts{
-		Config:      config,
-		StdinReader: reader,
-		TimeNow:     specificTimeNow,
-		Enabled:     true,
+		Config:        config,
+		StdinReader:   reader,
+		TimeNow:       specificTimeNow,
+		Enabled:       true,
+		LegacyPrompts: promptsLegacy,
 	}
 
 	_, err := prompts.BuildChanges()
 	then.NotNil(t, err)
 }
 
-func TestAskPromptsForBodyWithProjectErrNoProject(t *testing.T) {
+func TestAskPromptsProjectRequiredBeforeContinuing(t *testing.T) {
 	reader, writer := then.WithReadWritePipe(t)
 	then.DelayWrite(
 		t, writer,
+		// enter without a project shows an error and stays on projects
+		[]byte{13},
+		[]byte{32},
+		[]byte{13},
+		[]byte("body stuff"),
 		[]byte{13},
 	)
 
@@ -230,8 +247,10 @@ func TestAskPromptsForBodyWithProjectErrNoProject(t *testing.T) {
 		Enabled:     true,
 	}
 
-	_, err := prompts.BuildChanges()
-	then.Err(t, errProjectRequired, err)
+	changes, err := prompts.BuildChanges()
+	then.Nil(t, err)
+	then.SliceLen(t, 1, changes)
+	then.Equals(t, "client", changes[0].Project)
 }
 
 func TestAskComponentKindBody(t *testing.T) {
@@ -253,10 +272,11 @@ func TestAskComponentKindBody(t *testing.T) {
 		},
 	}
 	prompts := &Prompts{
-		Config:      config,
-		StdinReader: reader,
-		TimeNow:     specificTimeNow,
-		Enabled:     true,
+		Config:        config,
+		StdinReader:   reader,
+		TimeNow:       specificTimeNow,
+		Enabled:       true,
+		LegacyPrompts: promptsLegacy,
 	}
 	changes, err := prompts.BuildChanges()
 	then.Nil(t, err)
@@ -293,7 +313,8 @@ func TestBodyKindPostProcess(t *testing.T) {
 		Customs: map[string]string{
 			"Issue": "25",
 		},
-		Enabled: true,
+		Enabled:       true,
+		LegacyPrompts: promptsLegacy,
 	}
 	changes, err := prompts.BuildChanges()
 	then.Nil(t, err)
@@ -323,10 +344,11 @@ func TestBodyCustom(t *testing.T) {
 	}
 
 	prompts := &Prompts{
-		Config:      config,
-		StdinReader: reader,
-		TimeNow:     specificTimeNow,
-		Enabled:     true,
+		Config:        config,
+		StdinReader:   reader,
+		TimeNow:       specificTimeNow,
+		Enabled:       true,
+		LegacyPrompts: promptsLegacy,
 	}
 	changes, err := prompts.BuildChanges()
 	then.Nil(t, err)
@@ -362,7 +384,8 @@ func TestBodyCustomWithExistingCustomValue(t *testing.T) {
 		Customs: map[string]string{
 			"Project": "Changie",
 		},
-		Enabled: true,
+		Enabled:       true,
+		LegacyPrompts: promptsLegacy,
 	}
 	changes, err := prompts.BuildChanges()
 	then.Nil(t, err)
@@ -403,10 +426,11 @@ func TestSkippedBodyGlobalChoicesKindWithAdditional(t *testing.T) {
 	}
 
 	prompts := &Prompts{
-		Config:      config,
-		StdinReader: reader,
-		TimeNow:     specificTimeNow,
-		Enabled:     true,
+		Config:        config,
+		StdinReader:   reader,
+		TimeNow:       specificTimeNow,
+		Enabled:       true,
+		LegacyPrompts: promptsLegacy,
 	}
 	changes, err := prompts.BuildChanges()
 	then.Nil(t, err)
@@ -428,12 +452,13 @@ func TestBodyAndPostProcess(t *testing.T) {
 		},
 	}
 	prompts := &Prompts{
-		Config:      config,
-		StdinReader: reader,
-		TimeNow:     specificTimeNow,
-		Body:        "our body",
-		Customs:     make(map[string]string),
-		Enabled:     true,
+		Config:        config,
+		StdinReader:   reader,
+		TimeNow:       specificTimeNow,
+		Body:          "our body",
+		Customs:       make(map[string]string),
+		Enabled:       true,
+		LegacyPrompts: promptsLegacy,
 	}
 
 	changes, err := prompts.BuildChanges()
@@ -476,7 +501,8 @@ func TestBodyAndPostProcessSkipGlobalPost(t *testing.T) {
 		Customs: map[string]string{
 			"Issue": "30",
 		},
-		Enabled: true,
+		Enabled:       true,
+		LegacyPrompts: promptsLegacy,
 	}
 
 	changes, err := prompts.BuildChanges()
@@ -491,11 +517,14 @@ func TestBodyAndPostProcessSkipGlobalPost(t *testing.T) {
 	then.Equals(t, "", c.Custom["GlobalPost"])
 }
 
-func TestErrorInvalidBody(t *testing.T) {
+func TestAskPromptsInvalidBodyBeforeContinuing(t *testing.T) {
 	reader, writer := then.WithReadWritePipe(t)
 	then.DelayWrite(
 		t, writer,
+		// too short shows an error and stays on the body
 		[]byte("abc"),
+		[]byte{13},
+		[]byte("de"),
 		[]byte{13},
 	)
 
@@ -514,8 +543,9 @@ func TestErrorInvalidBody(t *testing.T) {
 		Enabled:     true,
 	}
 
-	_, err := prompts.BuildChanges()
-	then.Err(t, errInputTooShort, err)
+	changes, err := prompts.BuildChanges()
+	then.Nil(t, err)
+	then.Equals(t, "abcde", changes[0].Body)
 }
 
 func TestErrorInvalidPost(t *testing.T) {
@@ -526,11 +556,12 @@ func TestErrorInvalidPost(t *testing.T) {
 		},
 	}
 	prompts := &Prompts{
-		Config:      config,
-		StdinReader: reader,
-		TimeNow:     specificTimeNow,
-		Body:        "our body",
-		Enabled:     true,
+		Config:        config,
+		StdinReader:   reader,
+		TimeNow:       specificTimeNow,
+		Body:          "our body",
+		Enabled:       true,
+		LegacyPrompts: promptsLegacy,
 	}
 
 	_, err := prompts.BuildChanges()
@@ -549,12 +580,13 @@ func TestErrorInvalidPostWithProjects(t *testing.T) {
 		},
 	}
 	prompts := &Prompts{
-		Config:      config,
-		StdinReader: reader,
-		TimeNow:     specificTimeNow,
-		Body:        "our body",
-		Projects:    []string{"client"},
-		Enabled:     true,
+		Config:        config,
+		StdinReader:   reader,
+		TimeNow:       specificTimeNow,
+		Body:          "our body",
+		Projects:      []string{"client"},
+		Enabled:       true,
+		LegacyPrompts: promptsLegacy,
 	}
 
 	_, err := prompts.BuildChanges()
@@ -576,10 +608,11 @@ func TestErrorInvalidCustomType(t *testing.T) {
 	}
 
 	prompts := &Prompts{
-		Config:      config,
-		StdinReader: reader,
-		TimeNow:     specificTimeNow,
-		Enabled:     true,
+		Config:        config,
+		StdinReader:   reader,
+		TimeNow:       specificTimeNow,
+		Enabled:       true,
+		LegacyPrompts: promptsLegacy,
 	}
 
 	_, err := prompts.BuildChanges()
@@ -597,10 +630,11 @@ func TestErrorInvalidComponent(t *testing.T) {
 		Components: []string{"a", "b"},
 	}
 	prompts := &Prompts{
-		Config:      config,
-		StdinReader: reader,
-		TimeNow:     specificTimeNow,
-		Enabled:     true,
+		Config:        config,
+		StdinReader:   reader,
+		TimeNow:       specificTimeNow,
+		Enabled:       true,
+		LegacyPrompts: promptsLegacy,
 	}
 
 	_, err := prompts.BuildChanges()
@@ -621,10 +655,11 @@ func TestErrorInvalidKind(t *testing.T) {
 		},
 	}
 	prompts := &Prompts{
-		Config:      config,
-		StdinReader: reader,
-		TimeNow:     specificTimeNow,
-		Enabled:     true,
+		Config:        config,
+		StdinReader:   reader,
+		TimeNow:       specificTimeNow,
+		Enabled:       true,
+		LegacyPrompts: promptsLegacy,
 	}
 
 	_, err := prompts.BuildChanges()
@@ -640,10 +675,11 @@ func TestErrorFaultBody(t *testing.T) {
 
 	config := &Config{}
 	prompts := &Prompts{
-		Config:      config,
-		StdinReader: reader,
-		TimeNow:     specificTimeNow,
-		Enabled:     true,
+		Config:        config,
+		StdinReader:   reader,
+		TimeNow:       specificTimeNow,
+		Enabled:       true,
+		LegacyPrompts: promptsLegacy,
 	}
 
 	_, err := prompts.BuildChanges()
@@ -666,10 +702,11 @@ func TestErrorInvalidCustomValue(t *testing.T) {
 		},
 	}
 	prompts := &Prompts{
-		Config:      config,
-		StdinReader: reader,
-		TimeNow:     specificTimeNow,
-		Enabled:     true,
+		Config:        config,
+		StdinReader:   reader,
+		TimeNow:       specificTimeNow,
+		Enabled:       true,
+		LegacyPrompts: promptsLegacy,
 	}
 
 	_, err := prompts.BuildChanges()
@@ -684,12 +721,13 @@ func TestErrorBadKindLabel(t *testing.T) {
 		},
 	}
 	prompts := &Prompts{
-		Config:      config,
-		StdinReader: reader,
-		TimeNow:     specificTimeNow,
-		Kind:        "not kind",
-		Body:        "body",
-		Enabled:     true,
+		Config:        config,
+		StdinReader:   reader,
+		TimeNow:       specificTimeNow,
+		Kind:          "not kind",
+		Body:          "body",
+		Enabled:       true,
+		LegacyPrompts: promptsLegacy,
 	}
 
 	_, err := prompts.BuildChanges()
@@ -702,12 +740,13 @@ func TestErrorBadComponentInput(t *testing.T) {
 		Components: []string{"a", "b", "c"},
 	}
 	prompts := &Prompts{
-		Config:      config,
-		StdinReader: reader,
-		TimeNow:     specificTimeNow,
-		Component:   "d",
-		Body:        "body",
-		Enabled:     true,
+		Config:        config,
+		StdinReader:   reader,
+		TimeNow:       specificTimeNow,
+		Component:     "d",
+		Body:          "body",
+		Enabled:       true,
+		LegacyPrompts: promptsLegacy,
 	}
 
 	_, err := prompts.BuildChanges()
@@ -718,12 +757,13 @@ func TestErrorComponentGivenWithNoConfiguration(t *testing.T) {
 	reader, _ := then.WithReadWritePipe(t)
 	config := &Config{}
 	prompts := &Prompts{
-		Config:      config,
-		StdinReader: reader,
-		TimeNow:     specificTimeNow,
-		Component:   "we shouldn't have a component",
-		Body:        "body",
-		Enabled:     true,
+		Config:        config,
+		StdinReader:   reader,
+		TimeNow:       specificTimeNow,
+		Component:     "we shouldn't have a component",
+		Body:          "body",
+		Enabled:       true,
+		LegacyPrompts: promptsLegacy,
 	}
 
 	_, err := prompts.BuildChanges()
@@ -734,12 +774,13 @@ func TestErrorKindGivenWithNoConfiguration(t *testing.T) {
 	reader, _ := then.WithReadWritePipe(t)
 	config := &Config{}
 	prompts := &Prompts{
-		Config:      config,
-		StdinReader: reader,
-		TimeNow:     specificTimeNow,
-		Kind:        "we shouldn't have a kind",
-		Body:        "body",
-		Enabled:     true,
+		Config:        config,
+		StdinReader:   reader,
+		TimeNow:       specificTimeNow,
+		Kind:          "we shouldn't have a kind",
+		Body:          "body",
+		Enabled:       true,
+		LegacyPrompts: promptsLegacy,
 	}
 
 	_, err := prompts.BuildChanges()
@@ -760,7 +801,8 @@ func TestErrorCustomGivenWithNoConfiguration(t *testing.T) {
 		Customs: map[string]string{
 			"MissingKey": "40",
 		},
-		Enabled: true,
+		Enabled:       true,
+		LegacyPrompts: promptsLegacy,
 	}
 
 	_, err := prompts.BuildChanges()
@@ -782,7 +824,8 @@ func TestErrorCustomGivenDoesNotPassValidation(t *testing.T) {
 		Customs: map[string]string{
 			"Issue": "40",
 		},
-		Enabled: true,
+		Enabled:       true,
+		LegacyPrompts: promptsLegacy,
 	}
 
 	_, err := prompts.BuildChanges()
@@ -797,12 +840,13 @@ func TestErrorBodyGivenWithNoConfiguration(t *testing.T) {
 		},
 	}
 	prompts := &Prompts{
-		Config:      config,
-		StdinReader: reader,
-		TimeNow:     specificTimeNow,
-		Body:        "body",
-		Kind:        "kind",
-		Enabled:     true,
+		Config:        config,
+		StdinReader:   reader,
+		TimeNow:       specificTimeNow,
+		Body:          "body",
+		Kind:          "kind",
+		Enabled:       true,
+		LegacyPrompts: promptsLegacy,
 	}
 
 	_, err := prompts.BuildChanges()
@@ -822,12 +866,13 @@ func TestErrorBodyGivenDoesNotPassValidation(t *testing.T) {
 		},
 	}
 	prompts := &Prompts{
-		Config:      config,
-		StdinReader: reader,
-		TimeNow:     specificTimeNow,
-		Kind:        "kind",
-		Body:        "body",
-		Enabled:     true,
+		Config:        config,
+		StdinReader:   reader,
+		TimeNow:       specificTimeNow,
+		Kind:          "kind",
+		Body:          "body",
+		Enabled:       true,
+		LegacyPrompts: promptsLegacy,
 	}
 
 	_, err := prompts.BuildChanges()
@@ -846,11 +891,12 @@ func TestSkipPromptForComponentIfSet(t *testing.T) {
 		Components: []string{"a", "b"},
 	}
 	prompts := &Prompts{
-		Config:      config,
-		StdinReader: reader,
-		TimeNow:     specificTimeNow,
-		Component:   "a",
-		Enabled:     true,
+		Config:        config,
+		StdinReader:   reader,
+		TimeNow:       specificTimeNow,
+		Component:     "a",
+		Enabled:       true,
+		LegacyPrompts: promptsLegacy,
 	}
 
 	changes, err := prompts.BuildChanges()
@@ -872,10 +918,11 @@ func TestSkipPromptForCustomIfOptionalAndDisabled(t *testing.T) {
 		},
 	}
 	prompts := &Prompts{
-		Config:  config,
-		TimeNow: specificTimeNow,
-		Enabled: false,
-		Body:    "skip custom input",
+		Config:        config,
+		TimeNow:       specificTimeNow,
+		Enabled:       false,
+		LegacyPrompts: promptsLegacy,
+		Body:          "skip custom input",
 	}
 
 	changes, err := prompts.BuildChanges()
@@ -920,7 +967,8 @@ func TestSkipPromptForPromptsWithCustomPromptsInKindConfig(t *testing.T) {
 			"from": "1.20",
 			"to":   "1.22",
 		},
-		Enabled: true,
+		Enabled:       true,
+		LegacyPrompts: promptsLegacy,
 	}
 
 	changes, err := prompts.BuildChanges()
@@ -946,11 +994,12 @@ func TestSkipPromptForKindIfSet(t *testing.T) {
 		},
 	}
 	prompts := &Prompts{
-		Config:      config,
-		StdinReader: reader,
-		TimeNow:     specificTimeNow,
-		Kind:        "kind",
-		Enabled:     true,
+		Config:        config,
+		StdinReader:   reader,
+		TimeNow:       specificTimeNow,
+		Kind:          "kind",
+		Enabled:       true,
+		LegacyPrompts: promptsLegacy,
 	}
 
 	changes, err := prompts.BuildChanges()
@@ -975,11 +1024,12 @@ func TestSkipPromptForBodyIfSet(t *testing.T) {
 		},
 	}
 	prompts := &Prompts{
-		Config:      config,
-		StdinReader: reader,
-		TimeNow:     specificTimeNow,
-		Body:        "skip body body",
-		Enabled:     true,
+		Config:        config,
+		StdinReader:   reader,
+		TimeNow:       specificTimeNow,
+		Body:          "skip body body",
+		Enabled:       true,
+		LegacyPrompts: promptsLegacy,
 	}
 
 	changes, err := prompts.BuildChanges()
@@ -1008,7 +1058,8 @@ func TestGetBodyTxtWithEditor(t *testing.T) {
 				t:        t,
 			}, nil
 		},
-		Enabled: true,
+		Enabled:       true,
+		LegacyPrompts: promptsLegacy,
 	}
 
 	changes, err := prompts.BuildChanges()
@@ -1034,9 +1085,375 @@ func TestGetBodyTxtWithEditorUnableToCreateCmd(t *testing.T) {
 		EditorCmdBuilder: func(s string) (EditorRunner, error) {
 			return BuildCommand(s)
 		},
-		Enabled: true,
+		Enabled:       true,
+		LegacyPrompts: promptsLegacy,
 	}
 
 	_, err := prompts.BuildChanges()
 	then.NotNil(t, err)
+}
+
+func TestRequireProvided(t *testing.T) {
+	config := &Config{
+		Kinds: []KindConfig{
+			{Label: "Added", Key: "added"},
+			{
+				Label:             "Dependencies",
+				Key:               "deps",
+				SkipBody:          true,
+				SkipGlobalChoices: true,
+				AdditionalChoices: []Custom{
+					{Key: "Package", Type: CustomString},
+					{Key: "Version", Type: CustomString, Optional: true},
+				},
+			},
+		},
+		CustomChoices: []Custom{
+			{Key: "Issue", Type: CustomInt},
+			{Key: "Author", Type: CustomString, Optional: true},
+		},
+	}
+
+	t.Run("all provided", func(t *testing.T) {
+		p := &Prompts{
+			Config:  config,
+			Kind:    "added",
+			Body:    "body",
+			Customs: map[string]string{"Issue": "15"},
+		}
+
+		then.Nil(t, p.requireProvided())
+	})
+
+	t.Run("kind skips body and global choices", func(t *testing.T) {
+		p := &Prompts{
+			Config:  config,
+			Kind:    "deps",
+			Customs: map[string]string{"Package": "huh"},
+		}
+
+		then.Nil(t, p.requireProvided())
+	})
+
+	t.Run("kind additional choice missing", func(t *testing.T) {
+		p := &Prompts{
+			Config: config,
+			Kind:   "deps",
+		}
+
+		then.Err(t, errCustomMissingPromptDisabled, p.requireProvided())
+	})
+}
+
+var (
+	keyDown     = []byte("\x1b[B")
+	keyShiftTab = []byte("\x1b[Z")
+)
+
+func TestAskPromptsGoBackAndChangeKind(t *testing.T) {
+	reader, writer := then.WithReadWritePipe(t)
+	then.DelayWrite(
+		t, writer,
+		// pick added, type a body, then go back and pick dependencies
+		[]byte{13},
+		[]byte("body for added"),
+		keyShiftTab,
+		keyDown,
+		[]byte{13},
+		[]byte("huh"),
+		[]byte{13},
+	)
+
+	config := &Config{
+		Kinds: []KindConfig{
+			{Label: "Added", Key: "added"},
+			{
+				Label:             "Dependencies",
+				Key:               "deps",
+				SkipBody:          true,
+				AdditionalChoices: []Custom{{Key: "Package", Type: CustomString}},
+			},
+		},
+	}
+	prompts := &Prompts{
+		Config:      config,
+		StdinReader: reader,
+		TimeNow:     specificTimeNow,
+		Enabled:     true,
+	}
+
+	changes, err := prompts.BuildChanges()
+	then.Nil(t, err)
+
+	then.SliceLen(t, 1, changes)
+	c := changes[0]
+	then.Equals(t, "deps", c.Kind)
+	// the body typed for added is not used as dependencies skips the body
+	then.Equals(t, "", c.Body)
+	then.MapEquals(t, map[string]string{"Package": "huh"}, c.Custom)
+}
+
+func TestAskPromptsKeepsProvidedCustoms(t *testing.T) {
+	reader, writer := then.WithReadWritePipe(t)
+	then.DelayWrite(
+		t, writer,
+		[]byte("body stuff"),
+		[]byte{13},
+		[]byte("miniscruff"),
+		[]byte{13},
+	)
+
+	config := &Config{
+		CustomChoices: []Custom{
+			{Key: "Issue", Type: CustomInt},
+			{Key: "Author", Type: CustomString},
+		},
+	}
+	prompts := &Prompts{
+		Config:        config,
+		StdinReader:   reader,
+		TimeNow:       specificTimeNow,
+		Enabled:       true,
+		LegacyPrompts: promptsLegacy,
+		Customs:       map[string]string{"Issue": "15"},
+	}
+
+	changes, err := prompts.BuildChanges()
+	then.Nil(t, err)
+	then.MapEquals(t, map[string]string{"Issue": "15", "Author": "miniscruff"}, changes[0].Custom)
+}
+
+func TestAskPromptsEmptyBody(t *testing.T) {
+	reader, writer := then.WithReadWritePipe(t)
+	then.DelayWrite(
+		t, writer,
+		[]byte{13},
+	)
+
+	prompts := &Prompts{
+		Config:        &Config{},
+		StdinReader:   reader,
+		TimeNow:       specificTimeNow,
+		Enabled:       true,
+		LegacyPrompts: promptsLegacy,
+	}
+
+	// without a minimum length the body may be left empty
+	changes, err := prompts.BuildChanges()
+	then.Nil(t, err)
+	then.Equals(t, "", changes[0].Body)
+}
+
+func TestAskPromptsNothingToAsk(t *testing.T) {
+	prompts := &Prompts{
+		Config:        &Config{},
+		TimeNow:       specificTimeNow,
+		Enabled:       true,
+		LegacyPrompts: promptsLegacy,
+		Body:          "body from flag",
+	}
+
+	changes, err := prompts.BuildChanges()
+	then.Nil(t, err)
+	then.Equals(t, "body from flag", changes[0].Body)
+}
+
+func TestAskPromptsProjectWithoutKey(t *testing.T) {
+	reader, writer := then.WithReadWritePipe(t)
+	then.DelayWrite(
+		t, writer,
+		keyDown,
+		[]byte{32},
+		[]byte{13},
+		[]byte("body stuff"),
+		[]byte{13},
+	)
+
+	config := &Config{
+		Projects: []ProjectConfig{
+			{Label: "Client", Key: "client"},
+			{Label: "Frontend"},
+		},
+	}
+	prompts := &Prompts{
+		Config:        config,
+		StdinReader:   reader,
+		TimeNow:       specificTimeNow,
+		Enabled:       true,
+		LegacyPrompts: promptsLegacy,
+	}
+
+	changes, err := prompts.BuildChanges()
+	then.Nil(t, err)
+	then.SliceLen(t, 1, changes)
+	// projects without a key are saved with an empty project, as before
+	then.Equals(t, "", changes[0].Project)
+}
+
+func TestAskPromptsKindWithoutKey(t *testing.T) {
+	reader, writer := then.WithReadWritePipe(t)
+	then.DelayWrite(
+		t, writer,
+		keyDown,
+		[]byte{13},
+		[]byte("CVE-1"),
+		[]byte{13},
+	)
+
+	config := &Config{
+		Kinds: []KindConfig{
+			{Label: "Dependencies", SkipBody: true, SkipGlobalChoices: true},
+			{
+				Label:             "Security",
+				SkipBody:          true,
+				SkipGlobalChoices: true,
+				AdditionalChoices: []Custom{{Key: "CVE", Type: CustomString}},
+			},
+		},
+		CustomChoices: []Custom{{Key: "Issue", Type: CustomInt}},
+	}
+	prompts := &Prompts{
+		Config:        config,
+		StdinReader:   reader,
+		TimeNow:       specificTimeNow,
+		Enabled:       true,
+		LegacyPrompts: promptsLegacy,
+	}
+
+	changes, err := prompts.BuildChanges()
+	then.Nil(t, err)
+	then.SliceLen(t, 1, changes)
+	// kinds without a key are found by label for hiding fields and saving
+	then.Equals(t, "Security", changes[0].Kind)
+	then.Equals(t, "", changes[0].Body)
+	then.MapEquals(t, map[string]string{"CVE": "CVE-1"}, changes[0].Custom)
+}
+
+func TestAskPromptsForBodyWithProjectErrNoProject(t *testing.T) {
+	reader, writer := then.WithReadWritePipe(t)
+	then.DelayWrite(
+		t, writer,
+		[]byte{13},
+	)
+
+	config := &Config{
+		Projects: []ProjectConfig{
+			{Label: "Client", Key: "client"},
+			{Label: "Other", Key: "other"},
+		},
+	}
+	prompts := &Prompts{
+		Config:        config,
+		StdinReader:   reader,
+		TimeNow:       specificTimeNow,
+		Enabled:       true,
+		LegacyPrompts: true,
+	}
+
+	_, err := prompts.BuildChanges()
+	then.Err(t, errProjectRequired, err)
+}
+
+func TestErrorInvalidBody(t *testing.T) {
+	reader, writer := then.WithReadWritePipe(t)
+	then.DelayWrite(
+		t, writer,
+		[]byte("abc"),
+		[]byte{13},
+	)
+
+	var min int64 = 5
+
+	config := &Config{
+		Body: BodyConfig{
+			MinLength: &min,
+		},
+	}
+
+	prompts := &Prompts{
+		Config:        config,
+		StdinReader:   reader,
+		TimeNow:       specificTimeNow,
+		Enabled:       true,
+		LegacyPrompts: true,
+	}
+
+	_, err := prompts.BuildChanges()
+	then.Err(t, errInputTooShort, err)
+}
+
+// captureStderr redirects stderr until the returned func is called, which
+// returns everything written to it.
+func captureStderr(t *testing.T) func() string {
+	t.Helper()
+
+	reader, writer, err := os.Pipe()
+	then.Nil(t, err)
+
+	original := os.Stderr
+	os.Stderr = writer
+
+	var captured bytes.Buffer
+
+	done := make(chan struct{})
+
+	go func() {
+		_, _ = io.Copy(&captured, reader)
+
+		close(done)
+	}()
+
+	restore := func() {
+		if os.Stderr == writer {
+			os.Stderr = original
+			_ = writer.Close()
+
+			<-done
+
+			_ = reader.Close()
+		}
+	}
+	t.Cleanup(restore)
+
+	return func() string {
+		restore()
+
+		return captured.String()
+	}
+}
+
+func TestNewPromptsWarning(t *testing.T) {
+	for _, tc := range []struct {
+		name    string
+		prompts Prompts
+		warns   bool
+	}{
+		{name: "huh form shown", prompts: Prompts{Enabled: true, ShowNewPromptsWarning: true}, warns: true},
+		{name: "warning hidden", prompts: Prompts{Enabled: true}},
+		{name: "legacy prompts", prompts: Prompts{Enabled: true, LegacyPrompts: true, ShowNewPromptsWarning: true}},
+		{name: "prompts disabled", prompts: Prompts{Body: "from flag", ShowNewPromptsWarning: true}},
+		{name: "nothing to ask", prompts: Prompts{Enabled: true, Body: "from flag", ShowNewPromptsWarning: true}},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			reader, writer := then.WithReadWritePipe(t)
+			if tc.prompts.Enabled && tc.prompts.Body == "" {
+				then.DelayWrite(t, writer, []byte("body stuff"), []byte{13})
+			}
+
+			stderr := captureStderr(t)
+
+			prompts := tc.prompts
+			prompts.Config = &Config{}
+			prompts.StdinReader = reader
+			prompts.TimeNow = specificTimeNow
+
+			_, err := prompts.BuildChanges()
+			then.Nil(t, err)
+
+			// the form is drawn after the warning, also on stderr
+			output := stderr()
+			then.Equals(t, tc.warns, strings.HasPrefix(output, newPromptsWarning+"\n"))
+			then.Equals(t, tc.warns, strings.Contains(output, newPromptsWarning))
+		})
+	}
 }

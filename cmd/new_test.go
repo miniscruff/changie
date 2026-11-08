@@ -349,3 +349,39 @@ func TestPromptEnabled(t *testing.T) {
 		then.False(t, n.parsePromptEnabled())
 	})
 }
+
+func TestParseLegacyPrompts(t *testing.T) {
+	for _, tc := range []struct {
+		value       string
+		legacy      bool
+		showWarning bool
+	}{
+		{value: "", legacy: false, showWarning: true},
+		{value: "on", legacy: true, showWarning: false},
+		{value: "ON", legacy: true, showWarning: false},
+		{value: "off", legacy: false, showWarning: false},
+	} {
+		t.Run(fmt.Sprintf("value %q", tc.value), func(t *testing.T) {
+			t.Setenv(legacyPromptsEnvVar, tc.value)
+
+			legacy, showWarning, err := parseLegacyPrompts()
+			then.Nil(t, err)
+			then.Equals(t, tc.legacy, legacy)
+			then.Equals(t, tc.showWarning, showWarning)
+		})
+	}
+}
+
+func TestErrorNewInvalidLegacyPrompts(t *testing.T) {
+	cfg := newTestConfig()
+	then.WithTempDirConfig(t, cfg)
+	t.Setenv(legacyPromptsEnvVar, "true")
+
+	cmd := NewNew(
+		newMockTime,
+		core.NewTemplateCache(),
+	)
+
+	err := cmd.Run(cmd.Command, nil)
+	then.Err(t, errInvalidLegacyPrompts, err)
+}
