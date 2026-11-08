@@ -2,8 +2,6 @@ package core
 
 import (
 	"bytes"
-	"io"
-	"os"
 	"strings"
 	"testing"
 	"time"
@@ -1223,6 +1221,27 @@ func TestAskPromptsKeepsProvidedCustoms(t *testing.T) {
 	then.MapEquals(t, map[string]string{"Issue": "15", "Author": "miniscruff"}, changes[0].Custom)
 }
 
+func TestAskPromptsEmptyBody(t *testing.T) {
+	reader, writer := then.WithReadWritePipe(t)
+	then.DelayWrite(
+		t, writer,
+		[]byte{13},
+	)
+
+	prompts := &Prompts{
+		Config:        &Config{},
+		StdinReader:   reader,
+		TimeNow:       specificTimeNow,
+		Enabled:       true,
+		LegacyPrompts: promptsLegacy,
+	}
+
+	// without a minimum length the body may be left empty
+	changes, err := prompts.BuildChanges()
+	then.Nil(t, err)
+	then.Equals(t, "", changes[0].Body)
+}
+
 func TestAskPromptsNothingToAsk(t *testing.T) {
 	prompts := &Prompts{
 		Config:        &Config{},
@@ -1395,24 +1414,4 @@ func TestNewPromptsWarning(t *testing.T) {
 			then.Equals(t, tc.warns, strings.Contains(output.String(), newPromptsWarning))
 		})
 	}
-}
-
-func TestFormInput(t *testing.T) {
-	t.Run("pipe is read as a plain reader", func(t *testing.T) {
-		reader, writer, err := os.Pipe()
-		then.Nil(t, err)
-
-		t.Cleanup(func() {
-			_ = reader.Close()
-			_ = writer.Close()
-		})
-
-		_, isFile := formInput(reader).(*os.File)
-		then.False(t, isFile)
-	})
-
-	t.Run("other readers are unchanged", func(t *testing.T) {
-		reader := strings.NewReader("input")
-		then.Equals[io.Reader](t, reader, formInput(reader))
-	})
 }

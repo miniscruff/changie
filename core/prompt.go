@@ -8,8 +8,6 @@ import (
 	"os"
 	"runtime"
 	"slices"
-
-	"github.com/charmbracelet/x/term"
 )
 
 var (
@@ -359,19 +357,4 @@ func (p *Prompts) resolveBody() error {
 	p.Body, err = getBodyTextWithEditor(runner, file)
 
 	return err
-}
-
-// formInput returns the input for the huh form.
-// bubbletea reads files with a cancel reader, which it can close while its
-// read loop is still running when the form ends, a data race caught by tests
-// run with -race. Files that are not terminals, such as piped input, do not
-// need raw mode or canceling as only one form is run per process, so they are
-// read as a plain reader instead.
-func formInput(input io.Reader) io.Reader {
-	file, ok := input.(*os.File)
-	if !ok || term.IsTerminal(file.Fd()) {
-		return input
-	}
-
-	return struct{ io.Reader }{file}
 }

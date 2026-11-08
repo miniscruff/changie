@@ -54,6 +54,7 @@ func TestPromptsWithLegacy(t *testing.T) {
 		TestGetBodyTxtWithEditor,
 		TestGetBodyTxtWithEditorUnableToCreateCmd,
 		TestAskPromptsKeepsProvidedCustoms,
+		TestAskPromptsEmptyBody,
 		TestAskPromptsNothingToAsk,
 		TestAskPromptsProjectWithoutKey,
 		TestAskPromptsKindWithoutKey,
