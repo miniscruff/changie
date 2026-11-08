@@ -314,15 +314,9 @@ func (p *Prompts) applyFormAnswers() {
 // resolveValues resolves the kind config and validates the body, which may
 // still be written using an editor.
 func (p *Prompts) resolveValues() error {
-	if len(p.Config.Kinds) > 0 {
-		kc := p.selectedKind()
-		if kc == nil {
-			return fmt.Errorf("%w: %s", errInvalidKind, p.Kind)
-		}
-
-		p.KindConfig = kc
-		p.Kind = kc.KeyOrLabel()
-	}
+	// the kind is always configured here, as provided kinds are validated
+	// and the form only offers configured kinds
+	p.KindConfig = p.selectedKind()
 
 	return p.resolveBody()
 }

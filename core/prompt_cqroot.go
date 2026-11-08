@@ -13,7 +13,8 @@ import (
 
 // The cqroot prompts are kept behind CHANGIE_LEGACY_PROMPTS while the huh
 // form is tested by more users, after which this file can be removed along
-// with cqroot.
+// with cqroot. Provided values are validated before asking, in
+// validateArguments.
 
 // askWithCqroot asks for each missing value one prompt at a time, returning an
 // error for missing values when prompts are disabled.
@@ -70,14 +71,6 @@ func (p *Prompts) projects() error {
 		p.Projects = projs
 	}
 
-	// Quickly validate the project exists and lines up before moving on.
-	for _, proj := range p.Projects {
-		_, err := p.Config.Project(proj)
-		if err != nil {
-			return fmt.Errorf("%w: %s", err, proj)
-		}
-	}
-
 	return nil
 }
 
@@ -105,10 +98,6 @@ func (p *Prompts) component() error {
 		p.Component = comp
 	}
 
-	if !slices.Contains(p.Config.Components, p.Component) {
-		return fmt.Errorf("%w: %s", errInvalidComponent, p.Component)
-	}
-
 	return nil
 }
 
@@ -127,7 +116,7 @@ func (p *Prompts) kind() error {
 			kindLabels[i] = kc.Label
 		}
 
-		kind, err := Custom{
+		label, err := Custom{
 			Type:        CustomEnum,
 			Label:       "Kind",
 			EnumOptions: kindLabels,
@@ -136,21 +125,17 @@ func (p *Prompts) kind() error {
 			return err
 		}
 
-		p.Kind = kind
+		// kinds are looked up by key, so use the key of the selected label
+		i := slices.IndexFunc(p.Config.Kinds, func(kc KindConfig) bool {
+			return kc.Label == label
+		})
+		p.Kind = p.Config.Kinds[i].KeyOrLabel()
 	}
 
-	for i := range p.Config.Kinds {
-		kindConfig := &p.Config.Kinds[i]
+	// provided kinds are already validated
+	p.KindConfig = p.selectedKind()
 
-		if kindConfig.Label == p.Kind || kindConfig.Key == p.Kind {
-			p.KindConfig = kindConfig
-			p.Kind = kindConfig.KeyOrLabel()
-
-			return nil
-		}
-	}
-
-	return fmt.Errorf("%w: %s", errInvalidKind, p.Kind)
+	return nil
 }
 
 func (p *Prompts) body() error {
