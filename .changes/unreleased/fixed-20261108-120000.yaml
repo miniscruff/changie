@@ -1,0 +1,5 @@
+kind: fixed
+body: Custom int prompts with only `maxInt` no longer panic when the value is too high, and the error now reports the max instead of the min
+time: 2026-11-08T12:00:00.000000000-08:00
+custom:
+    Issue: "956"
