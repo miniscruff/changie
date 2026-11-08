@@ -1,5 +1,5 @@
 kind: deprecated
-body: Previous one at a time prompts, available for this release by setting `CHANGIE_LEGACY_PROMPTS=true`
+body: Previous one at a time prompts, available for this release by setting `CHANGIE_LEGACY_PROMPTS=on`
 time: 2026-11-07T15:40:09.492459093-08:00
 custom:
     Issue: "952"

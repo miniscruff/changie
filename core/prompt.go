@@ -30,7 +30,8 @@ var (
 // newPromptsWarning is shown before the huh form while the legacy prompts are
 // still available, so users know how to switch back if they hit a problem.
 const newPromptsWarning = "changie is using new prompts, if you run into any issues please report them at " +
-	"https://github.com/miniscruff/changie/issues and set CHANGIE_LEGACY_PROMPTS=true to use the previous prompts."
+	"https://github.com/miniscruff/changie/issues and set CHANGIE_LEGACY_PROMPTS=on to use the previous prompts, " +
+	"or CHANGIE_LEGACY_PROMPTS=off to hide this warning."
 
 type Prompts struct {
 	Config           *Config

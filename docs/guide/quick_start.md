@@ -23,7 +23,8 @@ changie new
 
 The prompts ask for every value in a single form, use shift+tab to go back to a previous prompt.
 If you run into any issues please [report them](https://github.com/miniscruff/changie/issues)
-and set `CHANGIE_LEGACY_PROMPTS=true` to use the previous prompts until they are fixed.
+and set `CHANGIE_LEGACY_PROMPTS=on` to use the previous prompts until they are fixed.
+Set `CHANGIE_LEGACY_PROMPTS=off` to keep the new prompts and hide the warning shown when they start.
 
 When it is time to prepare your next release, batch all unreleased changes into one using the batch command.
 

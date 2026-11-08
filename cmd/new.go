@@ -1,6 +1,8 @@
 package cmd
 
 import (
+	"errors"
+	"fmt"
 	"io"
 	"os"
 	"path/filepath"
@@ -11,8 +13,12 @@ import (
 	"github.com/miniscruff/changie/core"
 )
 
-// legacyPromptsEnvVar opts out of the huh form, using the cqroot prompts.
+// legacyPromptsEnvVar chooses between the huh form and the cqroot prompts:
+// unset uses the huh form with a warning, "on" uses the cqroot prompts and
+// "off" uses the huh form without the warning.
 const legacyPromptsEnvVar = "CHANGIE_LEGACY_PROMPTS"
+
+var errInvalidLegacyPrompts = errors.New("invalid " + legacyPromptsEnvVar + " value, must be on or off")
 
 type New struct {
 	*cobra.Command
@@ -60,8 +66,9 @@ Example: "CHANGIE_CUSTOM_Author=miniscruff"
 
 Prompts ask for every missing value in a single form,
 use shift+tab to go back to a previous prompt.
-Set CHANGIE_LEGACY_PROMPTS=true to use the previous prompts, which ask
+Set CHANGIE_LEGACY_PROMPTS=on to use the previous prompts, which ask
 one value at a time. These will be removed in a future release.
+Set CHANGIE_LEGACY_PROMPTS=off to hide the warning about the new prompts.
 `,
 		Args: cobra.NoArgs,
 		RunE: n.Run,
@@ -141,6 +148,11 @@ func (n *New) Run(cmd *cobra.Command, args []string) error {
 		}
 	}
 
+	legacyPrompts, showWarning, err := parseLegacyPrompts()
+	if err != nil {
+		return err
+	}
+
 	prompts := &core.Prompts{
 		StdinReader:      n.InOrStdin(),
 		BodyEditor:       n.BodyEditor,
@@ -153,8 +165,11 @@ func (n *New) Run(cmd *cobra.Command, args []string) error {
 		Customs:          customValues,
 		EditorCmdBuilder: core.BuildCommand,
 		Enabled:          n.parsePromptEnabled(),
-		LegacyPrompts:    strings.ToLower(os.Getenv(legacyPromptsEnvVar)) == "true",
-		WarningWriter:    n.ErrOrStderr(),
+		LegacyPrompts:    legacyPrompts,
+	}
+
+	if showWarning {
+		prompts.WarningWriter = n.ErrOrStderr()
 	}
 
 	changes, err := prompts.BuildChanges()
@@ -206,6 +221,23 @@ func (n *New) Run(cmd *cobra.Command, args []string) error {
 	}
 
 	return err
+}
+
+// parseLegacyPrompts returns whether to use the legacy prompts and whether to
+// warn about the new prompts, based on CHANGIE_LEGACY_PROMPTS.
+func parseLegacyPrompts() (legacy bool, showWarning bool, err error) {
+	value := os.Getenv(legacyPromptsEnvVar)
+
+	switch strings.ToLower(value) {
+	case "":
+		return false, true, nil
+	case "on":
+		return true, false, nil
+	case "off":
+		return false, false, nil
+	}
+
+	return false, false, fmt.Errorf("%w: %q", errInvalidLegacyPrompts, value)
 }
 
 func (n *New) parsePromptEnabled() bool {
