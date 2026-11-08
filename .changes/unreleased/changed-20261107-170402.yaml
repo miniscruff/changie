@@ -1,0 +1,5 @@
+kind: changed
+body: Prompts for `changie new` are written to stderr, so redirecting the output of `--dry-run` only captures the fragment
+time: 2026-11-07T17:04:02.116243067-08:00
+custom:
+    Issue: "950"
